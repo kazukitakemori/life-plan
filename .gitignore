@@ -1,0 +1,17 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# Editor / tooling
+.vscode/*
+!.vscode/tasks.json
+.cursor
+
+# Reconstruction scratch files (not part of the app)
+scripts/extracted-*.tsx
+scripts/reconstructed-*.tsx
+scripts/final-reconstructed-*.tsx
+scripts/fac647-*.txt
+scripts/skip-log.txt
+scripts/cashflow-patch.txt
