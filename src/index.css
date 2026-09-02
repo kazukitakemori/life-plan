@@ -16048,3 +16048,173 @@ button:disabled {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+.license-key-admin {
+  min-height: 100vh;
+  padding: 32px 20px 48px;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%);
+}
+
+.license-key-admin-shell {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.license-key-admin-header {
+  margin-bottom: 20px;
+}
+
+.license-key-admin-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.license-key-admin-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1f2a37;
+}
+
+.license-key-admin-lead {
+  margin: 8px 0 0;
+  font-size: 0.9375rem;
+  color: #556;
+  line-height: 1.6;
+}
+
+.license-key-admin-card {
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border: 1px solid #d5dde7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(40 60 88 / 6%);
+}
+
+.license-key-admin-card-title {
+  margin: 0 0 8px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #223;
+}
+
+.license-key-admin-card-desc {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+  color: #667;
+  line-height: 1.6;
+}
+
+.license-key-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.license-key-admin-issued {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #c8e6c9;
+  border-radius: 10px;
+  background: #f4fbf4;
+}
+
+.license-key-admin-issued-label {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.license-key-admin-issued-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.license-key-admin-issued-code {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1b5e20;
+}
+
+.license-key-admin-issued-note {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  color: #667;
+  line-height: 1.5;
+}
+
+.license-key-admin-copy-message {
+  margin: 10px 0 0;
+  font-size: 0.875rem;
+  color: #2e7d32;
+}
+
+.license-key-admin-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.license-key-admin-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #667;
+}
+
+.license-key-admin-table-wrap {
+  overflow-x: auto;
+}
+
+.license-key-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.license-key-admin-table th,
+.license-key-admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5ebf2;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.license-key-admin-table th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #667;
+  white-space: nowrap;
+}
+
+.license-key-admin-table code {
+  font-size: 0.8125rem;
+}
+
+.license-key-admin-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.license-key-admin-status--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.license-key-admin-status--revoked {
+  background: #fdecea;
+  color: #b42318;
+}

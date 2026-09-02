@@ -36,3 +36,36 @@ export type LicenseState =
   | 'inactive'
   | 'active'
   | 'error';
+
+export interface LicenseAdminGeneratedKey {
+  key: string;
+  hint: string;
+  note: string | null;
+}
+
+export interface LicenseAdminGenerateResponse {
+  ok: boolean;
+  error?: string;
+  keys?: LicenseAdminGeneratedKey[];
+}
+
+export interface LicenseAdminKeySummary {
+  id: string;
+  key_hint: string;
+  status: 'active' | 'revoked';
+  max_devices: number;
+  note: string | null;
+  created_at: string;
+  device_count: number;
+}
+
+export interface LicenseAdminListResponse {
+  ok: boolean;
+  error?: string;
+  keys?: LicenseAdminKeySummary[];
+}
+
+export interface LicenseAdminRevokeResponse {
+  ok: boolean;
+  error?: string;
+}
