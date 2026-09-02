@@ -52,11 +52,17 @@ export function clearLicenseCache(): void {
 
 export function getDefaultDeviceLabel(): string {
   const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'iPhone / iPad';
-  if (/Android/i.test(ua)) return 'Android';
-  if (/Windows/i.test(ua)) return 'Windows PC';
-  if (/Macintosh|Mac OS X/i.test(ua)) return 'Mac';
-  return 'ブラウザ';
+  let browser = 'ブラウザ';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/Chrome/i.test(ua)) browser = 'Chrome';
+  else if (/Firefox/i.test(ua)) browser = 'Firefox';
+  else if (/Safari/i.test(ua)) browser = 'Safari';
+
+  if (/Windows/i.test(ua)) return `${browser}（Windows）`;
+  if (/Macintosh|Mac OS X/i.test(ua)) return `${browser}（Mac）`;
+  if (/iPhone|iPad|iPod/i.test(ua)) return `${browser}（iPhone / iPad）`;
+  if (/Android/i.test(ua)) return `${browser}（Android）`;
+  return browser;
 }
 
 export function formatLicenseKeyInput(value: string): string {

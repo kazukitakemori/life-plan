@@ -224,7 +224,7 @@ export function useLicense() {
         targetDeviceId: deviceId,
       });
       if (!result.ok) {
-        setErrorMessage(result.message ?? 'この端末の解除に失敗しました。');
+        setErrorMessage(result.message ?? 'このブラウザの登録解除に失敗しました。');
         return false;
       }
       clearStoredLicenseKey();

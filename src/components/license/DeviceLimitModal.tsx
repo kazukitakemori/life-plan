@@ -64,10 +64,10 @@ export function DeviceLimitModal({
         </button>
 
         <h3 id={titleId} className="education-ref-modal-title">
-          利用できる端末数の上限に達しています
+          登録できるブラウザ数の上限に達しています
         </h3>
         <p id={hintId} className="education-ref-modal-summary">
-          このライセンスキーは最大 {maxDevices} 台まで登録できます。新しい端末で使うには、登録済みの端末を1台解除してください。
+          このライセンスキーは最大 {maxDevices} つのブラウザ（利用環境）まで登録できます。別のブラウザで使うには、登録済みの環境を1つ解除してください。
         </p>
 
         <div className="education-ref-modal-body">
@@ -80,7 +80,7 @@ export function DeviceLimitModal({
                     <p className="license-device-card-title">
                       {device.deviceLabel}
                       {isCurrent ? (
-                        <span className="license-device-card-badge">この端末</span>
+                        <span className="license-device-card-badge">このブラウザ</span>
                       ) : null}
                     </p>
                     <p className="license-device-card-meta">
@@ -96,7 +96,7 @@ export function DeviceLimitModal({
                         void onReplace(device.deviceId);
                       }}
                     >
-                      {busy ? '処理中…' : 'この端末を解除して登録'}
+                      {busy ? '処理中…' : 'この環境を解除して登録'}
                     </button>
                   ) : (
                     <span className="license-device-card-note">現在利用中</span>

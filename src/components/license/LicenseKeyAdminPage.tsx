@@ -320,7 +320,7 @@ export function LicenseKeyAdminPage() {
                     <th>ライセンスキー</th>
                     <th>お客様名</th>
                     <th>状態</th>
-                    <th>端末数</th>
+                    <th>登録数</th>
                     <th>発行日</th>
                     <th>操作</th>
                   </tr>

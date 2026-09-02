@@ -18,7 +18,7 @@ const STATE_LABELS = {
 const STATE_DESCRIPTIONS = {
   checking: 'ライセンス状態を確認しています。',
   inactive: 'ライフプラン分析を使うには、キーの登録が必要です。',
-  active: 'この端末ではライフプラン分析を利用できます。',
+  active: 'このブラウザではライフプラン分析を利用できます。',
   error: 'ライセンスサーバーに接続できませんでした。',
 } as const;
 
@@ -45,7 +45,7 @@ export function LicenseStatusPanel({
 
       <dl className="license-admin-card-grid">
         <div>
-          <dt>この端末</dt>
+          <dt>このブラウザ</dt>
           <dd>{deviceLabel}</dd>
         </div>
         <div>
@@ -79,7 +79,7 @@ export function LicenseStatusPanel({
             disabled={busy}
             onClick={onReleaseDevice}
           >
-            この端末の登録を解除
+            このブラウザの登録を解除
           </button>
         ) : null}
       </div>

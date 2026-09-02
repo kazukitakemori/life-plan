@@ -167,7 +167,7 @@ async function handleStatus(url, env) {
     return jsonResponse({
       valid: false,
       error: 'NOT_ACTIVATED',
-      message: 'この端末はまだライセンス登録されていません。',
+      message: 'このブラウザはまだライセンス登録されていません。',
       devices: serializeDevices(devices),
       maxDevices: resolved.license.max_devices,
     });
@@ -231,7 +231,7 @@ async function handleActivate(request, env) {
         {
           ok: false,
           error: 'DEVICE_LIMIT',
-          message: `このライセンスキーは最大${maxDevices}台までです。古い端末を解除してから登録してください。`,
+          message: `このライセンスキーは最大${maxDevices}つのブラウザ（利用環境）までです。古い登録を解除してから再度お試しください。`,
           devices: serializeDevices(devices),
           maxDevices,
         },
@@ -247,7 +247,7 @@ async function handleActivate(request, env) {
         {
           ok: false,
           error: 'REPLACE_TARGET_NOT_FOUND',
-          message: '解除対象の端末が見つかりません。',
+          message: '解除対象の利用環境が見つかりません。',
           devices: serializeDevices(devices),
           maxDevices,
         },
@@ -296,7 +296,7 @@ async function handleDeactivate(request, env) {
 
   if (!target) {
     return jsonResponse(
-      { ok: false, error: 'TARGET_NOT_FOUND', message: '解除対象の端末が見つかりません。' },
+      { ok: false, error: 'TARGET_NOT_FOUND', message: '解除対象の利用環境が見つかりません。' },
       404,
     );
   }
@@ -306,7 +306,7 @@ async function handleDeactivate(request, env) {
       {
         ok: false,
         error: 'UNAUTHORIZED_DEVICE',
-        message: 'この端末からは解除できません。登録済み端末で操作するか、新規登録時に置き換えてください。',
+        message: 'このブラウザからは解除できません。登録済みのブラウザで操作するか、新規登録時に置き換えてください。',
       },
       403,
     );
@@ -398,7 +398,7 @@ async function handleAdminApi(request, env, path) {
 function serializeDevices(devices) {
   return devices.map((device) => ({
     deviceId: device.device_id,
-    deviceLabel: device.device_label ?? '端末',
+    deviceLabel: device.device_label ?? 'ブラウザ',
     activatedAt: device.activated_at,
     lastSeenAt: device.last_seen_at,
   }));
