@@ -5,12 +5,7 @@ compatibility_date = "2025-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "life-plan-license"
-# Cloudflare ダッシュボードで D1 作成後、database_id をここに設定してください。
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "911ca7c6-6c00-4c98-ac87-f701d9a7d6b9"
 
 [assets]
 directory = "./dist"
-
-[vars]
-# 本番では Cloudflare ダッシュボードの Variables / Secrets で設定してください。
-LICENSE_PEPPER = "change-me-in-production"
