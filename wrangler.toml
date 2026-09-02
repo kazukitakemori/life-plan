@@ -1,8 +1,5 @@
-name = "life-plan"
-main = "worker/index.js"
+name = "life-plan-web"
 compatibility_date = "2025-01-01"
 
 [assets]
 directory = "./dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
