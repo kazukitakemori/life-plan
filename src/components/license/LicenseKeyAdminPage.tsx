@@ -286,7 +286,7 @@ export function LicenseKeyAdminPage() {
                 </div>
               ))}
               <p className="license-key-admin-issued-note">
-                この画面を閉じる前に必ずコピーしてください。あとから同じキー全文は表示できません。
+                発行したキーは下の一覧にも表示されます。メール送信前にコピーしてください。
               </p>
               {copyMessage ? <p className="license-key-admin-copy-message">{copyMessage}</p> : null}
             </div>
@@ -317,7 +317,7 @@ export function LicenseKeyAdminPage() {
               <table className="license-key-admin-table">
                 <thead>
                   <tr>
-                    <th>キー（一部）</th>
+                    <th>ライセンスキー</th>
                     <th>お客様名</th>
                     <th>状態</th>
                     <th>端末数</th>
@@ -326,10 +326,25 @@ export function LicenseKeyAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {keys.map((entry) => (
+                  {keys.map((entry) => {
+                    const displayKey = entry.key_display ?? entry.key_hint;
+                    return (
                     <tr key={entry.id}>
                       <td>
-                        <code>{entry.key_hint}</code>
+                        <div className="license-key-admin-table-key">
+                          <code>{displayKey}</code>
+                          {entry.key_display ? (
+                            <button
+                              type="button"
+                              className="plan-bar-btn plan-bar-btn--compact"
+                              onClick={() => {
+                                void handleCopyKey(entry.key_display!);
+                              }}
+                            >
+                              コピー
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                       <td>{entry.note?.trim() || '—'}</td>
                       <td>
@@ -360,7 +375,8 @@ export function LicenseKeyAdminPage() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -344,13 +344,14 @@ async function handleAdminApi(request, env, path) {
       const keyHash = await hashLicenseKey(plainKey, env.LICENSE_PEPPER);
       const id = createId();
       await env.DB.prepare(
-        `INSERT INTO license_keys (id, key_hash, key_hint, status, max_devices, note, created_at)
-         VALUES (?, ?, ?, 'active', ?, ?, ?)`,
+        `INSERT INTO license_keys (id, key_hash, key_hint, key_display, status, max_devices, note, created_at)
+         VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
       )
         .bind(
           id,
           keyHash,
           getLicenseKeyHint(plainKey),
+          formatLicenseKeyForDisplay(plainKey),
           MAX_DEVICES_DEFAULT,
           note,
           now,
@@ -368,7 +369,7 @@ async function handleAdminApi(request, env, path) {
 
   if (path === '/api/admin/keys' && request.method === 'GET') {
     const { results } = await env.DB.prepare(
-      `SELECT lk.id, lk.key_hint, lk.status, lk.max_devices, lk.note, lk.created_at,
+      `SELECT lk.id, lk.key_hint, lk.key_display, lk.status, lk.max_devices, lk.note, lk.created_at,
               COUNT(ld.id) AS device_count
        FROM license_keys lk
        LEFT JOIN license_devices ld ON ld.license_id = lk.id

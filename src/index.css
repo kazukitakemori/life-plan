@@ -16200,6 +16200,18 @@ button:disabled {
   font-size: 0.8125rem;
 }
 
+.license-key-admin-table-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-bar-btn--compact {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
 .license-key-admin-status {
   display: inline-flex;
   align-items: center;

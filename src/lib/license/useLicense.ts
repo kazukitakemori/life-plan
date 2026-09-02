@@ -4,8 +4,10 @@ import { activateLicense, deactivateLicense, fetchLicenseStatus } from './api';
 import {
   clearStoredLicenseKey,
   getDefaultDeviceLabel,
+  getLicenseCache,
   getOrCreateDeviceId,
   getStoredLicenseKey,
+  saveLicenseCache,
   setStoredLicenseKey,
 } from './storage';
 import type { LicenseDevice, LicenseState } from '../../types/license';
@@ -35,9 +37,25 @@ export function useLicense() {
       setDevices(nextDevices);
       setMaxDevices(nextMaxDevices);
       setErrorMessage(null);
+      saveLicenseCache({
+        keyHint: hint ?? 'LP-****',
+        deviceId,
+        verifiedAt: new Date().toISOString(),
+      });
     },
-    [],
+    [deviceId],
   );
+
+  const applyOfflineActive = useCallback(() => {
+    const cached = getLicenseCache();
+    if (!cached || cached.deviceId !== deviceId) return false;
+    setLicenseState('active');
+    setKeyHint(cached.keyHint);
+    setDevices([]);
+    setMaxDevices(2);
+    setErrorMessage('オフラインのため、前回確認時のライセンス状態で利用しています。');
+    return true;
+  }, [deviceId]);
 
   const verifyStoredLicense = useCallback(async () => {
     const stored = getStoredLicenseKey();
@@ -70,13 +88,16 @@ export function useLicense() {
       applyActive(result.keyHint, result.devices ?? [], result.maxDevices ?? 2);
       return true;
     } catch {
+      if (applyOfflineActive()) {
+        return true;
+      }
       setLicenseState('error');
       setErrorMessage(
         'ライセンスサーバーに接続できません。しばらくしてから再度お試しください。',
       );
       return false;
     }
-  }, [applyActive, deviceId]);
+  }, [applyActive, applyOfflineActive, deviceId]);
 
   useEffect(() => {
     void verifyStoredLicense();
@@ -122,6 +143,9 @@ export function useLicense() {
         setPendingKey('');
         return true;
       } catch {
+        if (applyOfflineActive()) {
+          return true;
+        }
         setErrorMessage(
           'ライセンスサーバーに接続できません。しばらくしてから再度お試しください。',
         );
@@ -130,7 +154,7 @@ export function useLicense() {
         setBusy(false);
       }
     },
-    [applyActive, deviceId],
+    [applyActive, applyOfflineActive, deviceId],
   );
 
   const replaceDeviceAndActivate = useCallback(

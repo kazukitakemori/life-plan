@@ -1,5 +1,12 @@
 const DEVICE_ID_KEY = 'life-plan-device-id';
 const LICENSE_KEY_STORAGE = 'life-plan-license-key';
+const LICENSE_CACHE_KEY = 'life-plan-license-cache';
+
+interface LicenseCache {
+  keyHint: string;
+  deviceId: string;
+  verifiedAt: string;
+}
 
 export function getOrCreateDeviceId(): string {
   const existing = localStorage.getItem(DEVICE_ID_KEY);
@@ -20,6 +27,27 @@ export function setStoredLicenseKey(key: string): void {
 
 export function clearStoredLicenseKey(): void {
   localStorage.removeItem(LICENSE_KEY_STORAGE);
+  clearLicenseCache();
+}
+
+export function saveLicenseCache(cache: LicenseCache): void {
+  localStorage.setItem(LICENSE_CACHE_KEY, JSON.stringify(cache));
+}
+
+export function getLicenseCache(): LicenseCache | null {
+  try {
+    const raw = localStorage.getItem(LICENSE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LicenseCache;
+    if (!parsed.keyHint || !parsed.deviceId || !parsed.verifiedAt) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLicenseCache(): void {
+  localStorage.removeItem(LICENSE_CACHE_KEY);
 }
 
 export function getDefaultDeviceLabel(): string {

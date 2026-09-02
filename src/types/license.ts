@@ -52,6 +52,7 @@ export interface LicenseAdminGenerateResponse {
 export interface LicenseAdminKeySummary {
   id: string;
   key_hint: string;
+  key_display: string | null;
   status: 'active' | 'revoked';
   max_devices: number;
   note: string | null;
