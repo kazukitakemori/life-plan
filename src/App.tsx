@@ -18,6 +18,9 @@ import { VehicleStep } from './components/vehicle/VehicleStep';
 import { InsuranceStep } from './components/insurance/InsuranceStep';
 import { SavingsStep } from './components/savings/SavingsStep';
 import { PlanAdminView } from './components/plan/PlanAdminView';
+import { DeviceLimitModal } from './components/license/DeviceLimitModal';
+import { LicenseKeyModal } from './components/license/LicenseKeyModal';
+import { LicenseStatusPanel } from './components/license/LicenseStatusPanel';
 import {
   buildCashFlowTable,
   type CashFlowInput,
@@ -80,6 +83,8 @@ import {
   getRequiredCoverageBlockedDescription,
 } from './lib/planPurposeInput';
 import { getLocalPlanRepository } from './lib/localPlanRepository';
+import { getDefaultDeviceLabel } from './lib/license/storage';
+import { useLicense } from './lib/license/useLicense';
 import {
   getDefaultPlanPurposes,
   getInitialStepForPurposes,
@@ -134,6 +139,7 @@ const INITIAL_PLAN = createEmptyPlanAppState();
 const AUTOSAVE_DELAY_MS = 500;
 
 export default function App() {
+  const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
   const [assetBuildingTab, setAssetBuildingTab] =
     useState<AssetBuildingTabId>('simulation');
@@ -984,44 +990,49 @@ export default function App() {
 
   const handleAnalyze = () => {
     if (isAnalyzing) return;
-    setIsAnalyzing(true);
-    setAssetBuildingTab('simulation');
-    setHeaderTab('asset-building');
+    void (async () => {
+      const allowed = await license.ensureLicensedForAnalysis();
+      if (!allowed) return;
 
-    window.setTimeout(() => {
-      try {
-        const currentInput = cashFlowInputRef.current;
-        if (!currentInput) {
-          throw new Error('cashFlowInput is not ready');
-        }
-        const frozenInput = structuredClone(currentInput) as CashFlowInput;
-        const cashFlowData = buildCashFlowTable(frozenInput);
-        const nextSnapshot: AnalysisSnapshot = {
-          cashFlowInput: frozenInput,
-          cashFlowData,
-        };
-        analysisSnapshotRef.current = nextSnapshot;
-        setAnalysisSnapshot(nextSnapshot);
-        setAnalysisStale(false);
-        setAnalysisSession((session) => session + 1);
+      setIsAnalyzing(true);
+      setAssetBuildingTab('simulation');
+      setHeaderTab('asset-building');
 
-        if (planId && planStatus !== 'simulated') {
-          setPlanStatus('simulated');
-          snapshotRef.current = {
-            ...snapshotRef.current,
-            planStatus: 'simulated',
+      window.setTimeout(() => {
+        try {
+          const currentInput = cashFlowInputRef.current;
+          if (!currentInput) {
+            throw new Error('cashFlowInput is not ready');
+          }
+          const frozenInput = structuredClone(currentInput) as CashFlowInput;
+          const cashFlowData = buildCashFlowTable(frozenInput);
+          const nextSnapshot: AnalysisSnapshot = {
+            cashFlowInput: frozenInput,
+            cashFlowData,
           };
-          revisionRef.current += 1;
-          void flushAutosave({ refreshList: true });
+          analysisSnapshotRef.current = nextSnapshot;
+          setAnalysisSnapshot(nextSnapshot);
+          setAnalysisStale(false);
+          setAnalysisSession((session) => session + 1);
+
+          if (planId && planStatus !== 'simulated') {
+            setPlanStatus('simulated');
+            snapshotRef.current = {
+              ...snapshotRef.current,
+              planStatus: 'simulated',
+            };
+            revisionRef.current += 1;
+            void flushAutosave({ refreshList: true });
+          }
+        } catch (err) {
+          console.error(err);
+          window.alert('ライフプラン分析に失敗しました。');
+          setHeaderTab('input');
+        } finally {
+          setIsAnalyzing(false);
         }
-      } catch (err) {
-        console.error(err);
-        window.alert('ライフプラン分析に失敗しました。');
-        setHeaderTab('input');
-      } finally {
-        setIsAnalyzing(false);
-      }
-    }, 50);
+      }, 50);
+    })();
   };
 
   const handleStepChange = (step: StepId) => {
@@ -1045,6 +1056,37 @@ export default function App() {
       setHeaderTab('input');
       return;
     }
+
+    const needsLicense =
+      tab === 'asset-building' ||
+      tab === 'summary' ||
+      tab === 'life-plan' ||
+      (tab === 'required-coverage' && !coverageUnlockedWithoutAnalysis);
+
+    if (needsLicense) {
+      void (async () => {
+        const allowed = await license.ensureLicensedForAnalysis();
+        if (!allowed) return;
+        if (tab === 'required-coverage') {
+          if (analysisSnapshot == null && !coverageUnlockedWithoutAnalysis) return;
+          if (medicalOnlyCoverage) {
+            setRequiredCoverageState((prev) =>
+              migrateRequiredCoverageState({ ...prev, riskKind: 'medical' }),
+            );
+          } else if (deathOnlyCoverage) {
+            setRequiredCoverageState((prev) =>
+              migrateRequiredCoverageState({ ...prev, riskKind: 'death' }),
+            );
+          }
+          setHeaderTab(tab);
+          return;
+        }
+        if (analysisSnapshot == null && tab !== 'asset-building') return;
+        setHeaderTab(tab);
+      })();
+      return;
+    }
+
     if (tab === 'required-coverage') {
       if (analysisSnapshot == null && !coverageUnlockedWithoutAnalysis) return;
       if (medicalOnlyCoverage) {
@@ -1063,10 +1105,24 @@ export default function App() {
     setHeaderTab(tab);
   };
 
+  const analysisBlockedByLicense = !license.isAnalysisAllowed;
+
   const renderMainContent = () => {
     if (headerTab === 'admin') {
       return (
-        <PlanAdminView
+        <>
+          <LicenseStatusPanel
+            licenseState={license.licenseState}
+            keyHint={license.keyHint}
+            deviceLabel={getDefaultDeviceLabel()}
+            errorMessage={license.errorMessage}
+            busy={license.busy}
+            onManageLicense={license.openLicenseModal}
+            onReleaseDevice={() => {
+              void license.releaseCurrentDevice();
+            }}
+          />
+          <PlanAdminView
           summaries={planSummaries}
           currentPlanId={planId}
           transferBusy={planTransferBusy}
@@ -1089,6 +1145,7 @@ export default function App() {
             void handleImportPlansFile(file);
           }}
         />
+        </>
       );
     }
 
@@ -1431,6 +1488,15 @@ export default function App() {
     }
 
     if (headerTab === 'asset-building') {
+      if (analysisBlockedByLicense) {
+        return (
+          <HeaderTabPlaceholder
+            title="資産形成"
+            description="ライフプラン分析を行うには、管理タブでライセンスキーを登録してください。"
+          />
+        );
+      }
+
       if (isAnalyzing) {
         return (
           <div className="analysis-loading-panel" role="status" aria-live="polite">
@@ -1499,6 +1565,15 @@ export default function App() {
       );
     }
 
+    if (analysisBlockedByLicense && analysisSnapshot != null) {
+      return (
+        <HeaderTabPlaceholder
+          title="必要保障額"
+          description="ライフプラン分析結果の表示には、有効なライセンスキーが必要です。"
+        />
+      );
+    }
+
     const coverageInput = analysisSnapshot?.cashFlowInput ?? cashFlowInput;
     const coverageData = analysisSnapshot?.cashFlowData;
 
@@ -1558,7 +1633,8 @@ export default function App() {
   }
 
   return (
-    <AppShell
+    <>
+      <AppShell
       activeStep={activeStep}
       enabledSteps={inputSteps}
       requiredSteps={requiredInputSteps}
@@ -1599,5 +1675,23 @@ export default function App() {
     >
       {renderMainContent()}
     </AppShell>
+      <LicenseKeyModal
+        open={license.keyModalOpen}
+        busy={license.busy}
+        errorMessage={license.errorMessage}
+        onClose={license.closeLicenseModal}
+        onSubmit={license.handleSubmitKey}
+      />
+      <DeviceLimitModal
+        open={license.deviceLimitModalOpen}
+        busy={license.busy}
+        devices={license.devices}
+        currentDeviceId={license.deviceId}
+        maxDevices={license.maxDevices}
+        errorMessage={license.errorMessage}
+        onClose={license.closeDeviceLimitModal}
+        onReplace={license.replaceDeviceAndActivate}
+      />
+    </>
   );
 }

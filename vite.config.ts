@@ -14,14 +14,20 @@ export default defineConfig({
   build: {
     modulePreload: false,
   },
-  server: {
-    port: 5173,
-    host: '127.0.0.1',
-    strictPort: false,
-  },
   preview: {
     port: 4173,
     host: '127.0.0.1',
     strictPort: false,
+  },
+  server: {
+    port: 5173,
+    host: '127.0.0.1',
+    strictPort: false,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
+    },
   },
 })

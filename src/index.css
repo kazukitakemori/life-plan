@@ -15860,3 +15860,191 @@ button:disabled {
   text-align: center;
   line-height: 1.4;
 }
+
+.license-key-modal,
+.license-device-modal {
+  max-width: 520px;
+}
+
+.license-key-input {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.license-key-format-hint {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: #667;
+}
+
+.license-inline-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fdecea;
+  color: #b42318;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.license-modal-footer {
+  margin-top: 20px;
+  padding-top: 4px;
+}
+
+.license-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.license-device-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #d5dde7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.license-device-card-main {
+  min-width: 0;
+}
+
+.license-device-card-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #223;
+}
+
+.license-device-card-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.license-device-card-meta {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: #667;
+}
+
+.license-device-card-action {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.license-device-card-note {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: #667;
+}
+
+.license-admin-card {
+  margin: 0 0 20px;
+  padding: 18px 20px;
+  border: 1px solid #d5dde7;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(40 60 88 / 6%);
+}
+
+.license-admin-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.license-admin-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #223;
+}
+
+.license-admin-card-desc {
+  margin: 6px 0 0;
+  font-size: 0.8125rem;
+  color: #667;
+  line-height: 1.5;
+}
+
+.license-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.license-status-badge--checking {
+  background: #eef2f7;
+  color: #556;
+}
+
+.license-status-badge--inactive {
+  background: #fff4e5;
+  color: #9a5b00;
+}
+
+.license-status-badge--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.license-status-badge--error {
+  background: #fdecea;
+  color: #b42318;
+}
+
+.license-admin-card-grid {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.license-admin-card-grid div {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.license-admin-card-grid dt {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #667;
+}
+
+.license-admin-card-grid dd {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #223;
+}
+
+.license-admin-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
