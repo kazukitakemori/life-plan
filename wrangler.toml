@@ -9,4 +9,5 @@ database_id = "911ca7c6-6c00-4c98-ac87-f701d9a7d6b9"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 not_found_handling = "single-page-application"
