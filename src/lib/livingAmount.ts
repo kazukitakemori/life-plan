@@ -15,14 +15,6 @@ export function calcMonthlyEquivalentMan(items: LivingExpenseItem[]): number {
   }, 0);
 }
 
-export function calcMonthlyEmergencyMan(items: LivingExpenseItem[]): number {
-  return items.reduce((sum, item) => {
-    const months = cycleMonthsPerPayment(item);
-    if (months <= 0) return sum;
-    return sum + item.emergencyAmountMan / months;
-  }, 0);
-}
-
 export function formatManAmount(value: number): string {
   return `${value.toFixed(1)}万円`;
 }

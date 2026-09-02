@@ -8,6 +8,7 @@ import type {
   LifeEventType,
 } from '../types/lifeEvent';
 import { getIncomeEligibleMembers } from './memberDisplay';
+import { resolveDefaultStartAgeMonth } from './simulationTiming';
 
 const DEFAULT_CELEBRATION_TARGET_AGE = 30;
 
@@ -42,7 +43,7 @@ function createId(): string {
 
 const PRESET_DEFAULTS: Record<
   LifeEventPresetId,
-  Pick<LifeEventEntry, 'label' | 'type' | 'cycleInterval' | 'cycleUnit' | 'amountMan' | 'emergencyAmountMan'>
+  Pick<LifeEventEntry, 'label' | 'type' | 'cycleInterval' | 'cycleUnit' | 'amountMan'>
 > = {
   travel: {
     label: '旅行',
@@ -50,7 +51,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 30,
-    emergencyAmountMan: 0,
   },
   appliance: {
     label: '家電・家具',
@@ -58,7 +58,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 20,
-    emergencyAmountMan: 0,
   },
   medical: {
     label: '医療費',
@@ -66,7 +65,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 10,
-    emergencyAmountMan: 0,
   },
   nursing: {
     label: '介護費',
@@ -74,7 +72,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 50,
-    emergencyAmountMan: 0,
   },
   hometown_tax: {
     label: 'ふるさと納税',
@@ -82,7 +79,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 5,
-    emergencyAmountMan: 0,
   },
   celebration_gift: {
     label: '子・孫の祝い金',
@@ -90,7 +86,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 0,
-    emergencyAmountMan: 0,
   },
   other: {
     label: 'その他',
@@ -98,7 +93,6 @@ const PRESET_DEFAULTS: Record<
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 0,
-    emergencyAmountMan: 0,
   },
 };
 
@@ -168,19 +162,20 @@ export function createLifeEventEntry(
   referenceMonth: number,
   overrides: Partial<LifeEventEntry> = {},
 ): LifeEventEntry {
+  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
   return {
     id: createId(),
     label: 'イベント',
     type: 'event',
-    startAge: member.age,
-    startMonth: referenceMonth,
+    startAge: defaultStart.startAge,
+    startMonth: defaultStart.startMonth,
     endMode: 'lifetime',
     endAge: member.expectedLifespan,
     endMonth: 12,
     cycleInterval: 1,
     cycleUnit: 'year',
     amountMan: 0,
-    emergencyAmountMan: 0,
+    increaseRate: 2,
     ...overrides,
   };
 }
@@ -207,7 +202,7 @@ export function createCelebrationGiftEntry(
     label: '子・孫の祝い金',
     type: 'celebration_gift',
     amountMan: 0,
-    emergencyAmountMan: 0,
+    increaseRate: null,
     celebrationBeneficiaries: syncCelebrationBeneficiaries(familyMembers),
   });
 }
@@ -217,10 +212,25 @@ export function canAddCelebrationGift(member: FamilyMember): boolean {
 }
 
 export function createDefaultLifeEventState(): LifeEventState {
-  return {
-    inflationRate: 2,
-    byMember: {},
-  };
+  return { byMember: {} };
+}
+
+export function migrateLifeEventState(
+  state: LifeEventState & { inflationRate?: number },
+): LifeEventState {
+  const fallbackRate = state.inflationRate ?? 2;
+  const byMember: LifeEventByMember = {};
+  for (const [memberId, entries] of Object.entries(state.byMember ?? {})) {
+    byMember[memberId] = entries.map((entry) => ({
+      ...entry,
+      increaseRate:
+        entry.type === 'celebration_gift'
+          ? null
+          : (entry.increaseRate ?? fallbackRate),
+    }));
+  }
+  // 旧・全体物価上昇率は行の上昇率と二重適用になるため破棄する
+  return { byMember };
 }
 
 export function syncLifeEventsWithFamily(
@@ -236,6 +246,7 @@ export function syncLifeEventsWithFamily(
         entry.type === 'celebration_gift'
           ? {
               ...entry,
+              increaseRate: null,
               celebrationBeneficiaries: syncCelebrationBeneficiaries(
                 members,
                 entry.celebrationBeneficiaries,
@@ -246,7 +257,7 @@ export function syncLifeEventsWithFamily(
     }
   }
 
-  return { ...state, byMember };
+  return migrateLifeEventState({ ...state, byMember });
 }
 
 export function getLifeEventTypeFromPreset(presetId: LifeEventPresetId): LifeEventType {

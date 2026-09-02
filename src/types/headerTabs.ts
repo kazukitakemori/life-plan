@@ -1,4 +1,5 @@
 export type HeaderTabId =
+  | 'admin'
   | 'input'
   | 'summary'
   | 'life-plan'
@@ -6,6 +7,7 @@ export type HeaderTabId =
   | 'required-coverage';
 
 export const HEADER_TABS: { id: HeaderTabId; label: string }[] = [
+  { id: 'admin', label: '管理' },
   { id: 'input', label: '入力' },
   { id: 'summary', label: 'サマリー' },
   { id: 'life-plan', label: 'ライフプラン' },

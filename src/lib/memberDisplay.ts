@@ -6,8 +6,15 @@ export function formatBirthShort(
   member: FamilyMember,
   referenceDate: Date,
 ): string {
+  if (
+    member.age == null ||
+    member.birthMonth == null ||
+    member.birthDay == null
+  ) {
+    return '';
+  }
   const year = calcBirthYear(member.age, member.birthMonth, referenceDate);
-  return `${year}年${member.birthMonth}月`;
+  return `${year}年${member.birthMonth}月${member.birthDay}日`;
 }
 
 export function getMemberTabLabel(member: FamilyMember): string {
@@ -29,6 +36,11 @@ export function getMemberTabLabel(member: FamilyMember): string {
 
 export function getIncomeEligibleMembers(members: FamilyMember[]): FamilyMember[] {
   return members.filter((m) => m.role !== 'pet');
+}
+
+/** 住宅ローンの契約者として選択できるメンバー */
+export function getLoanContractorMembers(members: FamilyMember[]): FamilyMember[] {
+  return members.filter((m) => m.role === 'head' || m.role === 'spouse');
 }
 
 /** Q2 教育費タブの初期表示メンバー（子どもがいれば最初の子どもを優先） */

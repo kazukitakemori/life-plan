@@ -1,7 +1,9 @@
 import {
   calcBirthYear,
   getMemberAgeMonth,
+  isAgeCalendarMonthInRange,
 } from './birthDate';
+import { resolveMemberBirthMonth } from './familyDefaults';
 import { isCelebrationGiftLifeEventType, getLifeEventExpenseCategory } from './lifeEventLabels';
 import type { FamilyMember } from '../types/family';
 import type { LifeEventEntry, LifeEventState } from '../types/lifeEvent';
@@ -14,30 +16,16 @@ function ageMonthIndex(age: number, month: number): number {
   return age * 12 + month;
 }
 
-function isInAgeMonthRange(
-  age: number,
-  month: number,
-  startAge: number,
-  startMonth: number,
-  endAge: number,
-  endMonth: number,
-): boolean {
-  const current = ageMonthIndex(age, month);
-  const start = ageMonthIndex(startAge, startMonth);
-  const end = ageMonthIndex(endAge, endMonth);
-  return current >= start && current <= end;
-}
-
 function yearsElapsedSince(
   birthYear: number,
-  birthMonth: number,
+  birthMonth: number | null | undefined,
   fromAge: number,
   fromMonth: number,
   toYear: number,
   toMonth: number,
 ): number {
   let fromCalYear = birthYear + fromAge;
-  if (fromMonth < birthMonth) {
+  if (fromMonth < (birthMonth ?? 1)) {
     fromCalYear -= 1;
   }
   const months = (toYear - fromCalYear) * 12 + (toMonth - fromMonth);
@@ -51,6 +39,9 @@ function getEntryEnd(
   if (entry.endMode === 'lifetime') {
     return { endAge: member.expectedLifespan, endMonth: 12 };
   }
+  if (entry.endMode === 'once') {
+    return { endAge: entry.startAge, endMonth: entry.startMonth };
+  }
   return { endAge: entry.endAge, endMonth: entry.endMonth };
 }
 
@@ -61,11 +52,17 @@ function cycleMonthsPerPayment(entry: LifeEventEntry): number {
     : entry.cycleInterval;
 }
 
+function resolveInflationFactor(
+  increaseRate: number | null | undefined,
+  yearsElapsed: number,
+): number {
+  if (increaseRate == null) return 1;
+  return Math.pow(1 + increaseRate / 100, yearsElapsed);
+}
+
 function calcCelebrationGiftMonthlyMan(
   entry: LifeEventEntry,
-  payerMember: FamilyMember,
   familyMembers: FamilyMember[],
-  inflationRate: number,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -77,11 +74,6 @@ function calcCelebrationGiftMonthlyMan(
     return 0;
   }
 
-  const payerBirthYear = calcBirthYear(
-    payerMember.age,
-    payerMember.birthMonth,
-    referenceDate,
-  );
   let total = 0;
 
   for (const beneficiary of entry.celebrationBeneficiaries) {
@@ -103,16 +95,7 @@ function calcCelebrationGiftMonthlyMan(
       continue;
     }
 
-    const yearsElapsed = yearsElapsedSince(
-      payerBirthYear,
-      payerMember.birthMonth,
-      entry.startAge,
-      entry.startMonth,
-      calendarYear,
-      calendarMonth,
-    );
-    const inflationFactor = Math.pow(1 + inflationRate / 100, yearsElapsed);
-    total += beneficiary.amountMan * inflationFactor;
+    total += beneficiary.amountMan;
   }
 
   return total;
@@ -121,7 +104,6 @@ function calcCelebrationGiftMonthlyMan(
 function calcEntryMonthlyMan(
   entry: LifeEventEntry,
   member: FamilyMember,
-  inflationRate: number,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -135,22 +117,40 @@ function calcEntryMonthlyMan(
   );
   if (!ageMonth) return 0;
 
-  const { endAge, endMonth } = getEntryEnd(entry, member);
-  if (
-    !isInAgeMonthRange(
-      ageMonth.age,
-      ageMonth.month,
-      entry.startAge,
-      entry.startMonth,
-      endAge,
-      endMonth,
-    )
-  ) {
-    return 0;
-  }
+  if (entry.endMode === 'once') {
+    if (
+      ageMonth.age !== entry.startAge ||
+      ageMonth.month !== entry.startMonth
+    ) {
+      return 0;
+    }
+  } else {
+    const { endAge, endMonth } = getEntryEnd(entry, member);
+    if (
+      !isAgeCalendarMonthInRange(
+        ageMonth.age,
+        ageMonth.month,
+        entry.startAge,
+        entry.startMonth,
+        endAge,
+        endMonth,
+        birthYear,
+        resolveMemberBirthMonth(member),
+      )
+    ) {
+      return 0;
+    }
 
-  const cycleMonths = cycleMonthsPerPayment(entry);
-  if (cycleMonths <= 0) return 0;
+    const cycleMonths = cycleMonthsPerPayment(entry);
+    if (cycleMonths <= 0) return 0;
+
+    const monthsFromStart =
+      ageMonthIndex(ageMonth.age, ageMonth.month) -
+      ageMonthIndex(entry.startAge, entry.startMonth);
+    if (monthsFromStart < 0 || monthsFromStart % cycleMonths !== 0) {
+      return 0;
+    }
+  }
 
   const yearsElapsed = yearsElapsedSince(
     birthYear,
@@ -160,11 +160,11 @@ function calcEntryMonthlyMan(
     calendarYear,
     calendarMonth,
   );
-  const inflationFactor = Math.pow(1 + inflationRate / 100, yearsElapsed);
-  const monthlyAmount =
-    ((entry.amountMan + entry.emergencyAmountMan) / cycleMonths) * inflationFactor;
-
-  return monthlyAmount;
+  const inflationFactor = resolveInflationFactor(
+    entry.increaseRate,
+    yearsElapsed,
+  );
+  return entry.amountMan * inflationFactor;
 }
 
 export interface LifeEventMonthlyBreakdown {
@@ -176,7 +176,7 @@ export interface LifeEventMonthlyBreakdown {
 export function calcMemberMonthlyLifeEventBreakdownMan(
   member: FamilyMember,
   entries: LifeEventEntry[],
-  state: LifeEventState,
+  _state: LifeEventState,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -192,9 +192,7 @@ export function calcMemberMonthlyLifeEventBreakdownMan(
     const monthly = isCelebrationGiftLifeEventType(entry.type)
       ? calcCelebrationGiftMonthlyMan(
           entry,
-          member,
           familyMembers,
-          state.inflationRate,
           referenceDate,
           calendarYear,
           calendarMonth,
@@ -202,7 +200,6 @@ export function calcMemberMonthlyLifeEventBreakdownMan(
       : calcEntryMonthlyMan(
           entry,
           member,
-          state.inflationRate,
           referenceDate,
           calendarYear,
           calendarMonth,
@@ -210,11 +207,10 @@ export function calcMemberMonthlyLifeEventBreakdownMan(
     if (monthly <= 0) continue;
 
     const category = getLifeEventExpenseCategory(entry.type);
-    if (category === 'medical') {
+    result.lifeEvent += monthly;
+    result.detail[category] += monthly;
+    if (category === 'medical' || category === 'nursing') {
       result.medicalCare += monthly;
-    } else {
-      result.lifeEvent += monthly;
-      result.detail[category] += monthly;
     }
   }
 
@@ -251,6 +247,8 @@ export function calcHouseholdMonthlyLifeEventBreakdownMan(
     result.detail.travel += breakdown.detail.travel;
     result.detail.appliance += breakdown.detail.appliance;
     result.detail.celebration += breakdown.detail.celebration;
+    result.detail.medical += breakdown.detail.medical;
+    result.detail.nursing += breakdown.detail.nursing;
     result.detail.other += breakdown.detail.other;
   }
 

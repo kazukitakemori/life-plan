@@ -3,6 +3,7 @@ import {
   NATIONAL_HEALTH_DATA_VERSION,
 } from '../../data/fukuokaMunicipalities';
 import { calcBirthYear, formatYearAtAgeLabel } from '../../lib/birthDate';
+import { resolveMemberAge } from '../../lib/familyDefaults';
 import { getResidenceAgeOptions } from '../../lib/taxSocialDefaults';
 import { normalizePrefectureCode } from '../../lib/taxSocialRegions';
 import type { FamilyMember } from '../../types/family';
@@ -34,7 +35,7 @@ function ResidencePeriodRow({
   onChange: (period: ResidencePeriod) => void;
   onRemove: () => void;
 }) {
-  const ageOptions = getResidenceAgeOptions(headMember.age);
+  const ageOptions = getResidenceAgeOptions(resolveMemberAge(headMember));
   const birthYear = calcBirthYear(
     headMember.age,
     headMember.birthMonth,

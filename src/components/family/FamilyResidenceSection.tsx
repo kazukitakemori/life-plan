@@ -1,3 +1,4 @@
+import { resolveMemberAge } from '../../lib/familyDefaults';
 import {
   createFollowUpResidencePeriod,
   createResidencePeriod,
@@ -30,10 +31,11 @@ export function FamilyResidenceSection({
 
   const addResidencePeriod = () => {
     const last = residencePeriods[residencePeriods.length - 1];
+    const headAge = resolveMemberAge(headMember);
     const nextPeriod =
       last != null
-        ? createFollowUpResidencePeriod(last, headMember.age, referenceMonth)
-        : createResidencePeriod(headMember.age, referenceMonth);
+        ? createFollowUpResidencePeriod(last, headAge, referenceMonth)
+        : createResidencePeriod(headAge, referenceMonth);
 
     updateResidencePeriods([...residencePeriods, nextPeriod]);
   };

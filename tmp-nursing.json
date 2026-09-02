@@ -1,0 +1,34 @@
+[
+  {
+    "year": 2027,
+    "id": "head",
+    "nursingYen": 29160,
+    "medicalYen": 181980,
+    "childYen": 4140,
+    "healthTotalYen": 215280
+  },
+  {
+    "year": 2027,
+    "id": "spouse",
+    "nursingYen": 0,
+    "medicalYen": 303300,
+    "childYen": 6900,
+    "healthTotalYen": 310200
+  },
+  {
+    "year": 2028,
+    "id": "head",
+    "nursingYen": 29160,
+    "medicalYen": 181980,
+    "childYen": 4140,
+    "healthTotalYen": 215280
+  },
+  {
+    "year": 2028,
+    "id": "spouse",
+    "nursingYen": 48600,
+    "medicalYen": 303300,
+    "childYen": 6900,
+    "healthTotalYen": 358800
+  }
+]

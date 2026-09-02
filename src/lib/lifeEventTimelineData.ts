@@ -1,7 +1,7 @@
-import { calcBirthYear, calcYearAtAge } from './birthDate';
-import { isCelebrationGiftBeneficiary } from './lifeEventDefaults';
-import { isCelebrationGiftLifeEventType } from './lifeEventLabels';
-import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import { resolveMemberAge } from './familyDefaults';
+import { calcBirthYear } from './birthDate';
+import { calcPeriodAnnualAmountFromMonthly } from './incomeAmount';
+import { isTaxFreeIncome } from './incomeBreakdown';
 import { createDefaultPensionMemberState } from './pensionDefaults';
 import {
   calcMemberMonthlyPensionBreakdownMan,
@@ -14,12 +14,19 @@ import {
 } from '../types/cashFlow';
 import type { EducationByMember } from '../types/education';
 import type { FamilyMember } from '../types/family';
-import type { IncomeByMember } from '../types/income';
+import type { IncomeByMember, IncomeEntry, IncomePeriod } from '../types/income';
 import type { LifeEventState } from '../types/lifeEvent';
 import { HOUSEHOLD_LIVING_KEY, type LivingExpenseState } from '../types/living';
 import type { PensionByMember } from '../types/pension';
 
 export type TimelineItemStyle = 'income' | 'living' | 'pension' | 'housing' | 'education' | 'event';
+
+/** 支出が発生する年（マーカー描画用） */
+export interface TimelineOccurrence {
+  headAge: number;
+  calendarYear: number;
+  amountMan: number;
+}
 
 export interface LifeEventTimelineItem {
   id: string;
@@ -32,6 +39,14 @@ export interface LifeEventTimelineItem {
   lane: number;
   /** グラフの年次ポイントと横位置を揃えるための暦年（単発イベント） */
   calendarYear?: number;
+  /** 期間イベントの開始・終了暦年（グラフ位置合わせ用） */
+  startCalendarYear?: number;
+  endCalendarYear?: number;
+  /**
+   * 実支出年。設定がある場合は期間バーではなく
+   * 「支出がある年」のマーカー列として描画する。
+   */
+  occurrences?: TimelineOccurrence[];
 }
 
 export interface LifeEventTimelineCategory {
@@ -90,6 +105,62 @@ function getIncomeRoleLabel(role: FamilyMember['role']): string {
   return '年収';
 }
 
+function ageMonthIndex(age: number, month: number): number {
+  return age * 12 + month;
+}
+
+function isPeriodActiveAtAgeMonth(
+  period: IncomePeriod,
+  age: number,
+  month: number,
+): boolean {
+  const current = ageMonthIndex(age, month);
+  const start = ageMonthIndex(period.startAge, period.startMonth);
+  const end = ageMonthIndex(period.endAge, period.endMonth);
+  return current >= start && current <= end;
+}
+
+function periodDurationMonths(period: IncomePeriod): number {
+  return Math.max(
+    1,
+    ageMonthIndex(period.endAge, period.endMonth) -
+      ageMonthIndex(period.startAge, period.startMonth) +
+      1,
+  );
+}
+
+/** タイムライン表示用の額面年収（経費控除前・試算の年途中開始の影響を受けない） */
+function calcFaceAnnualIncomeMan(
+  entries: IncomeEntry[],
+  member: FamilyMember,
+  referenceDate: Date,
+): number {
+  const currentMonth = referenceDate.getMonth() + 1;
+  let currentSum = 0;
+  let weightedSum = 0;
+  let weightedMonths = 0;
+
+  for (const entry of entries) {
+    for (const period of entry.periods) {
+      if (isTaxFreeIncome(entry.category, period.streamType)) continue;
+      const faceAnnual = calcPeriodAnnualAmountFromMonthly(period);
+      if (faceAnnual <= 0) continue;
+
+      const months = periodDurationMonths(period);
+      weightedSum += faceAnnual * months;
+      weightedMonths += months;
+
+      if (isPeriodActiveAtAgeMonth(period, resolveMemberAge(member), currentMonth)) {
+        currentSum += faceAnnual;
+      }
+    }
+  }
+
+  if (currentSum > 0) return currentSum;
+  if (weightedMonths <= 0) return 0;
+  return weightedSum / weightedMonths;
+}
+
 function getPensionRoleLabel(role: FamilyMember['role']): string {
   if (role === 'head') return '世帯主の公的年金等';
   if (role === 'spouse') return '配偶者の公的年金等';
@@ -99,12 +170,11 @@ function getPensionRoleLabel(role: FamilyMember['role']): string {
 function getYearMonthRange(
   calendarYear: number,
   cashFlowData: CashFlowTableData,
-  referenceDate: Date,
 ): { monthStart: number; monthEnd: number } {
   return {
     monthStart:
       calendarYear === cashFlowData.startYear
-        ? referenceDate.getMonth() + 1
+        ? cashFlowData.simulationMonthStart
         : 1,
     monthEnd: 12,
   };
@@ -121,25 +191,47 @@ function assignLifeCategoryLanes(
   members: FamilyMember[],
 ): LifeEventTimelineItem[] {
   const memberById = new Map(members.map((member) => [member.id, member]));
-  const spouseMemberIds = new Set(
-    members.filter((member) => member.role === 'spouse').map((member) => member.id),
-  );
-  const hasSpouseRow = items.some((item) => {
+
+  const memberRole = (item: LifeEventTimelineItem) => {
     const memberId = extractMemberIdFromTimelineItemId(item.id);
-    return memberId != null && spouseMemberIds.has(memberId);
-  });
-  const livingLane = hasSpouseRow ? 2 : 1;
+    return memberId != null ? memberById.get(memberId)?.role : undefined;
+  };
+
+  const hasSpouseIncome = items.some(
+    (item) => item.style === 'income' && memberRole(item) === 'spouse',
+  );
+  const hasHeadPension = items.some(
+    (item) => item.style === 'pension' && memberRole(item) === 'head',
+  );
+  const hasSpousePension = items.some(
+    (item) => item.style === 'pension' && memberRole(item) === 'spouse',
+  );
+
+  const headIncomeLane = 0;
+  const spouseIncomeLane = 1;
+  const pensionBaseLane = hasSpouseIncome ? 2 : 1;
+  const headPensionLane = pensionBaseLane;
+  const spousePensionLane = hasHeadPension ? pensionBaseLane + 1 : pensionBaseLane;
+  const livingLane =
+    pensionBaseLane +
+    (hasHeadPension ? 1 : 0) +
+    (hasSpousePension ? 1 : 0);
 
   return items.map((item) => {
     if (item.style === 'living') {
       return { ...item, lane: livingLane };
     }
 
-    const memberId = extractMemberIdFromTimelineItemId(item.id);
-    if (memberId) {
-      const role = memberById.get(memberId)?.role;
-      if (role === 'head') return { ...item, lane: 0 };
-      if (role === 'spouse') return { ...item, lane: 1 };
+    const role = memberRole(item);
+
+    if (item.style === 'income') {
+      if (role === 'spouse') return { ...item, lane: spouseIncomeLane };
+      return { ...item, lane: headIncomeLane };
+    }
+
+    if (item.style === 'pension') {
+      if (role === 'spouse') return { ...item, lane: spousePensionLane };
+      return { ...item, lane: headPensionLane };
     }
 
     return { ...item, lane: livingLane };
@@ -149,8 +241,6 @@ function assignLifeCategoryLanes(
 function buildIncomeItems(
   members: FamilyMember[],
   incomeByMember: IncomeByMember,
-  cashFlowData: CashFlowTableData,
-  headRow: MemberAgeRow,
   head: FamilyMember,
   referenceDate: Date,
 ): LifeEventTimelineItem[] {
@@ -162,11 +252,12 @@ function buildIncomeItems(
     const entries = incomeByMember[member.id] ?? [];
     let periodStartHeadAge: number | null = null;
     let periodEndHeadAge: number | null = null;
-    let totalGross = 0;
-    let activeYears = 0;
 
     for (const entry of entries) {
       for (const period of entry.periods) {
+        if (isTaxFreeIncome(entry.category, period.streamType)) continue;
+        if (calcPeriodAnnualAmountFromMonthly(period) <= 0) continue;
+
         const startHeadAge = memberAgeToHeadAge(
           member,
           period.startAge,
@@ -190,34 +281,16 @@ function buildIncomeItems(
       }
     }
 
-    for (const year of cashFlowData.years) {
-      const headAge = headRow.agesByYear[year.calendarYear];
-      if (headAge == null) continue;
-
-      const { monthStart, monthEnd } = getYearMonthRange(
-        year.calendarYear,
-        cashFlowData,
-        referenceDate,
-      );
-      const profile = resolveMemberYearIncomeProfile(
-        member,
-        entries,
-        referenceDate,
-        year.calendarYear,
-        monthStart,
-        monthEnd,
-      );
-
-      if (profile.grossIncomeMan <= 0) continue;
-
-      totalGross += profile.grossIncomeMan;
-      activeYears += 1;
-    }
+    const faceAnnualMan = calcFaceAnnualIncomeMan(
+      entries,
+      member,
+      referenceDate,
+    );
 
     if (
       periodStartHeadAge == null ||
       periodEndHeadAge == null ||
-      activeYears === 0
+      faceAnnualMan <= 0
     ) {
       continue;
     }
@@ -227,7 +300,7 @@ function buildIncomeItems(
       style: 'income',
       icon: '💼',
       title: getIncomeRoleLabel(member.role),
-      detail: formatMan(totalGross / activeYears),
+      detail: formatMan(faceAnnualMan),
       startHeadAge: periodStartHeadAge,
       endHeadAge: periodEndHeadAge,
       lane: 0,
@@ -291,7 +364,6 @@ function buildMemberPensionItem(
     const { monthStart, monthEnd } = getYearMonthRange(
       year.calendarYear,
       input.cashFlowData,
-      input.referenceDate,
     );
 
     let yearPension = 0;
@@ -445,104 +517,45 @@ function buildEducationItems(
   return items;
 }
 
-function resolveCelebrationPaymentYear(
-  beneficiary: FamilyMember,
-  targetAge: number,
-  referenceDate: Date,
-): number {
-  const beneficiaryBirthYear = calcBirthYear(
-    beneficiary.age,
-    beneficiary.birthMonth,
-    referenceDate,
-  );
-  return calcYearAtAge(
-    beneficiaryBirthYear,
-    beneficiary.birthMonth,
-    targetAge,
-    beneficiary.birthMonth,
-  );
-}
-
 function buildCelebrationGiftItems(
-  input: BuildLifeEventTimelineInput,
+  cashFlowData: CashFlowTableData,
   headRow: MemberAgeRow,
 ): LifeEventTimelineItem[] {
-  const amountByYear = new Map<number, number>();
-  for (const year of input.cashFlowData.years) {
+  const occurrences: TimelineOccurrence[] = [];
+  let total = 0;
+
+  for (const year of cashFlowData.years) {
     const amount = year.expenseBreakdown.lifeEventDetail.celebration;
-    if (amount > 0) {
-      amountByYear.set(year.calendarYear, amount);
-    }
-  }
+    if (amount <= 0) continue;
 
-  const items: LifeEventTimelineItem[] = [];
-  const seenYears = new Set<number>();
-
-  for (const member of input.familyMembers) {
-    if (member.role !== 'head' && member.role !== 'spouse') continue;
-
-    const entries = input.lifeEventState.byMember[member.id] ?? [];
-    for (const entry of entries) {
-      if (!isCelebrationGiftLifeEventType(entry.type)) continue;
-
-      for (const beneficiary of entry.celebrationBeneficiaries ?? []) {
-        if (beneficiary.amountMan <= 0) continue;
-
-        const child = input.familyMembers.find(
-          (familyMember) => familyMember.id === beneficiary.memberId,
-        );
-        if (!child || !isCelebrationGiftBeneficiary(child)) continue;
-
-        const paymentYear = resolveCelebrationPaymentYear(
-          child,
-          beneficiary.targetAge,
-          input.referenceDate,
-        );
-        if (seenYears.has(paymentYear)) continue;
-
-        const amount = amountByYear.get(paymentYear);
-        if (amount == null || amount <= 0) continue;
-
-        const headAge = headRow.agesByYear[paymentYear];
-        if (headAge == null) continue;
-
-        seenYears.add(paymentYear);
-        items.push({
-          id: `celebration-cost-${paymentYear}-${beneficiary.memberId}`,
-          style: 'event',
-          icon: '🎉',
-          title: '子・孫の祝い金',
-          detail: formatTotalMan(amount),
-          startHeadAge: headAge,
-          endHeadAge: headAge,
-          calendarYear: paymentYear,
-          lane: 2,
-        });
-      }
-    }
-  }
-
-  // 設定に無いがキャッシュフロー上で祝い金が発生している年も表示する
-  for (const [paymentYear, amount] of amountByYear) {
-    if (seenYears.has(paymentYear)) continue;
-
-    const headAge = headRow.agesByYear[paymentYear];
+    const headAge = headRow.agesByYear[year.calendarYear];
     if (headAge == null) continue;
 
-    items.push({
-      id: `celebration-cost-${paymentYear}`,
+    occurrences.push({
+      headAge,
+      calendarYear: year.calendarYear,
+      amountMan: amount,
+    });
+    total += amount;
+  }
+
+  if (occurrences.length === 0) return [];
+
+  return [
+    {
+      id: 'celebration-cost',
       style: 'event',
       icon: '🎉',
       title: '子・孫の祝い金',
-      detail: formatTotalMan(amount),
-      startHeadAge: headAge,
-      endHeadAge: headAge,
-      calendarYear: paymentYear,
+      detail: formatTotalMan(total),
+      startHeadAge: occurrences[0].headAge,
+      endHeadAge: occurrences[occurrences.length - 1].headAge,
+      startCalendarYear: occurrences[0].calendarYear,
+      endCalendarYear: occurrences[occurrences.length - 1].calendarYear,
       lane: 2,
-    });
-  }
-
-  return items.sort((a, b) => (a.calendarYear ?? 0) - (b.calendarYear ?? 0));
+      occurrences,
+    },
+  ];
 }
 
 function buildSpanFromExpenseKey(
@@ -553,10 +566,14 @@ function buildSpanFromExpenseKey(
   icon: string,
   title: string,
   getAmount: (year: (typeof cashFlowData.years)[number]) => number,
+  options?: { includeOccurrences?: boolean },
 ): LifeEventTimelineItem | null {
   let startHeadAge: number | null = null;
   let endHeadAge: number | null = null;
+  let startCalendarYear: number | null = null;
+  let endCalendarYear: number | null = null;
   let total = 0;
+  const occurrences: TimelineOccurrence[] = [];
 
   for (const year of cashFlowData.years) {
     const amount = getAmount(year);
@@ -565,12 +582,31 @@ function buildSpanFromExpenseKey(
     const headAge = headRow.agesByYear[year.calendarYear];
     if (headAge == null) continue;
 
-    if (startHeadAge == null) startHeadAge = headAge;
+    if (startHeadAge == null) {
+      startHeadAge = headAge;
+      startCalendarYear = year.calendarYear;
+    }
     endHeadAge = headAge;
+    endCalendarYear = year.calendarYear;
     total += amount;
+
+    if (options?.includeOccurrences) {
+      occurrences.push({
+        headAge,
+        calendarYear: year.calendarYear,
+        amountMan: amount,
+      });
+    }
   }
 
-  if (startHeadAge == null || endHeadAge == null) return null;
+  if (
+    startHeadAge == null ||
+    endHeadAge == null ||
+    startCalendarYear == null ||
+    endCalendarYear == null
+  ) {
+    return null;
+  }
 
   return {
     id,
@@ -580,7 +616,10 @@ function buildSpanFromExpenseKey(
     detail: formatTotalMan(total),
     startHeadAge,
     endHeadAge,
+    startCalendarYear,
+    endCalendarYear,
     lane: 0,
+    ...(options?.includeOccurrences ? { occurrences } : {}),
   };
 }
 
@@ -596,10 +635,20 @@ export function clipTimelineItemToRange(
     return null;
   }
 
+  const occurrences = item.occurrences?.filter(
+    (occurrence) =>
+      occurrence.headAge >= minHeadAge && occurrence.headAge <= maxHeadAge,
+  );
+
+  if (item.occurrences && (occurrences?.length ?? 0) === 0) {
+    return null;
+  }
+
   return {
     ...item,
     startHeadAge,
     endHeadAge: Math.max(startHeadAge, endHeadAge),
+    ...(occurrences ? { occurrences } : {}),
   };
 }
 
@@ -616,8 +665,6 @@ export function buildLifeEventTimelineData(
             ...buildIncomeItems(
               input.familyMembers,
               input.incomeByMember,
-              input.cashFlowData,
-              headRow,
               head,
               input.referenceDate,
             ),
@@ -666,6 +713,7 @@ export function buildLifeEventTimelineData(
       '🧳',
       '旅行',
       (year) => year.expenseBreakdown.lifeEventDetail.travel,
+      { includeOccurrences: true },
     );
     if (travelItem) {
       travelItem.lane = 0;
@@ -680,6 +728,7 @@ export function buildLifeEventTimelineData(
       '🎁',
       '家電・家具',
       (year) => year.expenseBreakdown.lifeEventDetail.appliance,
+      { includeOccurrences: true },
     );
     if (applianceItem) {
       applianceItem.lane = 1;
@@ -687,7 +736,7 @@ export function buildLifeEventTimelineData(
     }
 
     if (head) {
-      eventItems.push(...buildCelebrationGiftItems(input, headRow));
+      eventItems.push(...buildCelebrationGiftItems(input.cashFlowData, headRow));
     }
 
     const otherLifeEventItem = buildSpanFromExpenseKey(
@@ -698,6 +747,7 @@ export function buildLifeEventTimelineData(
       '✨',
       'その他',
       (year) => year.expenseBreakdown.lifeEventDetail.other,
+      { includeOccurrences: true },
     );
     if (otherLifeEventItem) {
       otherLifeEventItem.lane = 3;
@@ -711,7 +761,10 @@ export function buildLifeEventTimelineData(
       'event',
       '🩺',
       '医療・介護費',
-      (year) => year.expenseBreakdown.medicalCare,
+      (year) =>
+        year.expenseBreakdown.lifeEventDetail.medical +
+        year.expenseBreakdown.lifeEventDetail.nursing,
+      { includeOccurrences: true },
     );
     if (careItem) {
       careItem.lane = 4;
@@ -723,7 +776,7 @@ export function buildLifeEventTimelineData(
     categories: [
       {
         id: 'life',
-        label: '生活全般',
+        label: '生活\n全般',
         tone: 'life',
         items: lifeItems,
       },
@@ -741,7 +794,7 @@ export function buildLifeEventTimelineData(
       },
       {
         id: 'events',
-        label: 'ライフイベント',
+        label: 'ライフ\nイベント',
         tone: 'event',
         items: eventItems,
       },

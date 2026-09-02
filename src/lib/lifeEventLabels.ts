@@ -38,12 +38,15 @@ export type LifeEventExpenseCategory =
   | 'travel'
   | 'appliance'
   | 'celebration'
+  | 'medical'
+  | 'nursing'
   | 'other';
 
 export function getLifeEventExpenseCategory(
   type: LifeEventType,
-): LifeEventExpenseCategory | 'medical' {
-  if (isMedicalCareLifeEventType(type)) return 'medical';
+): LifeEventExpenseCategory {
+  if (type === 'medical') return 'medical';
+  if (type === 'nursing') return 'nursing';
   if (type === 'travel') return 'travel';
   if (type === 'appliance') return 'appliance';
   if (type === 'celebration_gift') return 'celebration';

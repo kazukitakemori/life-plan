@@ -1,3 +1,5 @@
+import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
+import { calcBirthYear, isAgeCalendarMonthInRange } from './birthDate';
 import { calcAnnualAmountMan } from './incomeAmount';
 import type { FamilyMember } from '../types/family';
 import type { IncomeCategory, IncomeEntry, IncomeStreamType } from '../types/income';
@@ -25,28 +27,12 @@ export interface CurrentWorkProfile {
   employeesKind: 'general' | 'publicServant' | null;
 }
 
-function ageMonthIndex(age: number, month: number): number {
-  return age * 12 + month;
-}
-
-function isInAgeMonthRange(
-  age: number,
-  month: number,
-  startAge: number,
-  startMonth: number,
-  endAge: number,
-  endMonth: number,
-): boolean {
-  const current = ageMonthIndex(age, month);
-  const start = ageMonthIndex(startAge, startMonth);
-  const end = ageMonthIndex(endAge, endMonth);
-  return current >= start && current <= end;
-}
-
 function findActivePeriodAtAgeMonth(
   entries: IncomeEntry[],
   age: number,
   month: number,
+  birthYear: number,
+  birthMonth: number,
 ): {
   category: IncomeCategory;
   streamType: IncomeStreamType;
@@ -54,16 +40,17 @@ function findActivePeriodAtAgeMonth(
   bonuses: IncomeEntry['periods'][number]['bonuses'];
 } | null {
   for (const entry of entries) {
-    if (entry.spouseContingencyOnly) continue;
     for (const period of entry.periods) {
       if (
-        isInAgeMonthRange(
+        isAgeCalendarMonthInRange(
           age,
           month,
           period.startAge,
           period.startMonth,
           period.endAge,
           period.endMonth,
+          birthYear,
+          birthMonth,
         )
       ) {
         return {
@@ -124,8 +111,10 @@ export function resolveCurrentWorkProfile(
   const referenceMonth = referenceDate.getMonth() + 1;
   const active = findActivePeriodAtAgeMonth(
     entries,
-    member.age,
+    resolveMemberAge(member),
     referenceMonth,
+    calcBirthYear(member.age, member.birthMonth, referenceDate),
+    resolveMemberBirthMonth(member),
   );
 
   if (!active) {

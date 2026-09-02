@@ -2,6 +2,7 @@ import {
   calcBirthYear,
   calcFutureYear,
   formatBirthLabel,
+  getBirthDayOptions,
 } from '../../lib/birthDate';
 import {
   buildParentPensionGuideMessage,
@@ -11,6 +12,7 @@ import {
   isParentOrGrandparent,
   shouldShowParentPensionGuide,
 } from '../../lib/dependentAlerts';
+import { isMemberBirthComplete } from '../../lib/familyDefaults';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { validateMemberDependentDefaults } from '../../lib/dependentValidation';
 import type {
@@ -44,12 +46,16 @@ function SelectField({
   onChange,
   options,
   suffix,
+  allowEmpty = false,
+  emptyLabel = '選択',
 }: {
   label: string;
-  value: number | string;
-  onChange: (value: number) => void;
+  value: number | string | null;
+  onChange: (value: number | null) => void;
   options: { value: number; label: string }[];
   suffix?: string;
+  allowEmpty?: boolean;
+  emptyLabel?: string;
 }) {
   return (
     <div className="inline-field">
@@ -57,9 +63,17 @@ function SelectField({
       <div className="inline-field-controls">
         <select
           className="select-input"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
+          value={value ?? ''}
+          onChange={(e) => {
+            const raw = e.target.value;
+            onChange(raw === '' ? null : Number(raw));
+          }}
         >
+          {allowEmpty && (
+            <option value="" disabled={value != null}>
+              {emptyLabel}
+            </option>
+          )}
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -82,7 +96,10 @@ function HouseholdPeriodSection({
   onChange: (member: FamilyMember) => void;
 }) {
   const { role, householdPeriod } = member;
-  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthComplete = isMemberBirthComplete(member);
+  const birthYear = birthComplete
+    ? calcBirthYear(member.age, member.birthMonth, referenceDate)
+    : null;
 
   const setMode = (mode: HouseholdPeriodMode) => {
     onChange({
@@ -111,7 +128,9 @@ function HouseholdPeriodSection({
 
   const showEducation = role === 'child';
   const endYear =
-    householdPeriod.mode === 'custom'
+    householdPeriod.mode === 'custom' &&
+    birthYear != null &&
+    member.birthMonth != null
       ? calcFutureYear(
           birthYear,
           householdPeriod.endAge,
@@ -200,11 +219,32 @@ export function FamilyMemberRow({
   onRemove,
   canRemove,
 }: FamilyMemberRowProps) {
-  const birthLabel = formatBirthLabel(
+  const birthLabel = isMemberBirthComplete(member)
+    ? formatBirthLabel(
+        member.age,
+        member.birthMonth,
+        referenceDate,
+        member.birthDay,
+      )
+    : '';
+
+  const dayOptions = getBirthDayOptions(
     member.age,
     member.birthMonth,
     referenceDate,
   );
+
+  const clampBirthDay = (
+    next: Pick<FamilyMember, 'age' | 'birthMonth' | 'birthDay'>,
+  ): number | null => {
+    if (next.birthDay == null) return null;
+    const maxDay = getBirthDayOptions(
+      next.age,
+      next.birthMonth,
+      referenceDate,
+    ).length;
+    return Math.min(next.birthDay, maxDay);
+  };
 
   const addHobby = () => {
     const hobby = window.prompt('趣味・関心を入力');
@@ -238,17 +278,27 @@ export function FamilyMemberRow({
         <div className="profile-grid">
           <div className="profile-birth">
             <SelectField
-              label="生年月"
+              label="生年月日"
               value={member.age}
-              onChange={(age) =>
+              allowEmpty
+              emptyLabel=""
+              onChange={(age) => {
+                const birthDay = clampBirthDay({
+                  age,
+                  birthMonth: member.birthMonth,
+                  birthDay: member.birthDay,
+                });
                 onChange({
                   ...member,
                   age,
-                  ...(member.role === 'other' && age < ELDERLY_DEPENDENT_MIN_AGE
+                  birthDay,
+                  ...(member.role === 'other' &&
+                  age != null &&
+                  age < ELDERLY_DEPENDENT_MIN_AGE
                     ? { isCohabiting: undefined }
                     : {}),
-                })
-              }
+                });
+              }}
               options={getAgeOptions(member.role).map((a) => ({
                 value: a,
                 label: `${a}才`,
@@ -257,18 +307,39 @@ export function FamilyMemberRow({
             <SelectField
               label=""
               value={member.birthMonth}
-              onChange={(birthMonth) => onChange({ ...member, birthMonth })}
+              allowEmpty
+              emptyLabel=""
+              onChange={(birthMonth) => {
+                const birthDay = clampBirthDay({
+                  age: member.age,
+                  birthMonth,
+                  birthDay: member.birthDay,
+                });
+                onChange({ ...member, birthMonth, birthDay });
+              }}
               options={MONTHS.map((m) => ({ value: m, label: `${m}月` }))}
             />
-            <p className="birth-label">{birthLabel}</p>
+            <SelectField
+              label=""
+              value={member.birthDay}
+              allowEmpty
+              emptyLabel=""
+              onChange={(birthDay) => onChange({ ...member, birthDay })}
+              options={dayOptions.map((d) => ({
+                value: d,
+                label: `${d}日`,
+              }))}
+            />
+            {birthLabel ? <p className="birth-label">{birthLabel}</p> : null}
           </div>
 
           <SelectField
             label="性別"
             value={member.gender === 'male' ? 0 : 1}
-            onChange={(v) =>
-              onChange({ ...member, gender: v === 0 ? 'male' : 'female' })
-            }
+            onChange={(v) => {
+              if (v == null) return;
+              onChange({ ...member, gender: v === 0 ? 'male' : 'female' });
+            }}
             options={[
               { value: 0, label: '男' },
               { value: 1, label: '女' },
@@ -278,21 +349,23 @@ export function FamilyMemberRow({
           <SelectField
             label="想定寿命"
             value={member.expectedLifespan}
-            onChange={(expectedLifespan) =>
-              onChange({ ...member, expectedLifespan })
-            }
+            onChange={(expectedLifespan) => {
+              if (expectedLifespan == null) return;
+              onChange({ ...member, expectedLifespan });
+            }}
             options={LIFESPANS.map((a) => ({ value: a, label: `${a}才` }))}
           />
 
           <SelectField
             label="障害"
             value={member.disability === 'none' ? 0 : 1}
-            onChange={(v) =>
+            onChange={(v) => {
+              if (v == null) return;
               onChange({
                 ...member,
                 disability: v === 0 ? 'none' : 'has',
-              })
-            }
+              });
+            }}
             options={[
               { value: 0, label: 'なし' },
               { value: 1, label: 'あり' },
@@ -426,7 +499,7 @@ function DependentSettingsSection({
       )}
 
       {isParentOrGrandparent(member) &&
-        member.age < ELDERLY_DEPENDENT_MIN_AGE && (
+        (member.age ?? 0) < ELDERLY_DEPENDENT_MIN_AGE && (
           <p className="profile-dependent-note">
             70歳未満のため一般扶養控除の対象です。同居老親等控除・老人扶養控除は70歳以上から適用されます。
           </p>
@@ -468,7 +541,7 @@ function DependentSettingsSection({
       )}
 
       <p className="profile-dependent-note">
-        所得48万円超の年は税法上の扶養控除は外れます。
+        合計所得58万円超の年は税法上の扶養控除は外れます（令和7年分以降。給与のみの目安は年収約123万円）。
         {siDep && '収入130万円以上の年は社保の扶養から外れます。'}
       </p>
     </div>

@@ -51,25 +51,59 @@ export interface IncomeBonus {
   paymentMonth: number;
 }
 
+/** 会社等の退職金（当該収入カードに紐づく一時金） */
+export type RetirementEnrollmentMode = 'years' | 'period';
+
+export interface RetirementAllowanceEntry {
+  id: string;
+  /** 受取額（万円・額面） */
+  amountMan: number;
+  receiveAge: number;
+  receiveMonth: number;
+  /** 勤続年数の入力方法 */
+  enrollmentMode: RetirementEnrollmentMode;
+  /** enrollmentMode === 'years' のときの勤続年数 */
+  enrollmentYears: number;
+  /** enrollmentMode === 'period' の勤続開始 */
+  enrollmentStartAge: number;
+  enrollmentStartMonth: number;
+  /** enrollmentMode === 'period' の勤続終了 */
+  enrollmentEndAge: number;
+  enrollmentEndMonth: number;
+}
+
 export interface IncomeEntry {
   id: string;
   memberId: string;
   category: IncomeCategory;
-  spouseContingencyOnly: boolean;
+  /**
+   * 副業カードから追加した事業収入。
+   * 本業給与との組み合わせを想定した注記表示に使用（試算ロジックは category で判定）。
+   */
+  incomePurpose?: 'side_business';
+  /**
+   * 就職・開業など試算初年度に始まる新しい収入。
+   * ON のとき初年度は実収入ベースで税計算し、前年度所得の年収読み替えを行わない。
+   */
+  isNewIncomeFromStart: boolean;
   periods: IncomePeriod[];
-  kenpoContinuationYears: number | null;
+  /** 会社等の退職金（雇用系のみ・複数可）。CF「退職金」行・退職所得の対象 */
+  retirementAllowances: RetirementAllowanceEntry[];
   expenseManPerMonth: number | null;
   filingType: FilingType | null;
 }
 
 export type IncomeByMember = Record<string, IncomeEntry[]>;
 
-/** 保育料参考値用：前年度の収入（今年度と異なる場合のみ上書き） */
-export interface PriorYearIncomeForNursery {
+/** 前年度の収入（今年度と異なる場合のみ上書き） */
+export interface PriorYearIncomeOverride {
   differsFromCurrentYear: boolean;
   category: IncomeCategory;
   /** 月額（万円） */
   monthlyAmountMan: number;
 }
 
-export type PriorYearIncomeByMember = Record<string, PriorYearIncomeForNursery>;
+/** @deprecated PriorYearIncomeOverride を使用してください */
+export type PriorYearIncomeForNursery = PriorYearIncomeOverride;
+
+export type PriorYearIncomeByMember = Record<string, PriorYearIncomeOverride>;

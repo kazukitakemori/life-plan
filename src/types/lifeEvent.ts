@@ -19,7 +19,7 @@ export type LifeEventType =
 
 export type LifeEventCycleUnit = 'month' | 'year';
 
-export type LifeEventEndMode = 'lifetime' | 'until';
+export type LifeEventEndMode = 'lifetime' | 'until' | 'once';
 
 /** 子・孫の祝い金の受取者（1人あたり） */
 export interface LifeEventCelebrationBeneficiary {
@@ -40,7 +40,8 @@ export interface LifeEventEntry {
   cycleInterval: number;
   cycleUnit: LifeEventCycleUnit;
   amountMan: number;
-  emergencyAmountMan: number;
+  /** 物価上昇率（%/年）。null のときは上昇なし */
+  increaseRate: number | null;
   /** type が celebration_gift のとき、子どもごとの祝い金設定 */
   celebrationBeneficiaries?: LifeEventCelebrationBeneficiary[];
 }
@@ -48,6 +49,5 @@ export interface LifeEventEntry {
 export type LifeEventByMember = Record<string, LifeEventEntry[]>;
 
 export interface LifeEventState {
-  inflationRate: number;
   byMember: LifeEventByMember;
 }

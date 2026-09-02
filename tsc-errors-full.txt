@@ -1,0 +1,312 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help
+ npmrc` for supported config options.
+発生場所 行:1 文字:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+src/components/family/FamilyMemberRow.tsx(455,9): error TS18047: 'member.age' is possibly 'null'.
+src/components/family/FamilyResidenceSection.tsx(35,47): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/housing/OwnedPropertyDetail.tsx(125,58): error TS18047: 'member.age' is possibly 'null'.
+src/components/housing/OwnedPropertyTargetSection.tsx(56,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/income/IncomeEntryCard.tsx(810,49): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/income/IncomeEntryCard.tsx(818,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/income/IncomeEntryCard.tsx(1010,13): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/insurance/InsuranceEntryDetail.tsx(257,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/insurance/InsuranceEntryDetail.tsx(531,62): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/insurance/InsuranceEntryDetail.tsx(748,23): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/insurance/InsuranceEntryDetail.tsx(977,25): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/loan/HousingLoanPrepaymentsEditor.tsx(72,5): error TS2322: Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/loan/HousingLoanRepaymentAmountTable.tsx(82,5): error TS2345: Argument of type 'number | null | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/loan/HousingLoanRepaymentMethodEditor.tsx(145,5): error TS2322: Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/loan/HousingLoanRepaymentMethodEditor.tsx(192,5): error TS2345: Argument of type 'number | null | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/loan/LoanEntryDetail.tsx(345,17): error TS2322: Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/loan/LoanEntryDetail.tsx(380,15): error TS2322: Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/pension/EnrollmentTimeline.tsx(39,38): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/pension/EnrollmentTimeline.tsx(76,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(847,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(933,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1020,25): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1021,48): error TS18047: 'a' is possibly 'null'.
+src/components/savings/SavingsEntryDetail.tsx(1021,52): error TS18047: 'b' is possibly 'null'.
+src/components/savings/SavingsEntryDetail.tsx(1028,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1064,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1085,11): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1090,42): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1140,11): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1289,9): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(1307,11): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(1469,11): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1476,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1485,11): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1490,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1512,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1531,13): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(1552,35): error TS18047: 'withdrawalStartAge' is possibly 'null'.
+src/components/savings/SavingsEntryDetail.tsx(1555,15): error TS18047: 'withdrawalStartAge' is possibly 'null'.
+src/components/savings/SavingsEntryDetail.tsx(1556,27): error TS18047: 'withdrawalStartAge' is possibly 'null'.
+src/components/savings/SavingsEntryDetail.tsx(2572,25): error TS2322: Type 'number | null' is not assignable to type 'string | number | readonly string[] | undefined'.
+  Type 'null' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(2582,45): error TS2322: Type 'number | null' is not assignable to type 'string | number | readonly string[] | undefined'.
+  Type 'null' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(2687,31): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3176,71): error TS2345: Argument of type 'FamilyMember' is not assignable to parameter of type '{ age: number; expectedLifespan: number; }'.
+  Types of property 'age' are incompatible.
+    Type 'number | null' is not assignable to type 'number'.
+      Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3405,27): error TS2322: Type 'number | null' is not assignable to type 'string | number | readonly string[] | undefined'.
+  Type 'null' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(3436,33): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3451,29): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3514,33): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3527,33): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3533,33): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3623,27): error TS2322: Type 'number | null' is not assignable to type 'string | number | readonly string[] | undefined'.
+  Type 'null' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/savings/SavingsEntryDetail.tsx(3640,29): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/savings/SavingsEntryDetail.tsx(3754,38): error TS18047: 'withdrawalStartAge' is possibly 'null'.
+src/components/savings/SavingsStep.tsx(210,11): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/taxSocial/ResidenceCard.tsx(37,45): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/vehicle/VehicleRow.tsx(96,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/vehicle/VehicleRow.tsx(101,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/components/vehicle/VehicleRow.tsx(117,45): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/cashFlow.ts(176,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/cashFlow.ts(323,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/cashFlow.ts(512,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dbEarlyExit.ts(57,18): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dbEnrollment.ts(108,22): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dbEnrollment.ts(350,27): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dcContribution.ts(145,26): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/dcContribution.ts(189,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dcContribution.ts(262,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dcContribution.ts(517,32): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/dependentAlerts.ts(24,43): error TS18047: 'member.age' is possibly 'null'.
+src/lib/educationChartData.ts(135,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationChartData.ts(158,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationChartData.ts(391,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationChartData.ts(509,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationCostContext.ts(35,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationCostContext.ts(42,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationCostContext.ts(48,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationCostContext.ts(53,40): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/educationCostContext.ts(64,62): error TS18047: 'member.age' is possibly 'null'.
+src/lib/educationCostContext.ts(88,35): error TS18047: 'b.age' is possibly 'null'.
+src/lib/educationCostContext.ts(88,43): error TS18047: 'a.age' is possibly 'null'.
+src/lib/educationCostContext.ts(89,14): error TS18047: 'a.birthMonth' is possibly 'null'.
+src/lib/educationCostContext.ts(89,29): error TS18047: 'b.birthMonth' is possibly 'null'.
+src/lib/employeesPensionPremium.ts(34,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/giftTax.ts(81,5): error TS18047: 'donorAge' is possibly 'null'.
+src/lib/householdTaxYear.ts(162,11): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/housingCashFlow.ts(376,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/housingCashFlow.ts(559,9): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/housingCashFlow.ts(600,13): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/housingCashFlow.ts(623,15): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/housingDefaults.ts(61,56): error TS18047: 'member.age' is possibly 'null'.
+src/lib/housingDefaults.ts(114,15): error TS18047: 'member.age' is possibly 'null'.
+src/lib/housingDefaults.ts(227,11): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoContributionLimit.ts(210,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoContributionLimit.ts(294,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoContributionLimit.ts(866,32): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPastContribution.ts(983,35): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/idecoPayout.ts(236,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/idecoPayout.ts(276,27): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(309,31): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/idecoPayout.ts(328,24): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(331,49): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(332,5): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(354,21): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(446,5): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(615,18): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(619,18): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(622,13): error TS18047: 'min' is possibly 'null'.
+src/lib/idecoPayout.ts(622,26): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoPayout.ts(623,37): error TS18047: 'min' is possibly 'null'.
+src/lib/idecoPayout.ts(623,58): error TS18047: 'min' is possibly 'null'.
+src/lib/idecoTax.ts(41,5): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/idecoTax.ts(146,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/incomeStartFlags.ts(27,30): error TS18047: 'member.age' is possibly 'null'.
+src/lib/insuranceIncomeTax.ts(190,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insuranceIncomeTax.ts(524,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insuranceIncomeTax.ts(611,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insuranceIncomeTax.ts(626,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insurancePeriod.ts(23,3): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insurancePeriod.ts(48,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/insurancePeriod.ts(53,26): error TS18047: 'receiveBirthMonth' is possibly 'null'.
+src/lib/lifeEventCashFlow.ts(108,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/lifeEventCashFlow.ts(164,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/lifeEventTimelineData.ts(140,44): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/memberYearIncome.ts(81,23): error TS18047: 'member.birthMonth' is possibly 'null'.
+src/lib/memberYearIncome.ts(133,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/nurseryHouseholdIncome.ts(157,35): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionEnrollmentEstimate.ts(210,55): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionEnrollmentEstimate.ts(248,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionEnrollmentEstimate.ts(294,53): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionEnrollmentEstimate.ts(551,13): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionEnrollmentEstimate.ts(559,63): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(76,23): error TS18047: 'member.birthMonth' is possibly 'null'.
+src/lib/pensionIncome.ts(340,98): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(341,98): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(342,98): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(738,23): error TS18047: 'headMember.birthMonth' is possibly 'null'.
+src/lib/pensionIncome.ts(753,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(767,23): error TS18047: 'spouseMember.birthMonth' is possibly 'null'.
+src/lib/pensionIncome.ts(774,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(882,69): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncome.ts(889,23): error TS18047: 'spouseMember.birthMonth' is possibly 'null'.
+src/lib/pensionIncome.ts(896,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/pensionIncomeProjection.ts(126,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/retirementAllowance.ts(29,14): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/retirementDeductionOverlap.ts(359,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/retirementTimingDiagram.ts(344,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsCashFlow.ts(176,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsCashFlow.ts(193,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsCashFlow.ts(1149,5): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsDefaults.ts(145,58): error TS2345: Argument of type 'FamilyMember' is not assignable to parameter of type '{ age: number; expectedLifespan: number; }'.
+  Types of property 'age' are incompatible.
+    Type 'number | null' is not assignable to type 'number'.
+      Type 'null' is not assignable to type 'number'.
+src/lib/savingsDefaults.ts(239,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsWithdrawalPeriod.ts(78,14): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsWithdrawalPeriod.ts(111,14): error TS18047: 'startAge' is possibly 'null'.
+src/lib/savingsWithdrawalPeriod.ts(113,42): error TS18047: 'startAge' is possibly 'null'.
+src/lib/savingsWithdrawalPeriod.ts(115,63): error TS18047: 'startAge' is possibly 'null'.
+src/lib/savingsWithdrawalPeriod.ts(141,7): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsWithdrawalPeriod.ts(160,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/savingsWithdrawalPeriod.ts(200,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/spouseDeductionIncome.ts(24,12): error TS18047: 'member.birthMonth' is possibly 'null'.
+src/lib/vehicleCashFlow.ts(123,45): error TS18047: 'member.age' is possibly 'null'.
+src/lib/vehicleCashFlow.ts(251,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/vehicleCashFlow.ts(274,7): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/vehicleCashFlow.ts(308,51): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/vehicleDefaults.ts(307,46): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/vehicleDefaults.ts(309,5): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/lib/vehicleDefaults.ts(347,47): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.

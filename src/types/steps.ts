@@ -29,6 +29,6 @@ export const STEPS: StepDefinition[] = [
   { id: 'pension', number: 8, label: '年金' },
   { id: 'loan', number: 9, label: 'ローン' },
   { id: 'insurance', number: 10, label: '保険' },
-  { id: 'savings', number: 11, label: '貯蓄・投資' },
-  { id: 'other', number: null, label: 'その他' },
+  { id: 'savings', number: 11, label: '貯蓄・運用' },
+  { id: 'other', number: 12, label: 'セカンドライフ' },
 ];

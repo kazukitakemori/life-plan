@@ -21,7 +21,7 @@ export function isParentOrGrandparent(member: FamilyMember): boolean {
 
 /** 70歳以上の親・祖父母（老人扶養・同居老親等控除の対象） */
 export function isElderlyParentOrGrandparent(member: FamilyMember): boolean {
-  return isParentOrGrandparent(member) && member.age >= ELDERLY_DEPENDENT_MIN_AGE;
+  return isParentOrGrandparent(member) && (member.age ?? 0) >= ELDERLY_DEPENDENT_MIN_AGE;
 }
 
 /** 70歳以上の親・祖父母で、税法上の扶養を想定しているときにQ8年金入力を促す */
@@ -42,7 +42,7 @@ export function buildParentPensionGuideMessage(
   return (
     `正確な${deductionLabel}の判定には、${memberLabel}の年金所得の入力が必要です。` +
     'Q8（年金）で受給額を登録してください（手入力でも可）。' +
-    '65歳以上で年金のみの場合、額面おおよそ158万円以下なら合計所得48万円以内となり扶養の範囲内です。'
+    '65歳以上で年金のみの場合も、合計所得が58万円を超えると扶養の範囲外になります（令和7年分以降）。'
   );
 }
 

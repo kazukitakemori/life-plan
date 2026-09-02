@@ -1,3 +1,4 @@
+import { resolveMemberBirthMonth } from './familyDefaults';
 import { calcBirthYear, calcYearAtAge, getMemberAgeMonth } from './birthDate';
 import { getChildBirthOrder } from './educationCostContext';
 import { calcMemberMonthlyEducationYen, yenToMan } from './educationCashFlow';
@@ -5,9 +6,14 @@ import { getMemberTabLabel } from './memberDisplay';
 import type { FamilyMember } from '../types/family';
 import type { EducationByMember, EducationExpenseEntry } from '../types/education';
 
+export const EDUCATION_CHART_PAST_DATA_KEY = 'pastAnnualMan';
+export const EDUCATION_CHART_PAST_LABEL = '過去の教育費';
+export const EDUCATION_CHART_PAST_COLOR = '#9ca3af';
+
 export interface EducationChartPoint {
   year: number;
   annualMan: number;
+  pastAnnualMan: number;
   cumulativeMan: number;
   memberAge: number | null;
   spouseAge: number | null;
@@ -19,18 +25,19 @@ export interface EducationChartXAxisRow {
   getValue: (point: EducationChartPoint, year: number) => string | null;
 }
 
-export interface EducationChartSeries {
-  memberLabel: string;
-  memberColor: string;
-  points: EducationChartPoint[];
-  leftAxisMax: number;
-  rightAxisMax: number;
-}
-
 export interface EducationChartMemberBar {
   dataKey: string;
   label: string;
   color: string;
+}
+
+export interface EducationChartSeries {
+  memberLabel: string;
+  memberColor: string;
+  bars: EducationChartMemberBar[];
+  points: EducationChartPoint[];
+  leftAxisMax: number;
+  rightAxisMax: number;
 }
 
 export interface AggregatedEducationChartSeries {
@@ -126,7 +133,7 @@ function getMemberEducationEndYear(
   return entries.reduce((maxYear, entry) => {
     const endYear = calcYearAtAge(
       birthYear,
-      member.birthMonth,
+      resolveMemberBirthMonth(member),
       entry.endAge,
       entry.endMonth,
     );
@@ -134,19 +141,41 @@ function getMemberEducationEndYear(
   }, referenceYear);
 }
 
+function getMemberEducationStartYear(
+  member: FamilyMember,
+  entries: EducationExpenseEntry[],
+  referenceDate: Date,
+): number {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const referenceYear = referenceDate.getFullYear();
+
+  if (entries.length === 0) {
+    return referenceYear;
+  }
+
+  return entries.reduce((minYear, entry) => {
+    const startYear = calcYearAtAge(
+      birthYear,
+      resolveMemberBirthMonth(member),
+      entry.startAge,
+      entry.startMonth,
+    );
+    return Math.min(minYear, startYear);
+  }, Number.POSITIVE_INFINITY);
+}
+
 function calcMemberAnnualEducationMan(
   member: FamilyMember,
   entries: EducationExpenseEntry[],
   referenceDate: Date,
   calendarYear: number,
+  monthStart: number,
+  monthEnd: number,
 ): number {
-  const monthStart =
-    calendarYear === referenceDate.getFullYear()
-      ? referenceDate.getMonth() + 1
-      : 1;
+  if (monthStart > monthEnd) return 0;
 
   let totalYen = 0;
-  for (let month = monthStart; month <= 12; month++) {
+  for (let month = monthStart; month <= monthEnd; month++) {
     totalYen += calcMemberMonthlyEducationYen(
       member,
       entries,
@@ -157,6 +186,71 @@ function calcMemberAnnualEducationMan(
   }
 
   return roundMan(yenToMan(totalYen));
+}
+
+function splitMemberAnnualEducationMan(
+  member: FamilyMember,
+  entries: EducationExpenseEntry[],
+  referenceDate: Date,
+  calendarYear: number,
+): { pastMan: number; futureMan: number } {
+  const referenceYear = referenceDate.getFullYear();
+  const referenceMonth = referenceDate.getMonth() + 1;
+
+  if (calendarYear < referenceYear) {
+    return {
+      pastMan: calcMemberAnnualEducationMan(
+        member,
+        entries,
+        referenceDate,
+        calendarYear,
+        1,
+        12,
+      ),
+      futureMan: 0,
+    };
+  }
+
+  if (calendarYear > referenceYear) {
+    return {
+      pastMan: 0,
+      futureMan: calcMemberAnnualEducationMan(
+        member,
+        entries,
+        referenceDate,
+        calendarYear,
+        1,
+        12,
+      ),
+    };
+  }
+
+  return {
+    pastMan: calcMemberAnnualEducationMan(
+      member,
+      entries,
+      referenceDate,
+      calendarYear,
+      1,
+      referenceMonth - 1,
+    ),
+    futureMan: calcMemberAnnualEducationMan(
+      member,
+      entries,
+      referenceDate,
+      calendarYear,
+      referenceMonth,
+      12,
+    ),
+  };
+}
+
+function createPastEducationBar(): EducationChartMemberBar {
+  return {
+    dataKey: EDUCATION_CHART_PAST_DATA_KEY,
+    label: EDUCATION_CHART_PAST_LABEL,
+    color: EDUCATION_CHART_PAST_COLOR,
+  };
 }
 
 export function formatEducationChartMemberAxisLabel(
@@ -275,7 +369,19 @@ export function buildAggregatedEducationChartSeries(
   educationByMember: EducationByMember,
   referenceDate: Date,
 ): AggregatedEducationChartSeries {
-  const startYear = referenceDate.getFullYear();
+  const referenceYear = referenceDate.getFullYear();
+  const membersWithEducation = getMembersWithEducationEntries(
+    eligibleMembers,
+    educationByMember,
+  );
+  const educationStartYear = membersWithEducation.reduce((minYear, member) => {
+    const entries = educationByMember[member.id] ?? [];
+    return Math.min(
+      minYear,
+      getMemberEducationStartYear(member, entries, referenceDate),
+    );
+  }, referenceYear);
+  const startYear = Math.min(educationStartYear, referenceYear);
   const headBirthYear = calcBirthYear(
     headMember.age,
     headMember.birthMonth,
@@ -283,52 +389,48 @@ export function buildAggregatedEducationChartSeries(
   );
   const headEndYear = calcYearAtAge(
     headBirthYear,
-    headMember.birthMonth,
+    resolveMemberBirthMonth(headMember),
     headMember.expectedLifespan,
     12,
   );
   const endYear = Math.min(
     headEndYear,
-    getMembersWithEducationEntries(eligibleMembers, educationByMember).reduce(
-      (maxYear, member) => {
-        const entries = educationByMember[member.id] ?? [];
-        return Math.max(
-          maxYear,
-          getMemberEducationEndYear(member, entries, referenceDate),
-        );
-      },
-      startYear,
-    ),
+    membersWithEducation.reduce((maxYear, member) => {
+      const entries = educationByMember[member.id] ?? [];
+      return Math.max(
+        maxYear,
+        getMemberEducationEndYear(member, entries, referenceDate),
+      );
+    }, referenceYear),
   );
 
   const spouseMember = familyMembers.find((m) => m.role === 'spouse');
   const children = getSortedChildren(familyMembers);
-  const membersWithEducation = getMembersWithEducationEntries(
-    eligibleMembers,
-    educationByMember,
+  const memberBars: EducationChartMemberBar[] = membersWithEducation.map(
+    (member) => ({
+      dataKey: `annual_${member.id}`,
+      label: formatEducationChartMemberLabel(
+        member,
+        familyMembers,
+        referenceDate,
+      ),
+      color: getEducationChartMemberColor(member, familyMembers),
+    }),
   );
-  const bars: EducationChartMemberBar[] = membersWithEducation.map((member) => ({
-    dataKey: `annual_${member.id}`,
-    label: formatEducationChartMemberLabel(member, familyMembers, referenceDate),
-    color: getEducationChartMemberColor(member, familyMembers),
-  }));
 
   const points: EducationChartPoint[] = [];
   let cumulativeMan = 0;
   let maxAnnualStack = 0;
+  let hasPast = false;
 
   for (let year = startYear; year <= endYear; year++) {
-    let yearTotal = 0;
+    let yearPastTotal = 0;
+    let yearFutureTotal = 0;
     const memberAnnual: Record<string, number> = {};
     const childAges: Record<string, number> = {};
 
     for (const child of children) {
-      const childAgeMonth = getMemberAgeMonth(
-        child,
-        referenceDate,
-        year,
-        12,
-      );
+      const childAgeMonth = getMemberAgeMonth(child, referenceDate, year, 12);
       if (childAgeMonth) {
         childAges[`childAge_${child.id}`] = childAgeMonth.age;
       }
@@ -336,16 +438,20 @@ export function buildAggregatedEducationChartSeries(
 
     for (const member of membersWithEducation) {
       const entries = educationByMember[member.id] ?? [];
-      const annualMan = calcMemberAnnualEducationMan(
+      const { pastMan, futureMan } = splitMemberAnnualEducationMan(
         member,
         entries,
         referenceDate,
         year,
       );
-      memberAnnual[`annual_${member.id}`] = annualMan;
-      yearTotal = roundMan(yearTotal + annualMan);
+      memberAnnual[`annual_${member.id}`] = futureMan;
+      yearPastTotal = roundMan(yearPastTotal + pastMan);
+      yearFutureTotal = roundMan(yearFutureTotal + futureMan);
     }
 
+    if (yearPastTotal > 0) hasPast = true;
+
+    const yearTotal = roundMan(yearPastTotal + yearFutureTotal);
     cumulativeMan = roundMan(cumulativeMan + yearTotal);
     maxAnnualStack = Math.max(maxAnnualStack, yearTotal);
 
@@ -362,6 +468,7 @@ export function buildAggregatedEducationChartSeries(
     points.push({
       year,
       annualMan: yearTotal,
+      pastAnnualMan: yearPastTotal,
       cumulativeMan,
       memberAge: null,
       spouseAge: spouseAgeMonth?.age ?? null,
@@ -372,7 +479,7 @@ export function buildAggregatedEducationChartSeries(
   }
 
   return {
-    bars,
+    bars: hasPast ? [createPastEducationBar(), ...memberBars] : memberBars,
     points,
     leftAxisMax: niceAxisMax(maxAnnualStack),
     rightAxisMax: niceAxisMax(cumulativeMan),
@@ -386,7 +493,13 @@ export function buildEducationChartSeries(
   entries: EducationExpenseEntry[],
   referenceDate: Date,
 ): EducationChartSeries {
-  const startYear = referenceDate.getFullYear();
+  const referenceYear = referenceDate.getFullYear();
+  const educationStartYear = getMemberEducationStartYear(
+    member,
+    entries,
+    referenceDate,
+  );
+  const startYear = Math.min(educationStartYear, referenceYear);
   const headBirthYear = calcBirthYear(
     headMember.age,
     headMember.birthMonth,
@@ -394,13 +507,16 @@ export function buildEducationChartSeries(
   );
   const headEndYear = calcYearAtAge(
     headBirthYear,
-    headMember.birthMonth,
+    resolveMemberBirthMonth(headMember),
     headMember.expectedLifespan,
     12,
   );
   const endYear = Math.min(
     headEndYear,
-    Math.max(getMemberEducationEndYear(member, entries, referenceDate), startYear),
+    Math.max(
+      getMemberEducationEndYear(member, entries, referenceDate),
+      referenceYear,
+    ),
   );
 
   const spouseMember = familyMembers.find((m) => m.role === 'spouse');
@@ -408,14 +524,18 @@ export function buildEducationChartSeries(
   const points: EducationChartPoint[] = [];
   let cumulativeMan = 0;
   let maxAnnual = 0;
+  let hasPast = false;
 
   for (let year = startYear; year <= endYear; year++) {
-    const annualMan = calcMemberAnnualEducationMan(
+    const { pastMan, futureMan } = splitMemberAnnualEducationMan(
       member,
       entries,
       referenceDate,
       year,
     );
+    if (pastMan > 0) hasPast = true;
+
+    const annualMan = roundMan(pastMan + futureMan);
     cumulativeMan = roundMan(cumulativeMan + annualMan);
     maxAnnual = Math.max(maxAnnual, annualMan);
 
@@ -437,7 +557,8 @@ export function buildEducationChartSeries(
 
     points.push({
       year,
-      annualMan,
+      annualMan: futureMan,
+      pastAnnualMan: pastMan,
       cumulativeMan,
       memberAge: memberAgeMonth?.age ?? null,
       spouseAge: spouseAgeMonth?.age ?? null,
@@ -445,16 +566,23 @@ export function buildEducationChartSeries(
     });
   }
 
-  return {
-    memberLabel: formatEducationChartMemberLabel(
+  const memberBar: EducationChartMemberBar = {
+    dataKey: 'annualMan',
+    label: formatEducationChartMemberLabel(
       member,
       familyMembers,
       referenceDate,
     ),
-    memberColor: getEducationChartMemberColor(member, familyMembers),
+    color: getEducationChartMemberColor(member, familyMembers),
+  };
+
+  return {
+    memberLabel: memberBar.label,
+    memberColor: memberBar.color,
     points,
     leftAxisMax: niceAxisMax(maxAnnual),
     rightAxisMax: niceAxisMax(cumulativeMan),
+    bars: hasPast ? [createPastEducationBar(), memberBar] : [memberBar],
   };
 }
 

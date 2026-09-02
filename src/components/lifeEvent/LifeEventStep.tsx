@@ -11,19 +11,26 @@ import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
 import { MemberLifeEventTabs } from './MemberLifeEventTabs';
+import { SecondLifeTemplatePanel } from '../shared/SecondLifeTemplatePanel';
 
 interface LifeEventStepProps {
   members: FamilyMember[];
   lifeEventState: LifeEventState;
   referenceDate: Date;
+  secondLifeStartAge?: number;
+  purposeNote?: string;
   onChange: (state: LifeEventState) => void;
+  onAddSecondLifeNursing?: () => void;
 }
 
 export function LifeEventStep({
   members,
   lifeEventState,
   referenceDate,
+  secondLifeStartAge,
+  purposeNote,
   onChange,
+  onAddSecondLifeNursing,
 }: LifeEventStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -96,10 +103,6 @@ export function LifeEventStep({
     persistEntries(resolvedActiveId, cloned);
   };
 
-  const setInflationRate = (inflationRate: number) => {
-    onChange({ ...lifeEventState, inflationRate });
-  };
-
   if (!headMember || !activeMember) {
     return (
       <div className="step-page">
@@ -120,25 +123,6 @@ export function LifeEventStep({
               結婚・夢・医療・介護など
             </span>
           </h2>
-          <div className="life-event-inflation-field">
-            <span className="life-event-inflation-label">※ 物価上昇率</span>
-            <input
-              type="number"
-              className="life-event-inflation-input"
-              value={lifeEventState.inflationRate}
-              min={0}
-              max={100}
-              step={0.1}
-              onChange={(e) => setInflationRate(Number(e.target.value) || 0)}
-            />
-            <span className="life-event-inflation-unit">%/年</span>
-            <span
-              className="life-event-help-icon"
-              title="ライフイベント全体の物価上昇率"
-            >
-              ?
-            </span>
-          </div>
         </div>
         <div className="step-header-right">
           <button type="button" className="step-action-btn" disabled>
@@ -152,6 +136,22 @@ export function LifeEventStep({
           </button>
         </div>
       </div>
+
+      {purposeNote ? (
+        <p className="purpose-input-note" role="note">
+          {purposeNote}
+        </p>
+      ) : null}
+
+      {onAddSecondLifeNursing ? (
+        <SecondLifeTemplatePanel
+          startAge={secondLifeStartAge}
+          title="セカンドライフの介護"
+          description="世帯主・配偶者それぞれの介護費（継続）を追加します。内容はあとから編集できます。"
+          buttonLabel="セカンドライフ用の介護費を追加"
+          onAdd={onAddSecondLifeNursing}
+        />
+      ) : null}
 
       <div className="life-event-toolbar">
         <MemberLifeEventTabs

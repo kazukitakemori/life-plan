@@ -1,16 +1,19 @@
-import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import {
+  calcMemberSalaryBreakdownYenForTaxYear,
+  resolveMemberYearIncomeProfile,
+} from './memberYearIncome';
 import type { FamilyMember } from '../types/family';
 import type {
   IncomeByMember,
   PriorYearIncomeByMember,
-  PriorYearIncomeForNursery,
+  PriorYearIncomeOverride,
 } from '../types/income';
 
 export function createDefaultPriorYearIncome(
   member: FamilyMember,
   incomeByMember: IncomeByMember,
   referenceDate: Date,
-): PriorYearIncomeForNursery {
+): PriorYearIncomeOverride {
   const entries = incomeByMember[member.id] ?? [];
   const currentYear = referenceDate.getFullYear();
   const profile = resolveMemberYearIncomeProfile(
@@ -20,12 +23,21 @@ export function createDefaultPriorYearIncome(
     currentYear,
   );
 
+  const salaryBreakdown = calcMemberSalaryBreakdownYenForTaxYear({
+    member,
+    entries,
+    referenceDate,
+    calendarYear: currentYear,
+    annualize: true,
+  });
   const monthlyAmountMan =
-    profile.grossIncomeMan > 0
-      ? Math.round((profile.grossIncomeMan / 12) * 10) / 10
-      : member.role === 'spouse'
-        ? 0
-        : 50;
+    salaryBreakdown.grossSalaryRevenueYen > 0
+      ? Math.round((salaryBreakdown.grossSalaryRevenueYen / 10_000 / 12) * 10) / 10
+      : profile.grossIncomeMan > 0
+        ? Math.round((profile.grossIncomeMan / 12) * 10) / 10
+        : member.role === 'spouse'
+          ? 0
+          : 50;
 
   return {
     differsFromCurrentYear: false,
@@ -39,7 +51,7 @@ export function getPriorYearIncomeForMember(
   priorYearIncomeByMember: PriorYearIncomeByMember,
   incomeByMember: IncomeByMember,
   referenceDate: Date,
-): PriorYearIncomeForNursery {
+): PriorYearIncomeOverride {
   return (
     priorYearIncomeByMember[member.id] ??
     createDefaultPriorYearIncome(member, incomeByMember, referenceDate)

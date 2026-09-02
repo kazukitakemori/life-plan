@@ -19,8 +19,8 @@ export function getMemberDependentDefaults(
   if (member.role === 'spouse') {
     return {
       dependentStatus: 'dependent',
-      taxDependent: true,
-      socialInsuranceDependent: true,
+      taxDependent: false,
+      socialInsuranceDependent: false,
     };
   }
   if (usesQ1DependentDefaults(member)) {
@@ -28,8 +28,8 @@ export function getMemberDependentDefaults(
     const siDep = member.socialInsuranceDependentDefault ?? true;
     return {
       dependentStatus: taxDep || siDep ? 'dependent' : 'none',
-      taxDependent: taxDep,
-      socialInsuranceDependent: siDep,
+      taxDependent: false,
+      socialInsuranceDependent: false,
     };
   }
   return {
@@ -49,7 +49,7 @@ export function allowsSocialInsuranceDependentDefault(member: FamilyMember): boo
   return member.socialInsuranceDependentDefault ?? true;
 }
 
-export function canConfigureDependentInQ2(member: FamilyMember): boolean {
+export function canConfigureDependentInQ7(member: FamilyMember): boolean {
   if (!usesQ1DependentDefaults(member)) return true;
   return allowsTaxDependentDefault(member) || allowsSocialInsuranceDependentDefault(member);
 }
@@ -61,34 +61,22 @@ export function clampPeriodDependentToMember(
 ): IncomePeriod {
   if (!usesQ1DependentDefaults(member)) return period;
 
-  const taxDependent = allowsTaxDependentDefault(member)
-    ? period.taxDependent
-    : false;
-  const socialInsuranceDependent = allowsSocialInsuranceDependentDefault(member)
-    ? period.socialInsuranceDependent
-    : false;
-  const dependentStatus: DependentStatus =
-    taxDependent || socialInsuranceDependent ? 'dependent' : 'none';
-
-  if (
-    period.dependentStatus === dependentStatus &&
-    period.taxDependent === taxDependent &&
-    period.socialInsuranceDependent === socialInsuranceDependent
-  ) {
-    return period;
+  if (!canConfigureDependentInQ7(member)) {
+    if (period.dependentStatus === 'none') return period;
+    return {
+      ...period,
+      dependentStatus: 'none',
+      taxDependent: false,
+      socialInsuranceDependent: false,
+    };
   }
 
-  return {
-    ...period,
-    dependentStatus,
-    taxDependent,
-    socialInsuranceDependent,
-  };
+  return period;
 }
 
-/** Q2で「扶養に入る」を選んだときの初期値（Q1連動） */
+/** Q7で「扶養に入る」を選んだときの初期値（Q1連動） */
 export function dependentFieldsForMemberSelection(
-  member: FamilyMember,
+  _member: FamilyMember,
   selectingDependent: boolean,
 ): Pick<IncomePeriod, 'dependentStatus' | 'taxDependent' | 'socialInsuranceDependent'> {
   if (!selectingDependent) {
@@ -98,13 +86,10 @@ export function dependentFieldsForMemberSelection(
       socialInsuranceDependent: false,
     };
   }
-  if (usesQ1DependentDefaults(member)) {
-    return getMemberDependentDefaults(member);
-  }
   return {
     dependentStatus: 'dependent',
-    taxDependent: true,
-    socialInsuranceDependent: true,
+    taxDependent: false,
+    socialInsuranceDependent: false,
   };
 }
 

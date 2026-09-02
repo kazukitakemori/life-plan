@@ -1,17 +1,19 @@
+import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcBirthYear,
   calcYearAtAge,
   getMemberAgeMonth,
+  isAgeCalendarMonthInRange,
 } from './birthDate';
-import { calcMonthlyEquivalentMan } from './livingAmount';
+import type { LivingExpenseItem } from '../types/living';
 import { getMemberTabLabel } from './memberDisplay';
 import {
-  resolveBonusStreamKey,
-  resolveOtherIncomeKey,
-  resolveSalaryStreamKey,
-  treatsPeriodAsBusinessIncome,
-  treatsPeriodAsSalaryIncome,
-} from './incomeBreakdown';
+  calcMonthlyIncomeBreakdown,
+  type EarnedIncomeCalcInput,
+  yearsElapsedSince,
+} from './memberEarnedIncome';
+
+export type { EarnedIncomeCalcInput };
 import type {
   CashFlowTableData,
   CashFlowYearRow,
@@ -19,16 +21,32 @@ import type {
   IncomeBreakdown,
 } from '../types/cashFlow';
 import {
+  addOtherLoanRepaymentDetail,
   addPensionBreakdown,
   createEmptyExpenseBreakdown,
   createEmptyIncomeBreakdown,
   createEmptyLifeEventExpenseDetail,
+  createEmptyHousingExpenseDetail,
+  createEmptyOtherLoanRepaymentDetail,
+  createEmptyVehicleExpenseDetail,
   createEmptyPensionBreakdown,
+  createEmptySavingsBreakdown,
+  createEmptyInvestBreakdown,
   roundPensionBreakdown,
+  roundSavingsBreakdown,
+  roundInvestBreakdown,
+  sumInvestPersonalContribution,
+  addInsuranceIncomeBreakdown,
+  roundInsuranceIncomeBreakdown,
+  addVehicleExpenseDetail,
   sumExpenseBreakdown,
+  sumHousingExpenseDetail,
   sumIncomeBreakdown,
   sumLifeEventExpenseDetail,
+  sumOtherInsurancePremiumDetail,
+  sumOtherLoanRepaymentDetail,
   sumPensionBreakdown,
+  sumVehicleExpenseDetail,
 } from '../types/cashFlow';
 import {
   calcMemberMonthlyPensionBreakdownMan,
@@ -40,11 +58,43 @@ import { calcMemberMonthlyEducationYen, yenToMan } from './educationCashFlow';
 import type { FamilyMember } from '../types/family';
 import type { EducationByMember } from '../types/education';
 import type { LifeEventState } from '../types/lifeEvent';
-import type { IncomeByMember, IncomeEntry, IncomePeriod } from '../types/income';
+import type { IncomeByMember, PriorYearIncomeByMember } from '../types/income';
+import type { VehicleState } from '../types/vehicle';
 import { calcHouseholdMonthlyLifeEventBreakdownMan } from './lifeEventCashFlow';
+import { calcHouseholdMonthlyHousingDetailMan, addHousingExpenseDetail, calcHouseholdMonthlyRentalOtherIncomeMan } from './housingCashFlow';
+import { calcHouseholdMonthlyVehicleDetailMan } from './vehicleCashFlow';
+import { calcHouseholdMonthlyOtherLoanDetailMan } from './loanCashFlow';
+import {
+  addInsuranceCashFlowDetail,
+  addInsuranceIncomeDetail,
+  calcHouseholdMonthlyInsuranceDetailMan,
+  calcHouseholdMonthlyInsuranceIncomeDetailMan,
+  createEmptyInsuranceCashFlowDetail,
+} from './insuranceCashFlow';
 import type { PensionByMember } from '../types/pension';
+import type { HousingState } from '../types/housing';
+import type { InsuranceState } from '../types/insurance';
+import type { LoanState } from '../types/loan';
+import type { SavingsState } from '../types/savings';
 import type { TaxSocialState } from '../types/taxSocial';
-import { calcHouseholdTaxSocialMan } from './taxCalculator';
+import { calcHouseholdTaxYearResult } from './householdTaxYear';
+import {
+  hasSavingsEntries,
+  projectSavingsForYear,
+} from './savingsCashFlow';
+import {
+  calcHouseholdSelectiveDcManForYear,
+  reclassifySalaryForSelectiveDc,
+} from './dcContribution';
+import {
+  calcChildAllowancePaymentFromEntitlements,
+  calcHouseholdMonthlyChildAllowanceEntitlementMan,
+} from './childAllowance';
+import {
+  resolveLevyPaymentFactorForYear,
+  resolveSimulationMonthStart,
+} from './simulationTiming';
+import { buildMemberCashFlowYearSlices } from './memberCashFlowYear';
 import {
   HOUSEHOLD_LIVING_KEY,
   type LivingExpenseSchedule,
@@ -54,135 +104,18 @@ import {
 export interface CashFlowInput {
   familyMembers: FamilyMember[];
   incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: PriorYearIncomeByMember;
   livingState: LivingExpenseState;
+  housingState: HousingState;
+  vehicleState?: VehicleState;
+  loanState?: LoanState;
+  insuranceState?: InsuranceState;
+  savingsState?: SavingsState;
   educationByMember: EducationByMember;
   lifeEventState: LifeEventState;
   pensionByMember: PensionByMember;
   taxSocialState: TaxSocialState;
   referenceDate: Date;
-}
-
-function ageMonthIndex(age: number, month: number): number {
-  return age * 12 + month;
-}
-
-function isInAgeMonthRange(
-  age: number,
-  month: number,
-  startAge: number,
-  startMonth: number,
-  endAge: number,
-  endMonth: number,
-): boolean {
-  const current = ageMonthIndex(age, month);
-  const start = ageMonthIndex(startAge, startMonth);
-  const end = ageMonthIndex(endAge, endMonth);
-  return current >= start && current <= end;
-}
-
-function yearsElapsedSince(
-  birthYear: number,
-  birthMonth: number,
-  fromAge: number,
-  fromMonth: number,
-  toYear: number,
-  toMonth: number,
-): number {
-  const fromCalYear = calcYearAtAge(birthYear, birthMonth, fromAge, fromMonth);
-  const months =
-    (toYear - fromCalYear) * 12 + (toMonth - fromMonth);
-  return Math.max(0, Math.floor(months / 12));
-}
-
-function getPeriodIncomeFactor(
-  period: IncomePeriod,
-  member: FamilyMember,
-  referenceDate: Date,
-  calendarYear: number,
-  calendarMonth: number,
-): number {
-  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
-  const ageMonth = getMemberAgeMonth(
-    member,
-    referenceDate,
-    calendarYear,
-    calendarMonth,
-  );
-  if (!ageMonth) return 0;
-  if (
-    !isInAgeMonthRange(
-      ageMonth.age,
-      ageMonth.month,
-      period.startAge,
-      period.startMonth,
-      period.endAge,
-      period.endMonth,
-    )
-  ) {
-    return 0;
-  }
-
-  const yearsElapsed = yearsElapsedSince(
-    birthYear,
-    member.birthMonth,
-    period.startAge,
-    period.startMonth,
-    calendarYear,
-    calendarMonth,
-  );
-
-  const increaseRate = period.annualIncreaseRate ?? 0;
-  return Math.pow(1 + increaseRate / 100, yearsElapsed);
-}
-
-function calcIncomeBreakdownManForMonth(
-  entry: IncomeEntry,
-  period: IncomePeriod,
-  member: FamilyMember,
-  referenceDate: Date,
-  calendarYear: number,
-  calendarMonth: number,
-): IncomeBreakdown {
-  const result = createEmptyIncomeBreakdown();
-  const factor = getPeriodIncomeFactor(
-    period,
-    member,
-    referenceDate,
-    calendarYear,
-    calendarMonth,
-  );
-  if (factor === 0) return result;
-
-  if (treatsPeriodAsSalaryIncome(entry.category, period.streamType)) {
-    const salaryKey = resolveSalaryStreamKey(period.streamType);
-    if (salaryKey) {
-      result.salary[salaryKey] += Math.max(0, period.monthlyAmountMan * factor);
-    }
-
-    const bonusKey = resolveBonusStreamKey(period.streamType);
-    if (bonusKey) {
-      for (const bonus of period.bonuses) {
-        if (bonus.paymentMonth === calendarMonth) {
-          result.bonus[bonusKey] += bonus.amountMan * factor;
-        }
-      }
-    }
-    return result;
-  }
-
-  const otherKey = resolveOtherIncomeKey(entry.category, period.streamType);
-  if (otherKey) {
-    let monthlyMan = period.monthlyAmountMan * factor;
-    if (
-      treatsPeriodAsBusinessIncome(entry.category, period.streamType) &&
-      entry.expenseManPerMonth != null
-    ) {
-      monthlyMan -= entry.expenseManPerMonth * factor;
-    }
-    result[otherKey] += Math.max(0, monthlyMan);
-  }
-
-  return result;
 }
 
 function addBreakdown(
@@ -200,7 +133,8 @@ function addBreakdown(
   target.businessCf += source.businessCf;
   target.realEstateCf += source.realEstateCf;
   addPensionBreakdown(target.pension, source.pension);
-  target.insurancePayout += source.insurancePayout;
+  addInsuranceIncomeBreakdown(target.insurance, source.insurance);
+  target.childAllowance += source.childAllowance ?? 0;
   target.transferCf += source.transferCf;
   target.taxFreeIncome += source.taxFreeIncome;
   target.otherIncome += source.otherIncome;
@@ -216,14 +150,44 @@ function getScheduleEnd(
   return { endAge: schedule.endAge, endMonth: schedule.endMonth };
 }
 
-function calcLivingManForMonth(
+function resolveLivingItemLabel(item: LivingExpenseItem): string {
+  const trimmed = item.label.trim();
+  return trimmed || '（無題）';
+}
+
+function calcLivingItemMonthlyEquivalentMan(item: LivingExpenseItem): number {
+  if (item.cycleInterval <= 0) return 0;
+  const months =
+    item.cycleUnit === 'year' ? item.cycleInterval * 12 : item.cycleInterval;
+  if (months <= 0) return 0;
+  return item.amountMan / months;
+}
+
+function addLivingByLabel(
+  target: Record<string, number>,
+  source: Record<string, number>,
+): void {
+  for (const [label, amount] of Object.entries(source)) {
+    target[label] = (target[label] ?? 0) + amount;
+  }
+}
+
+export interface LivingItemMonthlyAmount {
+  id: string;
+  targetId: string;
+  label: string;
+  amount: number;
+}
+
+function calcLivingItemsForMonth(
   schedule: LivingExpenseSchedule,
   member: FamilyMember,
-  livingState: LivingExpenseState,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
-): number {
+  targetId: string,
+): LivingItemMonthlyAmount[] {
+  const items: LivingItemMonthlyAmount[] = [];
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const ageMonth = getMemberAgeMonth(
     member,
@@ -231,20 +195,22 @@ function calcLivingManForMonth(
     calendarYear,
     calendarMonth,
   );
-  if (!ageMonth) return 0;
+  if (!ageMonth) return items;
 
   const { endAge, endMonth } = getScheduleEnd(schedule, member);
   if (
-    !isInAgeMonthRange(
+    !isAgeCalendarMonthInRange(
       ageMonth.age,
       ageMonth.month,
       schedule.startAge,
       schedule.startMonth,
       endAge,
       endMonth,
+      birthYear,
+      resolveMemberBirthMonth(member),
     )
   ) {
-    return 0;
+    return items;
   }
 
   const yearsElapsed = yearsElapsedSince(
@@ -256,11 +222,25 @@ function calcLivingManForMonth(
     calendarMonth,
   );
 
-  const baseMonthlyMan = calcMonthlyEquivalentMan(schedule.items);
-  const inflationFactor = Math.pow(
-    1 + livingState.inflationRate / 100,
-    yearsElapsed,
-  );
+  if (schedule.inputMode === 'simple') {
+    let itemFactor = 1;
+    if (schedule.simpleIncreaseRate != null) {
+      itemFactor = Math.pow(
+        1 + schedule.simpleIncreaseRate / 100,
+        yearsElapsed,
+      );
+    }
+    const monthly = schedule.simpleMonthlyExpenseMan * itemFactor;
+    if (monthly !== 0) {
+      items.push({
+        id: schedule.items[0]?.id ?? schedule.id,
+        targetId,
+        label: '生活費',
+        amount: monthly,
+      });
+    }
+    return items;
+  }
 
   let itemFactor = 1;
   const firstItem = schedule.items[0];
@@ -268,40 +248,146 @@ function calcLivingManForMonth(
     itemFactor = Math.pow(1 + firstItem.increaseRate / 100, yearsElapsed);
   }
 
-  return baseMonthlyMan * inflationFactor * itemFactor;
+  const billableItems =
+    schedule.inputMode === 'detail' &&
+    schedule.items.length > 1 &&
+    schedule.items[0]?.label.trim() === '生活費'
+      ? schedule.items.slice(1)
+      : schedule.items;
+  for (const item of billableItems) {
+    const monthly = calcLivingItemMonthlyEquivalentMan(item) * itemFactor;
+    if (monthly === 0) continue;
+    items.push({
+      id: item.id,
+      targetId,
+      label: resolveLivingItemLabel(item),
+      amount: monthly,
+    });
+  }
+  return items;
 }
 
-function calcMonthlyIncomeBreakdown(
-  input: CashFlowInput,
+function calcLivingDetailForMonth(
+  schedule: LivingExpenseSchedule,
+  member: FamilyMember,
+  referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
-): IncomeBreakdown {
-  const total = createEmptyIncomeBreakdown();
+): Record<string, number> {
+  const detail: Record<string, number> = {};
+  for (const item of calcLivingItemsForMonth(
+    schedule,
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+    '',
+  )) {
+    detail[item.label] = (detail[item.label] ?? 0) + item.amount;
+  }
+  return detail;
+}
 
-  for (const member of input.familyMembers) {
-    if (member.role === 'pet') continue;
-
-    const entries = input.incomeByMember[member.id] ?? [];
-    for (const entry of entries) {
-      if (entry.spouseContingencyOnly) continue;
-      for (const period of entry.periods) {
-        addBreakdown(
-          total,
-          calcIncomeBreakdownManForMonth(
-            entry,
-            period,
-            member,
-            input.referenceDate,
-            calendarYear,
-            calendarMonth,
-          ),
-        );
+function collectExpenseLivingItems(
+  livingState: LivingExpenseState,
+): { key: string; label: string }[] {
+  const seen = new Set<string>();
+  const items: { key: string; label: string }[] = [];
+  for (const schedules of Object.values(livingState.byTarget)) {
+    for (const schedule of schedules) {
+      if (schedule.inputMode === 'simple') {
+        if (!seen.has('生活費')) {
+          seen.add('生活費');
+          items.push({ key: '生活費', label: '生活費' });
+        }
+        continue;
+      }
+      const billableItems =
+        schedule.items.length > 1 &&
+        schedule.items[0]?.label.trim() === '生活費'
+          ? schedule.items.slice(1)
+          : schedule.items;
+      for (const item of billableItems) {
+        const label = resolveLivingItemLabel(item);
+        if (seen.has(label)) continue;
+        seen.add(label);
+        items.push({ key: label, label });
       }
     }
   }
-
-  return total;
+  return items;
 }
+
+export function calcMonthlyLivingItemsMan(
+  input: CashFlowInput,
+  calendarYear: number,
+  calendarMonth: number,
+): LivingItemMonthlyAmount[] {
+  const items: LivingItemMonthlyAmount[] = [];
+
+  for (const [targetId, schedules] of Object.entries(
+    input.livingState.byTarget,
+  )) {
+    const member =
+      targetId === HOUSEHOLD_LIVING_KEY
+        ? input.familyMembers.find((m) => m.role === 'head')
+        : input.familyMembers.find((m) => m.id === targetId);
+
+    if (!member) continue;
+
+    for (const schedule of schedules) {
+      items.push(
+        ...calcLivingItemsForMonth(
+          schedule,
+          member,
+          input.referenceDate,
+          calendarYear,
+          calendarMonth,
+          targetId,
+        ),
+      );
+    }
+  }
+
+  return items;
+}
+
+export function calcMonthlyLivingDetailMan(
+  input: CashFlowInput,
+  calendarYear: number,
+  calendarMonth: number,
+): Record<string, number> {
+  const detail: Record<string, number> = {};
+
+  for (const [targetId, schedules] of Object.entries(
+    input.livingState.byTarget,
+  )) {
+    const member =
+      targetId === HOUSEHOLD_LIVING_KEY
+        ? input.familyMembers.find((m) => m.role === 'head')
+        : input.familyMembers.find((m) => m.id === targetId);
+
+    if (!member) continue;
+
+    for (const schedule of schedules) {
+      addLivingByLabel(
+        detail,
+        calcLivingDetailForMonth(
+          schedule,
+          member,
+          input.referenceDate,
+          calendarYear,
+          calendarMonth,
+        ),
+      );
+    }
+  }
+
+  return detail;
+}
+
+/** Q7の就労・給付等（公的年金・保険の受取は含まない） */
+export { calcMonthlyIncomeBreakdown as calcMonthlyEarnedIncomeBreakdown } from './memberEarnedIncome';
 
 function calcMonthlyIncomeBreakdownWithPension(
   input: CashFlowInput,
@@ -317,38 +403,6 @@ function calcMonthlyIncomeBreakdownWithPension(
   return total;
 }
 
-function calcMonthlyLivingMan(
-  input: CashFlowInput,
-  calendarYear: number,
-  calendarMonth: number,
-): number {
-  let total = 0;
-
-  for (const [targetId, schedules] of Object.entries(
-    input.livingState.byTarget,
-  )) {
-    const member =
-      targetId === HOUSEHOLD_LIVING_KEY
-        ? input.familyMembers.find((m) => m.role === 'head')
-        : input.familyMembers.find((m) => m.id === targetId);
-
-    if (!member) continue;
-
-    for (const schedule of schedules) {
-      total += calcLivingManForMonth(
-        schedule,
-        member,
-        input.livingState,
-        input.referenceDate,
-        calendarYear,
-        calendarMonth,
-      );
-    }
-  }
-
-  return total;
-}
-
 function roundMan(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -356,20 +410,19 @@ function roundMan(value: number): number {
 export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
   const head = input.familyMembers.find((m) => m.role === 'head');
   if (!head) {
-    return {
-      startYear: 0,
-      endYear: 0,
-      memberAgeRows: [],
-      expenseEducationMembers: [],
-      years: [],
-    };
+    return createEmptyCashFlowTableData();
   }
 
   const birthYear = calcBirthYear(head.age, head.birthMonth, input.referenceDate);
   const startYear = input.referenceDate.getFullYear();
+  const simulationMonthStart = resolveSimulationMonthStart(
+    head,
+    input.incomeByMember,
+    input.referenceDate,
+  );
   const endYear = calcYearAtAge(
     birthYear,
-    head.birthMonth,
+    resolveMemberBirthMonth(head),
     head.expectedLifespan,
     12,
   );
@@ -380,6 +433,7 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
     label: getMemberTabLabel(member),
   }));
   const expenseMemberIds = expenseEducationMembers.map((row) => row.memberId);
+  const expenseLivingItems = collectExpenseLivingItems(input.livingState);
   const memberAgeRows = displayMembers.map((member) => {
     const agesByYear: Record<number, number | null> = {};
     for (let year = startYear; year <= endYear; year++) {
@@ -400,6 +454,11 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
 
   const years: CashFlowYearRow[] = [];
   let financialAssets = 0;
+  let savingsAccountBalances: Record<string, number> = {};
+  let savingsInvestPrincipals: Record<string, number> = {};
+  let savingsResidualCash = 0;
+  let savingsInitialized = false;
+  const useSavingsProjection = hasSavingsEntries(input.savingsState);
   let entitlementPreviousYearDecember =
     createEmptyPensionBreakdown();
 
@@ -407,15 +466,27 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
     const incomeBreakdown = createEmptyIncomeBreakdown();
     const expenseBreakdown: ExpenseBreakdown =
       createEmptyExpenseBreakdown(expenseMemberIds);
-    let annualLiving = 0;
     let annualMedicalCare = 0;
+    const annualLivingByLabel: Record<string, number> = {};
+    const annualOtherLoanDetail = createEmptyOtherLoanRepaymentDetail();
     const annualLifeEventDetail = createEmptyLifeEventExpenseDetail();
+    const annualHousingDetail = createEmptyHousingExpenseDetail();
+    const annualVehicleDetail = createEmptyVehicleExpenseDetail();
+    const annualInsuranceDetail = createEmptyInsuranceCashFlowDetail();
 
-    const monthStart = year === startYear ? input.referenceDate.getMonth() + 1 : 1;
+    const monthStart = year === startYear ? simulationMonthStart : 1;
     const monthEnd = 12;
 
     const entitlementsByMonth: IncomeBreakdown['pension'][] = [];
     entitlementsByMonth[0] = entitlementPreviousYearDecember;
+    const childAllowanceEntitlementsByMonth: number[] = [];
+    childAllowanceEntitlementsByMonth[0] =
+      calcHouseholdMonthlyChildAllowanceEntitlementMan(
+        input.familyMembers,
+        input.referenceDate,
+        year - 1,
+        12,
+      );
 
     for (let month = 1; month <= 12; month++) {
       entitlementsByMonth[month] = calcMonthlyPensionEntitlementBreakdownMan(
@@ -426,6 +497,13 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         year,
         month,
       );
+      childAllowanceEntitlementsByMonth[month] =
+        calcHouseholdMonthlyChildAllowanceEntitlementMan(
+          input.familyMembers,
+          input.referenceDate,
+          year,
+          month,
+        );
     }
 
     // ── メンバー別年間年金受給額（税計算用）────────────────────────────────
@@ -487,7 +565,10 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
           pensionPayment,
         ),
       );
-      annualLiving += calcMonthlyLivingMan(input, year, month);
+      addLivingByLabel(
+        annualLivingByLabel,
+        calcMonthlyLivingDetailMan(input, year, month),
+      );
 
       const lifeEventBreakdown = calcHouseholdMonthlyLifeEventBreakdownMan(
         input.familyMembers,
@@ -499,8 +580,85 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
       annualLifeEventDetail.travel += lifeEventBreakdown.detail.travel;
       annualLifeEventDetail.appliance += lifeEventBreakdown.detail.appliance;
       annualLifeEventDetail.celebration += lifeEventBreakdown.detail.celebration;
+      annualLifeEventDetail.medical += lifeEventBreakdown.detail.medical;
+      annualLifeEventDetail.nursing += lifeEventBreakdown.detail.nursing;
       annualLifeEventDetail.other += lifeEventBreakdown.detail.other;
       annualMedicalCare += lifeEventBreakdown.medicalCare;
+
+      if (input.vehicleState) {
+        addVehicleExpenseDetail(
+          annualVehicleDetail,
+          calcHouseholdMonthlyVehicleDetailMan(
+            input.familyMembers,
+            input.vehicleState,
+            input.referenceDate,
+            year,
+            month,
+            input.loanState,
+          ),
+        );
+      }
+
+      const monthlyHousingDetail = calcHouseholdMonthlyHousingDetailMan(
+        input.familyMembers,
+        input.housingState,
+        input.referenceDate,
+        year,
+        month,
+        input.loanState,
+      );
+      addHousingExpenseDetail(annualHousingDetail, monthlyHousingDetail);
+
+      addOtherLoanRepaymentDetail(
+        annualOtherLoanDetail,
+        calcHouseholdMonthlyOtherLoanDetailMan(
+          input.loanState,
+          input.referenceDate,
+          year,
+          month,
+        ),
+      );
+
+      if (input.insuranceState) {
+        addInsuranceCashFlowDetail(
+          annualInsuranceDetail,
+          calcHouseholdMonthlyInsuranceDetailMan(
+            input.familyMembers,
+            input.insuranceState,
+            input.housingState,
+            input.vehicleState ?? { byMember: {} },
+            input.referenceDate,
+            year,
+            month,
+          ),
+        );
+        const monthlyInsuranceIncome =
+          calcHouseholdMonthlyInsuranceIncomeDetailMan(
+            input.familyMembers,
+            input.insuranceState,
+            input.referenceDate,
+            year,
+            month,
+          );
+        addInsuranceIncomeDetail(
+          incomeBreakdown.insurance,
+          monthlyInsuranceIncome,
+        );
+      }
+
+      incomeBreakdown.otherIncome += calcHouseholdMonthlyRentalOtherIncomeMan(
+        input.familyMembers,
+        input.housingState,
+        input.referenceDate,
+        year,
+        month,
+      );
+
+      incomeBreakdown.childAllowance += calcChildAllowancePaymentFromEntitlements(
+        month,
+        childAllowanceEntitlementsByMonth[month - 1] ?? 0,
+        childAllowanceEntitlementsByMonth[month - 2] ?? 0,
+      );
 
       for (const member of displayMembers) {
         const entries = input.educationByMember[member.id] ?? [];
@@ -515,17 +673,111 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
       }
     }
 
-    expenseBreakdown.living = roundMan(annualLiving);
+    const roundedLivingByLabel: Record<string, number> = {};
+    for (const item of expenseLivingItems) {
+      roundedLivingByLabel[item.key] = roundMan(
+        annualLivingByLabel[item.key] ?? 0,
+      );
+    }
+    for (const [label, amount] of Object.entries(annualLivingByLabel)) {
+      if (label in roundedLivingByLabel) continue;
+      roundedLivingByLabel[label] = roundMan(amount);
+    }
+    expenseBreakdown.livingByLabel = roundedLivingByLabel;
+    expenseBreakdown.living = roundMan(
+      Object.values(roundedLivingByLabel).reduce((sum, value) => sum + value, 0),
+    );
+    expenseBreakdown.housingDetail = {
+      purchaseInitial: roundMan(annualHousingDetail.purchaseInitial),
+      rentalInitialCost: roundMan(annualHousingDetail.rentalInitialCost),
+      rentalMoveOutCost: roundMan(annualHousingDetail.rentalMoveOutCost),
+      monthlyCost: roundMan(annualHousingDetail.monthlyCost),
+      renewalCost: roundMan(annualHousingDetail.renewalCost),
+      managementFee: roundMan(annualHousingDetail.managementFee),
+      repairReserve: roundMan(annualHousingDetail.repairReserve),
+      selfRepairCost: roundMan(annualHousingDetail.selfRepairCost),
+      improvementCost: roundMan(annualHousingDetail.improvementCost),
+      taxDetail: {
+        realEstateAcquisition: roundMan(
+          annualHousingDetail.taxDetail.realEstateAcquisition,
+        ),
+        fixedAsset: roundMan(annualHousingDetail.taxDetail.fixedAsset),
+        cityPlanning: roundMan(annualHousingDetail.taxDetail.cityPlanning),
+      },
+      loanRepaymentDetail: {
+        principal: roundMan(annualHousingDetail.loanRepaymentDetail.principal),
+        interest: roundMan(annualHousingDetail.loanRepaymentDetail.interest),
+        fees: roundMan(annualHousingDetail.loanRepaymentDetail.fees),
+        groupCreditLife: roundMan(
+          annualHousingDetail.loanRepaymentDetail.groupCreditLife,
+        ),
+      },
+      rentalInsurancePremium: roundMan(
+        annualHousingDetail.rentalInsurancePremium +
+          annualInsuranceDetail.rentalInsurancePremium,
+      ),
+      ownedInsurancePremium: roundMan(
+        annualHousingDetail.ownedInsurancePremium +
+          annualInsuranceDetail.ownedInsurancePremium,
+      ),
+      simpleMonthlyCost: roundMan(annualHousingDetail.simpleMonthlyCost),
+    };
+    expenseBreakdown.housing = roundMan(
+      sumHousingExpenseDetail(expenseBreakdown.housingDetail),
+    );
+    expenseBreakdown.vehicleDetail = {
+      purchase: roundMan(annualVehicleDetail.purchase),
+      maintenance: roundMan(annualVehicleDetail.maintenance),
+      loanRepayment: roundMan(annualVehicleDetail.loanRepayment),
+      insurance: roundMan(
+        annualVehicleDetail.insurance + annualInsuranceDetail.vehicleInsurance,
+      ),
+    };
+    expenseBreakdown.vehicle = roundMan(
+      sumVehicleExpenseDetail(expenseBreakdown.vehicleDetail),
+    );
     expenseBreakdown.lifeEventDetail = {
       travel: roundMan(annualLifeEventDetail.travel),
       appliance: roundMan(annualLifeEventDetail.appliance),
       celebration: roundMan(annualLifeEventDetail.celebration),
+      medical: roundMan(annualLifeEventDetail.medical),
+      nursing: roundMan(annualLifeEventDetail.nursing),
       other: roundMan(annualLifeEventDetail.other),
     };
     expenseBreakdown.lifeEvent = roundMan(
       sumLifeEventExpenseDetail(expenseBreakdown.lifeEventDetail),
     );
+    // タイムライン等の互換用（支出合計には含めない。ライフイベントに内包）
     expenseBreakdown.medicalCare = roundMan(annualMedicalCare);
+    expenseBreakdown.loanRepaymentDetail = {
+      housing: roundMan(annualOtherLoanDetail.housing),
+      vehicle: roundMan(annualOtherLoanDetail.vehicle),
+      education: roundMan(annualOtherLoanDetail.education),
+      free: roundMan(annualOtherLoanDetail.free),
+    };
+    expenseBreakdown.loanRepayment = roundMan(
+      sumOtherLoanRepaymentDetail(expenseBreakdown.loanRepaymentDetail),
+    );
+    expenseBreakdown.insuranceOtherDetail = {
+      nonlife_other: roundMan(
+        annualInsuranceDetail.insuranceOtherDetail.nonlife_other,
+      ),
+      life: roundMan(annualInsuranceDetail.insuranceOtherDetail.life),
+      medical: roundMan(annualInsuranceDetail.insuranceOtherDetail.medical),
+      cancer: roundMan(annualInsuranceDetail.insuranceOtherDetail.cancer),
+      education: roundMan(
+        annualInsuranceDetail.insuranceOtherDetail.education,
+      ),
+      personal_pension: roundMan(
+        annualInsuranceDetail.insuranceOtherDetail.personal_pension,
+      ),
+      life_other: roundMan(
+        annualInsuranceDetail.insuranceOtherDetail.life_other,
+      ),
+    };
+    expenseBreakdown.insuranceOther = roundMan(
+      sumOtherInsurancePremiumDetail(expenseBreakdown.insuranceOtherDetail),
+    );
     for (const memberId of expenseMemberIds) {
       expenseBreakdown.educationByMember[memberId] = roundMan(
         expenseBreakdown.educationByMember[memberId],
@@ -534,6 +786,23 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
 
     entitlementPreviousYearDecember =
       entitlementsByMonth[12] ?? createEmptyPensionBreakdown();
+
+    if (input.savingsState) {
+      const selectiveDcMan = calcHouseholdSelectiveDcManForYear({
+        savingsState: input.savingsState,
+        familyMembers: input.familyMembers,
+        referenceDate: input.referenceDate,
+        calendarYear: year,
+        monthStart,
+        monthEnd,
+      });
+      if (selectiveDcMan > 0) {
+        incomeBreakdown.salary = reclassifySalaryForSelectiveDc(
+          incomeBreakdown.salary,
+          selectiveDcMan,
+        );
+      }
+    }
 
     const roundedBreakdown: IncomeBreakdown = {
       salary: {
@@ -551,36 +820,111 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
       businessCf: roundMan(incomeBreakdown.businessCf),
       realEstateCf: roundMan(incomeBreakdown.realEstateCf),
       pension: roundPensionBreakdown(incomeBreakdown.pension, roundMan),
-      insurancePayout: roundMan(incomeBreakdown.insurancePayout),
+      insurance: roundInsuranceIncomeBreakdown(
+        incomeBreakdown.insurance,
+        roundMan,
+      ),
+      childAllowance: roundMan(incomeBreakdown.childAllowance),
       transferCf: roundMan(incomeBreakdown.transferCf),
       taxFreeIncome: roundMan(incomeBreakdown.taxFreeIncome),
       otherIncome: roundMan(incomeBreakdown.otherIncome),
     };
 
     const annualIncome = roundMan(sumIncomeBreakdown(roundedBreakdown));
-    const taxBreakdown = calcHouseholdTaxSocialMan({
+    const levyPaymentFactor = resolveLevyPaymentFactorForYear({
+      calendarYear: year,
+      startYear,
+      head,
+      incomeByMember: input.incomeByMember,
+      referenceDate: input.referenceDate,
+    });
+    const taxYear = calcHouseholdTaxYearResult({
       familyMembers: input.familyMembers,
       incomeByMember: input.incomeByMember,
+      priorYearIncomeByMember: input.priorYearIncomeByMember,
       referenceDate: input.referenceDate,
       calendarYear: year,
       monthStart,
       monthEnd,
+      levyPaymentFactor,
       annualPensionManByMember: memberAnnualPensionMan,
+      pensionByMember: input.pensionByMember,
+      simulationStartYear: startYear,
+      housingState: input.housingState,
+      loanState: input.loanState,
+      insuranceState: input.insuranceState,
+      vehicleState: input.vehicleState,
+      savingsState: input.savingsState,
     });
+    const taxBreakdown = taxYear.household;
     const taxSocial = taxBreakdown.totalMan;
     const disposableIncome = roundMan(annualIncome - taxSocial);
-    const annualExpenditure = roundMan(sumExpenseBreakdown(expenseBreakdown));
-    const annualBalance = roundMan(disposableIncome - annualExpenditure);
-    const savings = annualBalance;
-    financialAssets += savings;
+    /** 生活・住居など消費支出（運用積立を含まない） */
+    const consumptionExpenditure = roundMan(sumExpenseBreakdown(expenseBreakdown));
+    /** 貯蓄投影の原資。家計負担の運用積立は投影内で差し引く */
+    const preInvestSurplus = roundMan(disposableIncome - consumptionExpenditure);
+    let savings = preInvestSurplus;
+    let savingsBreakdown = createEmptySavingsBreakdown();
+    let invest = 0;
+    let investBreakdown = createEmptyInvestBreakdown();
+    let investContribution = 0;
+    let annualBalance = preInvestSurplus;
+    let expenditure = consumptionExpenditure;
+    if (useSavingsProjection && input.savingsState) {
+      const projected = projectSavingsForYear({
+        savingsState: input.savingsState,
+        familyMembers: input.familyMembers,
+        referenceDate: input.referenceDate,
+        calendarYear: year,
+        monthStart,
+        monthEnd,
+        accountBalances: savingsAccountBalances,
+        investPrincipalByEntry: savingsInvestPrincipals,
+        residualCash: savingsResidualCash,
+        annualBalance: preInvestSurplus,
+        initialize: !savingsInitialized,
+      });
+      savingsInitialized = true;
+      savingsAccountBalances = projected.accountBalances;
+      savingsInvestPrincipals = projected.investPrincipalByEntry;
+      savingsResidualCash = projected.residualCash;
+      savings = roundMan(projected.savingsMan);
+      savingsBreakdown = roundSavingsBreakdown(
+        projected.savingsBreakdown,
+        roundMan,
+      );
+      invest = roundMan(projected.investMan);
+      investBreakdown = roundInvestBreakdown(
+        projected.investBreakdown,
+        roundMan,
+      );
+      investContribution = roundMan(
+        sumInvestPersonalContribution(investBreakdown),
+      );
+      expenditure = roundMan(consumptionExpenditure + investContribution);
+      annualBalance = roundMan(preInvestSurplus - investContribution);
+      financialAssets = roundMan(projected.financialAssets);
+    } else {
+      // 口座未登録時は年間収支の累積を普通預金残高（ストック）として計上
+      financialAssets += preInvestSurplus;
+      savings = roundMan(financialAssets);
+      savingsBreakdown = {
+        deposit: savings,
+        timeDeposit: 0,
+        savingsOther: 0,
+      };
+    }
 
     const taxSocialBreakdown = {
       incomeTax: roundMan(taxBreakdown.incomeTaxMan),
       residentTax: roundMan(taxBreakdown.residentTaxMan),
+      giftTax: roundMan(taxBreakdown.giftTaxMan ?? 0),
       socialInsuranceDetail: {
-        healthInsurance: roundMan(taxBreakdown.socialInsurance.healthInsurance),
+        healthInsurance: roundMan(
+          taxBreakdown.socialInsurance.healthInsurance +
+            taxBreakdown.socialInsurance.longTermCare,
+        ),
         employeesPension: roundMan(taxBreakdown.socialInsurance.employeesPension),
-        longTermCare: roundMan(taxBreakdown.socialInsurance.longTermCare),
         employmentInsurance: roundMan(
           taxBreakdown.socialInsurance.employmentInsurance,
         ),
@@ -590,11 +934,9 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         nationalHealthInsurance: roundMan(
           taxBreakdown.publicInsurance.nationalHealthInsurance,
         ),
+        longTermCare: roundMan(taxBreakdown.publicInsurance.longTermCare),
         lateElderlyHealth: roundMan(
           taxBreakdown.publicInsurance.lateElderlyHealth,
-        ),
-        lateElderlyLongTermCare: roundMan(
-          taxBreakdown.publicInsurance.lateElderlyLongTermCare,
         ),
       },
     };
@@ -606,20 +948,56 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
       taxSocial: roundMan(taxSocial),
       taxSocialBreakdown,
       disposableIncome,
-      expenditure: annualExpenditure,
+      expenditure,
       expenseBreakdown,
       annualBalance,
       savings,
+      savingsBreakdown,
+      invest,
+      investBreakdown,
+      investContribution,
       financialAssets: roundMan(financialAssets),
+      simulationMonthStart: monthStart,
+      simulationMonthEnd: monthEnd,
+      levyPaymentFactor,
+      memberTaxBreakdownByMemberId: taxYear.memberBreakdownByMemberId,
+      memberYearByMemberId: buildMemberCashFlowYearSlices({
+        familyMembers: input.familyMembers,
+        incomeByMember: input.incomeByMember,
+        pensionByMember: input.pensionByMember,
+        insuranceState: input.insuranceState,
+        savingsState: input.savingsState,
+        referenceDate: input.referenceDate,
+        calendarYear: year,
+        monthStart,
+        monthEnd,
+        levyPaymentFactor,
+        householdEntitlementsByMonth: entitlementsByMonth,
+        memberTaxBreakdownByMemberId: taxYear.memberBreakdownByMemberId,
+      }),
     });
   }
 
   return {
     startYear,
     endYear,
+    simulationMonthStart,
     memberAgeRows,
     expenseEducationMembers,
+    expenseLivingItems,
     years,
+  };
+}
+
+export function createEmptyCashFlowTableData(): CashFlowTableData {
+  return {
+    startYear: 0,
+    endYear: 0,
+    simulationMonthStart: 1,
+    memberAgeRows: [],
+    expenseEducationMembers: [],
+    expenseLivingItems: [],
+    years: [],
   };
 }
 
@@ -627,7 +1005,8 @@ export function formatCashFlowValue(
   value: number,
   options?: { emptyAsDash?: boolean },
 ): string {
-  if (value === 0 && options?.emptyAsDash) return '-';
-  if (value === 0) return '0';
-  return value.toFixed(1);
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  if (amount === 0 && options?.emptyAsDash) return '-';
+  if (amount === 0) return '0';
+  return amount.toFixed(1);
 }

@@ -1,0 +1,206 @@
+{
+  "start": 2026,
+  "simMonth": 9,
+  "rows": [
+    {
+      "year": 2026,
+      "phase": "simulation_start",
+      "factor": 0.3333333333333333,
+      "income": 320,
+      "taxSocial": 76.7,
+      "keys": [
+        "incomeTax",
+        "residentTax",
+        "giftTax",
+        "socialInsuranceDetail",
+        "publicInsuranceDetail"
+      ],
+      "h": {
+        "incomeTax": 8.6,
+        "residentTax": 19.7,
+        "giftTax": 0,
+        "socialInsuranceDetail": {
+          "healthInsurance": 17.5,
+          "employeesPension": 29.3,
+          "employmentInsurance": 1.6
+        },
+        "publicInsuranceDetail": {
+          "nationalPension": 0,
+          "nationalHealthInsurance": 0,
+          "longTermCare": 0,
+          "lateElderlyHealth": 0
+        }
+      }
+    },
+    {
+      "year": 2027,
+      "phase": "simulation_start_next",
+      "factor": 1,
+      "income": 960,
+      "taxSocial": 215.7,
+      "keys": [
+        "incomeTax",
+        "residentTax",
+        "giftTax",
+        "socialInsuranceDetail",
+        "publicInsuranceDetail"
+      ],
+      "h": {
+        "incomeTax": 25.7,
+        "residentTax": 44.9,
+        "giftTax": 0,
+        "socialInsuranceDetail": {
+          "healthInsurance": 52.5,
+          "employeesPension": 87.8,
+          "employmentInsurance": 4.8
+        },
+        "publicInsuranceDetail": {
+          "nationalPension": 0,
+          "nationalHealthInsurance": 0,
+          "longTermCare": 0,
+          "lateElderlyHealth": 0
+        }
+      }
+    },
+    {
+      "year": 2028,
+      "phase": "subsequent",
+      "factor": 1,
+      "income": 960,
+      "taxSocial": 220.1,
+      "keys": [
+        "incomeTax",
+        "residentTax",
+        "giftTax",
+        "socialInsuranceDetail",
+        "publicInsuranceDetail"
+      ],
+      "h": {
+        "incomeTax": 25.2,
+        "residentTax": 44.9,
+        "giftTax": 0,
+        "socialInsuranceDetail": {
+          "healthInsurance": 57.4,
+          "employeesPension": 87.8,
+          "employmentInsurance": 4.8
+        },
+        "publicInsuranceDetail": {
+          "nationalPension": 0,
+          "nationalHealthInsurance": 0,
+          "longTermCare": 0,
+          "lateElderlyHealth": 0
+        }
+      }
+    },
+    {
+      "year": 2029,
+      "phase": "subsequent",
+      "factor": 1,
+      "income": 960,
+      "taxSocial": 219.6,
+      "keys": [
+        "incomeTax",
+        "residentTax",
+        "giftTax",
+        "socialInsuranceDetail",
+        "publicInsuranceDetail"
+      ],
+      "h": {
+        "incomeTax": 25.2,
+        "residentTax": 44.4,
+        "giftTax": 0,
+        "socialInsuranceDetail": {
+          "healthInsurance": 57.4,
+          "employeesPension": 87.8,
+          "employmentInsurance": 4.8
+        },
+        "publicInsuranceDetail": {
+          "nationalPension": 0,
+          "nationalHealthInsurance": 0,
+          "longTermCare": 0,
+          "lateElderlyHealth": 0
+        }
+      }
+    }
+  ],
+  "memberRows": [
+    {
+      "year": 2026,
+      "id": "head",
+      "itCfYen": 22000,
+      "rtYen": 196700,
+      "rtCfYen": 66000,
+      "rtGross": 3600000,
+      "rtRefYear": 2025,
+      "rtAnnualBasis": true,
+      "itSiDeduct": 562680,
+      "rtSiDeduct": 18000,
+      "empSiYen": 187560
+    },
+    {
+      "year": 2026,
+      "id": "spouse",
+      "itCfYen": 64000,
+      "rtYen": 392500,
+      "rtCfYen": 131000,
+      "rtGross": 6000000,
+      "rtRefYear": 2025,
+      "rtAnnualBasis": true,
+      "itSiDeduct": 889200,
+      "rtSiDeduct": 30000,
+      "empSiYen": 296400
+    },
+    {
+      "year": 2027,
+      "id": "head",
+      "itCfYen": 65000,
+      "rtYen": 142232,
+      "rtCfYen": 142000,
+      "rtGross": 3600000,
+      "rtRefYear": 2026,
+      "rtAnnualBasis": true,
+      "itSiDeduct": 562680,
+      "rtSiDeduct": 562680,
+      "empSiYen": 562680
+    },
+    {
+      "year": 2027,
+      "id": "spouse",
+      "itCfYen": 192000,
+      "rtYen": 306580,
+      "rtCfYen": 307000,
+      "rtGross": 6000000,
+      "rtRefYear": 2026,
+      "rtAnnualBasis": true,
+      "itSiDeduct": 889200,
+      "rtSiDeduct": 889200,
+      "empSiYen": 889200
+    },
+    {
+      "year": 2028,
+      "id": "head",
+      "itCfYen": 65000,
+      "rtYen": 142232,
+      "rtCfYen": 142000,
+      "rtGross": 3600000,
+      "rtRefYear": 2027,
+      "rtAnnualBasis": false,
+      "itSiDeduct": 562680,
+      "rtSiDeduct": 562680,
+      "empSiYen": 562680
+    },
+    {
+      "year": 2028,
+      "id": "spouse",
+      "itCfYen": 187000,
+      "rtYen": 306580,
+      "rtCfYen": 307000,
+      "rtGross": 6000000,
+      "rtRefYear": 2027,
+      "rtAnnualBasis": false,
+      "itSiDeduct": 937800,
+      "rtSiDeduct": 889200,
+      "empSiYen": 937800
+    }
+  ]
+}

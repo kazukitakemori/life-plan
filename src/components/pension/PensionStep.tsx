@@ -2,22 +2,28 @@ import { useMemo, useState } from 'react';
 import { createDefaultPensionMemberState } from '../../lib/pensionDefaults';
 import { getIncomeEligibleMembers, getMemberTabLabel } from '../../lib/memberDisplay';
 import type { FamilyMember } from '../../types/family';
+import type { IncomeByMember } from '../../types/income';
 import type { PensionByMember } from '../../types/pension';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { PensionBenefitEstimatePanel } from './PensionBenefitEstimatePanel';
 import { PublicPensionSection } from './PublicPensionSection';
 
 interface PensionStepProps {
   members: FamilyMember[];
   pensionByMember: PensionByMember;
+  incomeByMember: IncomeByMember;
   referenceDate: Date;
   onChange: (pension: PensionByMember) => void;
+  purposeNote?: string;
 }
 
 export function PensionStep({
   members,
   pensionByMember,
+  incomeByMember,
   referenceDate,
   onChange,
+  purposeNote,
 }: PensionStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -36,6 +42,7 @@ export function PensionStep({
   const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
   const memberState =
     pensionByMember[resolvedActiveId] ?? createDefaultPensionMemberState();
+  const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
 
   const updateMemberState = (
     memberId: string,
@@ -93,6 +100,12 @@ export function PensionStep({
         </div>
       </div>
 
+      {purposeNote ? (
+        <p className="purpose-input-note" role="note">
+          {purposeNote}
+        </p>
+      ) : null}
+
       <MemberIncomeTabs
         members={eligibleMembers}
         activeMemberId={resolvedActiveId}
@@ -109,6 +122,13 @@ export function PensionStep({
         referenceDate={referenceDate}
         memberState={memberState}
         onChange={(state) => updateMemberState(resolvedActiveId, state)}
+      />
+
+      <PensionBenefitEstimatePanel
+        member={activeMember}
+        memberState={memberState}
+        incomeEntries={incomeEntries}
+        referenceDate={referenceDate}
       />
     </div>
   );

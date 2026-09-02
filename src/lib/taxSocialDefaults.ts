@@ -1,5 +1,6 @@
 import { DEFAULT_PREFECTURE_CODE } from '../data/fukuokaMunicipalities';
 import { normalizePrefectureCode } from './taxSocialRegions';
+import { resolveDefaultStartAgeMonth } from './simulationTiming';
 import type { ResidencePeriod, TaxSocialState } from '../types/taxSocial';
 
 function createId(): string {
@@ -7,24 +8,26 @@ function createId(): string {
 }
 
 export function createResidencePeriod(
-  headAge: number,
+  headAge: number | null | undefined,
   referenceMonth: number,
   overrides: Partial<ResidencePeriod> = {},
 ): ResidencePeriod {
   const prefectureCode = normalizePrefectureCode(
     overrides.prefectureCode ?? DEFAULT_PREFECTURE_CODE,
   );
+  const ageForStart = headAge ?? 0;
+  const defaultStart = resolveDefaultStartAgeMonth(ageForStart, referenceMonth);
 
   return {
     id: overrides.id ?? createId(),
-    startAge: overrides.startAge ?? headAge,
-    startMonth: overrides.startMonth ?? referenceMonth,
+    startAge: overrides.startAge ?? defaultStart.startAge,
+    startMonth: overrides.startMonth ?? defaultStart.startMonth,
     prefectureCode,
   };
 }
 
 export function createDefaultTaxSocialState(
-  headAge: number,
+  headAge: number | null | undefined,
   referenceMonth: number,
 ): TaxSocialState {
   return {
@@ -44,6 +47,7 @@ export function createFollowUpResidencePeriod(
   });
 }
 
-export function getResidenceAgeOptions(headAge: number): number[] {
-  return Array.from({ length: 101 - headAge }, (_, index) => headAge + index);
+export function getResidenceAgeOptions(headAge: number | null | undefined): number[] {
+  const age = headAge ?? 0;
+  return Array.from({ length: 101 - age }, (_, index) => age + index);
 }

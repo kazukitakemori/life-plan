@@ -1,3 +1,4 @@
+import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
 import { calcBirthYear, calcMonthsFromBirth, calcYearAtAge } from './birthDate';
 import type { FamilyMember } from '../types/family';
 import type { EducationExpenseEntry } from '../types/education';
@@ -25,6 +26,8 @@ export function getHeadAgeAtEducationStart(
     headMember.birthMonth,
     referenceDate,
   );
+  const memberBirthMonth = resolveMemberBirthMonth(member);
+  const headBirthMonth = resolveMemberBirthMonth(headMember);
   const memberBirthYear = calcBirthYear(
     member.age,
     member.birthMonth,
@@ -32,25 +35,25 @@ export function getHeadAgeAtEducationStart(
   );
   const targetYear = calcYearAtAge(
     memberBirthYear,
-    member.birthMonth,
+    memberBirthMonth,
     entry.startAge,
     entry.startMonth,
   );
 
   const memberMonthsAtRef = calcMonthsFromBirth(
     memberBirthYear,
-    member.birthMonth,
+    memberBirthMonth,
     refYear,
     refMonth,
   );
   const memberMonthsAtStart = calcMonthsFromBirth(
     memberBirthYear,
-    member.birthMonth,
+    memberBirthMonth,
     targetYear,
     entry.startMonth,
   );
   const headMonthsAtTarget =
-    calcMonthsFromBirth(headBirthYear, headMember.birthMonth, refYear, refMonth) +
+    calcMonthsFromBirth(headBirthYear, headBirthMonth, refYear, refMonth) +
     (memberMonthsAtStart - memberMonthsAtRef);
 
   return {
@@ -61,7 +64,7 @@ export function getHeadAgeAtEducationStart(
 
 /** 幼稚園入学前（3歳未満）の子どもがいるか。保育料参考値UIの表示条件に使用 */
 export function hasPreKindergartenChild(members: FamilyMember[]): boolean {
-  return members.some((member) => member.role === 'child' && member.age < 3);
+  return members.some((member) => member.role === 'child' && (member.age ?? 0) < 3);
 }
 
 /** 保育園の料金区分（3歳未満は乳幼児、3歳以上は就学前） */
@@ -85,8 +88,9 @@ export function getChildBirthOrder(
   const children = familyMembers
     .filter((m) => m.role === 'child')
     .sort((a, b) => {
-      if (b.age !== a.age) return b.age - a.age;
-      return a.birthMonth - b.birthMonth;
+      const ageDiff = resolveMemberAge(b) - resolveMemberAge(a);
+      if (ageDiff !== 0) return ageDiff;
+      return resolveMemberBirthMonth(a) - resolveMemberBirthMonth(b);
     });
 
   const index = children.findIndex((c) => c.id === member.id);

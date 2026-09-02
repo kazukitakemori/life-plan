@@ -2,10 +2,11 @@
  * 公的年金（老齢）の月次内訳計算。
  * v1 簡略化: 物価スライド・障害/寡婦年金の自動計算は未対応。
  */
+import { resolveMemberBirthMonth } from './familyDefaults';
 import { calcBirthYear } from './birthDate';
 import {
   calcTransitionalAdditionYenPerYear,
-  countQ2EmployeesMonthsAfterDate,
+  countQ7EmployeesMonthsAfterDate,
   estimateEmployeesMonthsForDependentQualification,
   estimateOldAgeAmountsFromIncome,
   getActiveEmployeesMonthlyRemunerationMan,
@@ -33,6 +34,7 @@ import {
   createEmptyOldAgePensionBreakdown,
   createEmptyPensionBreakdown,
   createEmptyPublicServantDetail,
+  sumOldAgePension,
   sumPensionBreakdown,
   type GeneralEmployeesDetail,
   type OldAgePensionBreakdown,
@@ -40,12 +42,13 @@ import {
   type PublicServantDetail,
 } from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
-import type { IncomeEntry } from '../types/income';
+import type { IncomeByMember, IncomeEntry } from '../types/income';
 import type {
   BenefitSettings,
   DependentSpousePensionSettings,
   NenkinTeikibinOver50Form,
   NenkinTeikibinUnder50Form,
+  PensionByMember,
   PensionMemberState,
   TeikibinOver50AmountPair,
   TeikibinOver50AmountTriple,
@@ -71,7 +74,7 @@ function getMemberAgeMonth(
 ): { age: number; month: number } | null {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   let age = calendarYear - birthYear;
-  if (calendarMonth < member.birthMonth) {
+  if (calendarMonth < resolveMemberBirthMonth(member)) {
     age -= 1;
   }
   if (age < 0) {
@@ -160,9 +163,9 @@ function calcAdditionalPensionYenPerYear(months: number | null | undefined): num
   return ADDITIONAL_PENSION_UNIT_YEN_PER_MONTH * (months ?? 0);
 }
 
-// ─── 定期便なし（Q2 収入推計）──────────────────────────────────────────────────
+// ─── 定期便なし（Q7 収入推計）──────────────────────────────────────────────────
 /**
- * Q2 収入から老齢年金の 65 歳満額ベース内訳を推計する（1 回だけ呼び出す）。
+ * Q7 収入から老齢年金の 65 歳満額ベース内訳を推計する（1 回だけ呼び出す）。
  * - 老齢基礎: 加入月数比例（大学猶予 24 か月除外）
  * - 老齢厚生（一般/公務員）: 報酬比例部分 + 経過的加算
  * - 付加年金（additional）・特別支給（payment）・職域（occupational）: 0
@@ -314,7 +317,7 @@ function calcOver50OldAgeAmounts(
  * ┌──────────────────┬────────────────────────────────────────────────────────┐
  * │ pastEnrollment   │ 計算内容                                               │
  * ├──────────────────┼────────────────────────────────────────────────────────┤
- * │ none（定期便なし）│ Q2 推計: 老齢基礎(加入月数比例) + 老齢厚生(報酬比例のみ)│
+ * │ none（定期便なし）│ Q7 推計: 老齢基礎(加入月数比例) + 老齢厚生(報酬比例のみ)│
  * │ under50（定期便） │ 定期便: 65 歳見込み額（特支・経加なし）                │
  * │ over50（定期便）  │ 定期便: 特支(65 歳前) or 老齢厚生65歳以降(経加・職域含)│
  * └──────────────────┴────────────────────────────────────────────────────────┘
@@ -335,9 +338,9 @@ function calcOldAgeMonthlyManByRow(
   const gSetting = benefitSettings.oldAgeGeneralEmployees;
   const pSetting = benefitSettings.oldAgePublicPrivate;
 
-  const basicActive   = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, bSetting.startAge, member.birthMonth, bSetting.startMonth ?? 0);
-  const generalActive = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, gSetting.startAge, member.birthMonth, gSetting.startMonth ?? 0);
-  const publicActive  = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, pSetting.startAge, member.birthMonth, pSetting.startMonth ?? 0);
+  const basicActive   = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, bSetting.startAge, resolveMemberBirthMonth(member), bSetting.startMonth ?? 0);
+  const generalActive = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, gSetting.startAge, resolveMemberBirthMonth(member), gSetting.startMonth ?? 0);
+  const publicActive  = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, pSetting.startAge, resolveMemberBirthMonth(member), pSetting.startMonth ?? 0);
 
   if (!basicActive && !generalActive && !publicActive) {
     return createEmptyOldAgePensionBreakdown();
@@ -364,6 +367,14 @@ function calcOldAgeMonthlyManByRow(
         break;
       default: // none（定期便なし）
         autoBase = calcNoneOldAgeAmounts(member, incomeEntries, referenceDate);
+    }
+
+    // 定期便を選んだが金額未入力のときは Q7 収入から推計する
+    if (
+      memberState.pastEnrollment !== 'none' &&
+      sumOldAgePension(autoBase) === 0
+    ) {
+      autoBase = calcNoneOldAgeAmounts(member, incomeEntries, referenceDate);
     }
   }
 
@@ -423,6 +434,8 @@ function calcOldAgeMonthlyManByRow(
       incomeEntries,
       ageMonth.age,
       ageMonth.month,
+      calcBirthYear(member.age, member.birthMonth, referenceDate),
+      resolveMemberBirthMonth(member),
     );
     if (remunerationMan > 0) {
       return applyZaishokuSuspension(result, remunerationMan);
@@ -430,6 +443,84 @@ function calcOldAgeMonthlyManByRow(
   }
 
   return result;
+}
+
+/**
+ * 65歳満額ベースの老齢年金内訳（繰上げ・繰下げ・在職支給停止なし）。
+ * 遺族厚生の報酬比例の母数に使う。
+ */
+export function calcMemberOldAge65BaseBreakdownMan(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+): OldAgePensionBreakdown {
+  const benefitSettings =
+    memberState.benefitSettings ?? createDefaultBenefitSettings();
+  const bSetting = benefitSettings.oldAgeBasic;
+  const gSetting = benefitSettings.oldAgeGeneralEmployees;
+  const pSetting = benefitSettings.oldAgePublicPrivate;
+  const needsAuto =
+    bSetting.amountMode === 'auto' ||
+    gSetting.amountMode === 'auto' ||
+    pSetting.amountMode === 'auto';
+
+  let autoBase = createEmptyOldAgePensionBreakdown();
+  if (needsAuto) {
+    switch (memberState.pastEnrollment) {
+      case 'nenkin-teikibin-under50':
+        autoBase = calcUnder50OldAgeAmounts(memberState.teikibinUnder50);
+        break;
+      case 'nenkin-teikibin-over50':
+        autoBase = calcOver50OldAgeAmounts(
+          migrateTeikibinOver50Form(memberState.teikibinOver50),
+          STANDARD_OLD_AGE_START,
+          STANDARD_OLD_AGE_START,
+        );
+        break;
+      default:
+        autoBase = calcNoneOldAgeAmounts(member, incomeEntries, referenceDate);
+    }
+    if (
+      memberState.pastEnrollment !== 'none' &&
+      sumOldAgePension(autoBase) === 0
+    ) {
+      autoBase = calcNoneOldAgeAmounts(member, incomeEntries, referenceDate);
+    }
+  }
+
+  const result = createEmptyOldAgePensionBreakdown();
+  result.basic =
+    bSetting.amountMode === 'manual'
+      ? buildBasicDetailFromYen(bSetting.manualAmountPerYear ?? 0)
+      : autoBase.basic;
+  result.generalEmployees =
+    gSetting.amountMode === 'manual'
+      ? buildGeneralDetailFromYen(gSetting.manualAmountPerYear ?? 0)
+      : autoBase.generalEmployees;
+  result.publicServant =
+    pSetting.amountMode === 'manual'
+      ? buildPublicServantDetailFromYen(pSetting.manualAmountPerYear ?? 0)
+      : autoBase.publicServant;
+  return result;
+}
+
+/** 老齢厚生の報酬比例部分（年額・円）。経過的加算・加給は含めない。 */
+export function calcMemberEmployeesProportionalYenPerYear(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+): number {
+  const base = calcMemberOldAge65BaseBreakdownMan(
+    member,
+    memberState,
+    incomeEntries,
+    referenceDate,
+  );
+  return Math.round(
+    (base.generalEmployees.basic + base.publicServant.basic) * 12 * 10000,
+  );
 }
 
 /**
@@ -570,12 +661,50 @@ export function calcMemberMonthlyPensionBreakdownMan(
   return result;
 }
 
+/** 暦年の年間公的年金受給額（万円）をメンバー別に返す */
+export function calcMemberAnnualPensionManByMember(input: {
+  familyMembers: FamilyMember[];
+  incomeByMember: IncomeByMember;
+  pensionByMember: PensionByMember;
+  referenceDate: Date;
+  calendarYear: number;
+  monthStart?: number;
+  monthEnd?: number;
+}): Record<string, number> {
+  const monthStart = input.monthStart ?? 1;
+  const monthEnd = input.monthEnd ?? 12;
+  const result: Record<string, number> = {};
+
+  for (const member of input.familyMembers) {
+    if (member.role === 'pet') continue;
+    const memberState =
+      input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
+    const incomeEntries = input.incomeByMember[member.id] ?? [];
+    let memberPension = 0;
+    for (let month = monthStart; month <= monthEnd; month++) {
+      memberPension += sumPensionBreakdown(
+        calcMemberMonthlyPensionBreakdownMan(
+          member,
+          memberState,
+          incomeEntries,
+          input.referenceDate,
+          input.calendarYear,
+          month,
+        ),
+      );
+    }
+    result[member.id] = memberPension;
+  }
+
+  return result;
+}
+
 /**
  * ねんきん定期便あり/なし共通で厚生年金加入月数の合計を返す。
- * - none（定期便なし）: Q2 収入から通常推計（年金額計算用）
+ * - none（定期便なし）: Q7 収入から通常推計（年金額計算用）
  * - teikibin-under50/over50: 定期便の加入月数フィールドを使用
  */
-function getTotalEmployeesMonths(
+export function getTotalEmployeesMonths(
   member: FamilyMember,
   memberState: PensionMemberState,
   incomeEntries: IncomeEntry[],
@@ -610,11 +739,11 @@ function getTotalEmployeesMonths(
  * 加給年金の 20 年要件判定専用の加入月数推計。
  *
  * ─ 定期便なし ─
- *   Q2 に厚生年金期間があれば 22 歳から就労終了まで全期間加入とみなす
+ *   Q7 に厚生年金期間があれば 22 歳から就労終了まで全期間加入とみなす
  *   寛大推計（現在非就労でも過去の就労歴を正しく反映できるよう）。
  *
  * ─ 定期便あり ─
- *   定期便の実績月数（過去・正確）＋定期便最終月以降の Q2 厚生年金月数（将来）
+ *   定期便の実績月数（過去・正確）＋定期便最終月以降の Q7 厚生年金月数（将来）
  *   を合算し、二重計上なしで精度の高い判定を行う。
  */
 function getTotalEmployeesMonthsForDependentQualification(
@@ -631,7 +760,7 @@ function getTotalEmployeesMonthsForDependentQualification(
     );
   }
 
-  // 定期便あり: 実績月数（過去）+ 定期便以降の Q2 厚生年金月数（将来）
+  // 定期便あり: 実績月数（過去）+ 定期便以降の Q7 厚生年金月数（将来）
   const base = getTotalEmployeesMonths(
     member,
     memberState,
@@ -644,7 +773,7 @@ function getTotalEmployeesMonthsForDependentQualification(
       ? memberState.teikibinUnder50
       : migrateTeikibinOver50Form(memberState.teikibinOver50);
 
-  const future = countQ2EmployeesMonthsAfterDate(
+  const future = countQ7EmployeesMonthsAfterDate(
     incomeEntries,
     member,
     referenceDate,
@@ -687,7 +816,7 @@ function calcDependentSpousePensionMonthlyMan(
     referenceDate,
   );
   let headAge = calendarYear - headBirthYear;
-  if (calendarMonth < headMember.birthMonth) headAge--;
+  if (calendarMonth < resolveMemberBirthMonth(headMember)) headAge--;
 
   const gSet = benefitSettings.oldAgeGeneralEmployees;
   const pSet = benefitSettings.oldAgePublicPrivate;
@@ -702,7 +831,7 @@ function calcDependentSpousePensionMonthlyMan(
       headAge,
       calendarMonth,
       empStartAge,
-      headMember.birthMonth,
+      resolveMemberBirthMonth(headMember),
       empStartMonth,
     )
   ) {
@@ -716,14 +845,14 @@ function calcDependentSpousePensionMonthlyMan(
     referenceDate,
   );
   let spouseAge = calendarYear - spouseBirthYear;
-  if (calendarMonth < spouseMember.birthMonth) spouseAge--;
+  if (calendarMonth < resolveMemberBirthMonth(spouseMember)) spouseAge--;
 
   if (
     isOnOrAfterBenefitStart(
       spouseAge,
       calendarMonth,
       DEPENDENT_PENSION_CUTOFF_AGE,
-      spouseMember.birthMonth,
+      resolveMemberBirthMonth(spouseMember),
     )
   ) {
     return 0;
@@ -831,21 +960,21 @@ function calcTransferAdditionMonthlyMan(
   );
 
   // 配偶者の生年月日から振替加算額を取得（対象外なら0）
-  const yenPerYear = getTransferAdditionYenPerYear(spouseBirthYear, spouseMember.birthMonth);
+  const yenPerYear = getTransferAdditionYenPerYear(spouseBirthYear, resolveMemberBirthMonth(spouseMember));
   if (yenPerYear <= 0) return 0;
 
   // 配偶者が老齢基礎年金の受給開始年齢に達しているか確認
   const spouseSettings =
     spouseMemberState.benefitSettings ?? createDefaultBenefitSettings();
   let spouseAge = calendarYear - spouseBirthYear;
-  if (calendarMonth < spouseMember.birthMonth) spouseAge--;
+  if (calendarMonth < resolveMemberBirthMonth(spouseMember)) spouseAge--;
 
   if (
     !isOnOrAfterBenefitStart(
       spouseAge,
       calendarMonth,
       spouseSettings.oldAgeBasic.startAge,
-      spouseMember.birthMonth,
+      resolveMemberBirthMonth(spouseMember),
       spouseSettings.oldAgeBasic.startMonth ?? 0,
     )
   ) {

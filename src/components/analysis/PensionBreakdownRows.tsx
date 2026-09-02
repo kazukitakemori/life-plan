@@ -50,6 +50,7 @@ interface PensionBreakdownRowsProps {
     year: number,
     options?: { emptyAsDash?: boolean },
   ) => ReactNode;
+  getPensionBreakdown?: (year: YearRow) => PensionBreakdown;
 }
 
 const OLD_AGE_CATEGORY_DETAIL_ROWS: Record<
@@ -135,8 +136,11 @@ export function PensionBreakdownRows({
   onToggleFolder,
   renderLabelCell,
   renderValueCell,
+  getPensionBreakdown,
 }: PensionBreakdownRowsProps) {
   const isExpanded = (key: string) => expandedFolders.has(key);
+  const resolvePension =
+    getPensionBreakdown ?? ((year) => year.incomeBreakdown.pension);
 
   return (
     <>
@@ -149,7 +153,7 @@ export function PensionBreakdownRows({
         })}
         {visibleYears.map((y) =>
           renderValueCell(
-            sumPensionBreakdown(y.incomeBreakdown.pension),
+            sumPensionBreakdown(resolvePension(y)),
             y.calendarYear,
             { emptyAsDash: true },
           ),
@@ -167,7 +171,7 @@ export function PensionBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumOldAgePension(y.incomeBreakdown.pension.oldAge),
+                sumOldAgePension(resolvePension(y).oldAge),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -187,6 +191,7 @@ export function PensionBreakdownRows({
                   onToggleFolder={onToggleFolder}
                   renderLabelCell={renderLabelCell}
                   renderValueCell={renderValueCell}
+                  getPensionBreakdown={resolvePension}
                 />
               );
             })}
@@ -200,7 +205,7 @@ export function PensionBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumDisabilityPension(y.incomeBreakdown.pension.disability),
+                sumDisabilityPension(resolvePension(y).disability),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -220,6 +225,7 @@ export function PensionBreakdownRows({
                   onToggleFolder={onToggleFolder}
                   renderLabelCell={renderLabelCell}
                   renderValueCell={renderValueCell}
+                  getPensionBreakdown={resolvePension}
                 />
               );
             })}
@@ -233,7 +239,7 @@ export function PensionBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumSurvivorPension(y.incomeBreakdown.pension.survivor),
+                sumSurvivorPension(resolvePension(y).survivor),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -253,6 +259,7 @@ export function PensionBreakdownRows({
                   onToggleFolder={onToggleFolder}
                   renderLabelCell={renderLabelCell}
                   renderValueCell={renderValueCell}
+                  getPensionBreakdown={resolvePension}
                 />
               );
             })}
@@ -271,6 +278,7 @@ function OldAgeCategoryRows({
   onToggleFolder,
   renderLabelCell,
   renderValueCell,
+  getPensionBreakdown,
 }: {
   category: (typeof OLD_AGE_PENSION_CATEGORY_ROWS)[number];
   folderKey: string;
@@ -279,6 +287,7 @@ function OldAgeCategoryRows({
   onToggleFolder: (key: string) => void;
   renderLabelCell: PensionBreakdownRowsProps['renderLabelCell'];
   renderValueCell: PensionBreakdownRowsProps['renderValueCell'];
+  getPensionBreakdown: (year: YearRow) => PensionBreakdown;
 }) {
   const detailRows = OLD_AGE_CATEGORY_DETAIL_ROWS[category.key];
   const sumCategory = OLD_AGE_CATEGORY_SUMMERS[category.key];
@@ -294,7 +303,7 @@ function OldAgeCategoryRows({
         })}
         {visibleYears.map((y) =>
           renderValueCell(
-            sumCategory(y.incomeBreakdown.pension.oldAge),
+            sumCategory(getPensionBreakdown(y).oldAge),
             y.calendarYear,
             { emptyAsDash: true },
           ),
@@ -308,7 +317,7 @@ function OldAgeCategoryRows({
             {visibleYears.map((y) =>
               renderValueCell(
                 getOldAgeDetailValue(
-                  y.incomeBreakdown.pension,
+                  getPensionBreakdown(y),
                   category.key,
                   row.key,
                 ),
@@ -330,6 +339,7 @@ function SurvivorCategoryRows({
   onToggleFolder,
   renderLabelCell,
   renderValueCell,
+  getPensionBreakdown,
 }: {
   category: (typeof SURVIVOR_PENSION_CATEGORY_ROWS)[number];
   folderKey: string;
@@ -338,6 +348,7 @@ function SurvivorCategoryRows({
   onToggleFolder: (key: string) => void;
   renderLabelCell: PensionBreakdownRowsProps['renderLabelCell'];
   renderValueCell: PensionBreakdownRowsProps['renderValueCell'];
+  getPensionBreakdown: (year: YearRow) => PensionBreakdown;
 }) {
   const detailRows = SURVIVOR_CATEGORY_DETAIL_ROWS[category.key];
   const sumCategory = SURVIVOR_CATEGORY_SUMMERS[category.key];
@@ -353,7 +364,7 @@ function SurvivorCategoryRows({
         })}
         {visibleYears.map((y) =>
           renderValueCell(
-            sumCategory(y.incomeBreakdown.pension.survivor),
+            sumCategory(getPensionBreakdown(y).survivor),
             y.calendarYear,
             { emptyAsDash: true },
           ),
@@ -367,7 +378,7 @@ function SurvivorCategoryRows({
             {visibleYears.map((y) =>
               renderValueCell(
                 getSurvivorDetailValue(
-                  y.incomeBreakdown.pension,
+                  getPensionBreakdown(y),
                   category.key,
                   row.key,
                 ),
@@ -389,6 +400,7 @@ function DisabilityCategoryRows({
   onToggleFolder,
   renderLabelCell,
   renderValueCell,
+  getPensionBreakdown,
 }: {
   category: (typeof DISABILITY_PENSION_CATEGORY_ROWS)[number];
   folderKey: string;
@@ -397,6 +409,7 @@ function DisabilityCategoryRows({
   onToggleFolder: (key: string) => void;
   renderLabelCell: PensionBreakdownRowsProps['renderLabelCell'];
   renderValueCell: PensionBreakdownRowsProps['renderValueCell'];
+  getPensionBreakdown: (year: YearRow) => PensionBreakdown;
 }) {
   const detailRows = DISABILITY_CATEGORY_DETAIL_ROWS[category.key];
   const sumCategory = DISABILITY_CATEGORY_SUMMERS[category.key];
@@ -412,7 +425,7 @@ function DisabilityCategoryRows({
         })}
         {visibleYears.map((y) =>
           renderValueCell(
-            sumCategory(y.incomeBreakdown.pension.disability),
+            sumCategory(getPensionBreakdown(y).disability),
             y.calendarYear,
             { emptyAsDash: true },
           ),
@@ -426,7 +439,7 @@ function DisabilityCategoryRows({
             {visibleYears.map((y) =>
               renderValueCell(
                 getDisabilityDetailValue(
-                  y.incomeBreakdown.pension,
+                  getPensionBreakdown(y),
                   category.key,
                   row.key,
                 ),

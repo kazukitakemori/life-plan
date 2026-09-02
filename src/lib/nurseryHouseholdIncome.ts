@@ -1,5 +1,9 @@
+import { resolveMemberBirthMonth } from './familyDefaults';
 import { calcBirthYear, calcYearAtAge } from './birthDate';
-import { calcTotalIncomeAmountYen } from './incomeTaxDeductions';
+import {
+  resolveMemberPriorYearIncome,
+  type PriorYearIncomeResolution,
+} from './priorYearIncomeResolution';
 import { resolveMemberYearIncomeProfile } from './memberYearIncome';
 import type { FamilyMember } from '../types/family';
 import type { EducationExpenseEntry } from '../types/education';
@@ -7,7 +11,6 @@ import type {
   IncomeByMember,
   IncomeCategory,
   PriorYearIncomeByMember,
-  PriorYearIncomeForNursery,
 } from '../types/income';
 
 /**
@@ -26,11 +29,7 @@ export type NurseryFeeTier =
   | 'D9'
   | 'D10';
 
-export type NurseryIncomeResolution =
-  | 'unset'
-  | 'reference_year'
-  | 'current_year_proxy'
-  | 'prior_year_override';
+export type NurseryIncomeResolution = PriorYearIncomeResolution;
 
 export interface NurseryHouseholdIncomeContext {
   tier: NurseryFeeTier;
@@ -96,31 +95,22 @@ function estimateMunicipalLevy(
   return Math.max(0, Math.floor(taxableBase * 0.06) - adjustmentCredit);
 }
 
-function estimateLevyFromPriorYearOverride(
-  override: PriorYearIncomeForNursery,
-): number {
-  const grossIncomeMan = override.monthlyAmountMan * 12;
-  const grossRevenueYen = grossIncomeMan * 10_000;
-  const totalIncomeYen = calcTotalIncomeAmountYen({
-    grossRevenueYen,
-    annualExpenseYen: 0,
-    category: override.category,
-    filingType: override.category === 'self_employed' ? 'blue_65' : null,
-  });
-  const totalIncomeMan = totalIncomeYen / 10_000;
-  return estimateMunicipalLevy(
-    totalIncomeMan,
-    grossIncomeMan,
-    override.category,
-  );
-}
-
 function estimateLevyFromYearProfile(
   totalIncomeMan: number,
   grossIncomeMan: number,
   category: IncomeCategory | null,
 ): number {
   return estimateMunicipalLevy(totalIncomeMan, grossIncomeMan, category);
+}
+
+function estimateLevyFromResolvedProfile(
+  profile: ReturnType<typeof resolveMemberYearIncomeProfile>,
+): number {
+  return estimateLevyFromYearProfile(
+    profile.totalIncomeMan,
+    profile.grossIncomeMan,
+    profile.category,
+  );
 }
 
 export function calcNurseryFeeTier(levy: number): NurseryFeeTier {
@@ -165,7 +155,7 @@ function resolveEnrollmentCalendarYear(
   referenceDate: Date,
 ): number {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
-  return calcYearAtAge(birthYear, member.birthMonth, entry.startAge, entry.startMonth);
+  return calcYearAtAge(birthYear, resolveMemberBirthMonth(member), entry.startAge, entry.startMonth);
 }
 
 /** 保育料の所得参照年（在籍開始年の前年） */
@@ -189,54 +179,25 @@ function resolveParentLevyForNursery(input: {
   referenceDate: Date;
   incomeReferenceYear: number;
 }): ParentLevyResult | null {
-  const override = input.priorYearIncomeByMember[input.parent.id];
-
-  if (override?.differsFromCurrentYear) {
-    return {
-      levy: estimateLevyFromPriorYearOverride(override),
-      resolution: 'prior_year_override',
-    };
-  }
-
-  const entries = input.incomeByMember[input.parent.id] ?? [];
-  const refYearProfile = resolveMemberYearIncomeProfile(
-    input.parent,
-    entries,
-    input.referenceDate,
-    input.incomeReferenceYear,
-  );
-
-  if (refYearProfile.hasActiveIncomeBlock) {
-    return {
-      levy: estimateLevyFromYearProfile(
-        refYearProfile.totalIncomeMan,
-        refYearProfile.grossIncomeMan,
-        refYearProfile.category,
-      ),
-      resolution: 'reference_year',
-    };
-  }
-
   const currentYear = input.referenceDate.getFullYear();
-  const currentProfile = resolveMemberYearIncomeProfile(
-    input.parent,
-    entries,
-    input.referenceDate,
-    currentYear,
-  );
+  const resolved = resolveMemberPriorYearIncome({
+    member: input.parent,
+    incomeByMember: input.incomeByMember,
+    priorYearIncomeByMember: input.priorYearIncomeByMember,
+    referenceDate: input.referenceDate,
+    incomeReferenceYear: input.incomeReferenceYear,
+    assessmentCalendarYear: currentYear,
+    simulationStartYear: currentYear,
+  });
 
-  if (currentProfile.hasActiveIncomeBlock) {
-    return {
-      levy: estimateLevyFromYearProfile(
-        currentProfile.totalIncomeMan,
-        currentProfile.grossIncomeMan,
-        currentProfile.category,
-      ),
-      resolution: 'current_year_proxy',
-    };
+  if (!resolved || resolved.resolution === 'unset') {
+    return null;
   }
 
-  return null;
+  return {
+    levy: estimateLevyFromResolvedProfile(resolved.profile),
+    resolution: resolved.resolution,
+  };
 }
 
 function resolvePrimaryResolution(

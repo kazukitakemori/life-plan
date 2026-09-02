@@ -1,22 +1,38 @@
-/** 福岡市・令和7年度 国民健康保険料率（簡易版） */
+/**
+ * 福岡市・令和8年度 国民健康保険料率
+ * 出典: https://www.city.fukuoka.lg.jp/hofuku/kokuho/hp/seido/06-02.html
+ */
+import { calcPensionMiscIncomeYen } from './publicPensionDeduction';
+
 export const FUKUOKA_NHI_RATES = {
   medical: {
-    incomeRate: 0.0596,
-    perCapitaYen: 19_980,
-    perHouseholdYen: 18_863,
-    annualCapYen: 660_000,
+    incomeRate: 0.0558,
+    perCapitaYen: 19_807,
+    perHouseholdYen: 18_664,
+    annualCapYen: 670_000,
+    assetRate: 0,
   },
   support: {
-    incomeRate: 0.0328,
-    perCapitaYen: 10_334,
-    perHouseholdYen: 9_757,
+    incomeRate: 0.0314,
+    perCapitaYen: 10_441,
+    perHouseholdYen: 9_838,
     annualCapYen: 260_000,
+    assetRate: 0,
   },
   ltc: {
-    incomeRate: 0.0281,
-    perCapitaYen: 10_386,
-    perHouseholdYen: 7_912,
+    incomeRate: 0.0261,
+    perCapitaYen: 10_160,
+    perHouseholdYen: 7_751,
     annualCapYen: 170_000,
+    assetRate: 0,
+  },
+  childcare: {
+    incomeRate: 0.0028,
+    /** 18歳以上被保険者均等割72円を含む */
+    perCapitaYen: 1_039,
+    perHouseholdYen: 911,
+    annualCapYen: 30_000,
+    assetRate: 0,
   },
   /** 所得割の算定基礎から控除（1人あたり） */
   basicDeductionYen: 430_000,
@@ -24,11 +40,51 @@ export const FUKUOKA_NHI_RATES = {
 
 export type NhiReductionTier = 'none' | '20' | '50' | '70';
 
-export interface NhiMemberInput {
+export type NhiSegmentId = 'medical' | 'support' | 'ltc' | 'childcare';
+
+export interface NhiMemberIncomeDetail {
+  memberId?: string;
+  memberLabel?: string;
   age: number;
-  /** 軽減判定・所得割用の総所得金額等（円） */
+  grossSalaryRevenueYen: number;
+  salaryIncomeDeductionYen: number;
+  incomeAdjustmentDeductionYen: number;
+  salaryIncomeYen: number;
+  pensionRevenueYen: number;
+  pensionIncomeYen: number;
+  otherIncomeYen: number;
+  /** 総所得金額等（軽減判定・所得割算定の基礎） */
   totalIncomeYen: number;
   hasSalary: boolean;
+  isPreschool: boolean;
+  isUnder18: boolean;
+  hasLtc: boolean;
+}
+
+export type NhiMemberInput = NhiMemberIncomeDetail;
+
+export interface NhiSegmentComponents {
+  incomeYen: number;
+  perCapitaYen: number;
+  perHouseholdYen: number;
+  assetYen: number;
+  rawTotalYen: number;
+  cappedTotalYen: number;
+}
+
+export interface NhiHouseholdBreakdown {
+  members: NhiMemberIncomeDetail[];
+  householdIncomeYen: number;
+  insuredCount: number;
+  salaryEarnerCount: number;
+  reductionTier: NhiReductionTier;
+  flatPayRate: number;
+  fixedAssetTaxYen: number;
+  medical: NhiSegmentComponents;
+  support: NhiSegmentComponents;
+  ltc: NhiSegmentComponents;
+  childcare: NhiSegmentComponents;
+  premiumYen: number;
 }
 
 /**
@@ -84,16 +140,121 @@ function applySegmentCap(amount: number, cap: number): number {
   return Math.min(Math.max(0, amount), cap);
 }
 
+function truncateTo100Yen(amount: number): number {
+  return Math.floor(Math.max(0, amount) / 100) * 100;
+}
+
+function memberPerCapitaRate(
+  member: NhiMemberIncomeDetail,
+  segment: NhiSegmentId,
+  flatPayRate: number,
+): number {
+  if (segment === 'childcare') {
+    if (member.isUnder18) return 0;
+    return flatPayRate;
+  }
+
+  if (segment === 'ltc' && !member.hasLtc) return 0;
+
+  let rate = flatPayRate;
+  if (member.isPreschool) {
+    rate *= 0.5;
+  }
+  return rate;
+}
+
+function calcSegmentAssetYen(
+  fixedAssetTaxYen: number,
+  assetRate: number,
+): number {
+  if (fixedAssetTaxYen <= 0 || assetRate <= 0) return 0;
+  return Math.floor(fixedAssetTaxYen * assetRate);
+}
+
+function buildEmptySegment(): NhiSegmentComponents {
+  return {
+    incomeYen: 0,
+    perCapitaYen: 0,
+    perHouseholdYen: 0,
+    assetYen: 0,
+    rawTotalYen: 0,
+    cappedTotalYen: 0,
+  };
+}
+
+function calcSegmentBreakdown(input: {
+  segment: NhiSegmentId;
+  members: NhiMemberIncomeDetail[];
+  flatPayRate: number;
+  fixedAssetTaxYen: number;
+  includeHouseholdFlat: boolean;
+}): NhiSegmentComponents {
+  const rates = FUKUOKA_NHI_RATES[input.segment];
+
+  let incomeYen = 0;
+  let perCapitaYen = 0;
+
+  for (const member of input.members) {
+    const incomeBase = Math.max(
+      0,
+      member.totalIncomeYen - FUKUOKA_NHI_RATES.basicDeductionYen,
+    );
+
+    if (input.segment === 'ltc') {
+      if (member.hasLtc) {
+        incomeYen += incomeBase * rates.incomeRate;
+      }
+    } else {
+      incomeYen += incomeBase * rates.incomeRate;
+    }
+
+    perCapitaYen +=
+      rates.perCapitaYen *
+      memberPerCapitaRate(member, input.segment, input.flatPayRate);
+  }
+
+  const perHouseholdYen = input.includeHouseholdFlat
+    ? rates.perHouseholdYen * input.flatPayRate
+    : 0;
+  const assetYen = calcSegmentAssetYen(input.fixedAssetTaxYen, rates.assetRate);
+  const rawTotalYen = incomeYen + perCapitaYen + perHouseholdYen + assetYen;
+  const truncatedTotalYen = truncateTo100Yen(rawTotalYen);
+
+  return {
+    incomeYen,
+    perCapitaYen,
+    perHouseholdYen,
+    assetYen,
+    rawTotalYen,
+    cappedTotalYen: applySegmentCap(truncatedTotalYen, rates.annualCapYen),
+  };
+}
+
 /**
- * 福岡市ベースの国保料（医療・支援・介護の所得割＋均等割＋平等割、軽減適用後）。
+ * 福岡市ベースの国保料内訳（医療・支援・介護・子育て、軽減適用後）。
  * 国民年金は含まない。
  */
-export function calcFukuokaHouseholdNhiPremiumYen(members: NhiMemberInput[]): {
-  premiumYen: number;
-  reductionTier: NhiReductionTier;
-} {
+export function calcFukuokaHouseholdNhiBreakdown(
+  members: NhiMemberInput[],
+  options?: { fixedAssetTaxYen?: number },
+): NhiHouseholdBreakdown {
+  const fixedAssetTaxYen = options?.fixedAssetTaxYen ?? 0;
+
   if (members.length === 0) {
-    return { premiumYen: 0, reductionTier: 'none' };
+    return {
+      members: [],
+      householdIncomeYen: 0,
+      insuredCount: 0,
+      salaryEarnerCount: 0,
+      reductionTier: 'none',
+      flatPayRate: 1,
+      fixedAssetTaxYen,
+      medical: buildEmptySegment(),
+      support: buildEmptySegment(),
+      ltc: buildEmptySegment(),
+      childcare: buildEmptySegment(),
+      premiumYen: 0,
+    };
   }
 
   const householdIncomeYen = members.reduce(
@@ -109,83 +270,82 @@ export function calcFukuokaHouseholdNhiPremiumYen(members: NhiMemberInput[]): {
   );
   const flatPayRate = nhiFlatPremiumPayRate(reductionTier);
 
-  let medicalIncome = 0;
-  let supportIncome = 0;
-  let ltcIncome = 0;
-  let medicalPerCapita = 0;
-  let supportPerCapita = 0;
-  let ltcPerCapita = 0;
+  const hasLtcHousehold = members.some((member) => member.hasLtc);
 
-  for (const member of members) {
-    const incomeBase = Math.max(
-      0,
-      member.totalIncomeYen - FUKUOKA_NHI_RATES.basicDeductionYen,
-    );
-    const hasLtc = member.age >= 40 && member.age < 65;
+  const medical = calcSegmentBreakdown({
+    segment: 'medical',
+    members,
+    flatPayRate,
+    fixedAssetTaxYen,
+    includeHouseholdFlat: true,
+  });
+  const support = calcSegmentBreakdown({
+    segment: 'support',
+    members,
+    flatPayRate,
+    fixedAssetTaxYen,
+    includeHouseholdFlat: true,
+  });
+  const ltc = hasLtcHousehold
+    ? calcSegmentBreakdown({
+        segment: 'ltc',
+        members,
+        flatPayRate,
+        fixedAssetTaxYen,
+        includeHouseholdFlat: true,
+      })
+    : buildEmptySegment();
+  const childcare = calcSegmentBreakdown({
+    segment: 'childcare',
+    members,
+    flatPayRate,
+    fixedAssetTaxYen,
+    includeHouseholdFlat: true,
+  });
 
-    medicalIncome += incomeBase * FUKUOKA_NHI_RATES.medical.incomeRate;
-    supportIncome += incomeBase * FUKUOKA_NHI_RATES.support.incomeRate;
-    if (hasLtc) {
-      ltcIncome += incomeBase * FUKUOKA_NHI_RATES.ltc.incomeRate;
-    }
-
-    medicalPerCapita += FUKUOKA_NHI_RATES.medical.perCapitaYen;
-    supportPerCapita += FUKUOKA_NHI_RATES.support.perCapitaYen;
-    if (hasLtc) {
-      ltcPerCapita += FUKUOKA_NHI_RATES.ltc.perCapitaYen;
-    }
-  }
-
-  const hasLtcHousehold = members.some(
-    (member) => member.age >= 40 && member.age < 65,
-  );
-
-  const medicalFlat =
-    (medicalPerCapita + FUKUOKA_NHI_RATES.medical.perHouseholdYen) * flatPayRate;
-  const supportFlat =
-    (supportPerCapita + FUKUOKA_NHI_RATES.support.perHouseholdYen) * flatPayRate;
-  const ltcFlat = hasLtcHousehold
-    ? (ltcPerCapita + FUKUOKA_NHI_RATES.ltc.perHouseholdYen) * flatPayRate
-    : 0;
-
-  const medicalTotal = applySegmentCap(
-    medicalIncome + medicalFlat,
-    FUKUOKA_NHI_RATES.medical.annualCapYen,
-  );
-  const supportTotal = applySegmentCap(
-    supportIncome + supportFlat,
-    FUKUOKA_NHI_RATES.support.annualCapYen,
-  );
-  const ltcTotal = hasLtcHousehold
-    ? applySegmentCap(ltcIncome + ltcFlat, FUKUOKA_NHI_RATES.ltc.annualCapYen)
-    : 0;
+  const premiumYen =
+    medical.cappedTotalYen +
+    support.cappedTotalYen +
+    ltc.cappedTotalYen +
+    childcare.cappedTotalYen;
 
   return {
-    premiumYen: Math.floor(medicalTotal + supportTotal + ltcTotal),
+    members,
+    householdIncomeYen,
+    insuredCount,
+    salaryEarnerCount,
     reductionTier,
+    flatPayRate,
+    fixedAssetTaxYen,
+    medical,
+    support,
+    ltc,
+    childcare,
+    premiumYen,
+  };
+}
+
+/**
+ * 福岡市ベースの国保料（年額・円）。後方互換ラッパー。
+ */
+export function calcFukuokaHouseholdNhiPremiumYen(members: NhiMemberInput[]): {
+  premiumYen: number;
+  reductionTier: NhiReductionTier;
+} {
+  const breakdown = calcFukuokaHouseholdNhiBreakdown(members);
+  return {
+    premiumYen: breakdown.premiumYen,
+    reductionTier: breakdown.reductionTier,
   };
 }
 
 /** 公的年金等の雑所得（円）— 国保の総所得金額等算定用 */
-function calcPensionIncomeForNhiYen(pensionYen: number, age: number): number {
-  if (pensionYen <= 0) return 0;
-
-  let deduction = 0;
-  if (age >= 65) {
-    if (pensionYen <= 3_300_000) deduction = 1_100_000;
-    else if (pensionYen <= 4_100_000) deduction = Math.floor(pensionYen * 0.25 + 275_000);
-    else if (pensionYen <= 7_700_000) deduction = Math.floor(pensionYen * 0.15 + 685_000);
-    else if (pensionYen <= 10_000_000) deduction = Math.floor(pensionYen * 0.05 + 1_455_000);
-    else deduction = 1_955_000;
-  } else {
-    if (pensionYen <= 1_300_000) deduction = 600_000;
-    else if (pensionYen <= 4_100_000) deduction = Math.floor(pensionYen * 0.25 + 275_000);
-    else if (pensionYen <= 7_700_000) deduction = Math.floor(pensionYen * 0.15 + 685_000);
-    else if (pensionYen <= 10_000_000) deduction = Math.floor(pensionYen * 0.05 + 1_455_000);
-    else deduction = 1_955_000;
-  }
-
-  return Math.max(0, pensionYen - deduction);
+export function calcPensionIncomeForNhiYen(
+  pensionYen: number,
+  age: number,
+  otherIncomeYen = 0,
+): number {
+  return calcPensionMiscIncomeYen(pensionYen, age, otherIncomeYen);
 }
 
 /** 国保の総所得金額等（軽減判定・所得割用・円） */
@@ -195,6 +355,41 @@ export function calcMemberTotalIncomeForNhiYen(input: {
   age: number;
 }): number {
   const pensionYen = Math.round(input.annualPensionMan * 10_000);
-  const pensionIncomeYen = calcPensionIncomeForNhiYen(pensionYen, input.age);
+  const pensionIncomeYen = calcPensionIncomeForNhiYen(
+    pensionYen,
+    input.age,
+    input.totalIncomeYen,
+  );
   return Math.max(0, input.totalIncomeYen + pensionIncomeYen);
+}
+
+/** 年齢区分に基づく国保加入者属性 */
+export function resolveNhiMemberAgeFlags(age: number): {
+  isPreschool: boolean;
+  isUnder18: boolean;
+  hasLtc: boolean;
+} {
+  return {
+    isPreschool: age < 6,
+    isUnder18: age < 18,
+    hasLtc: age >= 40 && age < 65,
+  };
+}
+
+/** 世帯内の国保被保険者按分（端数は先頭から1円ずつ） */
+export function allocateNhiPremiumAmongMembers(
+  premiumYen: number,
+  memberCount: number,
+): number[] {
+  if (memberCount <= 0 || premiumYen <= 0) {
+    return Array.from({ length: Math.max(0, memberCount) }, () => 0);
+  }
+
+  const baseShare = Math.floor(premiumYen / memberCount);
+  let remainder = premiumYen - baseShare * memberCount;
+  return Array.from({ length: memberCount }, () => {
+    const extra = remainder > 0 ? 1 : 0;
+    if (remainder > 0) remainder -= 1;
+    return baseShare + extra;
+  });
 }

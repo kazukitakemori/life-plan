@@ -1,0 +1,145 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help
+ npmrc` for supported config options.
+発生場所 行:1 文字:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+start undefined simMonth 9
+{
+  "phase": "simulation_start",
+  "factor": 0.3333333333333333,
+  "cfIncome": 320,
+  "cfTax": 76.7,
+  "household": {
+    "it": 0,
+    "rt": 0,
+    "si": 0,
+    "total": 0
+  },
+  "members": [
+    {
+      "id": "head",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    },
+    {
+      "id": "spouse",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    }
+  ]
+}
+{
+  "phase": "simulation_start",
+  "factor": 0.3333333333333333,
+  "cfIncome": 960,
+  "cfTax": 215.7,
+  "household": {
+    "it": 0,
+    "rt": 0,
+    "si": 0,
+    "total": 0
+  },
+  "members": [
+    {
+      "id": "head",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    },
+    {
+      "id": "spouse",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    }
+  ]
+}
+{
+  "phase": "simulation_start",
+  "factor": 0.3333333333333333,
+  "cfIncome": 960,
+  "cfTax": 220.1,
+  "household": {
+    "it": 0,
+    "rt": 0,
+    "si": 0,
+    "total": 0
+  },
+  "members": [
+    {
+      "id": "head",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    },
+    {
+      "id": "spouse",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    }
+  ]
+}
+{
+  "phase": "simulation_start",
+  "factor": 0.3333333333333333,
+  "cfIncome": 960,
+  "cfTax": 219.6,
+  "household": {
+    "it": 0,
+    "rt": 0,
+    "si": 0,
+    "total": 0
+  },
+  "members": [
+    {
+      "id": "head",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    },
+    {
+      "id": "spouse",
+      "rt": 0,
+      "rtGross": 0,
+      "rtRefYear": null,
+      "rtAnnualBasis": false,
+      "siDeductIt": 0,
+      "siDeductRt": 0,
+      "empSI": {}
+    }
+  ]
+}

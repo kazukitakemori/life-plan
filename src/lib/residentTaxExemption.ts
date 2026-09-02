@@ -1,3 +1,4 @@
+import { getSpouseTotalIncomeLimitYen } from './spouseDeduction';
 import { calcMemberTotalIncomeForNhiYen } from './nationalHealthInsurance';
 import type { FamilyMember } from '../types/family';
 import type { DependentStatus } from '../types/income';
@@ -29,7 +30,7 @@ export type ResidentTaxExemptionLevel =
 export interface HouseholdResidentTaxContext {
   /** 同一生計配偶者がいる（配偶者メンバーが登録されている） */
   hasCohabitingSpouse: boolean;
-  /** 税法上の扶養親族数（16歳以上・合計所得48万円以下） */
+  /** 税法上の扶養親族数（16歳以上・合計所得が上限以下） */
   dependentCount: number;
 }
 
@@ -113,7 +114,9 @@ function isTaxpayerMember(profile: ResidentTaxMemberProfile): boolean {
 export function countHouseholdTaxDependents(
   familyMembers: FamilyMember[],
   profilesByMemberId: Record<string, ResidentTaxMemberProfile>,
+  calendarYear = 2026,
 ): number {
+  const incomeLimitYen = getSpouseTotalIncomeLimitYen(calendarYear);
   let count = 0;
 
   for (const member of familyMembers) {
@@ -130,7 +133,7 @@ export function countHouseholdTaxDependents(
       annualPensionMan: profile.annualPensionMan,
       age,
     });
-    if (gokeiShotokuYen > 480_000) continue;
+    if (gokeiShotokuYen > incomeLimitYen) continue;
 
     count += 1;
   }
@@ -141,12 +144,14 @@ export function countHouseholdTaxDependents(
 export function buildHouseholdResidentTaxContext(
   familyMembers: FamilyMember[],
   profilesByMemberId: Record<string, ResidentTaxMemberProfile>,
+  calendarYear = 2026,
 ): HouseholdResidentTaxContext {
   return {
     hasCohabitingSpouse: familyMembers.some((member) => member.role === 'spouse'),
     dependentCount: countHouseholdTaxDependents(
       familyMembers,
       profilesByMemberId,
+      calendarYear,
     ),
   };
 }

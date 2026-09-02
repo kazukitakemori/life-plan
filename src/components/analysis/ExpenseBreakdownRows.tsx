@@ -1,21 +1,47 @@
 import type { ReactNode } from 'react';
 
 import type { CashFlowTableData } from '../../types/cashFlow';
-import {
-  EXPENSE_CATEGORY_ROWS,
-  EXPENSE_CATEGORY_ROWS_AFTER_EDUCATION,
-  sumEducationExpense,
-} from '../../types/cashFlow';
+import { sumEducationExpense, sumInvestPersonalContribution } from '../../types/cashFlow';
+import { HousingBreakdownRows } from './HousingBreakdownRows';
+import { InsuranceExpenseBreakdownRows } from './InsuranceExpenseBreakdownRows';
+import { InvestContributionBreakdownRows } from './InvestContributionBreakdownRows';
+import { LifeEventBreakdownRows } from './LifeEventBreakdownRows';
+import { LivingBreakdownRows } from './LivingBreakdownRows';
+import { LoanExpenseBreakdownRows } from './LoanExpenseBreakdownRows';
+import { VehicleBreakdownRows } from './VehicleBreakdownRows';
 
 type YearRow = CashFlowTableData['years'][number];
 
 interface ExpenseBreakdownRowsProps {
   visibleYears: YearRow[];
   educationMembers: CashFlowTableData['expenseEducationMembers'];
+  livingItems: CashFlowTableData['expenseLivingItems'];
   expanded: boolean;
+  livingExpanded: boolean;
+  housingExpanded: boolean;
+  housingRentalExpanded: boolean;
+  housingOwnedExpanded: boolean;
+  housingTaxExpanded: boolean;
+  housingLoanRepaymentExpanded: boolean;
+  vehicleExpanded: boolean;
+  lifeEventExpanded: boolean;
   educationExpanded: boolean;
+  loanExpanded: boolean;
+  insuranceExpanded: boolean;
+  investContributionExpanded: boolean;
   onToggle: () => void;
+  onToggleLiving: () => void;
+  onToggleHousing: () => void;
+  onToggleHousingRental: () => void;
+  onToggleHousingOwned: () => void;
+  onToggleHousingTax: () => void;
+  onToggleHousingLoanRepayment: () => void;
+  onToggleVehicle: () => void;
+  onToggleLifeEvent: () => void;
   onToggleEducation: () => void;
+  onToggleLoan: () => void;
+  onToggleInsurance: () => void;
+  onToggleInvestContribution: () => void;
   renderLabelCell: (
     label: string,
     indent: number,
@@ -36,10 +62,33 @@ interface ExpenseBreakdownRowsProps {
 export function ExpenseBreakdownRows({
   visibleYears,
   educationMembers,
+  livingItems,
   expanded,
+  livingExpanded,
+  housingExpanded,
+  housingRentalExpanded,
+  housingOwnedExpanded,
+  housingTaxExpanded,
+  housingLoanRepaymentExpanded,
+  vehicleExpanded,
+  lifeEventExpanded,
   educationExpanded,
+  loanExpanded,
+  insuranceExpanded,
+  investContributionExpanded,
   onToggle,
+  onToggleLiving,
+  onToggleHousing,
+  onToggleHousingRental,
+  onToggleHousingOwned,
+  onToggleHousingTax,
+  onToggleHousingLoanRepayment,
+  onToggleVehicle,
+  onToggleLifeEvent,
   onToggleEducation,
+  onToggleLoan,
+  onToggleInsurance,
+  onToggleInvestContribution,
   renderLabelCell,
   renderValueCell,
 }: ExpenseBreakdownRowsProps) {
@@ -52,25 +101,58 @@ export function ExpenseBreakdownRows({
           onToggle,
           icon: 'folder',
         })}
-        {visibleYears.map((y) =>
-          renderValueCell(y.expenditure, y.calendarYear, { emptyAsDash: true }),
-        )}
+        {visibleYears.map((y) => {
+          const invest =
+            y.investContribution ??
+            sumInvestPersonalContribution(y.investBreakdown);
+          const total =
+            y.investContribution == null ? y.expenditure + invest : y.expenditure;
+          return renderValueCell(total, y.calendarYear, { emptyAsDash: true });
+        })}
       </tr>
 
       {expanded && (
         <>
-          {EXPENSE_CATEGORY_ROWS.map((row) => (
-            <tr key={row.key} className="cf-row-expense-detail">
-              {renderLabelCell(row.label, 2, { icon: 'leaf' })}
-              {visibleYears.map((y) =>
-                renderValueCell(
-                  y.expenseBreakdown[row.key],
-                  y.calendarYear,
-                  { emptyAsDash: true },
-                ),
-              )}
-            </tr>
-          ))}
+          <LivingBreakdownRows
+            visibleYears={visibleYears}
+            livingItems={livingItems}
+            expanded={livingExpanded}
+            onToggle={onToggleLiving}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
+
+          <HousingBreakdownRows
+            visibleYears={visibleYears}
+            expanded={housingExpanded}
+            rentalExpanded={housingRentalExpanded}
+            ownedExpanded={housingOwnedExpanded}
+            taxExpanded={housingTaxExpanded}
+            loanRepaymentExpanded={housingLoanRepaymentExpanded}
+            onToggle={onToggleHousing}
+            onToggleRental={onToggleHousingRental}
+            onToggleOwned={onToggleHousingOwned}
+            onToggleTax={onToggleHousingTax}
+            onToggleLoanRepayment={onToggleHousingLoanRepayment}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
+
+          <VehicleBreakdownRows
+            visibleYears={visibleYears}
+            expanded={vehicleExpanded}
+            onToggle={onToggleVehicle}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
+
+          <LifeEventBreakdownRows
+            visibleYears={visibleYears}
+            expanded={lifeEventExpanded}
+            onToggle={onToggleLifeEvent}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
 
           <tr className="cf-row-expense cf-row-expense-subtotal">
             {renderLabelCell('教育費', 2, {
@@ -105,18 +187,29 @@ export function ExpenseBreakdownRows({
               </tr>
             ))}
 
-          {EXPENSE_CATEGORY_ROWS_AFTER_EDUCATION.map((row) => (
-            <tr key={row.key} className="cf-row-expense-detail">
-              {renderLabelCell(row.label, 2, { icon: 'leaf' })}
-              {visibleYears.map((y) =>
-                renderValueCell(
-                  y.expenseBreakdown[row.key],
-                  y.calendarYear,
-                  { emptyAsDash: true },
-                ),
-              )}
-            </tr>
-          ))}
+          <LoanExpenseBreakdownRows
+            visibleYears={visibleYears}
+            expanded={loanExpanded}
+            onToggle={onToggleLoan}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
+
+          <InsuranceExpenseBreakdownRows
+            visibleYears={visibleYears}
+            expanded={insuranceExpanded}
+            onToggle={onToggleInsurance}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
+
+          <InvestContributionBreakdownRows
+            visibleYears={visibleYears}
+            expanded={investContributionExpanded}
+            onToggle={onToggleInvestContribution}
+            renderLabelCell={renderLabelCell}
+            renderValueCell={renderValueCell}
+          />
         </>
       )}
     </>

@@ -8,11 +8,7 @@ const family = createDefaultFamily();
 const head = family.find((m) => m.role === 'head');
 
 const incomeByMember = {
-  [head.id]: createDefaultHeadIncome(
-    head.id,
-    head.age,
-    referenceDate.getMonth() + 1,
-  ),
+  [head.id]: createDefaultHeadIncome(head, referenceDate.getMonth() + 1),
 };
 
 const withIncome = calcHouseholdTaxSocialMan({

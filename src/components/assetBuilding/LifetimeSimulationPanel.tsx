@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 
 import {
   buildLifetimeBalanceChartData,
+  createDefaultLifetimeChartVisibleSeries,
   getLifetimeChartTickAges,
   getVisibleHeadAgeRange,
   sliceLifetimeChartPoints,
+  type LifetimeChartScaleMode,
 } from '../../lib/lifetimeBalanceChartData';
 import type { BuildLifeEventTimelineInput } from '../../lib/lifeEventTimelineData';
-import { getSimulationPlotMinWidth } from '../../lib/simulationLayout';
 import { LifeEventTimelineRows } from './LifeEventTimeline';
 import {
   LifetimeChartGridRow,
@@ -33,6 +34,10 @@ export function LifetimeSimulationPanel({
     () => buildLifetimeBalanceChartData(cashFlowData),
     [cashFlowData],
   );
+  const [scaleMode, setScaleMode] = useState<LifetimeChartScaleMode>('cashFlow');
+  const [visibleSeries, setVisibleSeries] = useState(() =>
+    createDefaultLifetimeChartVisibleSeries(),
+  );
   const [windowStart, setWindowStart] = useState(0);
   const [windowEnd, setWindowEnd] = useState<number | null>(null);
 
@@ -55,6 +60,8 @@ export function LifetimeSimulationPanel({
       <div className="lifetime-simulation-unified" aria-label="生涯収支シミュレーション">
         <LifetimeChartHeader
           showTitle={showHeader}
+          scaleMode={scaleMode}
+          onScaleModeChange={setScaleMode}
           canZoomIn={visiblePoints.length > 12}
           canZoomOut={windowStart > 0 || endIndex < chartData.points.length}
           showReset={windowStart > 0 || endIndex < chartData.points.length}
@@ -88,20 +95,16 @@ export function LifetimeSimulationPanel({
         />
 
         <div className="lifetime-simulation-scroll">
-          <div
-            className="lifetime-simulation-align"
-            style={
-              {
-                '--sim-plot-min': `${getSimulationPlotMinWidth(visiblePoints.length)}px`,
-              } as React.CSSProperties
-            }
-          >
+          <div className="lifetime-simulation-align">
           <LifetimeChartGridRow
             chartData={chartData}
             visiblePoints={visiblePoints}
             minHeadAge={minHeadAge}
             maxHeadAge={maxHeadAge}
             tickAges={tickAges}
+            scaleMode={scaleMode}
+            visibleSeries={visibleSeries}
+            onVisibleSeriesChange={setVisibleSeries}
           />
           <LifeEventTimelineRows
             cashFlowData={cashFlowData}

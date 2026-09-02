@@ -1,5 +1,5 @@
 /** タイムライン左のカテゴリラベル列幅 */
-export const TIMELINE_LABEL_COLUMN_WIDTH = 132;
+export const TIMELINE_LABEL_COLUMN_WIDTH = 52;
 
 /** Y軸・年齢ラベル列幅（Recharts margin.left と一致） */
 export const SIMULATION_CHART_MARGIN_LEFT = 52;
@@ -30,9 +30,13 @@ const SIMULATION_BAR_BODY_WIDTH_PX = 16;
 /**
  * Recharts の barCategoryGap（片側オフセット px）。
  * 棒と棒の見かけのすきま = 2 × この値 ≒ SIMULATION_BAR_GAP_MM
+ * 年数が多いときはすきまを詰めて横幅に収まりやすくする。
  */
-export function getSimulationBarCategoryGapPx(): number {
-  return mmToCssPx(SIMULATION_BAR_GAP_MM) / 2;
+export function getSimulationBarCategoryGapPx(pointCount = 0): number {
+  const ideal = mmToCssPx(SIMULATION_BAR_GAP_MM) / 2;
+  if (pointCount <= 40) return ideal;
+  if (pointCount <= 60) return ideal * 0.5;
+  return Math.max(0.5, ideal * 0.25);
 }
 
 /** 1年あたりの最小幅（px）= 棒幅 + 棒間すきま */
@@ -48,7 +52,6 @@ export function getSimulationPlotMinWidth(pointCount: number): number {
 export function getSimulationAlignMinWidth(pointCount: number): number {
   return (
     TIMELINE_LABEL_COLUMN_WIDTH +
-    SIMULATION_CHART_MARGIN_LEFT +
     getSimulationPlotMinWidth(pointCount) +
     SIMULATION_SIDEBAR_GAP +
     SIMULATION_SIDEBAR_WIDTH +
@@ -58,7 +61,6 @@ export function getSimulationAlignMinWidth(pointCount: number): number {
 
 export const SIMULATION_GRID_TEMPLATE = `
   ${TIMELINE_LABEL_COLUMN_WIDTH}px
-  ${SIMULATION_CHART_MARGIN_LEFT}px
   minmax(0, 1fr)
   ${SIMULATION_SIDEBAR_GAP}px
   ${SIMULATION_SIDEBAR_WIDTH}px
@@ -82,11 +84,18 @@ export function headAgeToPlotPercent(
   return headAgeToPlotRatio(age, minHeadAge, maxHeadAge) * 100;
 }
 
+/**
+ * 隣接する期間バーが密着しないよう、終端をわずかに短くする（年換算）。
+ * 例: 年収が65歳まで・年金が65歳からでも、見た目上のすき間を残す。
+ */
+const TIMELINE_SPAN_END_GAP_YEARS = 0.35;
+
 export function getTimelineSpanPercent(
   startHeadAge: number,
   endHeadAge: number,
   minHeadAge: number,
   maxHeadAge: number,
+  options?: { endGap?: boolean },
 ): { left: number; width: number } {
   const left = headAgeToPlotPercent(startHeadAge, minHeadAge, maxHeadAge);
   const right = headAgeToPlotPercent(
@@ -94,9 +103,14 @@ export function getTimelineSpanPercent(
     minHeadAge,
     maxHeadAge,
   );
+  const useEndGap = options?.endGap !== false;
+  const range = Math.max(maxHeadAge - minHeadAge, 1e-6);
+  const endGapPercent = useEndGap
+    ? (TIMELINE_SPAN_END_GAP_YEARS / range) * 100
+    : 0;
   return {
     left,
-    width: Math.max(right - left, 1.5),
+    width: Math.max(right - left - endGapPercent, 1.2),
   };
 }
 
@@ -105,13 +119,25 @@ export function resolveTimelinePlotHeadAge(
   item: { startHeadAge: number; calendarYear?: number },
   chartPoints: ReadonlyArray<{ calendarYear: number; headAge: number }>,
 ): number {
-  if (item.calendarYear != null) {
+  return resolveTimelineHeadAgeFromChart(
+    item.calendarYear,
+    item.startHeadAge,
+    chartPoints,
+  );
+}
+
+export function resolveTimelineHeadAgeFromChart(
+  calendarYear: number | undefined,
+  fallbackHeadAge: number,
+  chartPoints: ReadonlyArray<{ calendarYear: number; headAge: number }>,
+): number {
+  if (calendarYear != null) {
     const point = chartPoints.find(
-      (chartPoint) => chartPoint.calendarYear === item.calendarYear,
+      (chartPoint) => chartPoint.calendarYear === calendarYear,
     );
     if (point) return point.headAge;
   }
-  return item.startHeadAge;
+  return fallbackHeadAge;
 }
 
 /** Recharts の margin と同じ水平パディング（グラフ列内のタイムライン用） */
@@ -122,7 +148,7 @@ export const SIMULATION_PLOT_PADDING_STYLE = {
 
 /**
  * タイムライン行（プロット列〜右端）のパディング。
- * 左: グラフ内Y軸幅(52px) → グラフのプロット開始と一致（Y軸列はラベルが占有）
+ * 左: グラフ内Y軸幅 → グラフの棒開始位置と一致
  * 右: サイドバーgap + サイドバー + グラフ右余白 → グラフのプロット終端と一致
  */
 export const SIMULATION_TIMELINE_TRACK_PADDING_STYLE = {

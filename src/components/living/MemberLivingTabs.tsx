@@ -5,7 +5,6 @@ import { MemberAvatar } from '../family/MemberAvatar';
 
 interface MemberLivingTabsProps {
   members: FamilyMember[];
-  headMember?: FamilyMember;
   activeTargetId: string;
   scheduleCounts: Record<string, number>;
   referenceDate: Date;
@@ -14,16 +13,12 @@ interface MemberLivingTabsProps {
 
 export function MemberLivingTabs({
   members,
-  headMember,
   activeTargetId,
   scheduleCounts,
   referenceDate,
   onSelect,
 }: MemberLivingTabsProps) {
   const householdCount = scheduleCounts[HOUSEHOLD_LIVING_KEY] ?? 0;
-  const householdBirth = headMember
-    ? formatBirthShort(headMember, referenceDate)
-    : '';
 
   return (
     <div className="member-tabs">
@@ -40,7 +35,6 @@ export function MemberLivingTabs({
               <span className="member-tab-badge">（{householdCount}件）</span>
             )}
           </span>
-          <span className="member-tab-birth">{householdBirth}</span>
         </div>
       </button>
 

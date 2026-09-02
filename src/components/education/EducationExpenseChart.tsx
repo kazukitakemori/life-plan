@@ -99,7 +99,15 @@ interface ChartTooltipProps {
 function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length || label == null) return null;
 
-  const items = payload.filter((item) => item.dataKey !== 'annualMan');
+  const hasMemberBars = payload.some((item) =>
+    String(item.dataKey).startsWith('annual_'),
+  );
+  const items = payload.filter((item) => {
+    if (item.dataKey === 'annualMan' && hasMemberBars) return false;
+    return item.value !== 0;
+  });
+
+  if (items.length === 0) return null;
 
   return (
     <div className="education-chart-tooltip">
@@ -268,13 +276,7 @@ export function EducationExpenseChart(props: EducationExpenseChartProps) {
     );
     return {
       points: series.points,
-      bars: [
-        {
-          dataKey: 'annualMan',
-          label: series.memberLabel,
-          color: series.memberColor,
-        },
-      ],
+      bars: series.bars,
       leftAxisMax: series.leftAxisMax,
       rightAxisMax: series.rightAxisMax,
       xAxisRows: buildEducationChartXAxisRows(
@@ -379,17 +381,15 @@ export function EducationExpenseChart(props: EducationExpenseChartProps) {
               <Bar
                 key={bar.dataKey}
                 yAxisId="left"
-                stackId={isAggregate ? 'education' : undefined}
+                stackId="education"
                 dataKey={bar.dataKey}
                 name={bar.label}
                 fill={bar.color}
                 barSize={barSize}
                 radius={
-                  isAggregate && index === chartData.bars.length - 1
+                  index === chartData.bars.length - 1
                     ? [2, 2, 0, 0]
-                    : isAggregate
-                      ? [0, 0, 0, 0]
-                      : [2, 2, 0, 0]
+                    : [0, 0, 0, 0]
                 }
               />
             ))}

@@ -8,11 +8,14 @@ import {
   createLivingExpenseSchedule,
 } from '../../lib/livingDefaults';
 import type { FamilyMember } from '../../types/family';
+import type { IncomeByMember } from '../../types/income';
 import {
   HOUSEHOLD_LIVING_KEY,
   type LivingExpenseSchedule,
   type LivingExpenseState,
 } from '../../types/living';
+import type { PensionByMember } from '../../types/pension';
+import { SecondLifeTemplatePanel } from '../shared/SecondLifeTemplatePanel';
 import { LivingScheduleCard } from './LivingScheduleCard';
 import { MemberLivingTabs } from './MemberLivingTabs';
 
@@ -20,14 +23,22 @@ interface LivingStepProps {
   members: FamilyMember[];
   livingState: LivingExpenseState;
   referenceDate: Date;
+  secondLifeStartAge?: number;
+  incomeByMember?: IncomeByMember;
+  pensionByMember?: PensionByMember;
+  purposeNote?: string;
   onChange: (state: LivingExpenseState) => void;
+  onAddSecondLifeLiving?: () => void;
 }
 
 export function LivingStep({
   members,
   livingState,
   referenceDate,
+  secondLifeStartAge,
+  purposeNote,
   onChange,
+  onAddSecondLifeLiving,
 }: LivingStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -144,10 +155,6 @@ export function LivingStep({
     persistSchedules(resolvedTargetId, cloned);
   };
 
-  const setInflationRate = (inflationRate: number) => {
-    onChange({ ...livingState, inflationRate });
-  };
-
   if (!headMember || !contextMember) {
     return (
       <div className="step-page">
@@ -163,24 +170,6 @@ export function LivingStep({
       <div className="step-header">
         <div>
           <h2 className="step-title">Q4. 生活費</h2>
-          <div className="living-inflation-field">
-            <span className="living-inflation-label">※ 物価上昇率</span>
-            <input
-              type="number"
-              className="living-inflation-input"
-              value={livingState.inflationRate}
-              min={0}
-              max={100}
-              step={0.1}
-              onChange={(e) =>
-                setInflationRate(Number(e.target.value) || 0)
-              }
-            />
-            <span className="living-inflation-unit">%/年</span>
-            <span className="living-help-icon" title="生活費全体の物価上昇率">
-              ?
-            </span>
-          </div>
         </div>
         <div className="step-header-right">
           <button type="button" className="step-action-btn" disabled>
@@ -198,9 +187,24 @@ export function LivingStep({
         </div>
       </div>
 
+      {purposeNote ? (
+        <p className="purpose-input-note" role="note">
+          {purposeNote}
+        </p>
+      ) : null}
+
+      {onAddSecondLifeLiving ? (
+        <SecondLifeTemplatePanel
+          startAge={secondLifeStartAge}
+          title="セカンドライフの生活費"
+          description={`世帯主 ${secondLifeStartAge}歳以降の生活費スケジュールを追加します（目安は現在の7割）。`}
+          buttonLabel="セカンドライフ以降の生活費を追加"
+          onAdd={onAddSecondLifeLiving}
+        />
+      ) : null}
+
       <MemberLivingTabs
         members={eligibleMembers}
-        headMember={headMember}
         activeTargetId={resolvedTargetId}
         scheduleCounts={scheduleCounts}
         referenceDate={referenceDate}
@@ -247,11 +251,7 @@ export function LivingStep({
               schedule={schedule}
               member={contextMember}
               referenceDate={referenceDate}
-              canRemoveSchedule={
-                resolvedTargetId === HOUSEHOLD_LIVING_KEY
-                  ? schedules.length > 1
-                  : schedules.length >= 1
-              }
+              canRemoveSchedule={schedules.length >= 1}
               onChange={(updated) => updateSchedule(schedule.id, updated)}
               onRemoveSchedule={() => removeSchedule(schedule.id)}
             />

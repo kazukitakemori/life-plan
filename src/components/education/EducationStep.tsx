@@ -56,6 +56,9 @@ interface EducationStepProps {
 
   onChange: (state: EducationByMember) => void;
 
+  /** 教育費試算など、目的に応じた注記 */
+  purposeNote?: string;
+
 }
 
 
@@ -75,6 +78,8 @@ export function EducationStep({
   referenceDate,
 
   onChange,
+
+  purposeNote,
 
 }: EducationStepProps) {
 
@@ -289,6 +294,12 @@ export function EducationStep({
         <div>
 
           <h2 className="step-title">Q2. 教育費</h2>
+
+          {purposeNote ? (
+            <p className="purpose-input-note" role="note">
+              {purposeNote}
+            </p>
+          ) : null}
 
         </div>
 

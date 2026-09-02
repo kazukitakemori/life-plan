@@ -1,15 +1,12 @@
-import { formatReferenceYearLabel } from '../../lib/birthDate';
-import { hasPreKindergartenChild } from '../../lib/educationCostContext';
 import {
   getPriorYearIncomeForMember,
-} from '../../lib/priorYearIncomeDefaults';
-import { INCOME_CATEGORY_LABELS } from '../../lib/incomeLabels';
+} from '../../lib/priorYearIncomeDefaults';import { INCOME_CATEGORY_LABELS } from '../../lib/incomeLabels';
 import type { FamilyMember } from '../../types/family';
 import type {
   IncomeByMember,
   IncomeCategory,
   PriorYearIncomeByMember,
-  PriorYearIncomeForNursery,
+  PriorYearIncomeOverride,
 } from '../../types/income';
 
 const PRIOR_YEAR_CATEGORIES: IncomeCategory[] = [
@@ -21,7 +18,6 @@ const PRIOR_YEAR_CATEGORIES: IncomeCategory[] = [
 
 interface PriorYearIncomeSectionProps {
   member: FamilyMember;
-  members: FamilyMember[];
   incomeByMember: IncomeByMember;
   priorYearIncomeByMember: PriorYearIncomeByMember;
   referenceDate: Date;
@@ -30,17 +26,12 @@ interface PriorYearIncomeSectionProps {
 
 export function PriorYearIncomeSection({
   member,
-  members,
   incomeByMember,
   priorYearIncomeByMember,
   referenceDate,
   onChange,
 }: PriorYearIncomeSectionProps) {
   if (member.role !== 'head' && member.role !== 'spouse') {
-    return null;
-  }
-
-  if (!hasPreKindergartenChild(members)) {
     return null;
   }
 
@@ -51,9 +42,9 @@ export function PriorYearIncomeSection({
     referenceDate,
   );
 
-  const currentYearLabel = formatReferenceYearLabel(referenceDate);
-
-  const persist = (updated: PriorYearIncomeForNursery) => {
+  const currentYearLabel = `${referenceDate.getFullYear()}年`;
+  const priorYearLabel = `${referenceDate.getFullYear() - 1}年`;
+  const persist = (updated: PriorYearIncomeOverride) => {
     onChange({
       ...priorYearIncomeByMember,
       [member.id]: updated,
@@ -63,13 +54,7 @@ export function PriorYearIncomeSection({
   return (
     <section className="prior-year-income-card">
       <div className="prior-year-income-header">
-        <h3 className="prior-year-income-title">
-          保育料参考値用：前年度の収入
-        </h3>
-        <p className="prior-year-income-description">
-          Q2 教育費の保育園「参考」ボタンでは、前年度の市民税所得割額を使います。
-          {currentYearLabel}の収入と変わらない場合は、今年度の収入を前年度として読み替えて計算します。
-        </p>
+        <h3 className="prior-year-income-title">前年度の収入</h3>
       </div>
 
       <label className="prior-year-income-toggle">
@@ -84,13 +69,13 @@ export function PriorYearIncomeSection({
           }
         />
         <span>
-          前年度収入は、今年度（{currentYearLabel}）と異なる
+          前年度（{priorYearLabel}）の収入は、今年度（{currentYearLabel}）と異なる
         </span>
       </label>
 
       {!priorYear.differsFromCurrentYear ? (
         <p className="prior-year-income-note">
-          今年度の収入を前年度として使用します。転職・産休などで前年度の収入が異なる場合は、上のチェックをオンにしてください。
+          転職・産休などで前年度の収入が異なる場合は、上のチェックをオンにしてください。
         </p>
       ) : (
         <div className="prior-year-income-fields">

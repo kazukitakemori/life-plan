@@ -35,8 +35,11 @@ interface TaxSocialBreakdownRowsProps {
   renderValueCell: (
     value: number,
     year: number,
-    options?: { emptyAsDash?: boolean },
+    options?: { emptyAsDash?: boolean; onClick?: () => void },
   ) => ReactNode;
+  onTaxSocialYearClick?: (calendarYear: number) => void;
+  getTaxSocial?: (year: YearRow) => number;
+  getTaxSocialBreakdown?: (year: YearRow) => YearRow['taxSocialBreakdown'];
 }
 
 export function TaxSocialBreakdownRows({
@@ -49,9 +52,16 @@ export function TaxSocialBreakdownRows({
   onToggleTax,
   onToggleSocialInsurance,
   onTogglePublicInsurance,
+  onTaxSocialYearClick,
+  getTaxSocial,
+  getTaxSocialBreakdown,
   renderLabelCell,
   renderValueCell,
 }: TaxSocialBreakdownRowsProps) {
+  const resolveTaxSocial = getTaxSocial ?? ((year) => year.taxSocial);
+  const resolveTaxSocialBreakdown =
+    getTaxSocialBreakdown ?? ((year) => year.taxSocialBreakdown);
+
   return (
     <>
       <tr className="cf-row-tax cf-row-tax-total">
@@ -62,7 +72,12 @@ export function TaxSocialBreakdownRows({
           icon: 'folder',
         })}
         {visibleYears.map((y) =>
-          renderValueCell(y.taxSocial, y.calendarYear, { emptyAsDash: true }),
+          renderValueCell(resolveTaxSocial(y), y.calendarYear, {
+            emptyAsDash: true,
+            onClick: onTaxSocialYearClick
+              ? () => onTaxSocialYearClick(y.calendarYear)
+              : undefined,
+          }),
         )}
       </tr>
 
@@ -77,7 +92,7 @@ export function TaxSocialBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumTaxAmount(y.taxSocialBreakdown),
+                sumTaxAmount(resolveTaxSocialBreakdown(y)),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -90,7 +105,7 @@ export function TaxSocialBreakdownRows({
                 {renderLabelCell(row.label, 3, { icon: 'leaf' })}
                 {visibleYears.map((y) =>
                   renderValueCell(
-                    y.taxSocialBreakdown[row.key],
+                    resolveTaxSocialBreakdown(y)[row.key],
                     y.calendarYear,
                     { emptyAsDash: true },
                   ),
@@ -107,7 +122,9 @@ export function TaxSocialBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumSocialInsuranceDetail(y.taxSocialBreakdown.socialInsuranceDetail),
+                sumSocialInsuranceDetail(
+                  resolveTaxSocialBreakdown(y).socialInsuranceDetail,
+                ),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -120,7 +137,7 @@ export function TaxSocialBreakdownRows({
                 {renderLabelCell(row.label, 3, { icon: 'leaf' })}
                 {visibleYears.map((y) =>
                   renderValueCell(
-                    y.taxSocialBreakdown.socialInsuranceDetail[row.key],
+                    resolveTaxSocialBreakdown(y).socialInsuranceDetail[row.key],
                     y.calendarYear,
                     { emptyAsDash: true },
                   ),
@@ -137,7 +154,9 @@ export function TaxSocialBreakdownRows({
             })}
             {visibleYears.map((y) =>
               renderValueCell(
-                sumPublicInsuranceDetail(y.taxSocialBreakdown.publicInsuranceDetail),
+                sumPublicInsuranceDetail(
+                  resolveTaxSocialBreakdown(y).publicInsuranceDetail,
+                ),
                 y.calendarYear,
                 { emptyAsDash: true },
               ),
@@ -150,7 +169,7 @@ export function TaxSocialBreakdownRows({
                 {renderLabelCell(row.label, 3, { icon: 'leaf' })}
                 {visibleYears.map((y) =>
                   renderValueCell(
-                    y.taxSocialBreakdown.publicInsuranceDetail[row.key],
+                    resolveTaxSocialBreakdown(y).publicInsuranceDetail[row.key],
                     y.calendarYear,
                     { emptyAsDash: true },
                   ),

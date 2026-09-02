@@ -42,7 +42,7 @@ export function treatsPeriodAsBusinessIncome(
   return category === 'self_employed' && isBusinessIncomeStream(streamType);
 }
 
-/** Q2 の収入形態を給与内訳行へ割り当てる */
+/** Q7 の収入形態を給与内訳行へ割り当てる */
 export function resolveSalaryStreamKey(
   streamType: IncomeStreamType,
 ): SalaryBonusStreamKey | null {
@@ -58,7 +58,7 @@ export function resolveSalaryStreamKey(
   }
 }
 
-/** Q2 の収入形態を賞与内訳行へ割り当てる（選択型DCは対象外） */
+/** Q7 の収入形態を賞与内訳行へ割り当てる（選択型DCは対象外） */
 export function resolveBonusStreamKey(
   streamType: IncomeStreamType,
 ): keyof BonusDetail | null {

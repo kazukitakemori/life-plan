@@ -15,28 +15,42 @@ import {
 import { formatCashFlowValue } from '../../lib/cashFlow';
 import {
   buildLifetimeBalanceChartData,
-  buildFinancialAssetsLinePoints,
+  buildBalanceLinePoints,
+  balanceValueForMode,
   formatLifetimeTotalMan,
+  getLifetimeChartPlotAgeDomain,
   getLifetimeChartTickAges,
   getLifetimeChartYTicks,
+  LIFETIME_CHART_BALANCE_LINE_LABELS,
+  createAllHiddenLifetimeChartVisibleSeries,
+  createDefaultLifetimeChartVisibleSeries,
+  resolveActiveBalanceLineMode,
+  resolveLifetimeChartAxisDomain,
   resolveLifetimeChartTooltipPoint,
   RETIREMENT_HEAD_AGE,
   sliceLifetimeChartPoints,
+  toggleLifetimeChartVisibleSeries,
   type LifetimeBalanceChartData,
   type LifetimeBalanceChartPoint,
+  type LifetimeChartBalanceLineMode,
+  type LifetimeChartScaleMode,
+  type LifetimeChartSeriesKey,
+  type LifetimeChartSeriesVisibility,
 } from '../../lib/lifetimeBalanceChartData';
 import {
   SIMULATION_CHART_MARGIN_LEFT,
   SIMULATION_CHART_MARGIN_RIGHT,
   getSimulationBarCategoryGapPx,
-  getSimulationPlotMinWidth,
 } from '../../lib/simulationLayout';
 import type { CashFlowTableData } from '../../types/cashFlow';
 
-const CHART_HEIGHT = 760;
+/** 通常時：グラフ＋イベント表を1画面に収める高さ */
+const CHART_HEIGHT_COMPACT = 360;
+/** 資産が極端で軸を広げたとき：折れ線の変化が見えるよう高くする */
+const CHART_HEIGHT_EXPANDED = 560;
 const CHART_MARGIN_LEFT = SIMULATION_CHART_MARGIN_LEFT;
 const CHART_MARGIN_RIGHT = SIMULATION_CHART_MARGIN_RIGHT;
-const CHART_MARGIN_TOP = 24;
+const CHART_MARGIN_TOP = 16;
 /** ズームイン時などに棒が極端に太くならない上限（px） */
 const EXPENSE_BAR_MAX_SIZE = 36;
 /** ゼロ跨ぎ補間点を含む折れ線専用の非表示 X 軸（棒の帯域幅計算から除外する） */
@@ -46,35 +60,56 @@ const X_AXIS_ROW_GAP = 2;
 const X_AXIS_ROW_START = 18;
 
 const CHART_COLORS = {
-  lifeEvent: '#f0a8c0',
-  childRelated: '#f0d060',
+  lifeEvent: '#ee9cba',
+  education: '#6db86d',
   housing: '#6a9fd8',
+  vehicle: '#90c2e7',
   living: '#eda866',
+  loan: '#c4b5fd',
+  insurance: '#fb7185',
+  assetContribution: '#22d3ee',
   taxSocial: '#c9b896',
   income: '#0000ff',
   financialAssets: '#1f9690',
   financialAssetsNegative: '#ff0000',
 } as const;
 
+export type LifetimeChartVisibleSeries = LifetimeChartSeriesVisibility;
+
 const LEGEND_ITEMS = [
-  { key: 'lifeEvent', label: '将来プラン', color: CHART_COLORS.lifeEvent, type: 'bar' as const },
+  { key: 'lifeEvent', label: 'ライフイベント', color: CHART_COLORS.lifeEvent, type: 'bar' as const },
+  { key: 'education', label: '教育費', color: CHART_COLORS.education, type: 'bar' as const },
+  { key: 'housing', label: '住まい', color: CHART_COLORS.housing, type: 'bar' as const },
+  { key: 'vehicle', label: '乗り物', color: CHART_COLORS.vehicle, type: 'bar' as const },
+  { key: 'living', label: '生活費', color: CHART_COLORS.living, type: 'bar' as const },
+  { key: 'loan', label: 'ローン', color: CHART_COLORS.loan, type: 'bar' as const },
+  { key: 'insurance', label: '保険', color: CHART_COLORS.insurance, type: 'bar' as const },
   {
-    key: 'childRelated',
-    label: 'お子さま関連',
-    color: CHART_COLORS.childRelated,
+    key: 'assetContribution',
+    label: '運用積立',
+    color: CHART_COLORS.assetContribution,
     type: 'bar' as const,
   },
-  { key: 'housing', label: '住宅関連', color: CHART_COLORS.housing, type: 'bar' as const },
-  { key: 'living', label: '生活費', color: CHART_COLORS.living, type: 'bar' as const },
   { key: 'taxSocial', label: '税金・社保', color: CHART_COLORS.taxSocial, type: 'bar' as const },
   { key: 'income', label: '収入', color: CHART_COLORS.income, type: 'line' as const },
   {
     key: 'financialAssets',
-    label: '金融資産残高',
+    label: LIFETIME_CHART_BALANCE_LINE_LABELS.financialAssets,
     color: CHART_COLORS.financialAssets,
     type: 'step' as const,
   },
-] as const;
+  {
+    key: 'depositBalance',
+    label: LIFETIME_CHART_BALANCE_LINE_LABELS.deposit,
+    color: CHART_COLORS.financialAssets,
+    type: 'step' as const,
+  },
+] as const satisfies ReadonlyArray<{
+  key: LifetimeChartSeriesKey;
+  label: string;
+  color: string;
+  type: 'bar' | 'line' | 'step';
+}>;
 
 const LEGEND_ITEM_ORDER = new Map(
   LEGEND_ITEMS.map((item, index) => [item.key, index]),
@@ -102,6 +137,8 @@ interface ChartTooltipProps {
     payload?: LifetimeBalanceChartPoint;
   }>;
   points: LifetimeBalanceChartPoint[];
+  visibleSeries: LifetimeChartVisibleSeries;
+  balanceLineMode: LifetimeChartBalanceLineMode | null;
 }
 
 interface ChartMouseState {
@@ -128,33 +165,128 @@ function headAgeFromChartMouseState(
   return null;
 }
 
-function buildTooltipRows(point: LifetimeBalanceChartPoint) {
-  return [
-    { dataKey: 'lifeEvent', name: '将来プラン', value: point.lifeEvent, color: CHART_COLORS.lifeEvent },
-    {
-      dataKey: 'childRelated',
-      name: 'お子さま関連',
-      value: point.childRelated,
-      color: CHART_COLORS.childRelated,
-    },
-    { dataKey: 'housing', name: '住宅関連', value: point.housing, color: CHART_COLORS.housing },
-    { dataKey: 'living', name: '生活費', value: point.living, color: CHART_COLORS.living },
-    { dataKey: 'taxSocial', name: '税金・社保', value: point.taxSocial, color: CHART_COLORS.taxSocial },
-    { dataKey: 'income', name: '収入', value: point.income, color: CHART_COLORS.income },
-    {
-      dataKey: 'financialAssets',
-      name: '金融資産残高',
-      value: point.financialAssets,
+function buildTooltipRows(
+  point: LifetimeBalanceChartPoint,
+  visibleSeries: LifetimeChartVisibleSeries,
+  balanceLineMode: LifetimeChartBalanceLineMode | null,
+) {
+  const rows: Array<{
+    dataKey: LifetimeChartSeriesKey;
+    name: string;
+    value: number;
+    color: string;
+  }> = [];
+
+  if (visibleSeries.lifeEvent) {
+    rows.push({
+      dataKey: 'lifeEvent',
+      name: 'ライフイベント',
+      value: point.lifeEvent,
+      color: CHART_COLORS.lifeEvent,
+    });
+  }
+  if (visibleSeries.education) {
+    rows.push({
+      dataKey: 'education',
+      name: '教育費',
+      value: point.education,
+      color: CHART_COLORS.education,
+    });
+  }
+  if (visibleSeries.housing) {
+    rows.push({
+      dataKey: 'housing',
+      name: '住まい',
+      value: point.housing,
+      color: CHART_COLORS.housing,
+    });
+  }
+  if (visibleSeries.vehicle) {
+    rows.push({
+      dataKey: 'vehicle',
+      name: '乗り物',
+      value: point.vehicle,
+      color: CHART_COLORS.vehicle,
+    });
+  }
+  if (visibleSeries.living) {
+    rows.push({
+      dataKey: 'living',
+      name: '生活費',
+      value: point.living,
+      color: CHART_COLORS.living,
+    });
+  }
+  if (visibleSeries.loan) {
+    rows.push({
+      dataKey: 'loan',
+      name: 'ローン',
+      value: point.loan,
+      color: CHART_COLORS.loan,
+    });
+  }
+  if (visibleSeries.insurance) {
+    rows.push({
+      dataKey: 'insurance',
+      name: '保険',
+      value: point.insurance,
+      color: CHART_COLORS.insurance,
+    });
+  }
+  if (visibleSeries.assetContribution) {
+    rows.push({
+      dataKey: 'assetContribution',
+      name: '運用積立',
+      value: point.assetContribution,
+      color: CHART_COLORS.assetContribution,
+    });
+  }
+  if (visibleSeries.taxSocial) {
+    rows.push({
+      dataKey: 'taxSocial',
+      name: '税金・社保',
+      value: point.taxSocial,
+      color: CHART_COLORS.taxSocial,
+    });
+  }
+  if (visibleSeries.income) {
+    rows.push({
+      dataKey: 'income',
+      name: '収入',
+      value: point.income,
+      color: CHART_COLORS.income,
+    });
+  }
+  if (balanceLineMode != null) {
+    const balanceValue = balanceValueForMode(point, balanceLineMode);
+    rows.push({
+      dataKey:
+        balanceLineMode === 'deposit' ? 'depositBalance' : 'financialAssets',
+      name: LIFETIME_CHART_BALANCE_LINE_LABELS[balanceLineMode],
+      value: balanceValue,
       color:
-        point.financialAssets < 0
+        balanceValue < 0
           ? CHART_COLORS.financialAssetsNegative
           : CHART_COLORS.financialAssets,
-    },
-  ];
+    });
+  }
+
+  return rows.filter((row) => {
+    if (
+      row.dataKey === 'income' ||
+      row.dataKey === 'financialAssets' ||
+      row.dataKey === 'depositBalance'
+    ) {
+      return true;
+    }
+    return row.value !== 0;
+  });
 }
 
 export interface LifetimeChartHeaderProps {
   showTitle?: boolean;
+  scaleMode: LifetimeChartScaleMode;
+  onScaleModeChange: (mode: LifetimeChartScaleMode) => void;
   canZoomIn: boolean;
   canZoomOut: boolean;
   showReset: boolean;
@@ -169,6 +301,9 @@ export interface LifetimeChartGridRowProps {
   minHeadAge: number;
   maxHeadAge: number;
   tickAges: number[];
+  scaleMode: LifetimeChartScaleMode;
+  visibleSeries: LifetimeChartVisibleSeries;
+  onVisibleSeriesChange: (next: LifetimeChartVisibleSeries) => void;
 }
 
 function xAxisRowStep(): number {
@@ -190,11 +325,13 @@ function formatAxisMan(value: number): string {
 function DualAgeAxisTick({
   x = 0,
   y = 0,
+  index = 0,
   payload,
   points,
 }: {
   x?: number;
   y?: number;
+  index?: number;
   payload?: { value: number };
   points: LifetimeBalanceChartPoint[];
 }) {
@@ -205,43 +342,68 @@ function DualAgeAxisTick({
 
   const rows = point.spouseAge != null
     ? [
-        { value: String(point.headAge), rowIndex: 0 },
-        { value: String(point.spouseAge), rowIndex: 1 },
+        { value: String(point.headAge), label: '世帯主', rowIndex: 0 },
+        { value: String(point.spouseAge), label: '配偶者', rowIndex: 1 },
       ]
-    : [{ value: String(point.headAge), rowIndex: 0 }];
+    : [{ value: String(point.headAge), label: '世帯主', rowIndex: 0 }];
+  const labelXInGroup = CHART_MARGIN_LEFT - 8 - x;
 
   return (
     <g transform={`translate(${x},${y})`}>
       {rows.map((row) => (
-        <text
-          key={row.rowIndex}
-          x={0}
-          y={xAxisRowY(row.rowIndex)}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill={row.rowIndex === 0 ? '#555' : '#666'}
-          fontSize={11}
-        >
-          {row.value}
-        </text>
+        <g key={row.rowIndex}>
+          {index === 0 ? (
+            <text
+              x={labelXInGroup}
+              y={xAxisRowY(row.rowIndex)}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fill="#64748b"
+              fontSize={10}
+            >
+              {row.label}
+            </text>
+          ) : null}
+          <text
+            x={0}
+            y={xAxisRowY(row.rowIndex)}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill={row.rowIndex === 0 ? '#555' : '#666'}
+            fontSize={11}
+          >
+            {row.value}
+          </text>
+        </g>
       ))}
     </g>
   );
 }
 
-function ChartTooltip({ active, label, payload, points }: ChartTooltipProps) {
+function ChartTooltip({
+  active,
+  label,
+  payload,
+  points,
+  visibleSeries,
+  balanceLineMode,
+}: ChartTooltipProps) {
   if (!active) return null;
 
   const point = resolveLifetimeChartTooltipPoint(points, label, payload);
   if (!point) return null;
 
-  const tooltipRows = buildTooltipRows(point).sort(
+  const tooltipRows = buildTooltipRows(
+    point,
+    visibleSeries,
+    balanceLineMode,
+  ).sort(
     (left, right) =>
-      (LEGEND_ITEM_ORDER.get(left.dataKey as (typeof LEGEND_ITEMS)[number]['key']) ??
-        Number.MAX_SAFE_INTEGER) -
-      (LEGEND_ITEM_ORDER.get(right.dataKey as (typeof LEGEND_ITEMS)[number]['key']) ??
-        Number.MAX_SAFE_INTEGER),
+      (LEGEND_ITEM_ORDER.get(left.dataKey) ?? Number.MAX_SAFE_INTEGER) -
+      (LEGEND_ITEM_ORDER.get(right.dataKey) ?? Number.MAX_SAFE_INTEGER),
   );
+
+  if (tooltipRows.length === 0) return null;
 
   return (
     <div className="lifetime-chart-tooltip">
@@ -266,7 +428,19 @@ function ChartTooltip({ active, label, payload, points }: ChartTooltipProps) {
   );
 }
 
-function ChartSidebar({ summary }: { summary: LifetimeBalanceChartData['summary'] }) {
+function ChartSidebar({
+  summary,
+  visibleSeries,
+  onVisibleSeriesChange,
+}: {
+  summary: LifetimeBalanceChartData['summary'];
+  visibleSeries: LifetimeChartVisibleSeries;
+  onVisibleSeriesChange: (next: LifetimeChartVisibleSeries) => void;
+}) {
+  const handleToggle = (key: LifetimeChartSeriesKey) => {
+    onVisibleSeriesChange(toggleLifetimeChartVisibleSeries(visibleSeries, key));
+  };
+
   return (
     <aside className="sim-align-sidebar lifetime-chart-sidebar">
       <div className="lifetime-chart-summary">
@@ -285,17 +459,55 @@ function ChartSidebar({ summary }: { summary: LifetimeBalanceChartData['summary'
 
       <div className="lifetime-chart-legend-panel">
         <h3 className="lifetime-chart-legend-title">凡例</h3>
+        <div className="lifetime-chart-legend-bulk">
+          <button
+            type="button"
+            className="lifetime-chart-legend-bulk-btn"
+            onClick={() =>
+              onVisibleSeriesChange(createDefaultLifetimeChartVisibleSeries())
+            }
+          >
+            全表示
+          </button>
+          <button
+            type="button"
+            className="lifetime-chart-legend-bulk-btn"
+            onClick={() =>
+              onVisibleSeriesChange(createAllHiddenLifetimeChartVisibleSeries())
+            }
+          >
+            全解除
+          </button>
+        </div>
         <ul className="lifetime-chart-legend">
-          {LEGEND_ITEMS.map((item) => (
-            <li key={item.key} className="lifetime-chart-legend-item">
-              <span
-                className={`lifetime-chart-legend-icon lifetime-chart-legend-icon--${item.type}`}
-                style={{ backgroundColor: item.color }}
-                aria-hidden
-              />
-              <span className="lifetime-chart-legend-label">{item.label}</span>
-            </li>
-          ))}
+          {LEGEND_ITEMS.map((item) => {
+            const checked = visibleSeries[item.key];
+            return (
+              <li
+                key={item.key}
+                className={
+                  checked
+                    ? 'lifetime-chart-legend-item'
+                    : 'lifetime-chart-legend-item is-hidden'
+                }
+              >
+                <label className="lifetime-chart-legend-toggle">
+                  <input
+                    type="checkbox"
+                    className="lifetime-chart-legend-check"
+                    checked={checked}
+                    onChange={() => handleToggle(item.key)}
+                  />
+                  <span
+                    className={`lifetime-chart-legend-icon lifetime-chart-legend-icon--${item.type}`}
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden
+                  />
+                  <span className="lifetime-chart-legend-label">{item.label}</span>
+                </label>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </aside>
@@ -304,6 +516,8 @@ function ChartSidebar({ summary }: { summary: LifetimeBalanceChartData['summary'
 
 export function LifetimeChartHeader({
   showTitle = true,
+  scaleMode,
+  onScaleModeChange,
   canZoomIn,
   canZoomOut,
   showReset,
@@ -319,6 +533,36 @@ export function LifetimeChartHeader({
         )}
       </div>
       <div className="lifetime-chart-toolbar">
+        <div
+          className="lifetime-chart-scale-toggle"
+          role="group"
+          aria-label="Y軸の表示スケール"
+        >
+          <button
+            type="button"
+            className={
+              scaleMode === 'cashFlow'
+                ? 'lifetime-chart-scale-btn is-active'
+                : 'lifetime-chart-scale-btn'
+            }
+            aria-pressed={scaleMode === 'cashFlow'}
+            onClick={() => onScaleModeChange('cashFlow')}
+          >
+            収支重視
+          </button>
+          <button
+            type="button"
+            className={
+              scaleMode === 'assets'
+                ? 'lifetime-chart-scale-btn is-active'
+                : 'lifetime-chart-scale-btn'
+            }
+            aria-pressed={scaleMode === 'assets'}
+            onClick={() => onScaleModeChange('assets')}
+          >
+            資産重視
+          </button>
+        </div>
         <button
           type="button"
           className="lifetime-chart-zoom-btn"
@@ -353,10 +597,34 @@ export function LifetimeChartGridRow({
   minHeadAge,
   maxHeadAge,
   tickAges,
+  scaleMode,
+  visibleSeries,
+  onVisibleSeriesChange,
 }: LifetimeChartGridRowProps) {
+  const balanceLineMode = resolveActiveBalanceLineMode(visibleSeries);
+
+  const axisDomain = useMemo(
+    () =>
+      resolveLifetimeChartAxisDomain(
+        visiblePoints,
+        scaleMode,
+        balanceLineMode,
+        visibleSeries,
+      ),
+    [visiblePoints, scaleMode, balanceLineMode, visibleSeries],
+  );
+
+  const chartHeight =
+    scaleMode === 'assets' ? CHART_HEIGHT_EXPANDED : CHART_HEIGHT_COMPACT;
+
   const yTicks = useMemo(
-    () => getLifetimeChartYTicks(chartData.yAxisMin, chartData.yAxisMax),
-    [chartData.yAxisMin, chartData.yAxisMax],
+    () => getLifetimeChartYTicks(axisDomain.min, axisDomain.max),
+    [axisDomain.min, axisDomain.max],
+  );
+
+  const { plotMinHeadAge, plotMaxHeadAge } = useMemo(
+    () => getLifetimeChartPlotAgeDomain(minHeadAge, maxHeadAge),
+    [minHeadAge, maxHeadAge],
   );
 
   const xAxisRowCount = chartData.spouseAxisLabel ? 2 : 1;
@@ -367,9 +635,19 @@ export function LifetimeChartGridRow({
   );
 
   const chartLinePoints = useMemo(
-    () => buildFinancialAssetsLinePoints(visiblePoints),
-    [visiblePoints],
+    () =>
+      balanceLineMode == null
+        ? []
+        : buildBalanceLinePoints(visiblePoints, balanceLineMode),
+    [visiblePoints, balanceLineMode],
   );
+
+  const showBalanceLine = balanceLineMode != null;
+
+  const balanceLineLabel =
+    balanceLineMode == null
+      ? ''
+      : LIFETIME_CHART_BALANCE_LINE_LABELS[balanceLineMode];
 
   const [hoveredHeadAge, setHoveredHeadAge] = useState<number | null>(null);
 
@@ -378,6 +656,11 @@ export function LifetimeChartGridRow({
     [visiblePoints, hoveredHeadAge],
   );
 
+  const hoveredBalance =
+    hoveredPoint && balanceLineMode != null
+      ? balanceValueForMode(hoveredPoint, balanceLineMode)
+      : null;
+
   const handleChartMouseMove = (state: ChartMouseState) => {
     setHoveredHeadAge(headAgeFromChartMouseState(state, visiblePoints));
   };
@@ -385,15 +668,14 @@ export function LifetimeChartGridRow({
   return (
     <>
       <div className="sim-align-label sim-chart-label-spacer" aria-hidden="true" />
-      <div className="sim-align-yaxis" aria-hidden="true" />
       <div className="sim-align-plot lifetime-chart-plot">
         <p className="lifetime-chart-y-unit" aria-hidden>
           （万円）
         </p>
-        <ResponsiveContainer width="100%" height={CHART_HEIGHT + xAxisHeight}>
+        <ResponsiveContainer width="100%" height={chartHeight + xAxisHeight}>
           <ComposedChart
             data={visiblePoints}
-            barCategoryGap={getSimulationBarCategoryGapPx()}
+            barCategoryGap={getSimulationBarCategoryGapPx(visiblePoints.length)}
             barGap={0}
             maxBarSize={EXPENSE_BAR_MAX_SIZE}
             onMouseMove={handleChartMouseMove}
@@ -410,7 +692,7 @@ export function LifetimeChartGridRow({
               dataKey="headAge"
               type="number"
               scale="linear"
-              domain={[minHeadAge, maxHeadAge]}
+              domain={[plotMinHeadAge, plotMaxHeadAge]}
               allowDataOverflow
               padding={{ left: 0, right: 0 }}
               ticks={tickAges}
@@ -427,7 +709,7 @@ export function LifetimeChartGridRow({
               dataKey="headAge"
               type="number"
               scale="linear"
-              domain={[minHeadAge, maxHeadAge]}
+              domain={[plotMinHeadAge, plotMaxHeadAge]}
               allowDataOverflow
               padding={{ left: 0, right: 0 }}
               hide
@@ -439,7 +721,7 @@ export function LifetimeChartGridRow({
               stroke="#64748b"
               fontSize={11}
               width={CHART_MARGIN_LEFT}
-              domain={[Math.min(chartData.yAxisMin, 0), chartData.yAxisMax]}
+              domain={[axisDomain.min, axisDomain.max]}
             />
             <ReferenceLine yAxisId="main" y={0} stroke="#cbd5e1" strokeWidth={1} />
             <Tooltip
@@ -451,6 +733,8 @@ export function LifetimeChartGridRow({
                     props.payload as ChartTooltipProps['payload']
                   }
                   points={visiblePoints}
+                  visibleSeries={visibleSeries}
+                  balanceLineMode={balanceLineMode}
                 />
               )}
             />
@@ -470,6 +754,35 @@ export function LifetimeChartGridRow({
               name="税金・社保"
               stackId="expense"
               fill={CHART_COLORS.taxSocial}
+              hide={!visibleSeries.taxSocial}
+              isAnimationActive={false}
+            />
+            <Bar
+              yAxisId="main"
+              dataKey="assetContribution"
+              name="運用積立"
+              stackId="expense"
+              fill={CHART_COLORS.assetContribution}
+              hide={!visibleSeries.assetContribution}
+              isAnimationActive={false}
+            />
+            <Bar
+              yAxisId="main"
+              dataKey="insurance"
+              name="保険"
+              stackId="expense"
+              fill={CHART_COLORS.insurance}
+              hide={!visibleSeries.insurance}
+              isAnimationActive={false}
+            />
+            <Bar
+              yAxisId="main"
+              dataKey="loan"
+              name="ローン"
+              stackId="expense"
+              fill={CHART_COLORS.loan}
+              hide={!visibleSeries.loan}
+              isAnimationActive={false}
             />
             <Bar
               yAxisId="main"
@@ -477,32 +790,48 @@ export function LifetimeChartGridRow({
               name="生活費"
               stackId="expense"
               fill={CHART_COLORS.living}
+              hide={!visibleSeries.living}
+              isAnimationActive={false}
+            />
+            <Bar
+              yAxisId="main"
+              dataKey="vehicle"
+              name="乗り物"
+              stackId="expense"
+              fill={CHART_COLORS.vehicle}
+              hide={!visibleSeries.vehicle}
+              isAnimationActive={false}
             />
             <Bar
               yAxisId="main"
               dataKey="housing"
-              name="住宅関連"
+              name="住まい"
               stackId="expense"
               fill={CHART_COLORS.housing}
+              hide={!visibleSeries.housing}
+              isAnimationActive={false}
             />
             <Bar
               yAxisId="main"
-              dataKey="childRelated"
-              name="お子さま関連"
+              dataKey="education"
+              name="教育費"
               stackId="expense"
-              fill={CHART_COLORS.childRelated}
+              fill={CHART_COLORS.education}
+              hide={!visibleSeries.education}
+              isAnimationActive={false}
             />
             <Bar
               yAxisId="main"
               dataKey="lifeEvent"
-              name="将来プラン"
+              name="ライフイベント"
               stackId="expense"
               fill={CHART_COLORS.lifeEvent}
+              hide={!visibleSeries.lifeEvent}
+              isAnimationActive={false}
             />
             <Line
               xAxisId={LINE_X_AXIS_ID}
               yAxisId="main"
-              data={visiblePoints}
               type="monotone"
               dataKey="income"
               name="収入"
@@ -510,57 +839,71 @@ export function LifetimeChartGridRow({
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 4 }}
+              hide={!visibleSeries.income}
+              isAnimationActive={false}
             />
             <Line
               xAxisId={LINE_X_AXIS_ID}
               yAxisId="main"
               data={chartLinePoints}
               type="stepAfter"
-              dataKey="financialAssetsPositive"
-              name="金融資産残高"
+              dataKey="balancePositive"
+              name={balanceLineLabel}
               stroke={CHART_COLORS.financialAssets}
               strokeWidth={2.5}
               dot={false}
               activeDot={false}
               connectNulls={false}
               legendType="none"
+              hide={!showBalanceLine}
+              isAnimationActive={false}
             />
             <Line
               xAxisId={LINE_X_AXIS_ID}
               yAxisId="main"
               data={chartLinePoints}
               type="stepAfter"
-              dataKey="financialAssetsNegative"
-              name="金融資産残高"
+              dataKey="balanceNegative"
+              name={balanceLineLabel}
               stroke={CHART_COLORS.financialAssetsNegative}
               strokeWidth={2.5}
               dot={false}
               activeDot={false}
               connectNulls={false}
               legendType="none"
+              hide={!showBalanceLine}
+              isAnimationActive={false}
             />
-            {hoveredPoint && (
+            {hoveredPoint &&
+              hoveredBalance != null &&
+              balanceLineMode != null &&
+              hoveredBalance >= axisDomain.min &&
+              hoveredBalance <= axisDomain.max && (
               <ReferenceDot
                 xAxisId={LINE_X_AXIS_ID}
                 yAxisId="main"
                 x={hoveredPoint.headAge}
-                y={hoveredPoint.financialAssets}
+                y={hoveredBalance}
                 r={5}
                 fill={
-                  hoveredPoint.financialAssets < 0
+                  hoveredBalance < 0
                     ? CHART_COLORS.financialAssetsNegative
                     : CHART_COLORS.financialAssets
                 }
                 stroke="#fff"
                 strokeWidth={2}
-                ifOverflow="visible"
+                ifOverflow="hidden"
               />
             )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
       <div className="sim-align-gap" aria-hidden="true" />
-      <ChartSidebar summary={chartData.summary} />
+      <ChartSidebar
+        summary={chartData.summary}
+        visibleSeries={visibleSeries}
+        onVisibleSeriesChange={onVisibleSeriesChange}
+      />
     </>
   );
 }
@@ -579,6 +922,10 @@ export function LifetimeBalanceSimulationChart({
   onWindowEndChange,
 }: LifetimeBalanceSimulationChartProps) {
   const chartData = useMemo(() => buildLifetimeBalanceChartData(data), [data]);
+  const [scaleMode, setScaleMode] = useState<LifetimeChartScaleMode>('cashFlow');
+  const [visibleSeries, setVisibleSeries] = useState(() =>
+    createDefaultLifetimeChartVisibleSeries(),
+  );
   const [localWindowStart, setLocalWindowStart] = useState(0);
   const [localWindowEnd, setLocalWindowEnd] = useState<number | null>(null);
 
@@ -641,6 +988,8 @@ export function LifetimeBalanceSimulationChart({
     <section className="lifetime-chart-card" aria-label="生涯収支シミュレーション">
       <LifetimeChartHeader
         showTitle={showHeader}
+        scaleMode={scaleMode}
+        onScaleModeChange={setScaleMode}
         canZoomIn={canZoomIn}
         canZoomOut={canZoomOut}
         showReset={canZoomOut}
@@ -651,20 +1000,16 @@ export function LifetimeBalanceSimulationChart({
       <div
         className="lifetime-simulation-scroll"
       >
-        <div
-          className="lifetime-simulation-align"
-          style={
-            {
-              '--sim-plot-min': `${getSimulationPlotMinWidth(visiblePoints.length)}px`,
-            } as React.CSSProperties
-          }
-        >
+        <div className="lifetime-simulation-align">
         <LifetimeChartGridRow
           chartData={chartData}
           visiblePoints={visiblePoints}
           minHeadAge={minHeadAge}
           maxHeadAge={maxHeadAge}
           tickAges={tickAges}
+          scaleMode={scaleMode}
+          visibleSeries={visibleSeries}
+          onVisibleSeriesChange={setVisibleSeries}
         />
         </div>
       </div>

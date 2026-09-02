@@ -1,24 +1,49 @@
 import {
+  calcApproximateEmployeeGrossYenForTotalIncomeYen,
   SPOUSE_SPECIAL_DEDUCTION_INCOME_LIMIT_YEN,
-  SPOUSE_TOTAL_INCOME_LIMIT_YEN,
 } from './incomeTaxDeductions';
-import { treatsPeriodAsBusinessIncome } from './incomeBreakdown';
-import {
-  calcCombinedIncomeForOverlappingPeriods,
-  countOverlappingIncomeEntries,
-} from './memberCombinedIncome';
-import {
-  allowsSocialInsuranceDependentDefault,
-  allowsTaxDependentDefault,
-} from './memberDependentDefaults';
+import { getSpouseTotalIncomeLimitYen } from './spouseDeduction';
 import type { FamilyMember } from '../types/family';
 import type { IncomeEntry, IncomePeriod } from '../types/income';
 
 const MAN_TO_YEN = 10_000;
 
-/** 税法上の扶養：合計所得金額の上限（万円） */
+/** 税法上の扶養：合計所得金額の上限（万円・令和7年分以降の試算デフォルト） */
+export function getTaxDependentTotalIncomeLimitMan(calendarYear = 2026): number {
+  return getSpouseTotalIncomeLimitYen(calendarYear) / MAN_TO_YEN;
+}
+
+/** @deprecated getTaxDependentTotalIncomeLimitMan(calendarYear) を使用 */
 export const TAX_DEPENDENT_TOTAL_INCOME_LIMIT_MAN =
-  SPOUSE_TOTAL_INCOME_LIMIT_YEN / MAN_TO_YEN;
+  getTaxDependentTotalIncomeLimitMan(2026);
+
+/**
+ * 給与所得のみ・賞与なしの場合、合計所得が扶養・配偶者控除の上限に収まる
+ * おおよその年収（額面・万円）。令和7年分以降は約123万円（旧103万円の壁は48万円上限時代）。
+ */
+export function getApproximateEmployeeGrossLimitManForTaxDependent(
+  calendarYear = 2026,
+): number {
+  const totalIncomeLimitYen = getSpouseTotalIncomeLimitYen(calendarYear);
+  return (
+    calcApproximateEmployeeGrossYenForTotalIncomeYen(
+      totalIncomeLimitYen,
+      calendarYear,
+    ) / MAN_TO_YEN
+  );
+}
+
+/** 配偶者特別控除がなくなるおおよその年収（額面・万円・給与のみ） */
+export function getApproximateEmployeeGrossLimitManForSpouseSpecialDeduction(
+  calendarYear = 2026,
+): number {
+  return (
+    calcApproximateEmployeeGrossYenForTotalIncomeYen(
+      SPOUSE_SPECIAL_DEDUCTION_INCOME_LIMIT_YEN,
+      calendarYear,
+    ) / MAN_TO_YEN
+  );
+}
 
 /** 配偶者特別控除の合計所得金額上限（万円） */
 export const SPOUSE_SPECIAL_DEDUCTION_TOTAL_INCOME_LIMIT_MAN =
@@ -30,13 +55,6 @@ export const SOCIAL_INSURANCE_DEPENDENT_INCOME_LIMIT_MAN = 130;
 export interface DependentValidationIssue {
   id: string;
   message: string;
-}
-
-function formatIncomeMan(amountMan: number): string {
-  if (Number.isInteger(amountMan)) {
-    return `${amountMan}万円`;
-  }
-  return `${amountMan.toFixed(1)}万円`;
 }
 
 /**
@@ -65,69 +83,26 @@ export function validateMemberDependentDefaults(
   return issues;
 }
 
-/**
- * child/other が所得超過・社保収入超過の場合の期間単位アラートを返す。
- * Q7（収入ページ）の期間ごとに表示する用途。
- */
+/** child/other の期間単位バリデーション（自動判定のため所得超過は表示のみ） */
 export function validateDependentMemberPeriod(
   member: FamilyMember,
-  entry: IncomeEntry,
+  _entry: IncomeEntry,
   period: IncomePeriod,
-  memberEntries: IncomeEntry[] = [entry],
+  _memberEntries: IncomeEntry[] = [],
+  _calendarYear = 2026,
 ): DependentValidationIssue[] {
   if (member.role !== 'child' && member.role !== 'other') return [];
-
-  const issues: DependentValidationIssue[] = [];
-
-  if (period.taxDependent && !allowsTaxDependentDefault(member)) {
-    issues.push({
-      id: 'q1-tax-dependent-disabled',
-      message:
-        'ご家族（Q1）で「税法上の扶養に入れる」がオフのため、この期間では税法上の扶養に設定できません。',
-    });
-  }
-
-  if (period.socialInsuranceDependent && !allowsSocialInsuranceDependentDefault(member)) {
-    issues.push({
-      id: 'q1-social-insurance-disabled',
-      message:
-        'ご家族（Q1）で「社会保険の扶養に入れる」がオフのため、この期間では社会保険の扶養に設定できません。',
-    });
-  }
-
-  if (period.dependentStatus !== 'dependent') return issues;
-
-  const { totalIncomeMan, socialInsuranceIncomeMan } =
-    calcCombinedIncomeForOverlappingPeriods(memberEntries, period);
-  const hasMultipleSources =
-    countOverlappingIncomeEntries(memberEntries, period) > 1;
-
-  if (period.taxDependent && totalIncomeMan > TAX_DEPENDENT_TOTAL_INCOME_LIMIT_MAN) {
-    issues.push({
-      id: 'child-other-tax-income-over-limit',
-      message: `合計所得金額が${TAX_DEPENDENT_TOTAL_INCOME_LIMIT_MAN}万円を超えているため、税法上の扶養控除が適用されません。（${hasMultipleSources ? '収入合算・' : ''}合計所得：${formatIncomeMan(totalIncomeMan)}）`,
-    });
-  }
-
-  if (
-    period.socialInsuranceDependent &&
-    socialInsuranceIncomeMan >= SOCIAL_INSURANCE_DEPENDENT_INCOME_LIMIT_MAN
-  ) {
-    issues.push({
-      id: 'child-other-social-insurance-income-over-limit',
-      message: `年収（額面）合算が${SOCIAL_INSURANCE_DEPENDENT_INCOME_LIMIT_MAN}万円以上のため、社会保険の扶養には入れません。（${hasMultipleSources ? '収入合算・' : ''}合算額：${formatIncomeMan(socialInsuranceIncomeMan)}）`,
-    });
-  }
-
-  return issues;
+  if (period.dependentStatus !== 'dependent') return [];
+  return [];
 }
 
 export function validatePeriodDependentSettings(
   member: FamilyMember,
-  entry: IncomeEntry,
+  _entry: IncomeEntry,
   period: IncomePeriod,
   familyMembers: FamilyMember[],
-  memberEntries: IncomeEntry[] = [entry],
+  _memberEntries: IncomeEntry[] = [],
+  _calendarYear = 2026,
 ): DependentValidationIssue[] {
   if (period.dependentStatus !== 'dependent') {
     return [];
@@ -135,10 +110,6 @@ export function validatePeriodDependentSettings(
 
   const issues: DependentValidationIssue[] = [];
   const hasSpouse = familyMembers.some((m) => m.role === 'spouse');
-  const { totalIncomeMan, socialInsuranceIncomeMan } =
-    calcCombinedIncomeForOverlappingPeriods(memberEntries, period);
-  const hasMultipleSources =
-    countOverlappingIncomeEntries(memberEntries, period) > 1;
 
   if (!hasSpouse) {
     issues.push({
@@ -154,47 +125,6 @@ export function validatePeriodDependentSettings(
       id: 'head-cannot-be-dependent',
       message:
         '世帯主の収入期間では「扶養に入る」は設定できません。配偶者の収入期間で設定してください。',
-    });
-  }
-
-  if (!period.taxDependent && !period.socialInsuranceDependent) {
-    issues.push({
-      id: 'no-dependent-target',
-      message:
-        '「扶養に入る」を選択した場合、税法上または社会保険の扶養のいずれかにチェックが必要です。',
-    });
-  }
-
-  if (
-    period.taxDependent &&
-    totalIncomeMan > TAX_DEPENDENT_TOTAL_INCOME_LIMIT_MAN
-  ) {
-    if (totalIncomeMan <= SPOUSE_SPECIAL_DEDUCTION_TOTAL_INCOME_LIMIT_MAN) {
-      issues.push({
-        id: 'tax-income-special-range',
-        message: `合計所得金額が${TAX_DEPENDENT_TOTAL_INCOME_LIMIT_MAN}万円を超えているため、税法上の扶養には入れません。世帯主には配偶者特別控除が適用されます。（${hasMultipleSources ? '収入合算・' : ''}合計所得：${formatIncomeMan(totalIncomeMan)}）`,
-      });
-    } else {
-      issues.push({
-        id: 'tax-income-over-limit',
-        message: `合計所得金額が${SPOUSE_SPECIAL_DEDUCTION_TOTAL_INCOME_LIMIT_MAN}万円を超えているため、税法上の扶養・配偶者控除は適用されません。（${hasMultipleSources ? '収入合算・' : ''}合計所得：${formatIncomeMan(totalIncomeMan)}）`,
-      });
-    }
-  }
-
-  if (
-    period.socialInsuranceDependent &&
-    socialInsuranceIncomeMan >= SOCIAL_INSURANCE_DEPENDENT_INCOME_LIMIT_MAN
-  ) {
-    const isBusiness = treatsPeriodAsBusinessIncome(entry.category, period.streamType);
-    const incomeLabel = hasMultipleSources
-      ? '収入合算'
-      : isBusiness
-        ? '収入（額面 − 必要経費）'
-        : '年収（額面）';
-    issues.push({
-      id: 'social-insurance-income-over-limit',
-      message: `${incomeLabel}が${SOCIAL_INSURANCE_DEPENDENT_INCOME_LIMIT_MAN}万円以上のため、社会保険の扶養には入れません。（${incomeLabel}：${formatIncomeMan(socialInsuranceIncomeMan)}）`,
     });
   }
 

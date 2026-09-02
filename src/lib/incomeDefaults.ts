@@ -10,9 +10,14 @@ import type {
   IncomeEntry,
   IncomePeriod,
   IncomeStreamType,
+  RetirementAllowanceEntry,
 } from '../types/income';
 import { calcAnnualAmountMan } from './incomeAmount';
-import { CATEGORY_TO_STREAM } from './incomeLabels';
+import {
+  CATEGORY_TO_STREAM,
+  incomeCategoryShowsRetirementAllowance,
+} from './incomeLabels';
+import { resolveDefaultStartAgeMonth } from './simulationTiming';
 
 function createId(): string {
   return crypto.randomUUID();
@@ -47,14 +52,21 @@ type LegacyIncomePeriod = Omit<
 
 type LegacyIncomeEntry = Omit<
   IncomeEntry,
-  'periods' | 'kenpoContinuationYears' | 'expenseManPerMonth' | 'filingType'
+  | 'periods'
+  | 'expenseManPerMonth'
+  | 'filingType'
+  | 'retirementAllowances'
 > &
   Partial<
     Pick<
       IncomeEntry,
-      'kenpoContinuationYears' | 'expenseManPerMonth' | 'filingType'
+      | 'expenseManPerMonth'
+      | 'filingType'
+      | 'retirementAllowances'
     >
   > & {
+    /** @deprecated UI削除済み。読み込み時は無視する */
+    kenpoContinuationYears?: number | null;
     /** 旧ブロック単位の扶養区分（期間へ移行） */
     dependentStatus?: DependentStatus;
     streamType?: IncomeStreamType;
@@ -63,8 +75,61 @@ type LegacyIncomeEntry = Omit<
     annualAmountMan?: number;
     spouseContingencyRate?: number | null;
     annualIncreaseRate?: number | null;
+    spouseContingencyOnly?: boolean;
+    isNewIncomeFromStart?: boolean;
     periods: LegacyIncomePeriod[];
   };
+
+function migrateRetirementAllowance(
+  raw: Partial<RetirementAllowanceEntry> & {
+    id?: string;
+    /** @deprecated */
+    enrollmentYearsOverride?: number | null;
+  },
+): RetirementAllowanceEntry {
+  const receiveAge = Math.max(0, Number(raw.receiveAge) || 60);
+  const receiveMonth = Math.min(12, Math.max(1, Number(raw.receiveMonth) || 3));
+  const legacyOverride =
+    raw.enrollmentYearsOverride == null
+      ? null
+      : Math.max(1, Math.floor(Number(raw.enrollmentYearsOverride) || 1));
+  const enrollmentYears = Math.max(
+    1,
+    Math.floor(
+      Number(raw.enrollmentYears) ||
+        legacyOverride ||
+        30,
+    ),
+  );
+  const enrollmentMode =
+    raw.enrollmentMode === 'period' || raw.enrollmentMode === 'years'
+      ? raw.enrollmentMode
+      : 'years';
+  return {
+    id: raw.id ?? createId(),
+    amountMan: Math.max(0, Number(raw.amountMan) || 0),
+    receiveAge,
+    receiveMonth,
+    enrollmentMode,
+    enrollmentYears,
+    enrollmentStartAge: Math.max(
+      0,
+      Number(raw.enrollmentStartAge) || Math.max(0, receiveAge - enrollmentYears),
+    ),
+    enrollmentStartMonth: Math.min(
+      12,
+      Math.max(1, Number(raw.enrollmentStartMonth) || 4),
+    ),
+    enrollmentEndAge: Math.max(
+      0,
+      Number(raw.enrollmentEndAge) || receiveAge,
+    ),
+    enrollmentEndMonth: Math.min(
+      12,
+      Math.max(1, Number(raw.enrollmentEndMonth) || receiveMonth),
+    ),
+  };
+}
 
 function migrateIncomePeriod(
   period: LegacyIncomePeriod,
@@ -110,7 +175,7 @@ function dependentFlagsForStatus(
   dependentStatus: DependentStatus,
 ): Pick<IncomePeriod, 'taxDependent' | 'socialInsuranceDependent'> {
   if (dependentStatus === 'dependent') {
-    return { taxDependent: true, socialInsuranceDependent: true };
+    return { taxDependent: false, socialInsuranceDependent: false };
   }
   return { taxDependent: false, socialInsuranceDependent: false };
 }
@@ -155,12 +220,13 @@ export function migrateIncomeEntry(
     id: entry.id,
     memberId: entry.memberId,
     category,
-    spouseContingencyOnly: entry.spouseContingencyOnly,
+    isNewIncomeFromStart: entry.isNewIncomeFromStart ?? false,
     periods: entry.periods.map((period) =>
       migrateIncomePeriod(period, fallback),
     ),
-    kenpoContinuationYears:
-      entry.kenpoContinuationYears ?? (category === 'employee' ? 2 : null),
+    retirementAllowances: incomeCategoryShowsRetirementAllowance(category)
+      ? (entry.retirementAllowances ?? []).map(migrateRetirementAllowance)
+      : [],
     expenseManPerMonth:
       entry.expenseManPerMonth ??
       (category === 'self_employed' || category === 'other' ? 0 : null),
@@ -183,7 +249,7 @@ export function migrateIncomeByMember(
 }
 
 export function createDefaultPeriod(
-  memberAge: number,
+  memberAge: number | null | undefined,
   referenceMonth: number,
   streamType: IncomeStreamType,
   monthlyAmountMan = 50,
@@ -197,11 +263,15 @@ export function createDefaultPeriod(
           dependentStatus: defaultDependentStatus(member?.role),
           ...dependentFlagsForStatus(defaultDependentStatus(member?.role)),
         };
+  // 60歳超で非就労想定の場合は、就労履歴を過去期間として持たせる
+  const age = memberAge ?? 0;
+  const useCareerHistory = age > 60;
+  const defaultStart = resolveDefaultStartAgeMonth(memberAge, referenceMonth);
   return {
     id: createId(),
-    startAge: memberAge,
-    startMonth: referenceMonth,
-    endAge: 60,
+    startAge: useCareerHistory ? 25 : defaultStart.startAge,
+    startMonth: useCareerHistory ? 4 : defaultStart.startMonth,
+    endAge: useCareerHistory ? 60 : Math.max(60, age),
     endMonth: 3,
     streamType,
     monthlyAmountMan,
@@ -218,7 +288,7 @@ export function createDefaultPeriod(
 export function createIncomeEntry(
   memberId: string,
   category: IncomeCategory,
-  memberAge = 40,
+  memberAge: number | null | undefined = 40,
   referenceMonth = 1,
   member?: FamilyMember,
 ): IncomeEntry {
@@ -229,7 +299,7 @@ export function createIncomeEntry(
     id: createId(),
     memberId,
     category,
-    spouseContingencyOnly: false,
+    isNewIncomeFromStart: false,
     periods: [
       createDefaultPeriod(
         memberAge,
@@ -239,10 +309,40 @@ export function createIncomeEntry(
         member,
       ),
     ],
-    kenpoContinuationYears: category === 'employee' ? 2 : null,
+    retirementAllowances: [],
     expenseManPerMonth:
       category === 'self_employed' || category === 'other' ? 0 : null,
     filingType: category === 'self_employed' ? 'blue_65' : null,
+  };
+}
+
+/** 本業給与に加える副業・事業収入（社保は本業側のまま） */
+export function createSideBusinessIncomeEntry(
+  memberId: string,
+  memberAge: number | null | undefined = 40,
+  referenceMonth = 1,
+  member?: FamilyMember,
+): IncomeEntry {
+  return {
+    ...createIncomeEntry(
+      memberId,
+      'self_employed',
+      memberAge,
+      referenceMonth,
+      member,
+    ),
+    incomePurpose: 'side_business',
+    expenseManPerMonth: 0,
+    filingType: 'blue_65',
+    periods: [
+      createDefaultPeriod(
+        memberAge,
+        referenceMonth,
+        'business_national_insurance',
+        10,
+        member,
+      ),
+    ],
   };
 }
 

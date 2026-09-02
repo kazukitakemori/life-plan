@@ -32,8 +32,12 @@ export interface FamilyMember {
   id: string;
   role: FamilyMemberRole;
   nickname: string;
-  age: number;
-  birthMonth: number;
+  /** 未選択時は null（新規入力の初期状態）。基準日時点の満年齢 */
+  age: number | null;
+  /** 未選択時は null（新規入力の初期状態） */
+  birthMonth: number | null;
+  /** 未選択時は null（新規入力の初期状態） */
+  birthDay: number | null;
   gender: Gender;
   expectedLifespan: number;
   disability: DisabilityStatus;
@@ -46,7 +50,7 @@ export interface FamilyMember {
    * true: 同居老親等控除（58万/45万）、false: 老人扶養控除（48万/38万）
    */
   isCohabiting?: boolean;
-  /** child/otherのデフォルト扶養区分（税法上）。trueなら所得48万円以下の年は扶養控除を適用 */
+  /** child/otherのデフォルト扶養区分（税法上）。trueなら合計所得が上限以下の年は扶養控除を適用（令和7年分以降は58万円） */
   taxDependentDefault?: boolean;
   /** child/otherのデフォルト扶養区分（社会保険）。trueなら収入130万円未満の年は被扶養者として扱う */
   socialInsuranceDependentDefault?: boolean;

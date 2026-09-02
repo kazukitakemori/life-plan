@@ -3,6 +3,7 @@ import {
   calcPensionTimelinePivotRatio,
   calcYearAtAge,
 } from '../../lib/birthDate';
+import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
 import type { FamilyMember } from '../../types/family';
 import type { PastEnrollmentMode } from '../../types/pension';
 
@@ -36,7 +37,12 @@ function buildTimelineTicks(
   ) {
     ticks.push({
       age,
-      year: calcYearAtAge(birthYear, member.birthMonth, age, member.birthMonth),
+      year: calcYearAtAge(
+        birthYear,
+        resolveMemberBirthMonth(member),
+        age,
+        resolveMemberBirthMonth(member),
+      ),
     });
   }
 
@@ -73,7 +79,7 @@ export function EnrollmentTimeline({
     );
     pivotRatio = calcPensionTimelinePivotRatio(
       birthYear,
-      member.birthMonth,
+      resolveMemberBirthMonth(member),
       recentMonthlyYear,
       recentMonthlyMonth,
       TIMELINE_START_AGE,

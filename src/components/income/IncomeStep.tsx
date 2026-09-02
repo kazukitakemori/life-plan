@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
-import { createIncomeEntry } from '../../lib/incomeDefaults';
+import {
+  createIncomeEntry,
+  createSideBusinessIncomeEntry,
+} from '../../lib/incomeDefaults';
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
+import { canAddSideBusinessIncome } from '../../lib/incomeGuidance';
+import type { AddIncomeOption } from '../../lib/incomeLabels';
 import type { FamilyMember } from '../../types/family';
 import type {
   IncomeByMember,
-  IncomeCategory,
   IncomeEntry,
   PriorYearIncomeByMember,
 } from '../../types/income';
@@ -20,6 +24,8 @@ interface IncomeStepProps {
   referenceDate: Date;
   onChange: (income: IncomeByMember) => void;
   onPriorYearIncomeChange: (priorYearIncome: PriorYearIncomeByMember) => void;
+  /** 教育費試算など、目的に応じた注記 */
+  purposeNote?: string;
 }
 
 export function IncomeStep({
@@ -29,6 +35,7 @@ export function IncomeStep({
   referenceDate,
   onChange,
   onPriorYearIncomeChange,
+  purposeNote,
 }: IncomeStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -75,18 +82,24 @@ export function IncomeStep({
     );
   };
 
-  const addEntry = (category: IncomeCategory) => {
+  const addEntry = (option: AddIncomeOption) => {
     if (!resolvedActiveId || !activeMember) return;
-    persistEntries(resolvedActiveId, [
-      ...entries,
-      createIncomeEntry(
-        resolvedActiveId,
-        category,
-        activeMember.age,
-        referenceDate.getMonth() + 1,
-        activeMember,
-      ),
-    ]);
+    const newEntry =
+      option.variant === 'side_business'
+        ? createSideBusinessIncomeEntry(
+            resolvedActiveId,
+            activeMember.age,
+            referenceDate.getMonth() + 1,
+            activeMember,
+          )
+        : createIncomeEntry(
+            resolvedActiveId,
+            option.category,
+            activeMember.age,
+            referenceDate.getMonth() + 1,
+            activeMember,
+          );
+    persistEntries(resolvedActiveId, [...entries, newEntry]);
   };
 
   if (!activeMember) {
@@ -124,6 +137,12 @@ export function IncomeStep({
         </div>
       </div>
 
+      {purposeNote ? (
+        <p className="purpose-input-note" role="note">
+          {purposeNote}
+        </p>
+      ) : null}
+
       <MemberIncomeTabs
         members={eligibleMembers}
         activeMemberId={resolvedActiveId}
@@ -145,6 +164,7 @@ export function IncomeStep({
               member={activeMember}
               memberEntries={entries}
               familyMembers={members}
+              incomeByMember={incomeByMember}
               referenceDate={referenceDate}
               index={index}
               onChange={(updated) => updateEntry(entry.id, updated)}
@@ -156,14 +176,16 @@ export function IncomeStep({
 
       <PriorYearIncomeSection
         member={activeMember}
-        members={members}
         incomeByMember={incomeByMember}
         priorYearIncomeByMember={priorYearIncomeByMember}
         referenceDate={referenceDate}
         onChange={onPriorYearIncomeChange}
       />
 
-      <AddIncomeBar onAdd={addEntry} />
+      <AddIncomeBar
+        canAddSideBusiness={canAddSideBusinessIncome(entries)}
+        onAdd={addEntry}
+      />
     </div>
   );
 }

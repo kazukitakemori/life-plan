@@ -95,8 +95,8 @@ export function LifeEventTable({
               <div className="life-event-header-cell life-event-col-amount">
                 一回当たりの金額（税込）
               </div>
-              <div className="life-event-header-cell life-event-col-emergency">
-                万が一時の金額（税込）
+              <div className="life-event-header-cell life-event-col-rate">
+                上昇率
               </div>
               <div className="life-event-header-cell life-event-col-action" />
             </div>

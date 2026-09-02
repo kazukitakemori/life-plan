@@ -1,4 +1,4 @@
-import { calcPeriodAnnualAmountMan } from './incomeAmount';
+import { calcPeriodAnnualAmountFromMonthly } from './incomeAmount';
 import type { IncomePeriod } from '../types/income';
 
 export function nextPeriodStart(prev: {
@@ -53,6 +53,6 @@ export function createFollowUpPeriod(
   };
   return {
     ...nextPeriod,
-    annualAmountMan: calcPeriodAnnualAmountMan(nextPeriod),
+    annualAmountMan: calcPeriodAnnualAmountFromMonthly(nextPeriod),
   };
 }
