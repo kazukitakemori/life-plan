@@ -3,11 +3,19 @@ import type {
   LicenseDeactivateResponse,
   LicenseStatusResponse,
 } from '../../types/license';
-
-const API_BASE = import.meta.env.VITE_LICENSE_API_BASE ?? '';
+import { resolveLicenseApiBase } from './apiBase';
 
 async function parseJson<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('LICENSE_API_NON_JSON');
+  }
   return (await response.json()) as T;
+}
+
+function apiUrl(path: string): string {
+  const base = resolveLicenseApiBase();
+  return `${base}${path}`;
 }
 
 export async function fetchLicenseStatus(
@@ -15,7 +23,7 @@ export async function fetchLicenseStatus(
   deviceId: string,
 ): Promise<LicenseStatusResponse> {
   const params = new URLSearchParams({ key, deviceId });
-  const response = await fetch(`${API_BASE}/api/license/status?${params.toString()}`, {
+  const response = await fetch(`${apiUrl('/api/license/status')}?${params.toString()}`, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   });
@@ -28,7 +36,7 @@ export async function activateLicense(input: {
   deviceLabel: string;
   replaceDeviceId?: string;
 }): Promise<LicenseActivateResponse> {
-  const response = await fetch(`${API_BASE}/api/license/activate`, {
+  const response = await fetch(apiUrl('/api/license/activate'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -44,7 +52,7 @@ export async function deactivateLicense(input: {
   deviceId: string;
   targetDeviceId: string;
 }): Promise<LicenseDeactivateResponse> {
-  const response = await fetch(`${API_BASE}/api/license/deactivate`, {
+  const response = await fetch(apiUrl('/api/license/deactivate'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

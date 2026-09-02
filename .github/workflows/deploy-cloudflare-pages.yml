@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: cloudflare-pages
+  group: cloudflare-workers
   cancel-in-progress: true
 
 jobs:
@@ -27,9 +27,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Publish to Cloudflare Pages
+      - name: Publish to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=life-plan-web
+          command: deploy
