@@ -22,9 +22,12 @@ import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { VehicleState } from '../../types/vehicle';
 import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } from '../../types/loan';
 import { MemberLivingTabs } from '../living/MemberLivingTabs';
-import { SecondLifeTemplatePanel } from '../shared/SecondLifeTemplatePanel';
+import { SecondLifeHousingSection } from '../secondLife/SecondLifeHousingSection';
+import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { OwnedPropertySection } from './OwnedPropertySection';
 import { RentalPropertySection } from './RentalPropertySection';
+import type { SecondLifeState } from '../../types/secondLife';
+import { getSecondLifeHousingDesignSummary } from '../../lib/secondLifeLabels';
 
 interface HousingStepProps {
   members: FamilyMember[];
@@ -33,9 +36,11 @@ interface HousingStepProps {
   vehicleState: VehicleState;
   insuranceState?: InsuranceState;
   referenceDate: Date;
-  secondLifeStartAge?: number;
+  secondLifeState?: SecondLifeState;
   purposeNote?: string;
   onChange: (state: HousingState) => void;
+  onSecondLifeChange?: (state: SecondLifeState) => void;
+  onApplySecondLifeHousing?: () => void;
   onAddHousingLoan: (
     targetId: string,
     property: OwnedProperty,
@@ -59,7 +64,6 @@ interface HousingStepProps {
   ) => void;
   onUpdateInsurance?: (entry: InsuranceEntry) => void;
   onRemoveInsurance?: (entryId: string) => void;
-  onAddSecondLifeRental?: () => void;
 }
 
 export function HousingStep({
@@ -69,9 +73,11 @@ export function HousingStep({
   vehicleState,
   insuranceState,
   referenceDate,
-  secondLifeStartAge,
+  secondLifeState,
   purposeNote,
   onChange,
+  onSecondLifeChange,
+  onApplySecondLifeHousing,
   onAddHousingLoan,
   onRemoveHousingLoan,
   onUpdateLoan,
@@ -82,7 +88,6 @@ export function HousingStep({
   onAddFireInsurance,
   onUpdateInsurance,
   onRemoveInsurance,
-  onAddSecondLifeRental,
 }: HousingStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -224,16 +229,6 @@ export function HousingStep({
         </p>
       ) : null}
 
-      {onAddSecondLifeRental ? (
-        <SecondLifeTemplatePanel
-          startAge={secondLifeStartAge}
-          title="セカンドライフの住まい"
-          description={`世帯主 ${secondLifeStartAge}歳からの賃貸物件（入居予定）を追加します。家賃・初期費用はあとから編集できます。`}
-          buttonLabel="セカンドライフ用の賃貸を追加"
-          onAdd={onAddSecondLifeRental}
-        />
-      ) : null}
-
       <MemberLivingTabs
         members={eligibleMembers}
         activeTargetId={resolvedTargetId}
@@ -315,6 +310,24 @@ export function HousingStep({
         onUpdateInsurance={onUpdateInsurance}
         onRemoveInsurance={onRemoveInsurance}
       />
+
+      {secondLifeState && onSecondLifeChange ? (
+        <SecondLifeRefinePanel
+          title="セカンドライフの住まいを具体化する"
+          summary={getSecondLifeHousingDesignSummary(secondLifeState)}
+        >
+          <SecondLifeHousingSection
+            state={secondLifeState}
+            onChange={(patch) =>
+              onSecondLifeChange({
+                ...secondLifeState,
+                ...patch,
+              })
+            }
+            onApply={onApplySecondLifeHousing}
+          />
+        </SecondLifeRefinePanel>
+      ) : null}
     </div>
   );
 }

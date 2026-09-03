@@ -11,8 +11,14 @@ import {
   syncLivingDetailSummary,
 } from '../src/lib/livingDefaults.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
-import { createDefaultHousingState } from '../src/lib/housingDefaults.ts';
-import { addSecondLifeRentalToHousing } from '../src/lib/secondLifeTemplates.ts';
+import {
+  createCurrentRentalProperty,
+  createDefaultHousingState,
+  getHousingTargetData,
+} from '../src/lib/housingDefaults.ts';
+import { createDefaultSecondLifeState } from '../src/lib/secondLifeDefaults.ts';
+import { applySecondLifeHousingToHousingState } from '../src/lib/secondLifeTemplates.ts';
+import { HOUSEHOLD_HOUSING_KEY } from '../src/types/housing.ts';
 import { HOUSEHOLD_LIVING_KEY } from '../src/types/living.ts';
 
 const referenceDate = new Date(2026, 5, 1);
@@ -78,11 +84,24 @@ assert.equal(
   'pre-second-life living only should be partial',
 );
 
-const housingState = addSecondLifeRentalToHousing({
-  housingState: createDefaultHousingState(),
+const baseHousing = createDefaultHousingState();
+const currentRental = createCurrentRentalProperty(head, 6, 2026);
+currentRental.monthlyRentMan = 8;
+baseHousing.byTarget[HOUSEHOLD_HOUSING_KEY] = {
+  ...getHousingTargetData(baseHousing, HOUSEHOLD_HOUSING_KEY),
+  rentals: [currentRental],
+};
+
+const rentDesign = createDefaultSecondLifeState();
+rentDesign.startAge = startAge;
+rentDesign.housingScenario = 'new_area';
+rentDesign.newAreaOption = 'rent';
+
+const housingState = applySecondLifeHousingToHousingState({
+  housingState: baseHousing,
+  secondLifeState: rentDesign,
   member: head,
   referenceDate,
-  startAge,
 });
 
 const doneHousingGuide = buildSecondLifeGuide({

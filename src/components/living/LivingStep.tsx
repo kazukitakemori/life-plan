@@ -7,6 +7,8 @@ import {
   createFollowUpLivingSchedule,
   createLivingExpenseSchedule,
 } from '../../lib/livingDefaults';
+import { buildSecondLifeLivingOptions } from '../../lib/secondLifeEstimates';
+import { getSecondLifeLivingDesignSummary } from '../../lib/secondLifeLabels';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
 import {
@@ -15,7 +17,9 @@ import {
   type LivingExpenseState,
 } from '../../types/living';
 import type { PensionByMember } from '../../types/pension';
-import { SecondLifeTemplatePanel } from '../shared/SecondLifeTemplatePanel';
+import type { SecondLifeState } from '../../types/secondLife';
+import { SecondLifeLivingSection } from '../secondLife/SecondLifeLivingSection';
+import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { LivingScheduleCard } from './LivingScheduleCard';
 import { MemberLivingTabs } from './MemberLivingTabs';
 
@@ -23,22 +27,26 @@ interface LivingStepProps {
   members: FamilyMember[];
   livingState: LivingExpenseState;
   referenceDate: Date;
-  secondLifeStartAge?: number;
+  secondLifeState?: SecondLifeState;
   incomeByMember?: IncomeByMember;
   pensionByMember?: PensionByMember;
   purposeNote?: string;
   onChange: (state: LivingExpenseState) => void;
-  onAddSecondLifeLiving?: () => void;
+  onSecondLifeChange?: (state: SecondLifeState) => void;
+  onApplySecondLifeLiving?: () => void;
 }
 
 export function LivingStep({
   members,
   livingState,
   referenceDate,
-  secondLifeStartAge,
+  secondLifeState,
+  incomeByMember,
+  pensionByMember,
   purposeNote,
   onChange,
-  onAddSecondLifeLiving,
+  onSecondLifeChange,
+  onApplySecondLifeLiving,
 }: LivingStepProps) {
   const eligibleMembers = useMemo(
     () => getIncomeEligibleMembers(members),
@@ -50,6 +58,25 @@ export function LivingStep({
   const [copySourceId, setCopySourceId] = useState(
     headMember?.id ?? eligibleMembers[0]?.id ?? HOUSEHOLD_LIVING_KEY,
   );
+
+  const livingOptions = useMemo(() => {
+    if (!secondLifeState) return [];
+    return buildSecondLifeLivingOptions({
+      livingState,
+      familyMembers: members,
+      incomeByMember: incomeByMember ?? {},
+      pensionByMember: pensionByMember ?? {},
+      referenceDate,
+      startAge: secondLifeState.startAge,
+    });
+  }, [
+    secondLifeState,
+    livingState,
+    members,
+    incomeByMember,
+    pensionByMember,
+    referenceDate,
+  ]);
 
   const resolvedTargetId = (() => {
     if (activeTargetId === HOUSEHOLD_LIVING_KEY) return HOUSEHOLD_LIVING_KEY;
@@ -193,16 +220,6 @@ export function LivingStep({
         </p>
       ) : null}
 
-      {onAddSecondLifeLiving ? (
-        <SecondLifeTemplatePanel
-          startAge={secondLifeStartAge}
-          title="セカンドライフの生活費"
-          description={`世帯主 ${secondLifeStartAge}歳以降の生活費スケジュールを追加します（目安は現在の7割）。`}
-          buttonLabel="セカンドライフ以降の生活費を追加"
-          onAdd={onAddSecondLifeLiving}
-        />
-      ) : null}
-
       <MemberLivingTabs
         members={eligibleMembers}
         activeTargetId={resolvedTargetId}
@@ -272,6 +289,25 @@ export function LivingStep({
           前のスケジュールをコピー
         </button>
       </div>
+
+      {secondLifeState && onSecondLifeChange ? (
+        <SecondLifeRefinePanel
+          title="セカンドライフの生活水準を具体化する"
+          summary={getSecondLifeLivingDesignSummary(secondLifeState)}
+        >
+          <SecondLifeLivingSection
+            state={secondLifeState}
+            options={livingOptions}
+            onChange={(patch) =>
+              onSecondLifeChange({
+                ...secondLifeState,
+                ...patch,
+              })
+            }
+            onApply={onApplySecondLifeLiving}
+          />
+        </SecondLifeRefinePanel>
+      ) : null}
     </div>
   );
 }

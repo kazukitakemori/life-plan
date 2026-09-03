@@ -11,15 +11,18 @@ import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
 import { MemberLifeEventTabs } from './MemberLifeEventTabs';
-import { SecondLifeTemplatePanel } from '../shared/SecondLifeTemplatePanel';
+import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
+import { SecondLifeStartAgeField } from '../secondLife/SecondLifeStartAgeField';
+import type { SecondLifeState } from '../../types/secondLife';
 
 interface LifeEventStepProps {
   members: FamilyMember[];
   lifeEventState: LifeEventState;
   referenceDate: Date;
-  secondLifeStartAge?: number;
+  secondLifeState?: SecondLifeState;
   purposeNote?: string;
   onChange: (state: LifeEventState) => void;
+  onSecondLifeChange?: (state: SecondLifeState) => void;
   onAddSecondLifeNursing?: () => void;
 }
 
@@ -27,9 +30,10 @@ export function LifeEventStep({
   members,
   lifeEventState,
   referenceDate,
-  secondLifeStartAge,
+  secondLifeState,
   purposeNote,
   onChange,
+  onSecondLifeChange,
   onAddSecondLifeNursing,
 }: LifeEventStepProps) {
   const eligibleMembers = useMemo(
@@ -143,16 +147,6 @@ export function LifeEventStep({
         </p>
       ) : null}
 
-      {onAddSecondLifeNursing ? (
-        <SecondLifeTemplatePanel
-          startAge={secondLifeStartAge}
-          title="セカンドライフの介護"
-          description="世帯主・配偶者それぞれの介護費（継続）を追加します。内容はあとから編集できます。"
-          buttonLabel="セカンドライフ用の介護費を追加"
-          onAdd={onAddSecondLifeNursing}
-        />
-      ) : null}
-
       <div className="life-event-toolbar">
         <MemberLifeEventTabs
           members={eligibleMembers}
@@ -198,6 +192,37 @@ export function LifeEventStep({
       />
 
       <AddLifeEventCards activeMember={activeMember} onAdd={addEntryFromPreset} />
+
+      {onAddSecondLifeNursing && secondLifeState && onSecondLifeChange ? (
+        <SecondLifeRefinePanel
+          title="セカンドライフの介護を具体化する"
+          summary="世帯主・配偶者の介護費を追加できます"
+        >
+          <div className="second-life-section-toolbar">
+            <SecondLifeStartAgeField
+              value={secondLifeState.startAge}
+              onChange={(startAge) =>
+                onSecondLifeChange({
+                  ...secondLifeState,
+                  startAge,
+                })
+              }
+            />
+          </div>
+          <div className="second-life-nursing-actions">
+            <p className="second-life-apply-note">
+              世帯主・配偶者それぞれの介護費（継続）を追加します。内容はあとから編集できます。
+            </p>
+            <button
+              type="button"
+              className="second-life-apply-btn"
+              onClick={onAddSecondLifeNursing}
+            >
+              セカンドライフ用の介護費を追加
+            </button>
+          </div>
+        </SecondLifeRefinePanel>
+      ) : null}
     </div>
   );
 }

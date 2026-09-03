@@ -6,6 +6,10 @@ import {
   type SecondLifeChecklistItem,
 } from '../../lib/secondLifeGuide';
 import { SECOND_LIFE_DEFAULT_START_AGE } from '../../lib/secondLifeDefaults';
+import {
+  getSecondLifeHousingDesignSummary,
+  getSecondLifeLivingDesignSummary,
+} from '../../lib/secondLifeLabels';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventState } from '../../types/lifeEvent';
 import type { LivingExpenseState } from '../../types/living';
@@ -26,9 +30,11 @@ interface SecondLifeGuideStepProps {
 
 function ChecklistCard({
   item,
+  designNote,
   onNavigate,
 }: {
   item: SecondLifeChecklistItem;
+  designNote?: string;
   onNavigate: () => void;
 }) {
   return (
@@ -39,6 +45,9 @@ function ChecklistCard({
             {item.stepLabel} {item.title}
           </p>
           <p className="second-life-guide-card-summary">{item.summary}</p>
+          {designNote ? (
+            <p className="second-life-guide-card-design">設計：{designNote}</p>
+          ) : null}
         </div>
         <span className={`second-life-guide-status second-life-guide-status--${item.status}`}>
           {getSecondLifeChecklistStatusLabel(item.status)}
@@ -112,14 +121,13 @@ export function SecondLifeGuideStep({
         <div>
           <h2 className="step-title">Q12. セカンドライフ</h2>
           <p className="second-life-lead">
-            各入力項目（Q3・Q4・Q5）で具体化するための設計ガイドです
+            住まい・生活費・介護の入力状況を確認します
           </p>
         </div>
       </div>
 
       <p className="second-life-guide-intro">
-        セカンドライフの試算は、住まい・生活費・介護をそれぞれの入力画面で期間付きで登録します。
-        ここでは入力状況の確認と、各ステップへの移動ができます。
+        開始年齢は Q3・Q4・Q5 の各画面でも変更でき、すべて連動します。ここでは入力状況の確認ができます。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -143,11 +151,23 @@ export function SecondLifeGuideStep({
         </label>
       </div>
 
+      <h3 className="second-life-guide-checklist-title">入力状況チェック</h3>
+      <p className="second-life-guide-checklist-lead">
+        各ステップでの設計・入力ができているか確認できます。
+      </p>
+
       <div className="second-life-guide-grid">
         {guide.items.map((item) => (
           <ChecklistCard
             key={item.id}
             item={item}
+            designNote={
+              item.id === 'housing'
+                ? getSecondLifeHousingDesignSummary(secondLifeState)
+                : item.id === 'living'
+                  ? getSecondLifeLivingDesignSummary(secondLifeState)
+                  : undefined
+            }
             onNavigate={() => onNavigateToStep(item.stepId)}
           />
         ))}
