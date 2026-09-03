@@ -396,6 +396,46 @@ async function handleAdminApi(request, env, path) {
     return jsonResponse({ ok: true });
   }
 
+  if (path.startsWith('/api/admin/keys/') && path.endsWith('/activate') && request.method === 'POST') {
+    const licenseId = path.split('/')[4];
+    await env.DB.prepare(`UPDATE license_keys SET status = 'active' WHERE id = ?`)
+      .bind(licenseId)
+      .run();
+    return jsonResponse({ ok: true });
+  }
+
+  if (path.startsWith('/api/admin/keys/') && request.method === 'DELETE') {
+    const licenseId = path.split('/')[4];
+    if (!licenseId || licenseId === 'generate') {
+      return jsonResponse({ error: 'NOT_FOUND' }, 404);
+    }
+    const existing = await env.DB.prepare(
+      `SELECT id, status FROM license_keys WHERE id = ?`,
+    )
+      .bind(licenseId)
+      .first();
+    if (!existing) {
+      return jsonResponse({ ok: false, error: 'NOT_FOUND', message: 'キーが見つかりません。' }, 404);
+    }
+    if (existing.status !== 'revoked') {
+      return jsonResponse(
+        {
+          ok: false,
+          error: 'NOT_REVOKED',
+          message: '有効なキーは削除できません。先に無効化してください。',
+        },
+        409,
+      );
+    }
+    await env.DB.prepare(`DELETE FROM license_devices WHERE license_id = ?`)
+      .bind(licenseId)
+      .run();
+    await env.DB.prepare(`DELETE FROM license_keys WHERE id = ?`)
+      .bind(licenseId)
+      .run();
+    return jsonResponse({ ok: true });
+  }
+
   return jsonResponse({ error: 'NOT_FOUND' }, 404);
 }
 

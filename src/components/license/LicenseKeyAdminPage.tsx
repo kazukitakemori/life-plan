@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  deleteLicenseKey,
   generateLicenseKeys,
   listLicenseKeys,
-  revokeLicenseKey,
+  setLicenseKeyStatus,
   verifyAdminSecret,
 } from '../../lib/license/adminApi';
 import {
@@ -32,6 +33,140 @@ function statusLabel(status: LicenseAdminKeySummary['status']): string {
   return status === 'active' ? '有効' : '無効';
 }
 
+async function copyTextToClipboard(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // fallback below
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '0';
+  textarea.style.left = '0';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, value.length);
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+function LicenseKeyTable({
+  keys,
+  busyId,
+  onCopy,
+  onSetStatus,
+  onDelete,
+}: {
+  keys: LicenseAdminKeySummary[];
+  busyId: string | null;
+  onCopy: (key: string) => void;
+  onSetStatus: (entry: LicenseAdminKeySummary, status: 'active' | 'revoked') => void;
+  onDelete: (entry: LicenseAdminKeySummary) => void;
+}) {
+  if (keys.length === 0) {
+    return <p className="license-key-admin-empty">まだキーは発行されていません。</p>;
+  }
+
+  return (
+    <div className="license-key-admin-table-wrap">
+      <table className="license-key-admin-table">
+        <thead>
+          <tr>
+            <th>ライセンスキー</th>
+            <th>購入者名</th>
+            <th>状態</th>
+            <th>登録数</th>
+            <th>発行日</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((entry) => {
+            const displayKey = entry.key_display ?? entry.key_hint;
+            const copyValue = entry.key_display ?? '';
+            return (
+              <tr key={entry.id}>
+                <td>
+                  <div className="license-key-admin-table-key">
+                    <code>{displayKey}</code>
+                    {copyValue ? (
+                      <button
+                        type="button"
+                        className="plan-bar-btn plan-bar-btn--compact"
+                        onClick={() => onCopy(copyValue)}
+                      >
+                        コピー
+                      </button>
+                    ) : null}
+                  </div>
+                </td>
+                <td>{entry.note?.trim() || '—'}</td>
+                <td>
+                  <span
+                    className={`license-key-admin-status license-key-admin-status--${entry.status}`}
+                  >
+                    {statusLabel(entry.status)}
+                  </span>
+                </td>
+                <td>
+                  {entry.device_count} / {entry.max_devices}
+                </td>
+                <td>{formatDateTime(entry.created_at)}</td>
+                <td>
+                  <div className="license-key-admin-row-actions">
+                    {entry.status === 'active' ? (
+                      <button
+                        type="button"
+                        className="plan-bar-btn plan-bar-btn--danger"
+                        disabled={busyId === entry.id}
+                        onClick={() => onSetStatus(entry, 'revoked')}
+                      >
+                        {busyId === entry.id ? '処理中…' : '無効化'}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="plan-bar-btn"
+                          disabled={busyId === entry.id}
+                          onClick={() => onSetStatus(entry, 'active')}
+                        >
+                          {busyId === entry.id ? '処理中…' : '有効化'}
+                        </button>
+                        <button
+                          type="button"
+                          className="plan-bar-btn plan-bar-btn--danger"
+                          disabled={busyId === entry.id}
+                          onClick={() => onDelete(entry)}
+                        >
+                          {busyId === entry.id ? '処理中…' : '削除'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function LicenseKeyAdminPage() {
   const [adminSecret, setAdminSecret] = useState<string | null>(() => loadAdminSecret());
   const [passwordInput, setPasswordInput] = useState('');
@@ -48,7 +183,16 @@ export function LicenseKeyAdminPage() {
   const [keys, setKeys] = useState<LicenseAdminKeySummary[]>([]);
   const [listBusy, setListBusy] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
-  const [revokeBusyId, setRevokeBusyId] = useState<string | null>(null);
+  const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+
+  const personalKeys = useMemo(
+    () => keys.filter((entry) => (entry.edition ?? 'personal') === 'personal'),
+    [keys],
+  );
+  const advisorKeys = useMemo(
+    () => keys.filter((entry) => entry.edition === 'advisor'),
+    [keys],
+  );
 
   const refreshList = useCallback(async (secret: string) => {
     setListBusy(true);
@@ -136,34 +280,62 @@ export function LicenseKeyAdminPage() {
   };
 
   const handleCopyKey = async (key: string) => {
-    try {
-      await navigator.clipboard.writeText(key);
-      setCopyMessage('キーをコピーしました。メールに貼り付けてお客様へ送ってください。');
-    } catch {
-      setCopyMessage('コピーできませんでした。キーを手動で選択してコピーしてください。');
-    }
+    const ok = await copyTextToClipboard(key);
+    setCopyMessage(
+      ok
+        ? 'キーをコピーしました。'
+        : 'コピーできませんでした。キーを手動で選択してコピーしてください。',
+    );
   };
 
-  const handleRevoke = async (entry: LicenseAdminKeySummary) => {
+  const handleSetStatus = async (
+    entry: LicenseAdminKeySummary,
+    status: 'active' | 'revoked',
+  ) => {
     if (!adminSecret) return;
     const label = entry.note?.trim() || entry.key_hint;
     const confirmed = window.confirm(
-      `「${label}」のキーを無効にしますか？\n\n無効にすると、このキーは使えなくなります。`,
+      status === 'revoked'
+        ? `「${label}」のキーを無効にしますか？\n\n無効にすると、このキーは使えなくなります。`
+        : `「${label}」のキーを有効に戻しますか？`,
     );
     if (!confirmed) return;
 
-    setRevokeBusyId(entry.id);
+    setActionBusyId(entry.id);
     try {
-      const body = await revokeLicenseKey(adminSecret, entry.id);
+      const body = await setLicenseKeyStatus(adminSecret, entry.id, status);
       if (!body.ok) {
-        window.alert('無効化に失敗しました。');
+        window.alert(body.message ?? '状態の変更に失敗しました。');
         return;
       }
       await refreshList(adminSecret);
     } catch {
       window.alert('サーバーに接続できませんでした。');
     } finally {
-      setRevokeBusyId(null);
+      setActionBusyId(null);
+    }
+  };
+
+  const handleDelete = async (entry: LicenseAdminKeySummary) => {
+    if (!adminSecret) return;
+    const label = entry.note?.trim() || entry.key_hint;
+    const confirmed = window.confirm(
+      `「${label}」の無効化されたキーを削除しますか？\n\nこの操作は取り消せません。`,
+    );
+    if (!confirmed) return;
+
+    setActionBusyId(entry.id);
+    try {
+      const body = await deleteLicenseKey(adminSecret, entry.id);
+      if (!body.ok) {
+        window.alert(body.message ?? '削除に失敗しました。');
+        return;
+      }
+      await refreshList(adminSecret);
+    } catch {
+      window.alert('サーバーに接続できませんでした。');
+    } finally {
+      setActionBusyId(null);
     }
   };
 
@@ -308,14 +480,16 @@ export function LicenseKeyAdminPage() {
               <p className="license-key-admin-issued-note">
                 発行したキーは下の一覧にも表示されます。メール送信前にコピーしてください。
               </p>
-              {copyMessage ? <p className="license-key-admin-copy-message">{copyMessage}</p> : null}
             </div>
           ) : null}
+          {copyMessage ? <p className="license-key-admin-copy-message">{copyMessage}</p> : null}
         </section>
 
         <section className="license-key-admin-card">
           <div className="license-key-admin-list-head">
-            <h2 className="license-key-admin-card-title">発行済みキー一覧</h2>
+            <h2 className="license-key-admin-card-title">
+              {LICENSE_EDITION_LABELS.personal}
+            </h2>
             <button
               type="button"
               className="plan-bar-btn"
@@ -327,82 +501,41 @@ export function LicenseKeyAdminPage() {
               {listBusy ? '更新中…' : '一覧を更新'}
             </button>
           </div>
-
           {listError ? <p className="license-inline-error">{listError}</p> : null}
+          <LicenseKeyTable
+            keys={personalKeys}
+            busyId={actionBusyId}
+            onCopy={(key) => {
+              void handleCopyKey(key);
+            }}
+            onSetStatus={(entry, status) => {
+              void handleSetStatus(entry, status);
+            }}
+            onDelete={(entry) => {
+              void handleDelete(entry);
+            }}
+          />
+        </section>
 
-          {keys.length === 0 && !listBusy ? (
-            <p className="license-key-admin-empty">まだキーは発行されていません。</p>
-          ) : (
-            <div className="license-key-admin-table-wrap">
-              <table className="license-key-admin-table">
-                <thead>
-                  <tr>
-                    <th>ライセンスキー</th>
-                    <th>種別</th>
-                    <th>購入者名</th>
-                    <th>状態</th>
-                    <th>登録数</th>
-                    <th>発行日</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keys.map((entry) => {
-                    const displayKey = entry.key_display ?? entry.key_hint;
-                    return (
-                    <tr key={entry.id}>
-                      <td>
-                        <div className="license-key-admin-table-key">
-                          <code>{displayKey}</code>
-                          {entry.key_display ? (
-                            <button
-                              type="button"
-                              className="plan-bar-btn plan-bar-btn--compact"
-                              onClick={() => {
-                                void handleCopyKey(entry.key_display!);
-                              }}
-                            >
-                              コピー
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td>{LICENSE_EDITION_LABELS[entry.edition ?? 'personal']}</td>
-                      <td>{entry.note?.trim() || '—'}</td>
-                      <td>
-                        <span
-                          className={`license-key-admin-status license-key-admin-status--${entry.status}`}
-                        >
-                          {statusLabel(entry.status)}
-                        </span>
-                      </td>
-                      <td>
-                        {entry.device_count} / {entry.max_devices}
-                      </td>
-                      <td>{formatDateTime(entry.created_at)}</td>
-                      <td>
-                        {entry.status === 'active' ? (
-                          <button
-                            type="button"
-                            className="plan-bar-btn plan-bar-btn--danger"
-                            disabled={revokeBusyId === entry.id}
-                            onClick={() => {
-                              void handleRevoke(entry);
-                            }}
-                          >
-                            {revokeBusyId === entry.id ? '処理中…' : '無効化'}
-                          </button>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <section className="license-key-admin-card">
+          <div className="license-key-admin-list-head">
+            <h2 className="license-key-admin-card-title">
+              {LICENSE_EDITION_LABELS.advisor}
+            </h2>
+          </div>
+          <LicenseKeyTable
+            keys={advisorKeys}
+            busyId={actionBusyId}
+            onCopy={(key) => {
+              void handleCopyKey(key);
+            }}
+            onSetStatus={(entry, status) => {
+              void handleSetStatus(entry, status);
+            }}
+            onDelete={(entry) => {
+              void handleDelete(entry);
+            }}
+          />
         </section>
       </div>
     </div>

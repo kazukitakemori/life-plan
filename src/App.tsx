@@ -93,6 +93,7 @@ import {
   getRequiredStepsForPurposes,
   getRequiredCoverageRiskKindsForPurposes,
   hasPlanPurpose,
+  isPlanPurposeLocked,
   isStepInputEnabled,
   limitsRequiredCoverageToSimpleDesign,
   normalizePlanPurposes,
@@ -655,6 +656,13 @@ export default function App() {
         await refreshSummaries();
         return;
       }
+      const existingPurposes = normalizePlanPurposes(
+        existing.purposes,
+        existing.purpose,
+      );
+      const nextPurposes = isPlanPurposeLocked(existing.status, existingPurposes)
+        ? existingPurposes
+        : meta.purposes;
       const saved = await planRepository.save(
         createPlanRecord({
           id: existing.id,
@@ -662,7 +670,7 @@ export default function App() {
           phone: meta.phone,
           email: meta.email,
           note: meta.note,
-          purposes: meta.purposes,
+          purposes: nextPurposes,
           status: meta.status,
           payload:
             id === planId
@@ -678,15 +686,15 @@ export default function App() {
           phone: saved.phone,
           email: saved.email,
           note: saved.note,
-          purposes: saved.purposes ?? meta.purposes,
+          purposes: saved.purposes ?? nextPurposes,
           status: saved.status,
           createdAt: saved.createdAt,
         });
-        const nextInputSteps = getInputStepsForPurposes(meta.purposes);
+        const nextInputSteps = getInputStepsForPurposes(nextPurposes);
         setActiveStep((current) =>
           nextInputSteps.includes(current)
             ? current
-            : getInitialStepForPurposes(meta.purposes),
+            : getInitialStepForPurposes(nextPurposes),
         );
         snapshotRef.current = {
           ...snapshotRef.current,
@@ -694,7 +702,7 @@ export default function App() {
           planPhone: saved.phone,
           planEmail: saved.email,
           planNote: saved.note,
-          planPurposes: saved.purposes ?? meta.purposes,
+          planPurposes: saved.purposes ?? nextPurposes,
           planStatus: saved.status,
         };
         savedRevisionRef.current = revisionRef.current;
@@ -1142,9 +1150,7 @@ export default function App() {
             errorMessage={license.errorMessage}
             busy={license.busy}
             onManageLicense={license.openLicenseModal}
-            onReleaseDevice={() => {
-              void license.releaseCurrentDevice();
-            }}
+            onReleaseDevice={() => license.releaseCurrentDevice()}
           />
         );
       }

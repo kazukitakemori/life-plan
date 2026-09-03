@@ -453,9 +453,18 @@ button:disabled {
   transition: border-color 0.15s, background 0.15s;
 }
 
-.plan-purpose-option:hover {
+.plan-purpose-option:hover:not(.is-locked) {
   border-color: #8aa4c4;
   background: #f8fbff;
+}
+
+.plan-purpose-option.is-locked {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.plan-purpose-fieldset:disabled {
+  opacity: 1;
 }
 
 .plan-purpose-option.is-selected {
@@ -561,9 +570,14 @@ button:disabled {
   margin-bottom: 20px;
 }
 
+.plan-admin-header > div:first-child {
+  min-width: 0;
+}
+
 .plan-admin-header-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -16209,8 +16223,14 @@ button:disabled {
 
 .license-key-admin-table-key {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  gap: 8px;
+}
+
+.license-key-admin-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
 }
 

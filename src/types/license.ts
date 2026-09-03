@@ -74,4 +74,5 @@ export interface LicenseAdminListResponse {
 export interface LicenseAdminRevokeResponse {
   ok: boolean;
   error?: string;
+  message?: string;
 }

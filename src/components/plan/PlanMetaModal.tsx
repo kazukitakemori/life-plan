@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   getDefaultPlanPurposes,
+  isPlanPurposeLocked,
   PLAN_PURPOSE_DEFINITIONS,
   togglePlanPurpose,
   type PlanPurposeDefinition,
@@ -39,12 +40,14 @@ interface PlanCreateModalProps {
 function PlanPurposeOptions({
   purposes,
   onChange,
+  locked = false,
 }: {
   purposes: PlanPurpose[];
   onChange: (purposes: PlanPurpose[]) => void;
+  locked?: boolean;
 }) {
   return (
-    <fieldset className="plan-purpose-fieldset">
+    <fieldset className="plan-purpose-fieldset" disabled={locked}>
       <legend className="plan-meta-label">目的（複数選択可）</legend>
       <p className="plan-purpose-hint">
         教育費・年金などを組み合わせられます。ライフプランを選ぶと他の目的は外れます。
@@ -53,20 +56,25 @@ function PlanPurposeOptions({
         className="plan-purpose-options"
         role="group"
         aria-label="プランの目的"
+        aria-disabled={locked || undefined}
       >
         {PLAN_PURPOSE_DEFINITIONS.map((option: PlanPurposeDefinition) => {
           const checked = purposes.includes(option.id);
           return (
             <label
               key={option.id}
-              className={`plan-purpose-option${checked ? ' is-selected' : ''}`}
+              className={`plan-purpose-option${checked ? ' is-selected' : ''}${locked ? ' is-locked' : ''}`}
             >
               <input
                 type="checkbox"
                 className="plan-purpose-checkbox"
                 value={option.id}
                 checked={checked}
-                onChange={() => onChange(togglePlanPurpose(purposes, option.id))}
+                disabled={locked}
+                onChange={() => {
+                  if (locked) return;
+                  onChange(togglePlanPurpose(purposes, option.id));
+                }}
               />
               <span className="plan-purpose-option-body">
                 <span className="plan-purpose-option-label">{option.label}</span>
@@ -363,7 +371,11 @@ export function PlanMetaModal({
         </h3>
         <p className="education-ref-modal-summary">{summaryText}</p>
         <div className="education-ref-modal-body">
-          <PlanPurposeOptions purposes={purposes} onChange={setPurposes} />
+          <PlanPurposeOptions
+            purposes={purposes}
+            onChange={setPurposes}
+            locked={isPlanPurposeLocked(initial.status, initial.purposes)}
+          />
 
           <PlanMetaFields
             customerName={customerName}
@@ -397,7 +409,9 @@ export function PlanMetaModal({
                   email: showCrmFields ? email.trim() : initial.email,
                   note: note.trim(),
                   status,
-                  purposes,
+                  purposes: isPlanPurposeLocked(initial.status, initial.purposes)
+                    ? initial.purposes
+                    : purposes,
                 })
               }
             >

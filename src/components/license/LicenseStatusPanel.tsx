@@ -7,7 +7,7 @@ interface LicenseStatusPanelProps {
   deviceLabel: string;
   errorMessage?: string | null;
   onManageLicense: () => void;
-  onReleaseDevice?: () => void;
+  onReleaseDevice?: () => Promise<boolean> | boolean;
   busy?: boolean;
 }
 
@@ -84,7 +84,24 @@ export function LicenseStatusPanel({
               type="button"
               className="plan-bar-btn"
               disabled={busy}
-              onClick={onReleaseDevice}
+              onClick={() => {
+                const confirmed = window.confirm(
+                  [
+                    'このブラウザのライセンス登録を解除しますか？',
+                    '',
+                    '解除すると、ライフプラン分析を使うには再度キーの登録が必要です。',
+                  ].join('\n'),
+                );
+                if (!confirmed || !onReleaseDevice) return;
+                void (async () => {
+                  const ok = await onReleaseDevice();
+                  window.alert(
+                    ok
+                      ? 'このブラウザの登録を解除しました。'
+                      : 'このブラウザの登録解除に失敗しました。',
+                  );
+                })();
+              }}
             >
               このブラウザの登録を解除
             </button>

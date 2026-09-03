@@ -1,4 +1,4 @@
-import type { PlanPurpose } from '../types/plan';
+import type { PlanPurpose, PlanStatus } from '../types/plan';
 import type { RequiredCoverageRiskKind } from '../types/requiredCoverage';
 import type { StepId } from '../types/steps';
 
@@ -91,6 +91,14 @@ function sortPurposes(purposes: PlanPurpose[]): PlanPurpose[] {
 
 export function getDefaultPlanPurposes(): PlanPurpose[] {
   return ['life_plan'];
+}
+
+/** ライフプラン作成かつシミュレーション済みのときは目的を変更できない */
+export function isPlanPurposeLocked(
+  status: PlanStatus,
+  purposes: PlanPurpose[],
+): boolean {
+  return status === 'simulated' && purposes.includes('life_plan');
 }
 
 /** @deprecated use getDefaultPlanPurposes */

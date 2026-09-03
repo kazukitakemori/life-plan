@@ -62,12 +62,32 @@ export async function listLicenseKeys(
   return parseJson<LicenseAdminListResponse>(response);
 }
 
+export async function setLicenseKeyStatus(
+  adminSecret: string,
+  licenseId: string,
+  status: 'active' | 'revoked',
+): Promise<LicenseAdminRevokeResponse> {
+  const action = status === 'active' ? 'activate' : 'revoke';
+  const response = await fetch(apiUrl(`/api/admin/keys/${licenseId}/${action}`), {
+    method: 'POST',
+    headers: authHeaders(adminSecret),
+  });
+  return parseJson<LicenseAdminRevokeResponse>(response);
+}
+
 export async function revokeLicenseKey(
   adminSecret: string,
   licenseId: string,
 ): Promise<LicenseAdminRevokeResponse> {
-  const response = await fetch(apiUrl(`/api/admin/keys/${licenseId}/revoke`), {
-    method: 'POST',
+  return setLicenseKeyStatus(adminSecret, licenseId, 'revoked');
+}
+
+export async function deleteLicenseKey(
+  adminSecret: string,
+  licenseId: string,
+): Promise<LicenseAdminRevokeResponse> {
+  const response = await fetch(apiUrl(`/api/admin/keys/${licenseId}`), {
+    method: 'DELETE',
     headers: authHeaders(adminSecret),
   });
   return parseJson<LicenseAdminRevokeResponse>(response);

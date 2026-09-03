@@ -92,20 +92,16 @@ export function PlanAdminView({
     });
   }, [query, statusFilter, summaries]);
 
-  const pageDescription = entitlements.allowMultiPlanAdmin
-    ? 'プランを一覧・編集し、入力画面を開きます。ブラウザをまたぐ場合は書き出し／読み込みでまとめられます。'
-    : 'ご自身のプランを編集し、入力画面を開きます。一般向けライセンスではプランは1件までです。';
-
-  const emptyDescription = entitlements.allowMultiPlanAdmin
-    ? '新規作成からはじめるか、他のブラウザで書き出した JSON ファイルを読み込んでください。入力内容は自動で保存されます。'
-    : '新規作成からはじめてください。入力内容は自動で保存されます。';
-
   return (
     <div className="plan-admin">
       <div className="plan-admin-header">
         <div>
           <h2 className="plan-admin-title">プラン管理</h2>
-          <p className="plan-admin-desc">{pageDescription}</p>
+          <p className="plan-admin-desc">
+            {entitlements.allowMultiPlanAdmin
+              ? 'プランを一覧・編集し、入力画面を開きます。ブラウザをまたぐ場合は書き出し／読み込みでまとめられます。'
+              : '一般向けライセンスではプランは1件までです。ブラウザをまたぐ場合は書き出し／読み込みが使えます。'}
+          </p>
         </div>
         <div className="plan-admin-header-actions">
           <button
@@ -117,17 +113,15 @@ export function PlanAdminView({
           >
             書き出し
           </button>
-          {entitlements.allowMultiPlanAdmin ? (
-            <button
-              type="button"
-              className="plan-bar-btn"
-              disabled={transferBusy}
-              title="他ブラウザで書き出した JSON を読み込み、このブラウザへ統合します"
-              onClick={() => importInputRef.current?.click()}
-            >
-              読み込み
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="plan-bar-btn"
+            disabled={transferBusy}
+            title="他ブラウザで書き出した JSON を読み込み、このブラウザへ統合します"
+            onClick={() => importInputRef.current?.click()}
+          >
+            読み込み
+          </button>
           {canCreate ? (
             <button
               type="button"
@@ -190,18 +184,19 @@ export function PlanAdminView({
       {summaries.length === 0 ? (
         <div className="plan-admin-empty">
           <h3 className="plan-admin-empty-title">プランがまだありません</h3>
-          <p className="plan-admin-empty-desc">{emptyDescription}</p>
+          <p className="plan-admin-empty-desc">
+            新規作成からはじめるか、書き出した JSON
+            ファイルを読み込んでください。入力内容は自動で保存されます。
+          </p>
           <div className="plan-admin-empty-actions">
-            {entitlements.allowMultiPlanAdmin ? (
-              <button
-                type="button"
-                className="plan-bar-btn"
-                disabled={transferBusy}
-                onClick={() => importInputRef.current?.click()}
-              >
-                バックアップを読み込む
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="plan-bar-btn"
+              disabled={transferBusy}
+              onClick={() => importInputRef.current?.click()}
+            >
+              バックアップを読み込む
+            </button>
             <button
               type="button"
               className="plan-bar-btn plan-bar-btn--primary plan-admin-empty-cta"
@@ -289,16 +284,14 @@ export function PlanAdminView({
                         >
                           プラン情報
                         </button>
-                        {entitlements.allowMultiPlanAdmin ? (
-                          <button
-                            type="button"
-                            className="plan-bar-btn plan-bar-btn--danger"
-                            title="このプランを削除します"
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            削除
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          className="plan-bar-btn plan-bar-btn--danger"
+                          title="このプランを削除します"
+                          onClick={() => setDeleteTarget(item)}
+                        >
+                          削除
+                        </button>
                       </div>
                     </td>
                   </tr>
