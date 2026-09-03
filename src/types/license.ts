@@ -1,3 +1,5 @@
+import type { LicenseEdition } from './licenseEdition';
+
 export interface LicenseDevice {
   deviceId: string;
   deviceLabel: string;
@@ -10,6 +12,7 @@ export interface LicenseStatusResponse {
   error?: string;
   message?: string;
   keyHint?: string;
+  edition?: LicenseEdition;
   devices?: LicenseDevice[];
   maxDevices?: number;
 }
@@ -19,6 +22,7 @@ export interface LicenseActivateResponse {
   error?: string;
   message?: string;
   keyHint?: string;
+  edition?: LicenseEdition;
   devices?: LicenseDevice[];
   maxDevices?: number;
 }
@@ -54,6 +58,7 @@ export interface LicenseAdminKeySummary {
   key_hint: string;
   key_display: string | null;
   status: 'active' | 'revoked';
+  edition: LicenseEdition;
   max_devices: number;
   note: string | null;
   created_at: string;

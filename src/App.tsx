@@ -107,6 +107,7 @@ import {
   getLastOpenedPlanId,
   setLastOpenedPlanId,
 } from './lib/lastOpenedPlan';
+import type { AdminTabId } from './types/adminTabs';
 import type { AssetBuildingTabId } from './types/assetBuildingTabs';
 import type { EducationByMember } from './types/education';
 import type { FamilyMember } from './types/family';
@@ -120,6 +121,7 @@ import type { LivingExpenseState } from './types/living';
 import type { PensionByMember } from './types/pension';
 import { migrateRequiredCoverageState } from './lib/requiredCoverage';
 import type { RequiredCoveragePageView, RequiredCoverageState } from './types/requiredCoverage';
+import { canCreatePlan } from './types/licenseEdition';
 import type { PlanAppState, PlanCreateInput, PlanEditInput, PlanPurpose, PlanStatus, PlanSummary } from './types/plan';
 import { getDefaultCreateStatus } from './types/plan';
 import type { SavingsState } from './types/savings';
@@ -141,6 +143,7 @@ const AUTOSAVE_DELAY_MS = 500;
 export default function App() {
   const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
+  const [adminTab, setAdminTab] = useState<AdminTabId>('plans');
   const [assetBuildingTab, setAssetBuildingTab] =
     useState<AssetBuildingTabId>('simulation');
   const [requiredCoveragePageView, setRequiredCoveragePageView] =
@@ -604,6 +607,10 @@ export default function App() {
   }, [simpleCoverageDesignOnly]);
 
   const handleCreatePlan = async (meta: PlanCreateInput) => {
+    if (!canCreatePlan(license.entitlements, planSummaries.length)) {
+      window.alert('一般向けライセンスではプランは1件までです。');
+      return;
+    }
     try {
       await flushAutosave({ refreshList: true });
       const empty = createEmptyPlanAppState();
@@ -763,7 +770,7 @@ export default function App() {
       await flushAutosave({ refreshList: true });
       const plans = await planRepository.listAll();
       if (plans.length === 0) {
-        window.alert('書き出す顧客プランがありません。');
+        window.alert('書き出すプランがありません。');
         return;
       }
       const backup = buildPlanBackup(plans);
@@ -798,10 +805,27 @@ export default function App() {
       const text = await file.text();
       const backup = parsePlanBackupJson(text);
       if (backup.plans.length === 0) {
-        window.alert('ファイルに顧客プランが含まれていません。');
+        window.alert('ファイルにプランが含まれていません。');
         return;
       }
       const existing = await planRepository.listAll();
+      if (!license.entitlements.allowMultiPlanAdmin) {
+        const incomingNewCount = backup.plans.filter(
+          (plan) => !existing.some((item) => item.id === plan.id),
+        ).length;
+        if (existing.length >= 1 && incomingNewCount > 0) {
+          window.alert(
+            '一般向けライセンスではプランは1件までです。別プランの追加読み込みはできません。',
+          );
+          return;
+        }
+        if (existing.length === 0 && backup.plans.length > 1) {
+          window.alert(
+            '一般向けライセンスではプランは1件までです。ファイルに複数プランが含まれているため読み込めません。',
+          );
+          return;
+        }
+      }
       const { toSave, result } = mergePlanRecords(existing, backup.plans);
       for (const plan of toSave) {
         await planRepository.save(plan);
@@ -1109,11 +1133,11 @@ export default function App() {
 
   const renderMainContent = () => {
     if (headerTab === 'admin') {
-      return (
-        <>
+      if (adminTab === 'license') {
+        return (
           <LicenseStatusPanel
             licenseState={license.licenseState}
-            keyHint={license.keyHint}
+            entitlements={license.entitlements}
             deviceLabel={getDefaultDeviceLabel()}
             errorMessage={license.errorMessage}
             busy={license.busy}
@@ -1122,10 +1146,15 @@ export default function App() {
               void license.releaseCurrentDevice();
             }}
           />
-          <PlanAdminView
+        );
+      }
+
+      return (
+        <PlanAdminView
           summaries={planSummaries}
           currentPlanId={planId}
           transferBusy={planTransferBusy}
+          entitlements={license.entitlements}
           onOpen={(id) => {
             void handleOpenPlan(id);
           }}
@@ -1145,7 +1174,6 @@ export default function App() {
             void handleImportPlansFile(file);
           }}
         />
-        </>
       );
     }
 
@@ -1492,7 +1520,7 @@ export default function App() {
         return (
           <HeaderTabPlaceholder
             title="資産形成"
-            description="ライフプラン分析を行うには、管理タブでライセンスキーを登録してください。"
+            description="ライフプラン分析を行うには、管理タブのライセンスからキーを登録してください。"
           />
         );
       }
@@ -1658,6 +1686,9 @@ export default function App() {
       customerName={customerName}
       planStatus={planStatus}
       autosaveStatus={autosaveStatus}
+      showHonorific={license.entitlements.showHonorific}
+      adminTab={adminTab}
+      onAdminTabChange={setAdminTab}
       assetBuildingTab={assetBuildingTab}
       onAssetBuildingTabChange={setAssetBuildingTab}
       requiredCoverageRiskKind={

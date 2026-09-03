@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { ADMIN_TABS, type AdminTabId } from '../../types/adminTabs';
 import { ASSET_BUILDING_TABS, type AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import { HEADER_TABS, type HeaderTabId } from '../../types/headerTabs';
 import {
@@ -7,7 +8,7 @@ import {
   type RequiredCoverageRiskKind,
 } from '../../types/requiredCoverage';
 import {
-  formatCustomerNameWithHonorific,
+  formatPlanDisplayName,
   getPlanStatusLabel,
   type PlanStatus,
 } from '../../types/plan';
@@ -26,6 +27,9 @@ interface TopHeaderProps {
   customerName?: string;
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
+  showHonorific?: boolean;
+  adminTab?: AdminTabId;
+  onAdminTabChange?: (tab: AdminTabId) => void;
   assetBuildingTab?: AssetBuildingTabId;
   onAssetBuildingTabChange?: (tab: AssetBuildingTabId) => void;
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
@@ -71,23 +75,43 @@ export function TopHeader({
   customerName = '',
   planStatus = 'in_progress',
   autosaveStatus = 'idle',
+  showHonorific = false,
+  adminTab = 'plans',
+  onAdminTabChange,
   assetBuildingTab = 'simulation',
   onAssetBuildingTabChange,
   requiredCoverageRiskKind = 'death',
   onRequiredCoverageRiskKindChange,
 }: TopHeaderProps) {
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [assetMenuOpen, setAssetMenuOpen] = useState(false);
   const [coverageMenuOpen, setCoverageMenuOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
   const assetMenuRef = useRef<HTMLDivElement>(null);
   const coverageMenuRef = useRef<HTMLDivElement>(null);
   const coverageUnlocked = analysisUnlocked || requiredCoverageUnlocked;
   const coverageKinds = REQUIRED_COVERAGE_RISK_KINDS.filter((k) =>
     requiredCoverageRiskKinds.includes(k.id),
   );
+  const showAdminMenu = onAdminTabChange != null;
   const showAssetMenu =
     analysisUnlocked && onAssetBuildingTabChange != null;
   const showCoverageMenu =
     coverageUnlocked && onRequiredCoverageRiskKindChange != null;
+
+  useEffect(() => {
+    if (!adminMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (adminMenuRef.current?.contains(target)) return;
+      setAdminMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [adminMenuOpen]);
 
   useEffect(() => {
     if (!assetMenuOpen) return;
@@ -116,6 +140,21 @@ export function TopHeader({
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [coverageMenuOpen]);
+
+  const handleAdminClick = () => {
+    if (!showAdminMenu) {
+      onTabChange('admin');
+      return;
+    }
+    onTabChange('admin');
+    setAdminMenuOpen(true);
+  };
+
+  const handleAdminSubClick = (id: AdminTabId) => {
+    onTabChange('admin');
+    onAdminTabChange?.(id);
+    setAdminMenuOpen(false);
+  };
 
   const handleAssetClick = () => {
     if (!showAssetMenu) return;
@@ -151,7 +190,7 @@ export function TopHeader({
           {activeTab !== 'admin' && hasOpenPlan ? (
             <div className="top-header-context" aria-live="polite">
               <span className="top-header-customer">
-                {formatCustomerNameWithHonorific(customerName)}
+                {formatPlanDisplayName(customerName, { honorific: showHonorific })}
               </span>
               <span
                 className={`top-header-status-badge top-header-status-badge--${planStatus}`}
@@ -166,7 +205,7 @@ export function TopHeader({
             </div>
           ) : activeTab === 'admin' && !hasOpenPlan ? (
             <p className="top-header-hint">
-              管理タブで顧客プランを作成・開くと入力できます
+              管理タブでプランを作成・開くと入力できます
             </p>
           ) : null}
         </div>
@@ -183,6 +222,43 @@ export function TopHeader({
                 ? '管理からプランを開くと入力できます'
                 : undefined;
             const isActive = activeTab === tab.id;
+
+            if (tab.id === 'admin' && showAdminMenu) {
+              return (
+                <div
+                  key={tab.id}
+                  ref={adminMenuRef}
+                  className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${adminMenuOpen ? ' is-open' : ''}`}
+                  onMouseEnter={() => setAdminMenuOpen(true)}
+                  onMouseLeave={() => setAdminMenuOpen(false)}
+                >
+                  <button
+                    type="button"
+                    className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    aria-expanded={adminMenuOpen}
+                    aria-haspopup="true"
+                    onClick={handleAdminClick}
+                  >
+                    {tab.label}
+                    <span className="top-header-nav-chevron" aria-hidden />
+                  </button>
+                  <div className="top-header-dropdown" role="menu">
+                    {ADMIN_TABS.map((sub) => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        role="menuitem"
+                        className={`top-header-dropdown-item${adminTab === sub.id && isActive ? ' active' : ''}`}
+                        onClick={() => handleAdminSubClick(sub.id)}
+                      >
+                        {sub.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
 
             if (tab.id === 'asset-building' && showAssetMenu) {
               return (

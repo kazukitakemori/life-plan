@@ -12,6 +12,10 @@ import {
   saveAdminSecret,
 } from '../../lib/license/adminStorage';
 import type { LicenseAdminGeneratedKey, LicenseAdminKeySummary } from '../../types/license';
+import {
+  LICENSE_EDITION_LABELS,
+  type LicenseEdition,
+} from '../../types/licenseEdition';
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -35,6 +39,7 @@ export function LicenseKeyAdminPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [customerNote, setCustomerNote] = useState('');
+  const [keyEdition, setKeyEdition] = useState<LicenseEdition>('personal');
   const [generateBusy, setGenerateBusy] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [issuedKeys, setIssuedKeys] = useState<LicenseAdminGeneratedKey[]>([]);
@@ -115,6 +120,7 @@ export function LicenseKeyAdminPage() {
       const body = await generateLicenseKeys(adminSecret, {
         count: 1,
         note: customerNote,
+        edition: keyEdition,
       });
       if (!body.ok || !body.keys?.length) {
         setGenerateError('キーの発行に失敗しました。');
@@ -237,11 +243,25 @@ export function LicenseKeyAdminPage() {
         <section className="license-key-admin-card">
           <h2 className="license-key-admin-card-title">新しいキーを発行</h2>
           <p className="license-key-admin-card-desc">
-            キーの文字列は自動で作られます。お客様名は管理用メモとして残ります（お客様には見えません）。
+            キーの文字列は自動で作られます。購入者名は管理用メモとして残ります（アプリ内には表示されません）。
           </p>
 
+          <label className="plan-meta-label" htmlFor="license-admin-edition">
+            プラン種別
+          </label>
+          <select
+            id="license-admin-edition"
+            className="plan-meta-input"
+            value={keyEdition}
+            disabled={generateBusy}
+            onChange={(event) => setKeyEdition(event.target.value as LicenseEdition)}
+          >
+            <option value="personal">{LICENSE_EDITION_LABELS.personal}</option>
+            <option value="advisor">{LICENSE_EDITION_LABELS.advisor}</option>
+          </select>
+
           <label className="plan-meta-label" htmlFor="license-admin-customer">
-            お客様名（メモ）
+            購入者名（メモ）
           </label>
           <input
             id="license-admin-customer"
@@ -318,7 +338,8 @@ export function LicenseKeyAdminPage() {
                 <thead>
                   <tr>
                     <th>ライセンスキー</th>
-                    <th>お客様名</th>
+                    <th>種別</th>
+                    <th>購入者名</th>
                     <th>状態</th>
                     <th>登録数</th>
                     <th>発行日</th>
@@ -346,6 +367,7 @@ export function LicenseKeyAdminPage() {
                           ) : null}
                         </div>
                       </td>
+                      <td>{LICENSE_EDITION_LABELS[entry.edition ?? 'personal']}</td>
                       <td>{entry.note?.trim() || '—'}</td>
                       <td>
                         <span

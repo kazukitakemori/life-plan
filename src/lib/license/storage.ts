@@ -2,10 +2,13 @@ const DEVICE_ID_KEY = 'life-plan-device-id';
 const LICENSE_KEY_STORAGE = 'life-plan-license-key';
 const LICENSE_CACHE_KEY = 'life-plan-license-cache';
 
+import type { LicenseEdition } from '../../types/licenseEdition';
+
 interface LicenseCache {
   keyHint: string;
   deviceId: string;
   verifiedAt: string;
+  edition?: LicenseEdition;
 }
 
 export function getOrCreateDeviceId(): string {

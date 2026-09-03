@@ -1,6 +1,9 @@
+import { LICENSE_EDITION_LABELS } from '../../types/licenseEdition';
+import type { LicenseEntitlements } from '../../types/licenseEdition';
+
 interface LicenseStatusPanelProps {
   licenseState: 'checking' | 'inactive' | 'active' | 'error';
-  keyHint?: string | null;
+  entitlements: LicenseEntitlements;
   deviceLabel: string;
   errorMessage?: string | null;
   onManageLicense: () => void;
@@ -24,65 +27,70 @@ const STATE_DESCRIPTIONS = {
 
 export function LicenseStatusPanel({
   licenseState,
-  keyHint,
+  entitlements,
   deviceLabel,
   errorMessage,
   onManageLicense,
   onReleaseDevice,
   busy = false,
 }: LicenseStatusPanelProps) {
+  const featureSummary =
+    licenseState === 'active'
+      ? entitlements.edition === 'advisor'
+        ? 'データ入力 / ライフプラン分析 / 複数プラン管理'
+        : 'データ入力 / ライフプラン分析（プラン1件）'
+      : 'データ入力のみ';
+
   return (
-    <section className="license-admin-card" aria-label="ライセンス">
-      <div className="license-admin-card-head">
-        <div>
-          <h3 className="license-admin-card-title">ライセンス</h3>
-          <p className="license-admin-card-desc">{STATE_DESCRIPTIONS[licenseState]}</p>
+    <div className="license-admin-page">
+      <section className="license-admin-card" aria-label="ライセンス">
+        <div className="license-admin-card-head">
+          <div>
+            <h2 className="license-admin-card-title">ライセンス</h2>
+            <p className="license-admin-card-desc">{STATE_DESCRIPTIONS[licenseState]}</p>
+          </div>
+          <span className={`license-status-badge license-status-badge--${licenseState}`}>
+            {STATE_LABELS[licenseState]}
+          </span>
         </div>
-        <span className={`license-status-badge license-status-badge--${licenseState}`}>
-          {STATE_LABELS[licenseState]}
-        </span>
-      </div>
 
-      <dl className="license-admin-card-grid">
-        <div>
-          <dt>このブラウザ</dt>
-          <dd>{deviceLabel}</dd>
-        </div>
-        <div>
-          <dt>登録キー</dt>
-          <dd>{keyHint ?? '未登録'}</dd>
-        </div>
-        <div>
-          <dt>利用可能な機能</dt>
-          <dd>
-            {licenseState === 'active'
-              ? 'データ入力 / ライフプラン分析'
-              : 'データ入力のみ'}
-          </dd>
-        </div>
-      </dl>
+        <dl className="license-admin-card-grid">
+          <div>
+            <dt>プラン種別</dt>
+            <dd>{LICENSE_EDITION_LABELS[entitlements.edition]}</dd>
+          </div>
+          <div>
+            <dt>このブラウザ</dt>
+            <dd>{deviceLabel}</dd>
+          </div>
+          <div>
+            <dt>利用可能な機能</dt>
+            <dd>{featureSummary}</dd>
+          </div>
+        </dl>
 
-      {errorMessage ? <p className="license-inline-error">{errorMessage}</p> : null}
+        {errorMessage ? <p className="license-inline-error">{errorMessage}</p> : null}
 
-      <div className="license-admin-card-actions">
-        <button
-          type="button"
-          className="plan-bar-btn plan-bar-btn--primary"
-          onClick={onManageLicense}
-        >
-          {licenseState === 'active' ? 'キーを変更' : 'ライセンスキーを登録'}
-        </button>
-        {licenseState === 'active' && onReleaseDevice ? (
+        <div className="license-admin-card-actions">
           <button
             type="button"
-            className="plan-bar-btn"
-            disabled={busy}
-            onClick={onReleaseDevice}
+            className="plan-bar-btn plan-bar-btn--primary"
+            onClick={onManageLicense}
           >
-            このブラウザの登録を解除
+            {licenseState === 'active' ? 'キーを変更' : 'ライセンスキーを登録'}
           </button>
-        ) : null}
-      </div>
-    </section>
+          {licenseState === 'active' && onReleaseDevice ? (
+            <button
+              type="button"
+              className="plan-bar-btn"
+              disabled={busy}
+              onClick={onReleaseDevice}
+            >
+              このブラウザの登録を解除
+            </button>
+          ) : null}
+        </div>
+      </section>
+    </div>
   );
 }

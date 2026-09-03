@@ -1,7 +1,7 @@
 import { migratePlanRecord } from './planDocument';
 import type { PlanRecord } from '../types/plan';
 
-/** ブラウザ間で顧客プランを移すためのバックアップ形式 */
+/** ブラウザ間でプランを移すためのバックアップ形式 */
 export const PLAN_BACKUP_FORMAT = 'life-plan-backup' as const;
 export const PLAN_BACKUP_VERSION = 1;
 

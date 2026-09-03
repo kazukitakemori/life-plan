@@ -21,6 +21,7 @@ interface PlanMetaModalProps {
   title: string;
   confirmLabel?: string;
   initial: PlanEditInput;
+  showCrmFields?: boolean;
   onClose: () => void;
   onConfirm: (meta: PlanEditInput) => void;
 }
@@ -30,6 +31,7 @@ interface PlanCreateModalProps {
   title: string;
   confirmLabel?: string;
   initial: PlanMetaInput;
+  showCrmFields?: boolean;
   onClose: () => void;
   onConfirm: (meta: PlanCreateInput) => void;
 }
@@ -80,11 +82,121 @@ function PlanPurposeOptions({
   );
 }
 
+function PlanMetaFields({
+  customerName,
+  phone,
+  email,
+  note,
+  status,
+  showCrmFields,
+  showStatusField,
+  onCustomerNameChange,
+  onPhoneChange,
+  onEmailChange,
+  onNoteChange,
+  onStatusChange,
+  nameInputId,
+  autoFocus,
+}: {
+  customerName: string;
+  phone: string;
+  email: string;
+  note: string;
+  status: PlanStatus;
+  showCrmFields: boolean;
+  showStatusField: boolean;
+  onCustomerNameChange: (value: string) => void;
+  onPhoneChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onNoteChange: (value: string) => void;
+  onStatusChange: (value: PlanStatus) => void;
+  nameInputId: string;
+  autoFocus?: boolean;
+}) {
+  return (
+    <>
+      <label className="plan-meta-label" htmlFor={nameInputId}>
+        お名前
+      </label>
+      <input
+        id={nameInputId}
+        type="text"
+        className="plan-meta-input"
+        value={customerName}
+        onChange={(e) => onCustomerNameChange(e.target.value)}
+        placeholder="山田 太郎"
+        autoFocus={autoFocus}
+      />
+
+      {showCrmFields ? (
+        <>
+          <label className="plan-meta-label" htmlFor={`${nameInputId}-phone`}>
+            電話番号
+          </label>
+          <input
+            id={`${nameInputId}-phone`}
+            type="tel"
+            className="plan-meta-input"
+            value={phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            placeholder="090-1234-5678"
+          />
+
+          <label className="plan-meta-label" htmlFor={`${nameInputId}-email`}>
+            メールアドレス
+          </label>
+          <input
+            id={`${nameInputId}-email`}
+            type="email"
+            className="plan-meta-input"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            placeholder="example@example.com"
+          />
+        </>
+      ) : null}
+
+      {showStatusField ? (
+        <>
+          <label className="plan-meta-label" htmlFor={`${nameInputId}-status`}>
+            ステータス
+          </label>
+          <select
+            id={`${nameInputId}-status`}
+            className="plan-meta-input"
+            value={status}
+            onChange={(e) => onStatusChange(e.target.value as PlanStatus)}
+          >
+            {PLAN_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : null}
+
+      <label className="plan-meta-label" htmlFor={`${nameInputId}-note`}>
+        メモ
+      </label>
+      <textarea
+        id={`${nameInputId}-note`}
+        className="plan-meta-textarea"
+        rows={3}
+        value={note}
+        onChange={(e) => onNoteChange(e.target.value)}
+        placeholder={showCrmFields ? '面談メモなど' : '自由記入'}
+      />
+    </>
+  );
+}
+
 export function PlanCreateModal({
   open,
   title,
   confirmLabel = '作成して開く',
   initial,
+  showCrmFields = false,
   onClose,
   onConfirm,
 }: PlanCreateModalProps) {
@@ -137,58 +249,26 @@ export function PlanCreateModal({
           {title}
         </h3>
         <p className="education-ref-modal-summary">
-          目的と顧客情報を入力します。ステータスは「入力中」で作成されます。
+          目的とお名前を入力します。ステータスは「入力中」で作成されます。
         </p>
         <div className="education-ref-modal-body">
           <PlanPurposeOptions purposes={purposes} onChange={setPurposes} />
 
-          <label className="plan-meta-label" htmlFor="plan-meta-name">
-            顧客名
-          </label>
-          <input
-            id="plan-meta-name"
-            type="text"
-            className="plan-meta-input"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="山田 太郎"
+          <PlanMetaFields
+            customerName={customerName}
+            phone={phone}
+            email={email}
+            note={note}
+            status={getDefaultCreateStatus()}
+            showCrmFields={showCrmFields}
+            showStatusField={false}
+            onCustomerNameChange={setCustomerName}
+            onPhoneChange={setPhone}
+            onEmailChange={setEmail}
+            onNoteChange={setNote}
+            onStatusChange={() => undefined}
+            nameInputId="plan-meta-name"
             autoFocus
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-phone">
-            電話番号
-          </label>
-          <input
-            id="plan-meta-phone"
-            type="tel"
-            className="plan-meta-input"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="090-1234-5678"
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-email">
-            メールアドレス
-          </label>
-          <input
-            id="plan-meta-email"
-            type="email"
-            className="plan-meta-input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@example.com"
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-note">
-            メモ
-          </label>
-          <textarea
-            id="plan-meta-note"
-            className="plan-meta-textarea"
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="面談メモなど"
           />
 
           <div className="plan-save-as-actions">
@@ -202,8 +282,8 @@ export function PlanCreateModal({
               onClick={() =>
                 onConfirm({
                   customerName: trimmed,
-                  phone: phone.trim(),
-                  email: email.trim(),
+                  phone: showCrmFields ? phone.trim() : '',
+                  email: showCrmFields ? email.trim() : '',
                   note: note.trim(),
                   status: getDefaultCreateStatus(),
                   purposes,
@@ -224,6 +304,7 @@ export function PlanMetaModal({
   title,
   confirmLabel = '保存',
   initial,
+  showCrmFields = false,
   onClose,
   onConfirm,
 }: PlanMetaModalProps) {
@@ -256,6 +337,9 @@ export function PlanMetaModal({
 
   const trimmed = customerName.trim();
   const canSubmit = Boolean(trimmed) && purposes.length > 0;
+  const summaryText = showCrmFields
+    ? '目的・お名前・連絡先・ステータス・メモを編集します。目的を変更すると入力可能な項目が変わります。'
+    : '目的・お名前・メモを編集します。目的を変更すると入力可能な項目が変わります。';
 
   return (
     <div className="education-ref-modal-overlay" onClick={onClose}>
@@ -277,75 +361,25 @@ export function PlanMetaModal({
         <h3 id="plan-meta-modal-title" className="education-ref-modal-title">
           {title}
         </h3>
-        <p className="education-ref-modal-summary">
-          目的・顧客情報・連絡先・ステータス・メモを編集します。目的を変更すると入力可能な項目が変わります。
-        </p>
+        <p className="education-ref-modal-summary">{summaryText}</p>
         <div className="education-ref-modal-body">
           <PlanPurposeOptions purposes={purposes} onChange={setPurposes} />
 
-          <label className="plan-meta-label" htmlFor="plan-meta-name">
-            顧客名
-          </label>
-          <input
-            id="plan-meta-name"
-            type="text"
-            className="plan-meta-input"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="山田 太郎"
+          <PlanMetaFields
+            customerName={customerName}
+            phone={phone}
+            email={email}
+            note={note}
+            status={status}
+            showCrmFields={showCrmFields}
+            showStatusField={showCrmFields}
+            onCustomerNameChange={setCustomerName}
+            onPhoneChange={setPhone}
+            onEmailChange={setEmail}
+            onNoteChange={setNote}
+            onStatusChange={setStatus}
+            nameInputId="plan-meta-edit"
             autoFocus
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-phone">
-            電話番号
-          </label>
-          <input
-            id="plan-meta-phone"
-            type="tel"
-            className="plan-meta-input"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="090-1234-5678"
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-email">
-            メールアドレス
-          </label>
-          <input
-            id="plan-meta-email"
-            type="email"
-            className="plan-meta-input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@example.com"
-          />
-
-          <label className="plan-meta-label" htmlFor="plan-meta-status">
-            ステータス
-          </label>
-          <select
-            id="plan-meta-status"
-            className="plan-meta-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as PlanStatus)}
-          >
-            {PLAN_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <label className="plan-meta-label" htmlFor="plan-meta-note">
-            メモ
-          </label>
-          <textarea
-            id="plan-meta-note"
-            className="plan-meta-textarea"
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="面談メモなど"
           />
 
           <div className="plan-save-as-actions">
@@ -359,8 +393,8 @@ export function PlanMetaModal({
               onClick={() =>
                 onConfirm({
                   customerName: trimmed,
-                  phone: phone.trim(),
-                  email: email.trim(),
+                  phone: showCrmFields ? phone.trim() : initial.phone,
+                  email: showCrmFields ? email.trim() : initial.email,
                   note: note.trim(),
                   status,
                   purposes,

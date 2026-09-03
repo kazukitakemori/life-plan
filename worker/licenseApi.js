@@ -20,7 +20,7 @@ const MAX_DEVICES_DEFAULT = 2;
 async function findLicenseByHash(db, keyHash) {
   return db
     .prepare(
-      `SELECT id, key_hash, key_hint, status, max_devices, note, created_at
+      `SELECT id, key_hash, key_hint, status, edition, max_devices, note, created_at
        FROM license_keys
        WHERE key_hash = ?`,
     )
@@ -164,13 +164,14 @@ async function handleStatus(url, env) {
   const devices = await listDevices(env.DB, resolved.license.id);
   const current = devices.find((device) => device.device_id === deviceId);
   if (!current) {
-    return jsonResponse({
-      valid: false,
-      error: 'NOT_ACTIVATED',
-      message: 'このブラウザはまだライセンス登録されていません。',
-      devices: serializeDevices(devices),
-      maxDevices: resolved.license.max_devices,
-    });
+  return jsonResponse({
+    valid: false,
+    error: 'NOT_ACTIVATED',
+    message: 'このブラウザはまだライセンス登録されていません。',
+    edition: resolved.license.edition ?? 'personal',
+    devices: serializeDevices(devices),
+    maxDevices: resolved.license.max_devices,
+  });
   }
 
   const now = new Date().toISOString();
@@ -179,6 +180,7 @@ async function handleStatus(url, env) {
   return jsonResponse({
     valid: true,
     keyHint: resolved.license.key_hint,
+    edition: resolved.license.edition ?? 'personal',
     devices: serializeDevices(devices),
     maxDevices: resolved.license.max_devices,
   });
@@ -220,6 +222,7 @@ async function handleActivate(request, env) {
     return jsonResponse({
       ok: true,
       keyHint: resolved.license.key_hint,
+      edition: resolved.license.edition ?? 'personal',
       devices: serializeDevices(refreshed),
       maxDevices,
     });
@@ -232,6 +235,7 @@ async function handleActivate(request, env) {
           ok: false,
           error: 'DEVICE_LIMIT',
           message: `このライセンスキーは最大${maxDevices}つのブラウザ（利用環境）までです。古い登録を解除してから再度お試しください。`,
+          edition: resolved.license.edition ?? 'personal',
           devices: serializeDevices(devices),
           maxDevices,
         },
@@ -264,6 +268,7 @@ async function handleActivate(request, env) {
   return jsonResponse({
     ok: true,
     keyHint: resolved.license.key_hint,
+    edition: resolved.license.edition ?? 'personal',
     devices: serializeDevices(refreshed),
     maxDevices,
   });
@@ -336,6 +341,7 @@ async function handleAdminApi(request, env, path) {
     const body = (await readJson(request)) ?? {};
     const count = Math.min(Math.max(Number(body.count ?? 1), 1), 50);
     const note = body.note ? String(body.note) : null;
+    const edition = body.edition === 'advisor' ? 'advisor' : 'personal';
     const now = new Date().toISOString();
     const keys = [];
 
@@ -344,14 +350,15 @@ async function handleAdminApi(request, env, path) {
       const keyHash = await hashLicenseKey(plainKey, env.LICENSE_PEPPER);
       const id = createId();
       await env.DB.prepare(
-        `INSERT INTO license_keys (id, key_hash, key_hint, key_display, status, max_devices, note, created_at)
-         VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
+        `INSERT INTO license_keys (id, key_hash, key_hint, key_display, status, edition, max_devices, note, created_at)
+         VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
       )
         .bind(
           id,
           keyHash,
           getLicenseKeyHint(plainKey),
           formatLicenseKeyForDisplay(plainKey),
+          edition,
           MAX_DEVICES_DEFAULT,
           note,
           now,
@@ -369,7 +376,7 @@ async function handleAdminApi(request, env, path) {
 
   if (path === '/api/admin/keys' && request.method === 'GET') {
     const { results } = await env.DB.prepare(
-      `SELECT lk.id, lk.key_hint, lk.key_display, lk.status, lk.max_devices, lk.note, lk.created_at,
+      `SELECT lk.id, lk.key_hint, lk.key_display, lk.status, lk.edition, lk.max_devices, lk.note, lk.created_at,
               COUNT(ld.id) AS device_count
        FROM license_keys lk
        LEFT JOIN license_devices ld ON ld.license_id = lk.id

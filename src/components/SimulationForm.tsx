@@ -50,12 +50,12 @@ export function SimulationForm({
       <h2>入力条件</h2>
 
       <div className="field-group">
-        <h3>お客様情報</h3>
+        <h3>基本情報</h3>
         <label className="field">
-          <span className="field-label">お客様名</span>
+          <span className="field-label">お名前</span>
           <input
             type="text"
-            placeholder="例：山田 太郎 様"
+            placeholder="例：山田 太郎"
             value={clientInfo.clientName}
             onChange={(e) =>
               onClientInfoChange({ ...clientInfo, clientName: e.target.value })
@@ -66,7 +66,7 @@ export function SimulationForm({
           <span className="field-label">メモ</span>
           <input
             type="text"
-            placeholder="面談日・前提条件など"
+            placeholder="前提条件など"
             value={clientInfo.memo}
             onChange={(e) =>
               onClientInfoChange({ ...clientInfo, memo: e.target.value })

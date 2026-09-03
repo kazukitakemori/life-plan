@@ -3,6 +3,7 @@ import type {
   LicenseAdminListResponse,
   LicenseAdminRevokeResponse,
 } from '../../types/license';
+import type { LicenseEdition } from '../../types/licenseEdition';
 import { resolveLicenseApiBase } from './apiBase';
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -37,7 +38,7 @@ export async function verifyAdminSecret(adminSecret: string): Promise<boolean> {
 
 export async function generateLicenseKeys(
   adminSecret: string,
-  input: { count?: number; note?: string },
+  input: { count?: number; note?: string; edition?: LicenseEdition },
 ): Promise<LicenseAdminGenerateResponse> {
   const response = await fetch(apiUrl('/api/admin/keys/generate'), {
     method: 'POST',
@@ -45,6 +46,7 @@ export async function generateLicenseKeys(
     body: JSON.stringify({
       count: input.count ?? 1,
       note: input.note?.trim() || null,
+      edition: input.edition ?? 'personal',
     }),
   });
   return parseJson<LicenseAdminGenerateResponse>(response);

@@ -40,7 +40,7 @@ export const PLAN_STATUS_DEFINITIONS: PlanStatusDefinition[] = [
   {
     id: 'in_progress',
     label: '入力中',
-    description: '入力・編集中の顧客プラン',
+    description: '入力・編集中のプラン',
     isDefaultForCreate: true,
     setOnAnalyze: false,
   },
@@ -83,6 +83,17 @@ export function formatCustomerNameWithHonorific(name: string): string {
   const trimmed = name.trim() || '名称未設定';
   const base = trimmed.replace(/(?:\s|　)*様\s*$/u, '').trim() || '名称未設定';
   return `${base} 様`;
+}
+
+/** エディションに応じたプラン名表示 */
+export function formatPlanDisplayName(
+  name: string,
+  options: { honorific?: boolean } = {},
+): string {
+  const trimmed = name.trim() || '名称未設定';
+  const base = trimmed.replace(/(?:\s|　)*様\s*$/u, '').trim() || '名称未設定';
+  if (options.honorific) return `${base} 様`;
+  return base;
 }
 
 /** IndexedDB / 将来クラウド共通の入力スナップショット（JSON 化可能な形） */

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { AdminTabId } from '../../types/adminTabs';
 import type { AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { HeaderTabId } from '../../types/headerTabs';
 import type { PlanStatus } from '../../types/plan';
@@ -32,6 +33,9 @@ interface AppShellProps {
   customerName?: string;
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
+  showHonorific?: boolean;
+  adminTab?: AdminTabId;
+  onAdminTabChange?: (tab: AdminTabId) => void;
   assetBuildingTab?: AssetBuildingTabId;
   onAssetBuildingTabChange?: (tab: AssetBuildingTabId) => void;
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
@@ -61,6 +65,9 @@ export function AppShell({
   customerName,
   planStatus,
   autosaveStatus,
+  showHonorific,
+  adminTab,
+  onAdminTabChange,
   assetBuildingTab,
   onAssetBuildingTabChange,
   requiredCoverageRiskKind,
@@ -86,6 +93,9 @@ export function AppShell({
         customerName={customerName}
         planStatus={planStatus}
         autosaveStatus={autosaveStatus}
+        showHonorific={showHonorific}
+        adminTab={adminTab}
+        onAdminTabChange={onAdminTabChange}
         assetBuildingTab={assetBuildingTab}
         onAssetBuildingTabChange={onAssetBuildingTabChange}
         requiredCoverageRiskKind={requiredCoverageRiskKind}

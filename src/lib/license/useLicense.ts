@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { activateLicense, deactivateLicense, fetchLicenseStatus } from './api';
+import { getLicenseEntitlements, resolveLicenseEdition } from './edition';
 import {
   clearStoredLicenseKey,
   getDefaultDeviceLabel,
@@ -11,6 +12,7 @@ import {
   setStoredLicenseKey,
 } from './storage';
 import type { LicenseDevice, LicenseState } from '../../types/license';
+import type { LicenseEdition, LicenseEntitlements } from '../../types/licenseEdition';
 
 interface PendingAnalysis {
   resolve: (allowed: boolean) => void;
@@ -20,6 +22,7 @@ export function useLicense() {
   const deviceId = useMemo(() => getOrCreateDeviceId(), []);
   const [licenseState, setLicenseState] = useState<LicenseState>('checking');
   const [licenseKey, setLicenseKey] = useState<string | null>(() => getStoredLicenseKey());
+  const [edition, setEdition] = useState<LicenseEdition>('personal');
   const [keyHint, setKeyHint] = useState<string | null>(null);
   const [devices, setDevices] = useState<LicenseDevice[]>([]);
   const [maxDevices, setMaxDevices] = useState(2);
@@ -30,9 +33,21 @@ export function useLicense() {
   const [, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const entitlements = useMemo<LicenseEntitlements>(
+    () => getLicenseEntitlements(edition),
+    [edition],
+  );
+
   const applyActive = useCallback(
-    (hint: string | undefined, nextDevices: LicenseDevice[], nextMaxDevices: number) => {
+    (
+      hint: string | undefined,
+      nextEdition: LicenseEdition | undefined,
+      nextDevices: LicenseDevice[],
+      nextMaxDevices: number,
+    ) => {
+      const resolvedEdition = resolveLicenseEdition(nextEdition);
       setLicenseState('active');
+      setEdition(resolvedEdition);
       setKeyHint(hint ?? null);
       setDevices(nextDevices);
       setMaxDevices(nextMaxDevices);
@@ -41,6 +56,7 @@ export function useLicense() {
         keyHint: hint ?? 'LP-****',
         deviceId,
         verifiedAt: new Date().toISOString(),
+        edition: resolvedEdition,
       });
     },
     [deviceId],
@@ -50,6 +66,7 @@ export function useLicense() {
     const cached = getLicenseCache();
     if (!cached || cached.deviceId !== deviceId) return false;
     setLicenseState('active');
+    setEdition(resolveLicenseEdition(cached.edition));
     setKeyHint(cached.keyHint);
     setDevices([]);
     setMaxDevices(2);
@@ -62,6 +79,7 @@ export function useLicense() {
     setLicenseKey(stored);
     if (!stored) {
       setLicenseState('inactive');
+      setEdition('personal');
       setKeyHint(null);
       setDevices([]);
       return false;
@@ -73,6 +91,7 @@ export function useLicense() {
       if (!result.valid) {
         if (result.error === 'NOT_ACTIVATED') {
           setLicenseState('inactive');
+          setEdition(resolveLicenseEdition(result.edition));
           setDevices(result.devices ?? []);
           setMaxDevices(result.maxDevices ?? 2);
           setErrorMessage(result.message ?? null);
@@ -81,11 +100,17 @@ export function useLicense() {
         clearStoredLicenseKey();
         setLicenseKey(null);
         setLicenseState('inactive');
+        setEdition('personal');
         setErrorMessage(result.message ?? 'ライセンスが無効です。');
         return false;
       }
 
-      applyActive(result.keyHint, result.devices ?? [], result.maxDevices ?? 2);
+      applyActive(
+        result.keyHint,
+        result.edition,
+        result.devices ?? [],
+        result.maxDevices ?? 2,
+      );
       return true;
     } catch {
       if (applyOfflineActive()) {
@@ -125,6 +150,7 @@ export function useLicense() {
         if (!result.ok) {
           if (result.error === 'DEVICE_LIMIT') {
             setPendingKey(rawKey);
+            setEdition(resolveLicenseEdition(result.edition));
             setDevices(result.devices ?? []);
             setMaxDevices(result.maxDevices ?? 2);
             setKeyModalOpen(false);
@@ -137,7 +163,12 @@ export function useLicense() {
 
         setStoredLicenseKey(rawKey);
         setLicenseKey(rawKey);
-        applyActive(result.keyHint, result.devices ?? [], result.maxDevices ?? 2);
+        applyActive(
+          result.keyHint,
+          result.edition,
+          result.devices ?? [],
+          result.maxDevices ?? 2,
+        );
         setKeyModalOpen(false);
         setDeviceLimitModalOpen(false);
         setPendingKey('');
@@ -230,6 +261,7 @@ export function useLicense() {
       clearStoredLicenseKey();
       setLicenseKey(null);
       setLicenseState('inactive');
+      setEdition('personal');
       setKeyHint(null);
       setDevices(result.devices ?? []);
       return true;
@@ -247,6 +279,8 @@ export function useLicense() {
     deviceId,
     licenseState,
     licenseKey,
+    edition,
+    entitlements,
     keyHint,
     devices,
     maxDevices,

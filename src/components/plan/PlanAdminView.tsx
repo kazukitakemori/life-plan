@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 
 import {
-  formatCustomerNameWithHonorific,
+  formatPlanDisplayName,
   getDefaultCreateStatus,
   getPlanStatusLabel,
   PLAN_STATUS_OPTIONS,
@@ -16,6 +16,8 @@ import {
   getPlanPurposeShortLabel,
   getPlanPurposesShortLabel,
 } from '../../lib/planPurpose';
+import type { LicenseEntitlements } from '../../types/licenseEdition';
+import { canCreatePlan } from '../../types/licenseEdition';
 import { PlanCreateModal } from './PlanMetaModal';
 import { PlanDeleteConfirmModal } from './PlanDeleteConfirmModal';
 import { PlanMetaModal } from './PlanMetaModal';
@@ -24,6 +26,7 @@ interface PlanAdminViewProps {
   summaries: PlanSummary[];
   currentPlanId: string | null;
   transferBusy?: boolean;
+  entitlements: LicenseEntitlements;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onCreate: (meta: PlanCreateInput) => void;
@@ -55,6 +58,7 @@ export function PlanAdminView({
   summaries,
   currentPlanId,
   transferBusy = false,
+  entitlements,
   onOpen,
   onDelete,
   onCreate,
@@ -68,6 +72,10 @@ export function PlanAdminView({
   const [editTarget, setEditTarget] = useState<PlanSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PlanSummary | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const canCreate = canCreatePlan(entitlements, summaries.length);
+  const showToolbar =
+    entitlements.allowMultiPlanAdmin && summaries.length > 0;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,42 +92,52 @@ export function PlanAdminView({
     });
   }, [query, statusFilter, summaries]);
 
+  const pageDescription = entitlements.allowMultiPlanAdmin
+    ? 'プランを一覧・編集し、入力画面を開きます。ブラウザをまたぐ場合は書き出し／読み込みでまとめられます。'
+    : 'ご自身のプランを編集し、入力画面を開きます。一般向けライセンスではプランは1件までです。';
+
+  const emptyDescription = entitlements.allowMultiPlanAdmin
+    ? '新規作成からはじめるか、他のブラウザで書き出した JSON ファイルを読み込んでください。入力内容は自動で保存されます。'
+    : '新規作成からはじめてください。入力内容は自動で保存されます。';
+
   return (
     <div className="plan-admin">
       <div className="plan-admin-header">
         <div>
-          <h2 className="plan-admin-title">顧客プラン管理</h2>
-          <p className="plan-admin-desc">
-            顧客ごとのプランを一覧・編集し、入力画面を開きます。ブラウザをまたぐ場合は書き出し／読み込みでまとめられます。
-          </p>
+          <h2 className="plan-admin-title">プラン管理</h2>
+          <p className="plan-admin-desc">{pageDescription}</p>
         </div>
         <div className="plan-admin-header-actions">
           <button
             type="button"
             className="plan-bar-btn"
             disabled={transferBusy || summaries.length === 0}
-            title="このブラウザ内の全顧客プランを JSON ファイルに書き出します"
+            title="このブラウザ内の全プランを JSON ファイルに書き出します"
             onClick={() => onExportAll()}
           >
             書き出し
           </button>
-          <button
-            type="button"
-            className="plan-bar-btn"
-            disabled={transferBusy}
-            title="他ブラウザで書き出した JSON を読み込み、このブラウザへ統合します"
-            onClick={() => importInputRef.current?.click()}
-          >
-            読み込み
-          </button>
-          <button
-            type="button"
-            className="plan-bar-btn plan-bar-btn--primary"
-            disabled={transferBusy}
-            onClick={() => setCreateOpen(true)}
-          >
-            新規作成
-          </button>
+          {entitlements.allowMultiPlanAdmin ? (
+            <button
+              type="button"
+              className="plan-bar-btn"
+              disabled={transferBusy}
+              title="他ブラウザで書き出した JSON を読み込み、このブラウザへ統合します"
+              onClick={() => importInputRef.current?.click()}
+            >
+              読み込み
+            </button>
+          ) : null}
+          {canCreate ? (
+            <button
+              type="button"
+              className="plan-bar-btn plan-bar-btn--primary"
+              disabled={transferBusy}
+              onClick={() => setCreateOpen(true)}
+            >
+              新規作成
+            </button>
+          ) : null}
           <input
             ref={importInputRef}
             type="file"
@@ -136,53 +154,58 @@ export function PlanAdminView({
         </div>
       </div>
 
-      {summaries.length > 0 && (
+      {showToolbar && (
         <div className="plan-admin-toolbar">
           <input
             type="search"
             className="plan-open-search"
-            placeholder="顧客名・電話・メールで検索"
+            placeholder={
+              entitlements.showCrmFields
+                ? 'お名前・電話・メールで検索'
+                : 'お名前で検索'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <select
-            className="plan-admin-status-filter"
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value as PlanStatus | 'all')
-            }
-            aria-label="ステータスで絞り込み"
-          >
-            <option value="all">すべてのステータス</option>
-            {PLAN_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          {entitlements.showPlanStatusFilter ? (
+            <select
+              className="plan-admin-status-filter"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as PlanStatus | 'all')
+              }
+              aria-label="ステータスで絞り込み"
+            >
+              <option value="all">すべてのステータス</option>
+              {PLAN_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
         </div>
       )}
 
       {summaries.length === 0 ? (
         <div className="plan-admin-empty">
-          <h3 className="plan-admin-empty-title">顧客プランがまだありません</h3>
-          <p className="plan-admin-empty-desc">
-            新規作成から顧客を追加するか、他のブラウザで書き出した JSON
-            ファイルを読み込んでください。入力内容は自動で保存されます。
-          </p>
+          <h3 className="plan-admin-empty-title">プランがまだありません</h3>
+          <p className="plan-admin-empty-desc">{emptyDescription}</p>
           <div className="plan-admin-empty-actions">
-            <button
-              type="button"
-              className="plan-bar-btn"
-              disabled={transferBusy}
-              onClick={() => importInputRef.current?.click()}
-            >
-              バックアップを読み込む
-            </button>
+            {entitlements.allowMultiPlanAdmin ? (
+              <button
+                type="button"
+                className="plan-bar-btn"
+                disabled={transferBusy}
+                onClick={() => importInputRef.current?.click()}
+              >
+                バックアップを読み込む
+              </button>
+            ) : null}
             <button
               type="button"
               className="plan-bar-btn plan-bar-btn--primary plan-admin-empty-cta"
-              disabled={transferBusy}
+              disabled={transferBusy || !canCreate}
               onClick={() => setCreateOpen(true)}
             >
               新規作成してはじめる
@@ -196,7 +219,7 @@ export function PlanAdminView({
           <table className="plan-admin-table">
             <thead>
               <tr>
-                <th>顧客名</th>
+                <th>お名前</th>
                 <th>目的</th>
                 <th>ステータス</th>
                 <th>更新日時</th>
@@ -214,7 +237,9 @@ export function PlanAdminView({
                     <td>
                       <div className="plan-admin-name">
                         <span className="plan-admin-name-text">
-                          {formatCustomerNameWithHonorific(item.customerName)}
+                          {formatPlanDisplayName(item.customerName, {
+                            honorific: entitlements.showHonorific,
+                          })}
                         </span>
                       </div>
                     </td>
@@ -232,7 +257,7 @@ export function PlanAdminView({
                         className={`plan-admin-status plan-admin-status--${item.status}`}
                         title={
                           item.status === 'in_progress'
-                            ? '入力・編集中の顧客プラン'
+                            ? '入力・編集中のプラン'
                             : 'ライフプラン分析を実行済みのプラン'
                         }
                       >
@@ -255,19 +280,25 @@ export function PlanAdminView({
                         <button
                           type="button"
                           className="plan-bar-btn"
-                          title="目的・顧客名・連絡先・ステータス・メモを編集します"
+                          title={
+                            entitlements.showCrmFields
+                              ? '目的・お名前・連絡先・ステータス・メモを編集します'
+                              : '目的・お名前・メモを編集します'
+                          }
                           onClick={() => setEditTarget(item)}
                         >
                           プラン情報
                         </button>
-                        <button
-                          type="button"
-                          className="plan-bar-btn plan-bar-btn--danger"
-                          title="このプランを削除します"
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          削除
-                        </button>
+                        {entitlements.allowMultiPlanAdmin ? (
+                          <button
+                            type="button"
+                            className="plan-bar-btn plan-bar-btn--danger"
+                            title="このプランを削除します"
+                            onClick={() => setDeleteTarget(item)}
+                          >
+                            削除
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -280,9 +311,10 @@ export function PlanAdminView({
 
       <PlanCreateModal
         open={createOpen}
-        title="新規顧客プラン"
+        title="新規プラン"
         confirmLabel="作成して開く"
         initial={EMPTY_META}
+        showCrmFields={entitlements.showCrmFields}
         onClose={() => setCreateOpen(false)}
         onConfirm={(meta) => {
           setCreateOpen(false);
@@ -309,6 +341,7 @@ export function PlanAdminView({
                 purposes: getDefaultPlanPurposes(),
               }
         }
+        showCrmFields={entitlements.showCrmFields}
         onClose={() => setEditTarget(null)}
         onConfirm={(meta) => {
           if (!editTarget) return;
@@ -321,6 +354,7 @@ export function PlanAdminView({
       <PlanDeleteConfirmModal
         open={deleteTarget != null}
         customerName={deleteTarget?.customerName ?? ''}
+        showHonorific={entitlements.showHonorific}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (!deleteTarget) return;

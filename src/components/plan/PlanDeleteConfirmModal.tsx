@@ -1,8 +1,9 @@
-import { formatCustomerNameWithHonorific } from '../../types/plan';
+import { formatPlanDisplayName } from '../../types/plan';
 
 interface PlanDeleteConfirmModalProps {
   open: boolean;
   customerName: string;
+  showHonorific?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -10,10 +11,15 @@ interface PlanDeleteConfirmModalProps {
 export function PlanDeleteConfirmModal({
   open,
   customerName,
+  showHonorific = false,
   onClose,
   onConfirm,
 }: PlanDeleteConfirmModalProps) {
   if (!open) return null;
+
+  const displayName = formatPlanDisplayName(customerName, {
+    honorific: showHonorific,
+  });
 
   return (
     <div className="education-ref-modal-overlay" onClick={onClose}>
@@ -36,8 +42,7 @@ export function PlanDeleteConfirmModal({
           プランを削除
         </h3>
         <p className="education-ref-modal-summary">
-          「{formatCustomerNameWithHonorific(customerName)}
-          」を削除しますか？この操作は取り消せません。
+          「{displayName}」を削除しますか？この操作は取り消せません。
         </p>
         <div className="plan-save-as-actions">
           <button type="button" className="plan-bar-btn" onClick={onClose}>
