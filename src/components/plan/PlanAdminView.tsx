@@ -27,6 +27,7 @@ interface PlanAdminViewProps {
   currentPlanId: string | null;
   transferBusy?: boolean;
   entitlements: LicenseEntitlements;
+  canExport?: boolean;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onCreate: (meta: PlanCreateInput) => void;
@@ -59,6 +60,7 @@ export function PlanAdminView({
   currentPlanId,
   transferBusy = false,
   entitlements,
+  canExport = true,
   onOpen,
   onDelete,
   onCreate,
@@ -100,15 +102,19 @@ export function PlanAdminView({
           <p className="plan-admin-desc">
             {entitlements.allowMultiPlanAdmin
               ? 'プランを一覧・編集し、入力画面を開きます。ブラウザをまたぐ場合は書き出し／読み込みでまとめられます。'
-              : '一般向けライセンスではプランは1件までです。ブラウザをまたぐ場合は書き出し／読み込みが使えます。'}
+              : '一般向けライセンスではプランは1件までです。ライフプラン分析は1回まで体験できます。'}
           </p>
         </div>
         <div className="plan-admin-header-actions">
           <button
             type="button"
             className="plan-bar-btn"
-            disabled={transferBusy || summaries.length === 0}
-            title="このブラウザ内の全プランを JSON ファイルに書き出します"
+            disabled={transferBusy || summaries.length === 0 || !canExport}
+            title={
+              canExport
+                ? 'このブラウザ内の全プランを JSON ファイルに書き出します'
+                : '書き出しにはライセンスキーの登録が必要です'
+            }
             onClick={() => onExportAll()}
           >
             書き出し

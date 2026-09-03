@@ -8,6 +8,8 @@ import {
   getLicenseCache,
   getOrCreateDeviceId,
   getStoredLicenseKey,
+  hasUsedTrialAnalysis,
+  markTrialAnalysisUsed as persistTrialAnalysisUsed,
   saveLicenseCache,
   setStoredLicenseKey,
 } from './storage';
@@ -32,6 +34,7 @@ export function useLicense() {
   const [pendingKey, setPendingKey] = useState('');
   const [, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
   const [busy, setBusy] = useState(false);
+  const [trialAnalysisUsed, setTrialAnalysisUsed] = useState(() => hasUsedTrialAnalysis());
 
   const entitlements = useMemo<LicenseEntitlements>(
     () => getLicenseEntitlements(edition),
@@ -201,7 +204,7 @@ export function useLicense() {
     [activate, completePendingAnalysis, licenseKey, pendingKey],
   );
 
-  const ensureLicensedForAnalysis = useCallback(async () => {
+  const ensureLicensed = useCallback(async () => {
     if (licenseState === 'active') {
       const ok = await verifyStoredLicense();
       if (ok) return true;
@@ -217,6 +220,22 @@ export function useLicense() {
       setKeyModalOpen(true);
     });
   }, [licenseState, verifyStoredLicense]);
+
+  const ensureCanRunAnalysis = useCallback(async () => {
+    if (licenseState === 'active' || licenseState === 'checking') {
+      const ok = await verifyStoredLicense();
+      if (ok) return true;
+    }
+
+    if (!hasUsedTrialAnalysis()) return true;
+
+    return ensureLicensed();
+  }, [ensureLicensed, licenseState, verifyStoredLicense]);
+
+  const markTrialAnalysisUsed = useCallback(() => {
+    persistTrialAnalysisUsed();
+    setTrialAnalysisUsed(true);
+  }, []);
 
   const openLicenseModal = useCallback(() => {
     setErrorMessage(null);
@@ -273,7 +292,8 @@ export function useLicense() {
     }
   }, [deviceId]);
 
-  const isAnalysisAllowed = licenseState === 'active';
+  const isLicensed = licenseState === 'active';
+  const canRunAnalysis = isLicensed || !trialAnalysisUsed;
 
   return {
     deviceId,
@@ -286,11 +306,17 @@ export function useLicense() {
     maxDevices,
     errorMessage,
     busy,
-    isAnalysisAllowed,
+    isLicensed,
+    isAnalysisAllowed: isLicensed,
+    canRunAnalysis,
+    trialAnalysisUsed,
     keyModalOpen,
     deviceLimitModalOpen,
     pendingKey,
-    ensureLicensedForAnalysis,
+    ensureLicensed,
+    ensureCanRunAnalysis,
+    ensureLicensedForAnalysis: ensureCanRunAnalysis,
+    markTrialAnalysisUsed,
     openLicenseModal,
     closeLicenseModal,
     closeDeviceLimitModal,

@@ -7,8 +7,10 @@ interface LicenseStatusPanelProps {
   deviceLabel: string;
   errorMessage?: string | null;
   onManageLicense: () => void;
+  onStartWithoutKey?: () => void;
   onReleaseDevice?: () => Promise<boolean> | boolean;
   busy?: boolean;
+  trialAnalysisUsed?: boolean;
 }
 
 const STATE_LABELS = {
@@ -20,7 +22,7 @@ const STATE_LABELS = {
 
 const STATE_DESCRIPTIONS = {
   checking: 'ライセンス状態を確認しています。',
-  inactive: 'ライフプラン分析を使うには、キーの登録が必要です。',
+  inactive: 'データ入力とライフプラン分析1回は、キーなしで体験できます。',
   active: 'このブラウザではライフプラン分析を利用できます。',
   error: 'ライセンスサーバーに接続できませんでした。',
 } as const;
@@ -31,15 +33,23 @@ export function LicenseStatusPanel({
   deviceLabel,
   errorMessage,
   onManageLicense,
+  onStartWithoutKey,
   onReleaseDevice,
   busy = false,
+  trialAnalysisUsed = false,
 }: LicenseStatusPanelProps) {
+  const description =
+    licenseState === 'inactive' && trialAnalysisUsed
+      ? '体験分析は利用済みです。2回目以降の分析と書き出しにはキーの登録が必要です。'
+      : STATE_DESCRIPTIONS[licenseState];
   const featureSummary =
     licenseState === 'active'
       ? entitlements.edition === 'advisor'
         ? 'データ入力 / ライフプラン分析 / 複数プラン管理'
         : 'データ入力 / ライフプラン分析（プラン1件）'
-      : 'データ入力のみ';
+      : trialAnalysisUsed
+        ? 'データ入力 / 体験分析済み'
+        : 'データ入力 / ライフプラン分析（1回まで）';
 
   return (
     <div className="license-admin-page">
@@ -47,7 +57,7 @@ export function LicenseStatusPanel({
         <div className="license-admin-card-head">
           <div>
             <h2 className="license-admin-card-title">ライセンス</h2>
-            <p className="license-admin-card-desc">{STATE_DESCRIPTIONS[licenseState]}</p>
+            <p className="license-admin-card-desc">{description}</p>
           </div>
           <span className={`license-status-badge license-status-badge--${licenseState}`}>
             {STATE_LABELS[licenseState]}
@@ -55,10 +65,12 @@ export function LicenseStatusPanel({
         </div>
 
         <dl className="license-admin-card-grid">
-          <div>
-            <dt>プラン種別</dt>
-            <dd>{LICENSE_EDITION_LABELS[entitlements.edition]}</dd>
-          </div>
+          {licenseState === 'active' ? (
+            <div>
+              <dt>プラン種別</dt>
+              <dd>{LICENSE_EDITION_LABELS[entitlements.edition]}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>このブラウザ</dt>
             <dd>{deviceLabel}</dd>
@@ -79,6 +91,15 @@ export function LicenseStatusPanel({
           >
             {licenseState === 'active' ? 'キーを変更' : 'ライセンスキーを登録'}
           </button>
+          {licenseState !== 'active' && licenseState !== 'checking' && onStartWithoutKey ? (
+            <button
+              type="button"
+              className="plan-bar-btn"
+              onClick={onStartWithoutKey}
+            >
+              キーなしで体験をはじめる
+            </button>
+          ) : null}
           {licenseState === 'active' && onReleaseDevice ? (
             <button
               type="button"

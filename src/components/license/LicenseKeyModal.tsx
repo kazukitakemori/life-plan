@@ -69,7 +69,7 @@ export function LicenseKeyModal({
           ライセンスキーの登録
         </h3>
         <p id={hintId} className="education-ref-modal-summary">
-          ライフプラン分析には、購入時にお渡ししたキーが必要です。データの入力は、キーなしでも行えます。
+          ライフプラン分析は1回までキーなしで体験できます。2回目以降の分析と書き出しには、購入時のキーが必要です。
         </p>
 
         <div className="education-ref-modal-body">
@@ -115,7 +115,7 @@ export function LicenseKeyModal({
               disabled={!canSubmit}
               onClick={handleSubmit}
             >
-              {busy ? '確認中…' : '登録して分析を使う'}
+              {busy ? '確認中…' : '登録する'}
             </button>
           </div>
         </div>

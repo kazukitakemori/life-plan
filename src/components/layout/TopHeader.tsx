@@ -28,6 +28,7 @@ interface TopHeaderProps {
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
   showHonorific?: boolean;
+  isLicensed?: boolean;
   adminTab?: AdminTabId;
   onAdminTabChange?: (tab: AdminTabId) => void;
   assetBuildingTab?: AssetBuildingTabId;
@@ -76,6 +77,7 @@ export function TopHeader({
   planStatus = 'in_progress',
   autosaveStatus = 'idle',
   showHonorific = false,
+  isLicensed = false,
   adminTab = 'plans',
   onAdminTabChange,
   assetBuildingTab = 'simulation',
@@ -205,7 +207,9 @@ export function TopHeader({
             </div>
           ) : activeTab === 'admin' && !hasOpenPlan ? (
             <p className="top-header-hint">
-              管理タブでプランを作成・開くと入力できます
+              {isLicensed
+                ? '管理タブでプランを作成・開くと入力できます'
+                : 'ライセンスから体験をはじめると入力できます'}
             </p>
           ) : null}
         </div>
@@ -219,11 +223,33 @@ export function TopHeader({
             );
             const inputLockedHint =
               tab.id === 'input' && !hasOpenPlan
-                ? '管理からプランを開くと入力できます'
+                ? isLicensed
+                  ? '管理からプランを開くと入力できます'
+                  : 'ライセンスから体験をはじめると入力できます'
                 : undefined;
             const isActive = activeTab === tab.id;
+            const adminTabs = isLicensed
+              ? ADMIN_TABS
+              : ADMIN_TABS.filter((item) => item.id === 'license');
 
             if (tab.id === 'admin' && showAdminMenu) {
+              if (adminTabs.length === 1) {
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`top-header-nav-item${isActive ? ' active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => {
+                      onAdminTabChange?.(adminTabs[0].id);
+                      onTabChange('admin');
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              }
+
               return (
                 <div
                   key={tab.id}
@@ -244,7 +270,7 @@ export function TopHeader({
                     <span className="top-header-nav-chevron" aria-hidden />
                   </button>
                   <div className="top-header-dropdown" role="menu">
-                    {ADMIN_TABS.map((sub) => (
+                    {adminTabs.map((sub) => (
                       <button
                         key={sub.id}
                         type="button"

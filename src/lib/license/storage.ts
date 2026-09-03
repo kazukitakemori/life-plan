@@ -1,6 +1,7 @@
 const DEVICE_ID_KEY = 'life-plan-device-id';
 const LICENSE_KEY_STORAGE = 'life-plan-license-key';
 const LICENSE_CACHE_KEY = 'life-plan-license-cache';
+const TRIAL_ANALYSIS_USED_KEY = 'life-plan-trial-analysis-used';
 
 import type { LicenseEdition } from '../../types/licenseEdition';
 
@@ -51,6 +52,14 @@ export function getLicenseCache(): LicenseCache | null {
 
 export function clearLicenseCache(): void {
   localStorage.removeItem(LICENSE_CACHE_KEY);
+}
+
+export function hasUsedTrialAnalysis(): boolean {
+  return localStorage.getItem(TRIAL_ANALYSIS_USED_KEY) === '1';
+}
+
+export function markTrialAnalysisUsed(): void {
+  localStorage.setItem(TRIAL_ANALYSIS_USED_KEY, '1');
 }
 
 export function getDefaultDeviceLabel(): string {

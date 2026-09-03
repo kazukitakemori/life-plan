@@ -296,7 +296,7 @@ export function LicenseKeyAdminPage() {
     const label = entry.note?.trim() || entry.key_hint;
     const confirmed = window.confirm(
       status === 'revoked'
-        ? `「${label}」のキーを無効にしますか？\n\n無効にすると、このキーは使えなくなります。`
+        ? `「${label}」のキーを無効にしますか？\n\n無効のあいだは使えません。あとから有効に戻せます。`
         : `「${label}」のキーを有効に戻しますか？`,
     );
     if (!confirmed) return;

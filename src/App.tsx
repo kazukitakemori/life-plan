@@ -144,7 +144,9 @@ const AUTOSAVE_DELAY_MS = 500;
 export default function App() {
   const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
-  const [adminTab, setAdminTab] = useState<AdminTabId>('plans');
+  const [adminTab, setAdminTab] = useState<AdminTabId>('license');
+  const landingTabAppliedRef = useRef(false);
+  const previousLicenseStateRef = useRef(license.licenseState);
   const [assetBuildingTab, setAssetBuildingTab] =
     useState<AssetBuildingTabId>('simulation');
   const [requiredCoveragePageView, setRequiredCoveragePageView] =
@@ -492,6 +494,31 @@ export default function App() {
   }, [bootstrapped, headerTab]);
 
   useEffect(() => {
+    if (license.licenseState === 'checking') return;
+    if (!landingTabAppliedRef.current) {
+      landingTabAppliedRef.current = true;
+      setHeaderTab('admin');
+      setAdminTab(license.licenseState === 'active' ? 'plans' : 'license');
+      previousLicenseStateRef.current = license.licenseState;
+      return;
+    }
+    const previous = previousLicenseStateRef.current;
+    previousLicenseStateRef.current = license.licenseState;
+    if (
+      previous !== 'active' &&
+      license.licenseState === 'active' &&
+      headerTab === 'admin' &&
+      adminTab === 'license'
+    ) {
+      setAdminTab('plans');
+      return;
+    }
+    if (license.licenseState !== 'active' && adminTab === 'plans') {
+      setAdminTab('license');
+    }
+  }, [adminTab, headerTab, license.licenseState]);
+
+  useEffect(() => {
     return () => {
       clearAutosaveTimer();
     };
@@ -743,9 +770,39 @@ export default function App() {
         createdAt: record.createdAt,
       });
       setLastOpenedPlanId(record.id);
+      setHeaderTab('input');
     } catch (err) {
       console.error(err);
       window.alert('プランの読み込みに失敗しました。');
+    }
+  };
+
+  const handleStartTrialWithoutKey = async () => {
+    try {
+      if (planId != null) {
+        setHeaderTab('input');
+        return;
+      }
+      await flushAutosave({ refreshList: true });
+      const list =
+        planSummaries.length > 0
+          ? planSummaries
+          : await planRepository.listSummaries();
+      if (list.length > 0) {
+        await handleOpenPlan(list[0].id);
+        return;
+      }
+      await handleCreatePlan({
+        customerName: 'マイプラン',
+        phone: '',
+        email: '',
+        note: '',
+        status: getDefaultCreateStatus(),
+        purposes: getDefaultPlanPurposes(),
+      });
+    } catch (err) {
+      console.error(err);
+      window.alert('体験の開始に失敗しました。');
     }
   };
 
@@ -773,6 +830,8 @@ export default function App() {
 
   const handleExportAllPlans = async () => {
     if (planTransferBusy) return;
+    const allowed = await license.ensureLicensed();
+    if (!allowed) return;
     setPlanTransferBusy(true);
     try {
       await flushAutosave({ refreshList: true });
@@ -1023,7 +1082,7 @@ export default function App() {
   const handleAnalyze = () => {
     if (isAnalyzing) return;
     void (async () => {
-      const allowed = await license.ensureLicensedForAnalysis();
+      const allowed = await license.ensureCanRunAnalysis();
       if (!allowed) return;
 
       setIsAnalyzing(true);
@@ -1046,6 +1105,10 @@ export default function App() {
           setAnalysisSnapshot(nextSnapshot);
           setAnalysisStale(false);
           setAnalysisSession((session) => session + 1);
+
+          if (!license.isLicensed) {
+            license.markTrialAnalysisUsed();
+          }
 
           if (planId && planStatus !== 'simulated') {
             setPlanStatus('simulated');
@@ -1076,12 +1139,16 @@ export default function App() {
     if (tab === 'admin') {
       void (async () => {
         await flushAutosave({ refreshList: true });
+        if (!license.isLicensed) {
+          setAdminTab('license');
+        }
         setHeaderTab('admin');
       })();
       return;
     }
     if (tab === 'input') {
       if (planId == null) {
+        setAdminTab(license.isLicensed ? adminTab : 'license');
         setHeaderTab('admin');
         return;
       }
@@ -1089,33 +1156,29 @@ export default function App() {
       return;
     }
 
-    const needsLicense =
+    const needsResultsTab =
       tab === 'asset-building' ||
       tab === 'summary' ||
       tab === 'life-plan' ||
       (tab === 'required-coverage' && !coverageUnlockedWithoutAnalysis);
 
-    if (needsLicense) {
-      void (async () => {
-        const allowed = await license.ensureLicensedForAnalysis();
-        if (!allowed) return;
-        if (tab === 'required-coverage') {
-          if (analysisSnapshot == null && !coverageUnlockedWithoutAnalysis) return;
-          if (medicalOnlyCoverage) {
-            setRequiredCoverageState((prev) =>
-              migrateRequiredCoverageState({ ...prev, riskKind: 'medical' }),
-            );
-          } else if (deathOnlyCoverage) {
-            setRequiredCoverageState((prev) =>
-              migrateRequiredCoverageState({ ...prev, riskKind: 'death' }),
-            );
-          }
-          setHeaderTab(tab);
-          return;
+    if (needsResultsTab) {
+      if (tab === 'required-coverage') {
+        if (analysisSnapshot == null && !coverageUnlockedWithoutAnalysis) return;
+        if (medicalOnlyCoverage) {
+          setRequiredCoverageState((prev) =>
+            migrateRequiredCoverageState({ ...prev, riskKind: 'medical' }),
+          );
+        } else if (deathOnlyCoverage) {
+          setRequiredCoverageState((prev) =>
+            migrateRequiredCoverageState({ ...prev, riskKind: 'death' }),
+          );
         }
-        if (analysisSnapshot == null && tab !== 'asset-building') return;
         setHeaderTab(tab);
-      })();
+        return;
+      }
+      if (analysisSnapshot == null && tab !== 'asset-building') return;
+      setHeaderTab(tab);
       return;
     }
 
@@ -1137,19 +1200,21 @@ export default function App() {
     setHeaderTab(tab);
   };
 
-  const analysisBlockedByLicense = !license.isAnalysisAllowed;
-
   const renderMainContent = () => {
     if (headerTab === 'admin') {
-      if (adminTab === 'license') {
+      if (adminTab === 'license' || !license.isLicensed) {
         return (
           <LicenseStatusPanel
             licenseState={license.licenseState}
             entitlements={license.entitlements}
+            trialAnalysisUsed={license.trialAnalysisUsed}
             deviceLabel={getDefaultDeviceLabel()}
             errorMessage={license.errorMessage}
             busy={license.busy}
             onManageLicense={license.openLicenseModal}
+            onStartWithoutKey={() => {
+              void handleStartTrialWithoutKey();
+            }}
             onReleaseDevice={() => license.releaseCurrentDevice()}
           />
         );
@@ -1161,6 +1226,7 @@ export default function App() {
           currentPlanId={planId}
           transferBusy={planTransferBusy}
           entitlements={license.entitlements}
+          canExport={license.isLicensed}
           onOpen={(id) => {
             void handleOpenPlan(id);
           }}
@@ -1522,15 +1588,6 @@ export default function App() {
     }
 
     if (headerTab === 'asset-building') {
-      if (analysisBlockedByLicense) {
-        return (
-          <HeaderTabPlaceholder
-            title="資産形成"
-            description="ライフプラン分析を行うには、管理タブのライセンスからキーを登録してください。"
-          />
-        );
-      }
-
       if (isAnalyzing) {
         return (
           <div className="analysis-loading-panel" role="status" aria-live="polite">
@@ -1595,15 +1652,6 @@ export default function App() {
         <HeaderTabPlaceholder
           title="必要保障額"
           description={requiredCoverageBlockedDescription}
-        />
-      );
-    }
-
-    if (analysisBlockedByLicense && analysisSnapshot != null) {
-      return (
-        <HeaderTabPlaceholder
-          title="必要保障額"
-          description="ライフプラン分析結果の表示には、有効なライセンスキーが必要です。"
         />
       );
     }
@@ -1693,8 +1741,15 @@ export default function App() {
       planStatus={planStatus}
       autosaveStatus={autosaveStatus}
       showHonorific={license.entitlements.showHonorific}
+      isLicensed={license.isLicensed}
       adminTab={adminTab}
-      onAdminTabChange={setAdminTab}
+      onAdminTabChange={(tab) => {
+        if (!license.isLicensed && tab === 'plans') {
+          setAdminTab('license');
+          return;
+        }
+        setAdminTab(tab);
+      }}
       assetBuildingTab={assetBuildingTab}
       onAssetBuildingTabChange={setAssetBuildingTab}
       requiredCoverageRiskKind={

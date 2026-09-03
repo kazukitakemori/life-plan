@@ -34,6 +34,7 @@ interface AppShellProps {
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
   showHonorific?: boolean;
+  isLicensed?: boolean;
   adminTab?: AdminTabId;
   onAdminTabChange?: (tab: AdminTabId) => void;
   assetBuildingTab?: AssetBuildingTabId;
@@ -66,6 +67,7 @@ export function AppShell({
   planStatus,
   autosaveStatus,
   showHonorific,
+  isLicensed = false,
   adminTab,
   onAdminTabChange,
   assetBuildingTab,
@@ -94,6 +96,7 @@ export function AppShell({
         planStatus={planStatus}
         autosaveStatus={autosaveStatus}
         showHonorific={showHonorific}
+        isLicensed={isLicensed}
         adminTab={adminTab}
         onAdminTabChange={onAdminTabChange}
         assetBuildingTab={assetBuildingTab}
