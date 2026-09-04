@@ -707,11 +707,16 @@ export interface IncomeBreakdown {
 
 
 
+import type { FamilyMemberRole } from './family';
+
 export interface MemberAgeRow {
 
   memberId: string;
 
+  /** 表示ラベル（ニックネーム優先）。役割判定には role を使う */
   label: string;
+
+  role: FamilyMemberRole;
 
   agesByYear: Record<number, number | null>;
 

@@ -448,6 +448,7 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
     return {
       memberId: member.id,
       label: getMemberTabLabel(member),
+      role: member.role,
       agesByYear,
     };
   });

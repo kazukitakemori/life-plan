@@ -96,7 +96,7 @@ function getHeadMember(members: FamilyMember[]): FamilyMember | undefined {
 }
 
 function getHeadRow(data: CashFlowTableData): MemberAgeRow | undefined {
-  return data.memberAgeRows.find((row) => row.label.includes('世帯主'));
+  return data.memberAgeRows.find((row) => row.role === 'head');
 }
 
 function getIncomeRoleLabel(role: FamilyMember['role']): string {

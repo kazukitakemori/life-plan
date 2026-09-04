@@ -107,7 +107,7 @@ export function CashFlowTableView({
     return data.years.slice(0, count);
   }, [data.years, displayRange]);
 
-  const head = data.memberAgeRows.find((r) => r.label.includes('世帯主'));
+  const head = data.memberAgeRows.find((r) => r.role === 'head');
   const startHeadAge = head ? head.agesByYear[data.startYear] : null;
 
   const memberFolderRows = useMemo(() => {

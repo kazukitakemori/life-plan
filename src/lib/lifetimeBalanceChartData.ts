@@ -470,11 +470,11 @@ export function resolveLifetimeChartAxisDomain(
 }
 
 function findHeadRow(data: CashFlowTableData) {
-  return data.memberAgeRows.find((row) => row.label.includes('世帯主'));
+  return data.memberAgeRows.find((row) => row.role === 'head');
 }
 
 function findSpouseRow(data: CashFlowTableData) {
-  return data.memberAgeRows.find((row) => row.label.includes('配偶者'));
+  return data.memberAgeRows.find((row) => row.role === 'spouse');
 }
 
 export function resolveAssetIncomeChartMemberIds(
