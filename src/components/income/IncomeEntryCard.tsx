@@ -13,6 +13,11 @@ import {
   roundAmountMan,
 } from '../../lib/incomeAmount';
 import {
+  calcAnnualIncreaseRateFromEnd,
+  calcEndAnnualAmountMan,
+  calcPeriodIncreaseYears,
+} from '../../lib/incomeIncreaseRate';
+import {
   DEPENDENT_INELIGIBLE_ALERT,
   DEPENDENT_STATUS_LABELS,
   DEPENDENT_STATUS_OPTIONS,
@@ -381,11 +386,21 @@ function PeriodRow({
 }: PeriodRowProps) {
   const isLumpSumPeriod = isSingleMonthIncomePeriod(period);
   const [annualInput, setAnnualInput] = useState<string | null>(null);
+  const [endAnnualInput, setEndAnnualInput] = useState<string | null>(null);
   const dependentContext: PeriodDependentResolutionContext = {
     familyMembers,
     incomeByMember,
     referenceDate,
   };
+
+  const increaseYears = calcPeriodIncreaseYears(period, birthYear);
+  const endAnnualAmountMan = calcEndAnnualAmountMan(
+    period.annualAmountMan,
+    period.annualIncreaseRate,
+    increaseYears,
+  );
+  const canEditEndAnnual =
+    increaseYears > 0 && period.annualAmountMan > 0;
 
   const emitPeriod = (updated: IncomePeriod) => {
     onChange(
@@ -403,6 +418,18 @@ function PeriodRow({
   useEffect(() => {
     setAnnualInput(null);
   }, [period.id, period.annualAmountMan, period.monthlyAmountMan]);
+
+  useEffect(() => {
+    setEndAnnualInput(null);
+  }, [
+    period.id,
+    period.annualAmountMan,
+    period.annualIncreaseRate,
+    period.startAge,
+    period.startMonth,
+    period.endAge,
+    period.endMonth,
+  ]);
 
   const setMonthly = (monthlyAmountMan: number) => {
     emitPeriod(
@@ -431,6 +458,27 @@ function PeriodRow({
     const parsed = Number(annualInput);
     setAnnual(Number.isFinite(parsed) ? Math.max(0, parsed) : 0);
     setAnnualInput(null);
+  };
+
+  const commitEndAnnualInput = () => {
+    if (endAnnualInput === null) return;
+    if (!canEditEndAnnual) {
+      setEndAnnualInput(null);
+      return;
+    }
+    const parsed = Number(endAnnualInput);
+    const endMan = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    const nextRate = calcAnnualIncreaseRateFromEnd(
+      period.annualAmountMan,
+      endMan,
+      increaseYears,
+    );
+    setEndAnnualInput(null);
+    if (nextRate == null) return;
+    emitPeriod({
+      ...period,
+      annualIncreaseRate: nextRate,
+    });
   };
 
   const updateBonus = (
@@ -608,14 +656,24 @@ function PeriodRow({
               </button>
             </div>
           ) : (
-            <p className="period-end-label">
-              {formatEndYearLabel(
-                period.endAge,
-                period.endMonth,
-                birthYear,
-                birthMonth,
-              )}
-            </p>
+            <>
+              <p className="period-start-label">
+                {formatEndYearLabel(
+                  period.startAge,
+                  period.startMonth,
+                  birthYear,
+                  birthMonth,
+                )}
+              </p>
+              <p className="period-end-label">
+                {formatEndYearLabel(
+                  period.endAge,
+                  period.endMonth,
+                  birthYear,
+                  birthMonth,
+                )}
+              </p>
+            </>
           )}
         </div>
       </div>
@@ -727,33 +785,59 @@ function PeriodRow({
       </div>
 
       <div className="income-table-cell income-col-rate">
-        <div className="rate-input-wrap">
-          <button
-            type="button"
-            className="rate-calc-btn"
-            disabled
-            aria-label="年間上昇率を計算"
-            title="計算（準備中）"
-          >
-            🧮
-          </button>
-          <input
-            type="number"
-            className="rate-input"
-            value={period.annualIncreaseRate ?? ''}
-            min={0}
-            max={100}
-            step={0.1}
-            onChange={(e) =>
-              emitPeriod({
-                ...period,
-                annualIncreaseRate: e.target.value
-                  ? Number(e.target.value)
-                  : null,
-              })
-            }
-          />
-          <span className="rate-unit">%</span>
+        <div className="rate-stack">
+          <label className="rate-field">
+            <span className="rate-field-label">上昇率</span>
+            <span className="rate-field-controls">
+              <input
+                type="number"
+                className="rate-input"
+                value={period.annualIncreaseRate ?? 0}
+                step={0.1}
+                aria-label="年間上昇率"
+                onChange={(e) =>
+                  emitPeriod({
+                    ...period,
+                    annualIncreaseRate: e.target.value
+                      ? Number(e.target.value)
+                      : 0,
+                  })
+                }
+              />
+              <span className="rate-unit">%/年</span>
+            </span>
+          </label>
+          <label className="rate-field">
+            <span className="rate-field-label">終了時</span>
+            <span className="rate-field-controls">
+              <input
+                type="number"
+                className="rate-end-input"
+                value={endAnnualInput ?? endAnnualAmountMan}
+                min={0}
+                step={0.1}
+                disabled={!canEditEndAnnual}
+                aria-label="期間終了時の年収"
+                title={
+                  canEditEndAnnual
+                    ? '期間終了時の年収。変更すると上昇率を逆算します'
+                    : '期間が12か月未満のため上昇は適用されません'
+                }
+                onFocus={() => {
+                  if (!canEditEndAnnual) return;
+                  setEndAnnualInput(String(endAnnualAmountMan));
+                }}
+                onChange={(e) => setEndAnnualInput(e.target.value)}
+                onBlur={commitEndAnnualInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
+              />
+              <span className="amount-unit">万円</span>
+            </span>
+          </label>
         </div>
       </div>
 
@@ -981,9 +1065,6 @@ export function IncomeEntryCard({
           <span className="occupation-badge">
             {getIncomeEntryDisplayLabel(entry)}
           </span>
-          <button type="button" className="detail-settings-btn" disabled>
-            詳細設定（死亡退職金など）
-          </button>
         </div>
         <div className="income-entry-header-right">
           {newIncomeStartMonth != null && (
@@ -1027,7 +1108,10 @@ export function IncomeEntryCard({
           <div className="income-header-cell income-header-amount-group">
             金額（額面）
           </div>
-          <div className="income-header-cell income-header-rate">年間上昇率</div>
+          <div className="income-header-cell income-header-rate">
+            上昇率
+            <span className="income-header-rate-sub">終了時年収</span>
+          </div>
           {showExpenseColumn ? (
             <div className="income-header-cell income-header-expense">経費</div>
           ) : null}
@@ -1267,10 +1351,6 @@ export function IncomeEntryCard({
                     </div>
                   </label>
                 </div>
-                <p className="savings-entry-detail-hint">
-                  CF表の「退職金」に計上し、同年の iDeCo／企業型DC／DB
-                  一時金と合算して退職所得（分離課税）として試算します。受取タイミングの10年・19年ルール図解は貯蓄タブ（Q11）にまとめています
-                </p>
               </div>
             );
           })}

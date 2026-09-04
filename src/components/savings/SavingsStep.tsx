@@ -20,11 +20,6 @@ import {
 import { ensureDcContributionFields } from '../../lib/dcContribution';
 import { resolveMemberAge } from '../../lib/familyDefaults';
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
-import {
-  isPensionStylePayoutCategory,
-  resolveSavingsWithdrawalMode,
-} from '../../lib/savingsLabels';
-import { retirementAllowancesForEntry } from '../../lib/retirementAllowance';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
 import type {
@@ -33,7 +28,6 @@ import type {
   SavingsState,
 } from '../../types/savings';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
-import { RetirementDeductionTimingGuide } from '../shared/RetirementDeductionTimingGuide';
 import { AddSavingsCards } from './AddSavingsCards';
 import { SavingsEntryCard } from './SavingsEntryCard';
 
@@ -89,20 +83,6 @@ export function SavingsStep({
   );
 
   const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
-
-  const showRetirementTimingGuide = useMemo(() => {
-    const hasPensionOnce = entries.some(
-      (entry) =>
-        isPensionStylePayoutCategory(entry.category) &&
-        resolveSavingsWithdrawalMode(entry.withdrawalMode) === 'once',
-    );
-    const hasCompanyRetirement = incomeEntries.some((entry) =>
-      retirementAllowancesForEntry(entry).some(
-        (allowance) => (Number(allowance.amountMan) || 0) > 0,
-      ),
-    );
-    return hasPensionOnce || hasCompanyRetirement;
-  }, [entries, incomeEntries]);
 
   const entryCounts = useMemo(
     () =>
@@ -375,19 +355,6 @@ export function SavingsStep({
           </div>
         )}
       </section>
-
-      {showRetirementTimingGuide ? (
-        <section className="savings-section savings-retirement-timing-section">
-          <RetirementDeductionTimingGuide
-            className="retirement-timing-guide--in-savings"
-            member={activeMember}
-            incomeEntries={incomeEntries}
-            memberEntries={entries}
-            referenceDate={referenceDate}
-            defaultOpen
-          />
-        </section>
-      ) : null}
 
       <AddSavingsCards onAdd={addEntry} />
     </div>

@@ -3939,7 +3939,7 @@ export function SavingsEntryDetail({
                           </li>
                         </ul>
                         <p className="savings-entry-detail-hint">
-                          受取タイミングの10年・19年ルール図解は、下の「退職一時金の受取タイミング」にまとめてあります
+                          受取タイミングの10年・19年ルール図解は、収入タブ（Q7）の「退職一時金の受取タイミング」にまとめてあります
                         </p>
                       </div>
                     ) : withdrawalMode === 'drawdown' ? (

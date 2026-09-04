@@ -1525,6 +1525,7 @@ export default function App() {
             members={familyMembers}
             incomeByMember={incomeByMember}
             priorYearIncomeByMember={priorYearIncomeByMember}
+            savingsState={savingsState}
             referenceDate={referenceDate}
             purposeNote={(() => {
               if (hasPlanPurpose(planPurposes, 'life_plan')) return undefined;

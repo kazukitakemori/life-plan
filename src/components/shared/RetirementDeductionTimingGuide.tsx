@@ -161,8 +161,94 @@ interface RetirementDeductionTimingGuideProps {
   incomeEntries?: IncomeEntry[];
   memberEntries?: SavingsEntry[];
   referenceDate?: Date;
-  /** 最初から開いた状態にする（貯蓄タブの統合図解向け） */
+  /** 最初から開いた状態にする（収入タブの統合図解向け） */
   defaultOpen?: boolean;
+}
+
+const RETIREMENT_TIMING_HELP_SECTIONS: ReadonlyArray<{
+  title: string;
+  body: string;
+}> = [
+  {
+    title: 'この図は何を見ているの？',
+    body: '会社の退職金や、iDeCo・企業型DC・DBなどの「一時金（一括でもらうお金）」を、いつ受け取る予定かを並べたものです。受け取る年が近いと、税金の計算で「退職所得控除」がうまく使えないことがあるので、その目安を示しています。',
+  },
+  {
+    title: '同じ年にまとめて受け取る場合',
+    body: '同じ年に複数の一時金を受け取ると、税務上はまとめて1回の退職金として扱います。勤続（加入）していた期間も、できるだけ長く・重複しないように足し合わせて控除額を出します。タイミングを揃えたい人向けの考え方です。',
+  },
+  {
+    title: '先に iDeCo／企業型DC、あとで会社退職金・DB（10年ルール）',
+    body: '先に個人型・企業型の確定拠出年金（iDeCo／DC）を一時金でもらい、あとから会社の退職金やDB（確定給付）を受け取る場合は、だいたい10年より長く空けると、あとからの退職所得控除がリセットされやすくなります。空きが短いと、前の受取と控除がぶつかり、あとからの控除が減ることがあります。',
+  },
+  {
+    title: '先に会社退職金・DB、あとで iDeCo／企業型DC（19年ルール）',
+    body: '先に会社の退職金やDBを受け取り、あとから iDeCo／DC を一時金でもらう場合は、だいたい20年近く空ける必要があるルールです（いわゆる19年ルール）。空きが短いと、あとの一時金で使える控除が削られることがあります。',
+  },
+  {
+    title: 'iDeCo／DC を続けて受け取る場合も19年ルール',
+    body: 'あとに受け取るのが iDeCo や企業型DCの一時金のときは、前が同じDC系でも、会社退職金のあと同じく、長めの間隔（19年ルール）が必要になることがあります。',
+  },
+  {
+    title: '年金でもらう場合は対象外',
+    body: '一時金ではなく「年金形式」で分割して受け取る場合は、この「受け取りの間隔による控除の調整」の対象になりません。一括でもらうか、年金でもらうかで、税の扱いが変わる点だけ覚えておくと安心です。',
+  },
+];
+
+function RetirementTimingHelpModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="education-ref-modal-overlay" onClick={onClose}>
+      <div
+        className="education-ref-modal retirement-timing-help-modal"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-labelledby="retirement-timing-help-title"
+      >
+        <button
+          type="button"
+          className="education-ref-modal-close"
+          onClick={onClose}
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+        <h3
+          id="retirement-timing-help-title"
+          className="education-ref-modal-title"
+        >
+          退職一時金の受け取り方と税金の目安
+        </h3>
+        <p className="education-ref-modal-summary">
+          退職金や年金の一時金は、受け取る年をずらすと税金が変わることがあります。
+        </p>
+        <div className="education-ref-modal-body">
+          <div className="retirement-timing-help-sections">
+            {RETIREMENT_TIMING_HELP_SECTIONS.map((section) => (
+              <section
+                key={section.title}
+                className="retirement-timing-help-section"
+              >
+                <h4 className="retirement-timing-help-section-title">
+                  {section.title}
+                </h4>
+                <p className="retirement-timing-help-section-body">
+                  {section.body}
+                </p>
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -177,6 +263,7 @@ export function RetirementDeductionTimingGuide({
   defaultOpen = false,
 }: RetirementDeductionTimingGuideProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const liveScenario = useMemo(() => {
     if (!member || !incomeEntries || !memberEntries || !referenceDate) {
@@ -208,29 +295,35 @@ export function RetirementDeductionTimingGuide({
         <div className="retirement-timing-guide-body">
           {liveScenario ? (
             <>
+              <div className="retirement-timing-guide-toolbar">
+                <p className="retirement-timing-guide-lead retirement-timing-guide-lead--inline">
+                  入力した退職金・一時金の受け取り予定を一覧にしています。
+                </p>
+                <button
+                  type="button"
+                  className="retirement-timing-help-btn"
+                  aria-haspopup="dialog"
+                  aria-expanded={helpOpen}
+                  onClick={() => setHelpOpen(true)}
+                >
+                  受け取り方と税金の説明
+                </button>
+              </div>
               <TimingTimelineDiagram scenario={liveScenario} />
-              <ul className="retirement-timing-guide-tips">
-                <li>同じ年にまとめて受け取る（期間の和集合＝最長＋非重複で1本化）</li>
-                <li>
-                  DC/iDeCo → DB・会社退職金 … 10年ルール（空き10年超でリセット）
-                </li>
-                <li>
-                  DB・会社退職金 → DC/iDeCo … 19年ルール（空き約20年でリセット）
-                </li>
-                <li>
-                  DC/iDeCo → DC/iDeCo … 19年ルール（後受けがDC一時金のため）
-                </li>
-                <li>どちらかを年金受取にすると、この重複調整の対象外</li>
-              </ul>
             </>
           ) : (
             <p className="retirement-timing-guide-lead">
               iDeCo／企業型DC／DB
-              の一括受取、または収入タブの退職金を入れると、このメンバーの予定でタイムラインを表示します。
+              の一括受取、または収入の退職金を入れると、このメンバーの予定でタイムラインを表示します。
             </p>
           )}
         </div>
       ) : null}
+
+      <RetirementTimingHelpModal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+      />
     </div>
   );
 }

@@ -6,13 +6,22 @@ import {
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
 import { canAddSideBusinessIncome } from '../../lib/incomeGuidance';
 import type { AddIncomeOption } from '../../lib/incomeLabels';
+import { retirementAllowancesForEntry } from '../../lib/retirementAllowance';
+import { getMemberSavingsEntries } from '../../lib/savingsDefaults';
+import {
+  isPensionStylePayoutCategory,
+  resolveSavingsWithdrawalMode,
+} from '../../lib/savingsLabels';
 import type { FamilyMember } from '../../types/family';
 import type {
   IncomeByMember,
   IncomeEntry,
   PriorYearIncomeByMember,
 } from '../../types/income';
+import type { SavingsState } from '../../types/savings';
+import { RetirementDeductionTimingGuide } from '../shared/RetirementDeductionTimingGuide';
 import { AddIncomeBar } from './AddIncomeBar';
+import { IncomeAnnualChart } from './IncomeAnnualChart';
 import { IncomeEntryCard } from './IncomeEntryCard';
 import { MemberIncomeTabs } from './MemberIncomeTabs';
 import { PriorYearIncomeSection } from './PriorYearIncomeSection';
@@ -21,6 +30,7 @@ interface IncomeStepProps {
   members: FamilyMember[];
   incomeByMember: IncomeByMember;
   priorYearIncomeByMember: PriorYearIncomeByMember;
+  savingsState: SavingsState;
   referenceDate: Date;
   onChange: (income: IncomeByMember) => void;
   onPriorYearIncomeChange: (priorYearIncome: PriorYearIncomeByMember) => void;
@@ -32,6 +42,7 @@ export function IncomeStep({
   members,
   incomeByMember,
   priorYearIncomeByMember,
+  savingsState,
   referenceDate,
   onChange,
   onPriorYearIncomeChange,
@@ -53,6 +64,24 @@ export function IncomeStep({
 
   const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
   const entries = incomeByMember[resolvedActiveId] ?? [];
+  const savingsEntries = useMemo(
+    () => getMemberSavingsEntries(savingsState, resolvedActiveId),
+    [savingsState, resolvedActiveId],
+  );
+
+  const showRetirementTimingGuide = useMemo(() => {
+    const hasPensionOnce = savingsEntries.some(
+      (entry) =>
+        isPensionStylePayoutCategory(entry.category) &&
+        resolveSavingsWithdrawalMode(entry.withdrawalMode) === 'once',
+    );
+    const hasCompanyRetirement = entries.some((entry) =>
+      retirementAllowancesForEntry(entry).some(
+        (allowance) => (Number(allowance.amountMan) || 0) > 0,
+      ),
+    );
+    return hasPensionOnce || hasCompanyRetirement;
+  }, [savingsEntries, entries]);
 
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -151,6 +180,14 @@ export function IncomeStep({
         onSelect={setActiveMemberId}
       />
 
+      <PriorYearIncomeSection
+        member={activeMember}
+        incomeByMember={incomeByMember}
+        priorYearIncomeByMember={priorYearIncomeByMember}
+        referenceDate={referenceDate}
+        onChange={onPriorYearIncomeChange}
+      />
+
       <div className="income-entries">
         {entries.length === 0 ? (
           <div className="income-empty">
@@ -174,18 +211,32 @@ export function IncomeStep({
         )}
       </div>
 
-      <PriorYearIncomeSection
-        member={activeMember}
-        incomeByMember={incomeByMember}
-        priorYearIncomeByMember={priorYearIncomeByMember}
-        referenceDate={referenceDate}
-        onChange={onPriorYearIncomeChange}
-      />
-
       <AddIncomeBar
         canAddSideBusiness={canAddSideBusinessIncome(entries)}
         onAdd={addEntry}
       />
+
+      {activeMember ? (
+        <IncomeAnnualChart
+          member={activeMember}
+          familyMembers={members}
+          incomeByMember={incomeByMember}
+          referenceDate={referenceDate}
+        />
+      ) : null}
+
+      {showRetirementTimingGuide && activeMember ? (
+        <section className="income-retirement-timing-section">
+          <RetirementDeductionTimingGuide
+            className="retirement-timing-guide--in-income"
+            member={activeMember}
+            incomeEntries={entries}
+            memberEntries={savingsEntries}
+            referenceDate={referenceDate}
+            defaultOpen
+          />
+        </section>
+      ) : null}
     </div>
   );
 }

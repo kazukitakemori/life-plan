@@ -1838,67 +1838,46 @@ button:disabled {
   font-size: 0.875rem;
 }
 
-.prior-year-income-card {
-  margin-top: 20px;
-  padding: 16px 18px;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-}
-
-.prior-year-income-header {
+.prior-year-income-guide {
+  margin-top: 12px;
   margin-bottom: 12px;
 }
 
-.prior-year-income-title {
-  margin: 0 0 6px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #444;
-}
-
-.prior-year-income-description,
-.prior-year-income-note {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: #777;
-  line-height: 1.6;
-}
-
-.prior-year-income-toggle {
+.prior-year-income-check {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 12px 0;
-  font-size: 0.875rem;
-  color: #444;
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  color: #475569;
   cursor: pointer;
+  line-height: 1.45;
 }
 
-.prior-year-income-toggle input {
-  margin-top: 3px;
+.prior-year-income-check input {
+  margin-top: 2px;
   flex-shrink: 0;
 }
 
 .prior-year-income-fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: 12px 20px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #e8ecf1;
 }
 
 .prior-year-income-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 180px;
+  gap: 4px;
+  min-width: 160px;
 }
 
 .prior-year-income-label {
-  font-size: 0.8125rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .income-entry {
@@ -1952,15 +1931,6 @@ button:disabled {
   color: #555;
 }
 
-.detail-settings-btn {
-  padding: 4px 12px;
-  border: 1px solid #90caf9;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 0.75rem;
-  color: #1976d2;
-}
-
 .income-entry-header-right {
   display: flex;
   align-items: center;
@@ -1988,7 +1958,7 @@ button:disabled {
 
 .income-amount-group-top {
   display: grid;
-  grid-template-columns: minmax(100px, 1fr) minmax(200px, 1.6fr) minmax(90px, 0.8fr);
+  grid-template-columns: minmax(100px, 1fr) minmax(190px, 1.45fr) minmax(90px, 0.8fr);
   width: 100%;
   align-items: start;
   gap: 8px;
@@ -2173,20 +2143,20 @@ button:disabled {
 }
 
 .income-table {
-  --income-cols: 180px minmax(380px, 2.2fr) minmax(110px, 1fr) minmax(240px, 1.6fr) minmax(100px, 0.8fr) 116px 36px;
+  --income-cols: 180px minmax(380px, 2.2fr) minmax(110px, 1fr) minmax(220px, 1.5fr) minmax(100px, 0.8fr) 188px 36px;
   width: 100%;
   min-width: 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .income-table--self-employed {
-  --income-cols: 180px minmax(340px, 1.8fr) minmax(100px, 0.9fr) minmax(220px, 1.4fr) minmax(90px, 0.7fr) 116px 108px 140px 36px;
+  --income-cols: 180px minmax(340px, 1.8fr) minmax(100px, 0.9fr) minmax(200px, 1.35fr) minmax(90px, 0.7fr) 188px 108px 140px 36px;
   width: 100%;
   min-width: 0;
 }
 
 .income-table--with-expense {
-  --income-cols: 180px minmax(340px, 1.8fr) minmax(100px, 0.9fr) minmax(100px, 0.8fr) 116px minmax(108px, 1fr) 36px;
+  --income-cols: 180px minmax(340px, 1.8fr) minmax(100px, 0.9fr) minmax(100px, 0.8fr) 188px minmax(108px, 1fr) 36px;
   width: 100%;
   min-width: 0;
 }
@@ -2234,6 +2204,16 @@ button:disabled {
 .income-header-rate {
   grid-column: 6;
   grid-row: 1 / 3;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.income-header-rate-sub {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: #64b5f6;
 }
 
 .income-table--self-employed .income-header-expense {
@@ -2523,12 +2503,15 @@ button:disabled {
 }
 
 .period-start-label {
+  grid-column: 1 / 3;
+  grid-row: 2;
   margin: 0;
   font-size: 0.6875rem;
   font-weight: 400;
-  color: #64b5f6;
+  color: #888;
   white-space: nowrap;
   line-height: 1.3;
+  justify-self: start;
 }
 
 .period-end-label {
@@ -2608,7 +2591,7 @@ button:disabled {
 }
 
 .amount-input--small {
-  width: 48px;
+  width: 64px;
   min-width: 0;
 }
 
@@ -2619,7 +2602,7 @@ button:disabled {
 
 .bonus-row {
   display: grid;
-  grid-template-columns: 56px 48px minmax(0, max-content) 22px;
+  grid-template-columns: 56px 64px minmax(0, max-content) 22px;
   align-items: center;
   gap: 3px;
   width: 100%;
@@ -2665,40 +2648,89 @@ button:disabled {
   width: 100%;
 }
 
-.income-col-rate .rate-input {
-  width: 44px;
+.rate-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
   min-width: 0;
 }
 
-.rate-calc-btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid #90caf9;
-  border-radius: 4px;
-  background: #e3f2fd;
-  font-size: 0.75rem;
-  line-height: 1;
-  display: flex;
+.rate-field {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  opacity: 0.7;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
 }
 
-.rate-input {
-  width: 52px;
+.rate-field-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.rate-field-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rate-input,
+.rate-end-input {
+  width: 64px;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 72px;
   padding: 4px 6px;
   border: 1px solid #ddd;
   border-radius: 4px;
   text-align: right;
   font-size: 0.8125rem;
   background: #fff;
+  box-sizing: border-box;
+  /* スピンボタンで小数が見切れないようにする */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.rate-input::-webkit-outer-spin-button,
+.rate-input::-webkit-inner-spin-button,
+.rate-end-input::-webkit-outer-spin-button,
+.rate-end-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rate-end-input:disabled {
+  background: #f5f5f5;
+  color: #888;
+  cursor: default;
+}
+
+.income-col-rate .rate-input,
+.income-col-rate .rate-end-input {
+  width: 64px;
+  min-width: 0;
 }
 
 .rate-unit {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rate-field-controls .amount-unit {
+  font-size: 0.6875rem;
+  flex-shrink: 0;
 }
 
 .remove-period-btn {
@@ -7050,6 +7082,18 @@ button:disabled {
   border: 1px solid #d0dceb;
   border-radius: 8px;
   background: #f7fafc;
+}
+
+.income-annual-chart {
+  margin: 28px 0 24px;
+  padding: 16px 18px;
+  border: 1px solid #d0dceb;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.income-annual-chart .lifetime-chart-header {
+  margin-bottom: 8px;
 }
 
 .pension-estimate-header {
@@ -15169,6 +15213,14 @@ button:disabled {
   margin-top: 0;
 }
 
+.income-retirement-timing-section {
+  margin: 20px 0 8px;
+}
+
+.income-retirement-timing-section .retirement-timing-guide {
+  margin-top: 0;
+}
+
 .savings-empty {
   padding: 16px 18px;
   border: 1px dashed #ccc;
@@ -15589,6 +15641,63 @@ button:disabled {
   color: #64748b;
 }
 
+.retirement-timing-guide-lead--inline {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.retirement-timing-guide-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 12px 0 10px;
+}
+
+.retirement-timing-help-btn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border: 1px solid #90caf9;
+  border-radius: 999px;
+  background: #fff;
+  color: #1565c0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.retirement-timing-help-btn:hover {
+  background: #e3f2fd;
+}
+
+.retirement-timing-help-modal {
+  max-width: 560px;
+}
+
+.retirement-timing-help-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 4px;
+}
+
+.retirement-timing-help-section-title {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.retirement-timing-help-section-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: #475569;
+}
+
 .retirement-timing-guide-tabs {
   display: flex;
   gap: 6px;
@@ -15879,18 +15988,6 @@ button:disabled {
   font-size: 0.75rem;
   color: #64748b;
   line-height: 1.45;
-}
-
-.retirement-timing-guide-tips {
-  margin: 12px 0 0;
-  padding-left: 1.15em;
-  font-size: 0.78rem;
-  color: #475569;
-  line-height: 1.5;
-}
-
-.retirement-timing-guide-tips li {
-  margin: 0 0 3px;
 }
 
 @media (max-width: 720px) {

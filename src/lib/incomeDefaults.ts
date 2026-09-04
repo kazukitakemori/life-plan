@@ -213,7 +213,7 @@ export function migrateIncomeEntry(
     dependentStatus:
       entry.dependentStatus ?? defaultDependentStatus(memberRole),
     spouseContingencyRate: entry.spouseContingencyRate ?? null,
-    annualIncreaseRate: entry.annualIncreaseRate ?? null,
+    annualIncreaseRate: entry.annualIncreaseRate ?? 0,
   };
 
   return {
@@ -279,7 +279,7 @@ export function createDefaultPeriod(
     annualAmountMan: calcAnnualAmountMan(monthlyAmountMan, bonuses),
     ...dependentFields,
     spouseContingencyRate: null,
-    annualIncreaseRate: null,
+    annualIncreaseRate: 0,
     lumpSumRestoreEndAge: null,
     lumpSumRestoreEndMonth: null,
   };
