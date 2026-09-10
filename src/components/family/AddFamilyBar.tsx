@@ -10,19 +10,19 @@ interface AddOption {
 const ADD_OPTIONS: AddOption[] = [
   {
     role: 'spouse',
-    icon: '💚',
+    icon: '👤',
     label: '配偶者',
     description: '夫・妻を追加',
   },
   {
     role: 'child',
-    icon: '👶',
+    icon: '👤',
     label: '子供',
     description: '将来のお子さんもOK',
   },
   {
     role: 'other',
-    icon: '👥',
+    icon: '👤',
     label: 'その他',
     description: 'パートナー・同居の親族など',
   },

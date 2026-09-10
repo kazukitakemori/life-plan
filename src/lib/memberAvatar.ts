@@ -22,9 +22,9 @@ const ROLE_FALLBACK_AGE: Record<Exclude<FamilyMemberRole, 'pet'>, number> = {
 };
 
 const ROLE_EMOJI: Record<FamilyMemberRole, string> = {
-  head: '👨',
-  spouse: '👩',
-  child: '👶',
+  head: '👤',
+  spouse: '👤',
+  child: '👤',
   other: '👤',
   pet: '🐾',
 };
