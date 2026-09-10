@@ -338,7 +338,7 @@ export function LoanSettingsFields({
                 </span>
               ) : linkedVehicle ? (
                 <span className="loan-amount-linked-detail">
-                  ※ Q6の購入費用から自動計算
+                  ※ 乗り物の購入費用から自動計算
                 </span>
               ) : null}
             </div>

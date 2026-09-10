@@ -146,7 +146,7 @@ export function OtherTaxSocialBreakdown({
   if (!headMember) {
     return (
       <p className="placeholder-message">
-        ご家族（Q1）で世帯主を登録してください。
+        ご家族で世帯主を登録してください。
       </p>
     );
   }

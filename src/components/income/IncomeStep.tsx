@@ -22,6 +22,7 @@ import type {
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { SavingsState } from '../../types/savings';
 import { RetirementDeductionTimingGuide } from '../shared/RetirementDeductionTimingGuide';
+import { StepHeading } from '../ui';
 import { AddIncomeBar } from './AddIncomeBar';
 import { IncomeAnnualChart } from './IncomeAnnualChart';
 import { IncomeEntryCard } from './IncomeEntryCard';
@@ -158,7 +159,7 @@ export function IncomeStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -166,28 +167,11 @@ export function IncomeStep({
 
   return (
     <div className="step-page income-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q7. 収入</h2>
-          <p className="step-description">
-            扶養関係や産休育休を含む働き方設定
-          </p>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        </div>
-      </div>
+      <StepHeading
+        number={7}
+        title="収入"
+        lead="働き方と収入額を登録します。扶養や上昇率などの細かい設定は各収入の詳細から変更できます。"
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

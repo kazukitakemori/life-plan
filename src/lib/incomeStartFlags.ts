@@ -9,6 +9,8 @@ function ageMonthIndex(age: number, month: number): number {
 /**
  * 試算初年度内かつ試算開始以降に始まる収入期間か。
  * （継続勤務の過去開始は除外。開始月が試算開始より後でも初年度内なら対象）
+ *
+ * 試算開始は収入デフォルト・税計算と同じ resolveDefaultStartAgeMonth を使う。
  */
 export function isPeriodStartEligibleForNewIncomeFlag(
   startAge: number,
@@ -31,22 +33,19 @@ export function isPeriodStartEligibleForNewIncomeFlag(
 export function resolveNewIncomeStartMonth(
   entry: IncomeEntry,
   member: FamilyMember,
-  referenceMonth?: number,
+  referenceDate: Date,
 ): number | null {
-  const defaultStart =
-    referenceMonth != null
-      ? resolveDefaultStartAgeMonth(member.age, referenceMonth)
-      : {
-          startAge: member.age ?? 0,
-          startMonth: 1,
-        };
+  const simulationStart = resolveDefaultStartAgeMonth(
+    member.age,
+    referenceDate.getMonth() + 1,
+  );
 
   const eligibleStarts = entry.periods
     .filter((period) =>
       isPeriodStartEligibleForNewIncomeFlag(
         period.startAge,
         period.startMonth,
-        defaultStart,
+        simulationStart,
       ),
     )
     .map((period) => ({
@@ -65,23 +64,23 @@ export function resolveNewIncomeStartMonth(
 export function memberHasNewIncomeFromStart(
   member: FamilyMember,
   entries: IncomeEntry[],
-  referenceMonth?: number,
+  referenceDate: Date,
 ): boolean {
   return entries.some(
     (entry) =>
       entry.isNewIncomeFromStart &&
-      resolveNewIncomeStartMonth(entry, member, referenceMonth) != null,
+      resolveNewIncomeStartMonth(entry, member, referenceDate) != null,
   );
 }
 
 export function memberHasNewIncomeFromStartById(
   member: FamilyMember,
   incomeByMember: IncomeByMember,
-  referenceMonth?: number,
+  referenceDate: Date,
 ): boolean {
   return memberHasNewIncomeFromStart(
     member,
     incomeByMember[member.id] ?? [],
-    referenceMonth,
+    referenceDate,
   );
 }

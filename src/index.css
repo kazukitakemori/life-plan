@@ -5,16 +5,21 @@
 }
 
 :root {
-  font-family: 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo,
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #333;
-  background-color: #f5f7fa;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+  /* Brand / surface — own look (not FP yellow/blue table chrome) */
+  --color-ink: #1f2a24;
+  --color-muted: #5f6b64;
+  --color-faint: #7a8780;
+  --color-line: #e0e0e0;
+  --color-surface: #ffffff;
+  --color-soft: #f0f2f5;
+  --color-page: #f5f7fa;
+  --color-brand: #2f6f4e;
+  --color-brand-soft: #e7f1eb;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-focus-ring: rgb(47 111 78 / 16%);
 
+  /* Legacy aliases (header / older steps still reference these) */
   --color-primary: #4caf50;
   --color-primary-light: #e8f5e9;
   --color-primary-border: #a5d6a7;
@@ -24,6 +29,42 @@
   --color-border: #e0e0e0;
   --color-input-highlight: #fffde7;
   --color-accent: #1976d2;
+
+  /* Type scale — readability floor: body ≥15px, helper ≥13px */
+  --font-sans: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    Meiryo, sans-serif;
+  --text-xs: 0.8125rem; /* 13px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-md: 0.9375rem; /* 15px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-xl: 1.375rem; /* 22px */
+  --text-2xl: 1.625rem; /* 26px */
+  --leading-tight: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.55;
+
+  /* Controls */
+  --control-height: 40px;
+  --control-height-sm: 36px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+
+  font-family: var(--font-sans);
+  line-height: var(--leading-normal);
+  font-weight: 400;
+  color: var(--color-ink);
+  background-color: var(--color-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 html,
@@ -75,7 +116,7 @@ button:disabled {
   min-width: 0;
   overflow: auto;
   padding: 0 24px 32px;
-  background: #f5f7fa;
+  background: var(--color-page);
 }
 
 .analysis-status-message {
@@ -840,7 +881,7 @@ button:disabled {
   gap: 24px;
   padding: 0 24px;
   /* タイトル＋顧客行（またはヒント）を常に収める */
-  min-height: 72px;
+  min-height: 80px;
   background: var(--color-header-bg);
 }
 
@@ -855,12 +896,12 @@ button:disabled {
 .top-header-fullscreen-btn {
   align-self: center;
   margin: 0;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.3;
   white-space: nowrap;
@@ -881,18 +922,18 @@ button:disabled {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-  min-height: 52px;
-  padding: 10px 0;
+  min-height: 56px;
+  padding: 12px 0;
   box-sizing: border-box;
 }
 
 .top-header-title {
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: #fff;
 }
 
@@ -902,24 +943,24 @@ button:disabled {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  min-height: 1.375rem;
+  min-height: 1.5rem;
 }
 
 .top-header-customer {
-  max-width: 220px;
+  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
 }
 
 .top-header-status-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
@@ -946,7 +987,7 @@ button:disabled {
 }
 
 .top-header-autosave {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -969,9 +1010,9 @@ button:disabled {
 
 .top-header-hint {
   margin: 0;
-  min-height: 1.375rem;
-  font-size: 0.75rem;
-  line-height: 1.375rem;
+  min-height: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -987,11 +1028,11 @@ button:disabled {
   position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 20px;
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.78);
   white-space: nowrap;
@@ -1179,10 +1220,10 @@ button:disabled {
 }
 
 .top-header-dropdown-label {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .top-header-dropdown-item.active .top-header-dropdown-label {
@@ -1209,7 +1250,7 @@ button:disabled {
 /* Sidebar */
 
 .sidebar {
-  width: 180px;
+  width: 200px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1243,12 +1284,13 @@ button:disabled {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  padding: 10px 8px;
+  min-height: var(--control-height);
+  padding: 10px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--color-primary);
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
   text-align: center;
@@ -1277,13 +1319,13 @@ button:disabled {
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: #555;
   transition: background 0.15s;
 }
@@ -1300,10 +1342,15 @@ button:disabled {
 }
 
 .sidebar-q {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: inherit;
-  min-width: 22px;
+  min-width: 1.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-item.active .sidebar-q {
+  color: inherit;
 }
 
 .sidebar-label {
@@ -1356,7 +1403,7 @@ button:disabled {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 0 16px;
+  padding: 24px 0 20px;
 }
 
 .step-header > :first-child {
@@ -1376,16 +1423,57 @@ button:disabled {
 
 .step-title {
   margin: 0;
-  font-size: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 12px;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: #333;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+.step-index {
+  display: inline-block;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-brand);
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  vertical-align: baseline;
+}
+
+.step-index::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 0.85em;
+  margin: 0 0.15em 0 0.55em;
+  background: var(--color-line);
+  vertical-align: -0.05em;
+}
+
+.step-title-text {
+  letter-spacing: 0.02em;
 }
 
 .step-subtitle {
-  margin-left: 8px;
-  font-size: 0.9375rem;
+  font-size: var(--text-md);
   font-weight: 400;
-  color: #888;
+  color: var(--color-faint);
+}
+
+.step-lead {
+  margin: 10px 0 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-muted);
 }
 
 .step-actions {
@@ -1394,12 +1482,14 @@ button:disabled {
 }
 
 .step-action-btn {
-  padding: 6px 16px;
-  border: 1px solid #90caf9;
-  border-radius: 20px;
+  min-height: var(--control-height-sm);
+  padding: 8px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
   background: #fff;
-  color: #1976d2;
-  font-size: 0.8125rem;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .placeholder-step {
@@ -1411,195 +1501,7 @@ button:disabled {
   font-size: 0.9375rem;
 }
 
-/* Family table */
-
-.family-table {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.family-table-header {
-  display: grid;
-  grid-template-columns: 168px 1fr 160px 220px 40px;
-  background: var(--color-table-header);
-  border-bottom: 1px solid #bbdefb;
-}
-
-.family-table-header-cell {
-  padding: 10px 12px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1565c0;
-  text-align: center;
-}
-
-.family-table-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.family-row {
-  display: grid;
-  grid-template-columns: 168px 1fr 160px 220px 40px;
-  border-bottom: 1px solid #f0f0f0;
-  min-height: 200px;
-}
-
-.family-row:last-child {
-  border-bottom: none;
-}
-
-.family-row-cell {
-  padding: 12px;
-  border-right: 1px solid #f0f0f0;
-}
-
-.family-row-cell:last-child {
-  border-right: none;
-}
-
-/* Member cell */
-
-.member-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.nickname-input {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #ffe082;
-  border-radius: 4px;
-  background: var(--color-input-highlight);
-  text-align: center;
-  font-size: 0.8125rem;
-}
-
-.nickname-input:focus {
-  outline: none;
-  border-color: #ffc107;
-  box-shadow: 0 0 0 2px rgb(255 193 7 / 20%);
-}
-
-.member-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: #f5f5f5;
-  border: 2px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.75rem;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.member-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
-  pointer-events: none;
-  user-select: none;
-}
-
-.member-role {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #666;
-}
-
-/* Profile cell */
-
-.profile-cell {
-  display: flex;
-  align-items: flex-start;
-}
-
-.profile-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.profile-birth {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.birth-label {
-  margin: 0;
-  width: 100%;
-  font-size: 0.75rem;
-  color: #888;
-}
-
-.profile-dependent {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px dashed #e8e8e8;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.profile-checkbox-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: #444;
-  cursor: pointer;
-  line-height: 1.35;
-}
-
-.profile-checkbox-option input {
-  accent-color: var(--color-accent);
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.profile-dependent-note {
-  margin: 0;
-  font-size: 0.6875rem;
-  color: #999;
-  line-height: 1.4;
-}
-
-.profile-dependent-warning {
-  margin: 0;
-  padding: 4px 6px;
-  font-size: 0.6875rem;
-  color: #c62828;
-  background: #ffebee;
-  border-radius: 4px;
-  line-height: 1.4;
-}
-
-.profile-dependent-guide {
-  margin: 0;
-  padding: 8px 10px;
-  font-size: 0.6875rem;
-  color: #5d4037;
-  background: #fff8e1;
-  border: 1px solid #ffe082;
-  border-radius: 4px;
-  line-height: 1.45;
-}
-
-.profile-dependent .select-input--wide {
-  max-width: 100%;
-}
+/* Shared form controls (used by other steps) */
 
 .inline-field {
   display: flex;
@@ -1656,154 +1558,6 @@ button:disabled {
   color: #555;
 }
 
-/* Hobbies */
-
-.hobbies-cell {
-  display: flex;
-  align-items: stretch;
-}
-
-.hobbies-box {
-  position: relative;
-  width: 100%;
-  min-height: 100px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px;
-  background: #fafafa;
-}
-
-.hobbies-placeholder {
-  font-size: 0.75rem;
-  color: #bbb;
-}
-
-.hobbies-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hobbies-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  font-size: 0.75rem;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  padding: 2px 6px;
-}
-
-.hobby-remove {
-  border: none;
-  background: none;
-  color: #999;
-  font-size: 0.875rem;
-  padding: 0 2px;
-  line-height: 1;
-}
-
-.hobby-add-btn {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  padding: 2px 10px;
-  border: 1px solid #ffe082;
-  border-radius: 4px;
-  background: var(--color-input-highlight);
-  font-size: 0.6875rem;
-  color: #666;
-}
-
-/* Household period */
-
-.period-column {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.period-column-title {
-  margin: 0;
-  font-size: 0.6875rem;
-  color: #888;
-  line-height: 1.3;
-}
-
-.period-cell {
-  flex: 1;
-}
-
-.period-cell--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ccc;
-  font-size: 1.25rem;
-}
-
-.period-options {
-  border: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: #444;
-  cursor: pointer;
-}
-
-.radio-option input {
-  accent-color: var(--color-accent);
-}
-
-.period-custom {
-  margin-top: 8px;
-}
-
-.period-range {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  font-size: 0.75rem;
-}
-
-.period-range-label {
-  color: #666;
-}
-
-.period-range-arrow {
-  color: #999;
-}
-
-.period-end-year {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: #888;
-}
-
-/* Remove button */
-
-.action-cell {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 16px;
-}
-
 .remove-member-btn {
   width: 28px;
   height: 28px;
@@ -1822,56 +1576,531 @@ button:disabled {
   background: #ffebee;
 }
 
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.radio-option input {
+  accent-color: var(--color-accent);
+}
+
+.member-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-soft);
+  border: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.member-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Shared UI primitives (new design system — adopt step by step) */
+
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ui-field-label {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-muted);
+  line-height: var(--leading-tight);
+}
+
+.ui-field-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-field-hint,
+.ui-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-faint);
+}
+
+.ui-input,
+.ui-select {
+  min-height: var(--control-height);
+  padding: 8px 12px;
+  border: 1px solid #c5d0c9;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--text-base);
+  color: var(--color-ink);
+}
+
+.ui-input {
+  width: 100%;
+}
+
+.ui-input--title {
+  max-width: 280px;
+  font-weight: 600;
+  font-size: var(--text-lg);
+}
+
+.ui-input--amount {
+  width: 7.5rem;
+  flex: 0 0 auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-amount .ui-input {
+  width: auto;
+}
+
+.ui-amount-unit {
+  font-size: var(--text-md);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.ui-select {
+  min-width: 88px;
+}
+
+.ui-select--compact {
+  min-width: 76px;
+}
+
+.ui-select--wide {
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-input:focus,
+.ui-select:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.ui-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.ui-choice input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--color-brand);
+}
+
+.ui-choice-label {
+  min-width: 0;
+}
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.ui-btn--ghost {
+  min-height: var(--control-height-sm);
+  padding: 6px 12px;
+  border-color: #b7c9bd;
+  color: var(--color-brand);
+  background: transparent;
+}
+
+.ui-btn--ghost:hover {
+  background: var(--color-brand-soft);
+}
+
+.ui-btn--danger {
+  border-color: #e0b4b4;
+  color: var(--color-danger);
+  background: var(--color-surface);
+}
+
+.ui-btn--danger:hover {
+  background: var(--color-danger-soft);
+}
+
+.ui-btn--primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.ui-btn--primary:hover {
+  filter: brightness(0.96);
+}
+
+.ui-callout {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+}
+
+.ui-callout--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.ui-callout--brand {
+  border: 1px solid #d7e5dc;
+  background: var(--color-brand-soft);
+  color: #345743;
+}
+
+.ui-disclosure {
+  border-top: 1px solid var(--color-line);
+}
+
+.ui-disclosure-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.ui-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ui-disclosure-summary::before {
+  content: '';
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 0.2em;
+}
+
+.ui-disclosure[open] > .ui-disclosure-summary::before {
+  transform: rotate(45deg);
+  margin-top: 0;
+}
+
+.ui-disclosure-title {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.ui-disclosure-meta {
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+}
+
+.ui-disclosure-body {
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Family step — card layout using shared tokens */
+
+.family-step {
+  max-width: 880px;
+}
+
+.family-step-header {
+  padding-bottom: var(--space-5);
+}
+
+.family-step-lead {
+  margin: 0;
+}
+
+.family-step-lead-meta {
+  display: inline;
+  margin-left: 0.5em;
+  color: var(--color-faint);
+  font-size: var(--text-md);
+}
+
+.family-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.family-member-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.family-member-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-soft);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.family-member-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.family-member-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.family-role-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.family-member-card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.family-basics {
+  padding: var(--space-5);
+}
+
+.family-section-label {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.family-basics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 0.8fr));
+  gap: var(--space-4);
+}
+
+.family-birth-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.family-period-block {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.family-period-options {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.family-period-custom {
+  margin-top: var(--space-3);
+}
+
+.family-period-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--color-muted);
+}
+
+.family-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.family-panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.family-panel-title-row .family-section-label {
+  margin-bottom: 0;
+}
+
+.family-hobbies-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.family-hobbies-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 8px 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-soft);
+  font-size: var(--text-base);
+  color: var(--color-ink);
+}
+
+.family-hobby-remove {
+  border: none;
+  background: none;
+  color: var(--color-faint);
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.family-hobby-remove:hover {
+  color: var(--color-danger);
+}
+
+.family-dependent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}
+
 /* Add family bar */
 
 .add-family-bar {
-  margin-top: 24px;
+  margin-top: var(--space-7);
 }
 
 .add-family-title {
-  margin: 0 0 12px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #555;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 .add-family-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .add-family-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 88px;
+  padding: var(--space-4) 18px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .add-family-card:hover:not(:disabled) {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
 }
 
-.add-family-icon {
-  font-size: 1.5rem;
+.add-family-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .add-family-label {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 .add-family-desc {
-  font-size: 0.6875rem;
-  color: #999;
-  text-align: center;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-muted);
 }
 
 /* Income step */
@@ -1927,7 +2156,262 @@ button:disabled {
 }
 
 .income-step {
-  max-width: 100%;
+  max-width: 920px;
+}
+
+.income-period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+.income-period-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  overflow: hidden;
+}
+
+.income-period-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 16px 4px;
+}
+
+.income-period-card-identity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.income-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.income-field-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.income-period-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.income-period-arrow {
+  color: var(--color-muted);
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.income-period-year-note {
+  margin: 0;
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-faint);
+}
+
+.income-period-lump-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.income-period-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.income-period-amounts > .income-field {
+  padding: 14px 16px 16px;
+  border-right: 1px solid var(--color-line);
+}
+
+.income-period-amounts > .income-field:last-child {
+  border-right: none;
+}
+
+.income-field--bonus {
+  min-width: 0;
+}
+
+.income-new-income-flag {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.income-new-income-flag input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--color-brand);
+}
+
+.income-new-income-field {
+  margin-bottom: 4px;
+}
+
+.income-bonus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.income-bonus-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.income-rate-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.income-period-advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.income-period-details {
+  border-top: 1px solid var(--color-line);
+}
+
+.income-period-details .ui-disclosure-summary {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.income-period-details .ui-disclosure-body {
+  padding: 0 16px 16px;
+}
+
+.income-step .ui-btn.is-active {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.income-step .stream-type-fixed {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.income-step .income-entry-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+
+.income-retirement-disclosure {
+  border-top: 1px solid var(--color-line);
+}
+
+.income-retirement-disclosure .income-retirement-list {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.income-step .income-period-dependent-label,
+.income-step .income-period-dependent-group-label,
+.income-step .income-period-dependent-option,
+.income-step .income-period-dependent-check,
+.income-step .income-period-dependent-auto-status,
+.income-step .income-period-dependent-q1-note,
+.income-step .income-period-dependent-q1-hint {
+  font-size: var(--text-sm);
+}
+
+.income-step .income-period-dependent-alerts,
+.income-step .income-period-dependent-errors {
+  font-size: var(--text-xs);
+}
+
+.income-retirement-years {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.income-retirement-period-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.income-retirement-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.income-retirement-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.income-retirement-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .income-period-amounts,
+  .income-rate-row {
+    grid-template-columns: 1fr;
+  }
+
+  .income-period-amounts > .income-field {
+    border-right: none;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .income-period-amounts > .income-field:last-child {
+    border-bottom: none;
+  }
 }
 
 .member-tabs {
@@ -2209,9 +2693,9 @@ button.member-tab.active {
 }
 
 .income-entry {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -2220,20 +2704,20 @@ button.member-tab.active {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #eee;
+  padding: 14px 18px;
+  background: var(--color-soft);
+  border-bottom: 1px solid var(--color-line);
   flex-wrap: wrap;
 }
 
 .income-entry-guidance {
   margin: 0;
-  padding: 10px 16px 12px;
-  font-size: 0.8125rem;
-  color: #555;
-  line-height: 1.65;
-  background: #f7f9fc;
-  border-bottom: 1px solid #e8eef5;
+  padding: 12px 18px;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  line-height: var(--leading-relaxed);
+  background: #fafbfc;
+  border-bottom: 1px solid var(--color-line);
 }
 
 .income-entry-header-left {
@@ -2244,19 +2728,27 @@ button.member-tab.active {
 }
 
 .income-entry-index {
-  font-size: 0.9375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  background: var(--color-ink);
+  font-size: var(--text-xs);
   font-weight: 700;
-  color: #333;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
 }
 
 .occupation-badge {
-  padding: 4px 12px;
-  background: var(--color-input-highlight);
-  border: 1px solid #ffe082;
-  border-radius: 4px;
-  font-size: 0.8125rem;
+  padding: 6px 12px;
+  background: var(--color-brand-soft);
+  border: 1px solid #c5d9cc;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: #555;
+  color: var(--color-brand);
 }
 
 .income-entry-header-right {
@@ -2267,15 +2759,18 @@ button.member-tab.active {
 
 .contingency-check {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: #666;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 28rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  color: var(--color-muted);
   cursor: pointer;
 }
 
 .contingency-check input {
-  accent-color: var(--color-accent);
+  margin-top: 2px;
+  accent-color: var(--color-brand);
 }
 
 .income-col-amount-group {
@@ -2493,17 +2988,17 @@ button.member-tab.active {
   display: grid;
   grid-template-columns: var(--income-cols);
   grid-template-rows: auto auto;
-  background: var(--color-table-header);
-  border-bottom: 1px solid #bbdefb;
+  background: var(--color-soft);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .income-header-cell {
-  padding: 6px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #1565c0;
+  padding: 10px 10px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-muted);
   text-align: center;
-  border-right: 1px solid #bbdefb;
+  border-right: 1px solid var(--color-line);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2526,7 +3021,7 @@ button.member-tab.active {
 .income-header-amount-group {
   grid-column: 3 / 6;
   grid-row: 1;
-  border-bottom: 1px solid #bbdefb;
+  border-bottom: 1px solid var(--color-line);
 }
 
 .income-header-rate {
@@ -2539,9 +3034,9 @@ button.member-tab.active {
 
 .income-header-rate-sub {
   display: block;
-  font-size: 0.625rem;
+  font-size: var(--text-xs);
   font-weight: 500;
-  color: #64b5f6;
+  color: var(--color-faint);
 }
 
 .income-table--self-employed .income-header-expense {
@@ -3116,16 +3611,16 @@ button.member-tab.active {
 
 .income-retirement-fields {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .income-retirement-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #555;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }
 
 .income-retirement-when,
@@ -3138,7 +3633,8 @@ button.member-tab.active {
 
 .income-retirement-years {
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .income-retirement-years > .select-input {
@@ -3148,10 +3644,9 @@ button.member-tab.active {
 
 .income-retirement-period-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  overflow-x: auto;
 }
 
 .income-retirement-period-years {
@@ -3169,66 +3664,65 @@ button.member-tab.active {
 }
 
 .add-income-bar {
-  margin-top: 8px;
+  margin-top: var(--space-7);
 }
 
 .add-income-title {
-  margin: 0 0 12px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #555;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 .add-income-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
 }
 
 .add-income-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 88px;
+  padding: var(--space-4) 18px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.add-income-card:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
+.add-income-card:hover:not(:disabled):not(.add-income-card--disabled) {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
 }
 
 .add-income-card--disabled,
 .add-income-card--disabled:hover {
   cursor: not-allowed;
-  border-color: #e8e8e8;
-  background: #f5f5f5;
+  opacity: 0.45;
+  border-color: var(--color-line);
+  background: var(--color-surface);
   box-shadow: none;
 }
 
 .add-income-card--disabled .add-income-label,
 .add-income-card--disabled .add-income-desc {
-  color: #aaa;
-}
-
-.add-income-icon {
-  font-size: 1.75rem;
+  color: var(--color-faint);
 }
 
 .add-income-label {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 
 .add-income-desc {
-  font-size: 0.6875rem;
-  color: #999;
-  text-align: center;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--color-muted);
 }
 
 /* Living expense step */
@@ -3673,15 +4167,8 @@ button.member-tab.active {
     min-width: 0;
   }
 
-  .family-table-header,
-  .family-row {
-    grid-template-columns: 140px 1fr 140px 180px 36px;
-  }
-
-  .member-cell .member-avatar {
-    width: 80px;
-    height: 80px;
-    font-size: 2.25rem;
+  .family-basics-grid {
+    grid-template-columns: 1fr;
   }
 
   .add-family-grid {
@@ -9214,7 +9701,29 @@ button.member-tab.active {
 /* Family residence (tax / social insurance) */
 
 .family-residence-section {
-  margin-top: 24px;
+  margin-top: var(--space-7);
+}
+
+.family-step .residence-card {
+  border-color: var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.family-step .residence-card-header {
+  background: var(--color-soft);
+}
+
+.family-step .residence-card-title {
+  color: var(--color-ink);
+}
+
+.family-step .residence-add-btn {
+  min-height: var(--control-height);
+  margin-top: var(--space-3);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  font-weight: 600;
 }
 
 .residence-card {

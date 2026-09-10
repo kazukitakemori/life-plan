@@ -3112,7 +3112,7 @@ function shouldUseAnnualBasisForResidentTaxLevySocialInsurance(input: {
   incomeByMember: IncomeByMember;
   assessmentCalendarYear: number;
   simulationStartYear: number;
-  referenceMonth?: number;
+  referenceDate: Date;
 }): boolean {
   const phase = resolveResidentTaxLevyPhase(
     input.assessmentCalendarYear,
@@ -3123,7 +3123,7 @@ function shouldUseAnnualBasisForResidentTaxLevySocialInsurance(input: {
     memberHasNewIncomeFromStartById(
       input.member,
       input.incomeByMember,
-      input.referenceMonth,
+      input.referenceDate,
     ),
   );
 }
@@ -3147,8 +3147,7 @@ function resolveResidentTaxSocialInsurance(input: {
       incomeByMember: input.incomeByMember,
       assessmentCalendarYear: input.assessmentCalendarYear,
       simulationStartYear: input.simulationStartYear,
-      referenceMonth:
-        input.socialInsuranceCalcContext.referenceDate.getMonth() + 1,
+      referenceDate: input.socialInsuranceCalcContext.referenceDate,
     },
   );
   const levyPhase = resolveResidentTaxLevyPhase(
@@ -3326,7 +3325,7 @@ function resolveLevySalaryBreakdownYen(input: {
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   if (input.resolution === 'prior_year_override') {
@@ -4472,7 +4471,7 @@ export function buildMemberTaxBreakdownData(input: {
         memberHasNewIncomeFromStartById(
           member,
           input.incomeByMember,
-          input.referenceDate.getMonth() + 1,
+          input.referenceDate,
         ),
       ),
       retirementResidentTaxYen,

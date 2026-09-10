@@ -171,7 +171,7 @@ export function HousingLoanGroupCreditLifeEditor({
           </option>
         </select>
         <p className="loan-group-credit-life-structure-note">
-          Q5の所有物件に紐づく借入形態です。
+          住まいの所有物件に紐づく借入形態です。
         </p>
       </div>
 

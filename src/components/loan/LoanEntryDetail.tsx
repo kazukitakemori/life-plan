@@ -220,13 +220,13 @@ export function LoanEntryDetail({
     >
       {variant === 'full' && entry.housingLink && housingPropertyName ? (
         <p className="loan-entry-housing-link">
-          住まい（Q5）の所有物件「{housingPropertyName}」に紐づいています
+          住まいの所有物件「{housingPropertyName}」に紐づいています
         </p>
       ) : null}
 
       {variant === 'full' && entry.vehicleLink && vehicleName ? (
         <p className="loan-entry-housing-link">
-          乗り物（Q6）の「{vehicleName}」に紐づいています
+          乗り物の「{vehicleName}」に紐づいています
         </p>
       ) : null}
 

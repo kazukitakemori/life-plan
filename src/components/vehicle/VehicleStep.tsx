@@ -12,6 +12,7 @@ import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/lo
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { StepHeading } from '../ui';
 import { AddVehicleCards } from './AddVehicleCards';
 import { VehicleTable } from './VehicleTable';
 
@@ -168,7 +169,7 @@ export function VehicleStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -176,27 +177,11 @@ export function VehicleStep({
 
   return (
     <div className="step-page vehicle-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">
-            Q6. 乗り物
-            <span className="step-subtitle">
-              自動車・バイク・自転車などの購入と維持
-            </span>
-          </h2>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-        </div>
-      </div>
+      <StepHeading
+        number={6}
+        title="乗り物"
+        subtitle="自動車・バイク・自転車などの購入と維持"
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

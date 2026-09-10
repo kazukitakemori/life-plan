@@ -1,4 +1,5 @@
 import { STEPS, type StepId } from '../../types/steps';
+import { StepHeading } from '../ui';
 
 interface PlaceholderStepProps {
   stepId: StepId;
@@ -9,12 +10,7 @@ export function PlaceholderStep({ stepId }: PlaceholderStepProps) {
 
   return (
     <div className="step-page placeholder-step">
-      <h2 className="step-title">
-        {step?.number !== null && step?.number !== undefined
-          ? `Q${step.number}. `
-          : ''}
-        {step?.label}
-      </h2>
+      <StepHeading number={step?.number} title={step?.label ?? ''} />
       <p className="placeholder-message">この項目は準備中です。</p>
     </div>
   );

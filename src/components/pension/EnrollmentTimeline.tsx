@@ -113,7 +113,7 @@ export function EnrollmentTimeline({
             className="pension-timeline-bar pension-timeline-bar--income"
             style={{ width: `${100 - pivotPercent}%` }}
           >
-            Q7.収入設定から自動判別
+            収入設定から自動判別
           </div>
           <div
             className="pension-timeline-pivot"
@@ -127,7 +127,7 @@ export function EnrollmentTimeline({
         </div>
       ) : (
         <div className="pension-timeline-bar pension-timeline-bar--income pension-timeline-bar--full">
-          Q7.収入設定から自動判別
+          収入設定から自動判別
         </div>
       )}
     </div>

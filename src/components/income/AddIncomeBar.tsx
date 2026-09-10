@@ -38,7 +38,6 @@ export function AddIncomeBar({
               disabled={disabled}
               onClick={() => onAdd(option)}
             >
-              <span className="add-income-icon">{option.icon}</span>
               <span className="add-income-label">
                 {option.label ?? INCOME_CATEGORY_LABELS[option.category]}
               </span>

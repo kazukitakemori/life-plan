@@ -42,12 +42,11 @@ export function memberUsesAnnualBasisForIncomeTax(
   options?: AnnualIncomeTaxBasisOptions,
 ): boolean {
   if (
+    options?.referenceDate != null &&
     memberHasNewIncomeFromStartById(
       member,
       incomeByMember,
-      options?.referenceDate
-        ? options.referenceDate.getMonth() + 1
-        : undefined,
+      options.referenceDate,
     )
   ) {
     return false;

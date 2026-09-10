@@ -15,6 +15,7 @@ import type { EducationByMember } from '../../types/education';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { TaxSocialState } from '../../types/taxSocial';
+import { StepHeading } from '../ui';
 import { EducationExpenseChart } from './EducationExpenseChart';
 import { EducationExpenseTable } from './EducationExpenseTable';
 import { MemberEducationTabs } from './MemberEducationTabs';
@@ -168,7 +169,7 @@ export function EducationStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -176,28 +177,10 @@ export function EducationStep({
 
   return (
     <div className="step-page education-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q2. 教育費</h2>
-          {purposeNote ? (
-            <p className="purpose-input-note" role="note">
-              {purposeNote}
-            </p>
-          ) : null}
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            参考リンク
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
+      <StepHeading
+        number={2}
+        title="教育費"
+        actions={
           <button
             type="button"
             className={`show-all-btn${showAllMembers ? ' active' : ''}`}
@@ -206,8 +189,14 @@ export function EducationStep({
           >
             {showAllMembers ? '個人ごとに表示' : '全員まとめて表示'}
           </button>
-        </div>
-      </div>
+        }
+      />
+
+      {purposeNote ? (
+        <p className="purpose-input-note" role="note">
+          {purposeNote}
+        </p>
+      ) : null}
 
       {!showAllMembers ? (
         <div className="education-toolbar">

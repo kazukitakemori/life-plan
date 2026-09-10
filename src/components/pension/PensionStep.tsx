@@ -8,6 +8,7 @@ import type { IncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { PensionByMember } from '../../types/pension';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { StepHeading } from '../ui';
 import { PensionBenefitEstimatePanel } from './PensionBenefitEstimatePanel';
 import { PublicPensionSection } from './PublicPensionSection';
 
@@ -84,7 +85,7 @@ export function PensionStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -92,37 +93,15 @@ export function PensionStep({
 
   return (
     <div className="step-page pension-step">
-      <div className="step-header">
-        <h2 className="step-title">Q8. 年金</h2>
-        <div className="pension-header-actions">
-          <div className="step-actions">
-            <button type="button" className="step-action-btn" disabled>
-              解説 <span aria-hidden>▼</span>
-            </button>
-            <button type="button" className="step-action-btn" disabled>
-              <span className="step-action-icon" aria-hidden>
-                ▶
-              </span>{' '}
-              ガイド
-            </button>
-            <button type="button" className="step-action-btn" disabled>
-              <span className="step-action-icon" aria-hidden>
-                ↗
-              </span>{' '}
-              参考リンク <span aria-hidden>▼</span>
-            </button>
-            <button type="button" className="step-action-btn" disabled>
-              <span className="step-action-icon" aria-hidden>
-                📝
-              </span>{' '}
-              メモ
-            </button>
-          </div>
+      <StepHeading
+        number={8}
+        title="年金"
+        actions={
           <button type="button" className="show-all-btn" disabled>
             全員まとめて表示
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

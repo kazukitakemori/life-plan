@@ -18,6 +18,7 @@ import type {
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { StepHeading } from '../ui';
 import { AddInsuranceCards } from './AddInsuranceCards';
 import { InsuranceEntryCard } from './InsuranceEntryCard';
 
@@ -228,7 +229,7 @@ export function InsuranceStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -236,27 +237,11 @@ export function InsuranceStep({
 
   return (
     <div className="step-page insurance-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">
-            Q10. 保険
-            <span className="step-subtitle">
-              損害保険・生命保険の保険料を登録
-            </span>
-          </h2>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-        </div>
-      </div>
+      <StepHeading
+        number={10}
+        title="保険"
+        subtitle="損害保険・生命保険の保険料を登録"
+      />
 
       <MemberIncomeTabs
         members={visibleMembers}
@@ -319,7 +304,7 @@ export function InsuranceStep({
           </div>
         ) : (
           <div className="insurance-empty">
-            保険が登録されていません。下から追加するか、住まい（Q5）・乗り物（Q6）から追加してください。
+            保険が登録されていません。下から追加するか、住まい・乗り物から追加してください。
           </div>
         )}
       </section>

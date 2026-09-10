@@ -139,11 +139,11 @@ export function HousingSecondLifeApplySummary({
                 className="housing-second-life-apply-summary-jump"
                 onClick={onOpenLifeEvent}
               >
-                ライフイベント（Q3）を見る
+                ライフイベントを見る
               </button>
             ) : (
               <span className="housing-second-life-apply-summary-note">
-                一時金はライフイベント（Q3）にも反映されています
+                一時金はライフイベントにも反映されています
               </span>
             )
           ) : null}

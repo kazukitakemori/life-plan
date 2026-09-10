@@ -20,6 +20,7 @@ import type { SecondLifeState } from '../../types/secondLife';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { SecondLifeLivingSection } from '../secondLife/SecondLifeLivingSection';
 import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
+import { StepHeading } from '../ui';
 import { LivingScheduleCard } from './LivingScheduleCard';
 
 interface LivingStepProps {
@@ -197,7 +198,7 @@ export function LivingStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -205,28 +206,16 @@ export function LivingStep({
 
   return (
     <div className="step-page living-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q4. 生活費</h2>
-          <p className="step-description">
-            世帯の共有費は負担している人（多くの場合は世帯主）のタブへ。小遣いなど個人分はそれぞれのタブへ入力します。
-          </p>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
+      <StepHeading
+        number={4}
+        title="生活費"
+        lead="世帯の共有費は負担している人（多くの場合は世帯主）のタブへ。小遣いなど個人分はそれぞれのタブへ入力します。"
+        actions={
           <button type="button" className="show-all-btn" disabled>
             全員まとめて表示
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

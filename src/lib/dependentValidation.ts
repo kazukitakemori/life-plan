@@ -115,7 +115,7 @@ export function validatePeriodDependentSettings(
     issues.push({
       id: 'no-spouse',
       message:
-        '配偶者が登録されていないため、「扶養に入る」は設定できません。ご家族（Q1）で配偶者を登録してください。',
+        '配偶者が登録されていないため、「扶養に入る」は設定できません。ご家族で配偶者を登録してください。',
     });
     return issues;
   }

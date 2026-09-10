@@ -8,6 +8,7 @@ import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
+import { StepHeading } from '../ui';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
 import { MemberLifeEventTabs } from './MemberLifeEventTabs';
@@ -131,7 +132,7 @@ export function LifeEventStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -139,27 +140,11 @@ export function LifeEventStep({
 
   return (
     <div className="step-page life-event-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">
-            Q3. ライフイベント
-            <span className="step-subtitle">
-              結婚・夢・医療・介護など
-            </span>
-          </h2>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-        </div>
-      </div>
+      <StepHeading
+        number={3}
+        title="ライフイベント"
+        subtitle="結婚・夢・医療・介護など"
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

@@ -129,7 +129,7 @@ export function getSecondLifeHousingApplyPlanLines(
       break;
     case 'renovate':
       lines.push(
-        '住まい物件は追加せず、リフォーム費用をライフイベント（Q3）へ反映します',
+        '住まい物件は追加せず、リフォーム費用をライフイベントへ反映します',
       );
       break;
     default: {

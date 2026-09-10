@@ -16,6 +16,7 @@ import type { LivingExpenseState } from '../../types/living';
 import type { HousingState } from '../../types/housing';
 import type { SecondLifeState } from '../../types/secondLife';
 import type { StepId } from '../../types/steps';
+import { StepHeading } from '../ui';
 
 interface SecondLifeGuideStepProps {
   members: FamilyMember[];
@@ -109,7 +110,7 @@ export function SecondLifeGuideStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -117,17 +118,14 @@ export function SecondLifeGuideStep({
 
   return (
     <div className="step-page second-life-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q12. セカンドライフ</h2>
-          <p className="second-life-lead">
-            住まい・生活費・介護の入力状況を確認します
-          </p>
-        </div>
-      </div>
+      <StepHeading
+        number={12}
+        title="セカンドライフ"
+        lead="住まい・生活費・介護の入力状況を確認します"
+      />
 
       <p className="second-life-guide-intro">
-        開始年齢は Q3・Q4・Q5 の各画面でも変更でき、すべて連動します。ここでは入力状況の確認ができます。
+        開始年齢はライフイベント・生活費・住まいの各画面でも変更でき、すべて連動します。ここでは入力状況の確認ができます。
       </p>
 
       <div className="second-life-guide-start-age">

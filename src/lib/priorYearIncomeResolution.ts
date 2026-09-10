@@ -218,7 +218,7 @@ function resolveStartYearResidentTaxLevyIncome(input: {
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   if (!canUsePriorYearIncomeOverride(input.member)) {
@@ -287,7 +287,7 @@ function resolveFallbackStartYearLevyIncome(input: {
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   const refYearProfile = resolveMemberYearIncomeProfile(
@@ -340,7 +340,7 @@ function resolveStartNextYearResidentTaxLevyIncome(input: {
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   if (hasNewIncomeFromStart) {
@@ -407,7 +407,7 @@ function resolveSubsequentYearResidentTaxLevyIncome(input: {
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   const priorYearProfile = resolveMemberYearIncomeProfile(
@@ -556,7 +556,7 @@ export function resolveMemberPriorYearIncomeProfile(
   const hasNewIncomeFromStart = memberHasNewIncomeFromStartById(
     input.member,
     input.incomeByMember,
-    input.referenceDate.getMonth() + 1,
+    input.referenceDate,
   );
 
   if (residentTaxLevyUsesAnnualIncomeBasis(phase, hasNewIncomeFromStart)) {

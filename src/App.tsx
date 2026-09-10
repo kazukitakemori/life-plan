@@ -1378,7 +1378,7 @@ export default function App() {
             purposeNote={
               hasPlanPurpose(planPurposes, 'education') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
-                ? '認可保育料は世帯所得の階層で変わります。保育料を実態に近づけたい場合は Q7（収入）も入力してください（任意）。'
+                ? '認可保育料は世帯所得の階層で変わります。保育料を実態に近づけたい場合は収入も入力してください（任意）。'
                 : undefined
             }
             onChange={(state) => {
@@ -1668,7 +1668,7 @@ export default function App() {
             purposeNote={
               hasPlanPurpose(planPurposes, 'pension') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
-                ? 'この画面下部の「試算結果」に、入力内容に基づく老齢年金の見込みを表示します。定期便を使わない場合は Q7（収入）の入力が推計の前提になります。'
+                ? 'この画面下部の「試算結果」に、入力内容に基づく老齢年金の見込みを表示します。定期便を使わない場合は収入の入力が推計の前提になります。'
                 : undefined
             }
             onChange={(state) => {

@@ -67,6 +67,7 @@ import type {
   IncomePeriod,
   IncomeStreamType,
 } from '../../types/income';
+import { DisclosureSection, FormField, FormSelect } from '../ui';
 
 interface IncomeEntryCardProps {
   entry: IncomeEntry;
@@ -219,7 +220,7 @@ function PeriodDependentSettings({
       <span className="income-period-dependent-label">扶養設定</span>
       {isQ1LinkedMember && !canConfigureDependent ? (
         <p className="income-period-dependent-q1-note">
-          ご家族（Q1）で扶養設定がすべてオフのため、この期間では扶養に入れません。
+          ご家族で扶養設定がすべてオフのため、この期間では扶養に入れません。
         </p>
       ) : (
         <div className="income-period-dependent-options">
@@ -312,7 +313,7 @@ function PeriodDependentSettings({
       )}
       {isQ1LinkedMember && canConfigureDependent && (
         <p className="income-period-dependent-q1-note">
-          Q1の扶養設定に連動しています。税制上・社会保険の扶養は収入から自動判定されます。
+          ご家族の扶養設定に連動しています。税制上・社会保険の扶養は収入から自動判定されます。
         </p>
       )}
       {dependentAlerts.length > 0 && (
@@ -392,6 +393,19 @@ function PeriodRow({
     incomeByMember,
     referenceDate,
   };
+  const newIncomeStartMonth =
+    periodIndex === 0
+      ? resolveNewIncomeStartMonth(
+          {
+            ...entry,
+            periods: entry.periods.map((p) =>
+              p.id === period.id ? period : p,
+            ),
+          },
+          member,
+          referenceDate,
+        )
+      : null;
 
   const increaseYears = calcPeriodIncreaseYears(period, birthYear);
   const endAnnualAmountMan = calcEndAnnualAmountMan(
@@ -544,369 +558,789 @@ function PeriodRow({
   };
 
   return (
-    <div className="income-table-row">
-      <div className="income-table-cell income-col-type">
-        {streamFixed ? (
-          <span className="stream-type-fixed">
-            {getIncomeStreamDisplayLabel(entry, period.streamType)}
-          </span>
-        ) : (
-          <select
-            className="select-input select-input--wide"
-            value={period.streamType}
-            onChange={(e) =>
-              emitPeriod({
-                ...period,
-                streamType: e.target.value as IncomeStreamType,
-              })
-            }
-          >
-            {streamOptions.map((type) => (
-              <option key={type} value={type}>
-                {getIncomeStreamDisplayLabel(entry, type)}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
 
-      <div className="income-table-cell income-col-period">
-        <div
-          className={`period-inputs period-inputs--grid ${showLumpSum ? 'period-inputs--lump-sum' : ''}`}
-        >
-          <select
-            className="select-input select-input--period"
-            value={period.startAge}
-            onChange={(e) =>
-              emitPeriod(
-                withSyncedLumpSumEnd(period, {
-                  startAge: Number(e.target.value),
-                }),
-              )
-            }
-          >
-            {startAgeOptions.map((age) => (
-              <option key={age} value={age}>
-                {age}才
-              </option>
-            ))}
-          </select>
-          <select
-            className="select-input select-input--period"
-            value={period.startMonth}
-            onChange={(e) =>
-              emitPeriod(
-                withSyncedLumpSumEnd(period, {
-                  startMonth: Number(e.target.value),
-                }),
-              )
-            }
-          >
-            {MONTHS.map((m) => (
-              <option key={m} value={m}>
-                {m}月
-              </option>
-            ))}
-          </select>
-          <span className="period-separator period-separator--arrow">→</span>
-          <select
-            className="select-input select-input--period"
-            value={period.endAge}
-            onChange={(e) =>
-              updatePeriodEnd({ endAge: Number(e.target.value) })
-            }
-          >
-            {END_AGES.map((a) => (
-              <option key={a} value={a}>
-                {a}才
-              </option>
-            ))}
-          </select>
-          <select
-            className="select-input select-input--period"
-            value={period.endMonth}
-            onChange={(e) =>
-              updatePeriodEnd({ endMonth: Number(e.target.value) })
-            }
-          >
-            {MONTHS.map((m) => (
-              <option key={m} value={m}>
-                {m}月
-              </option>
-            ))}
-          </select>
-          {showLumpSum ? (
-            <div className="period-end-row">
-              <p className="period-end-label">
-                {formatEndYearLabel(
-                  period.endAge,
-                  period.endMonth,
-                  birthYear,
-                  birthMonth,
-                )}
-              </p>
-              <button
-                type="button"
-                className={`period-lump-sum-btn ${isLumpSumPeriod ? 'period-lump-sum-btn--active' : ''}`}
-                onClick={toggleLumpSumPeriod}
-                aria-pressed={isLumpSumPeriod}
-                title="一時金の期間（単月）に切り替えます。もう一度押すと元の期間に戻ります"
-              >
-                一時金
-              </button>
-            </div>
-          ) : (
-            <>
-              <p className="period-start-label">
-                {formatEndYearLabel(
-                  period.startAge,
-                  period.startMonth,
-                  birthYear,
-                  birthMonth,
-                )}
-              </p>
-              <p className="period-end-label">
-                {formatEndYearLabel(
-                  period.endAge,
-                  period.endMonth,
-                  birthYear,
-                  birthMonth,
-                )}
-              </p>
-            </>
-          )}
-        </div>
-      </div>
+    <article className="income-period-card">
 
-      <div className="income-table-cell income-col-amount-group">
-        <div
-          className={`income-amount-group-top ${showBonus ? '' : 'income-amount-group-top--no-bonus'}`}
-        >
-          <div className="income-amount-monthly">
-            <div className="amount-inline">
-              <input
-                type="number"
-                className="amount-input"
-                value={period.monthlyAmountMan}
-                min={0}
-                step={0.1}
-                onChange={(e) => setMonthly(Number(e.target.value) || 0)}
-              />
-              <span className="amount-unit">万円</span>
-            </div>
-          </div>
+      <div className="income-period-card-top">
 
-          {showBonus && (
-            <div className="income-amount-bonus">
-              <div className="bonus-column">
-                {period.bonuses.map((bonus) => (
-                  <div key={bonus.id} className="bonus-row">
-                    <select
-                      className="select-input select-input--compact"
-                      value={bonus.paymentMonth}
-                      onChange={(e) =>
-                        updateBonus(bonus.id, {
-                          paymentMonth: Number(e.target.value),
-                        })
-                      }
-                      aria-label="賞与支給月"
-                    >
-                      {MONTHS.map((m) => (
-                        <option key={m} value={m}>
-                          {m}月
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      className="amount-input amount-input--small"
-                      value={bonus.amountMan}
-                      min={0}
-                      step={0.1}
-                      onChange={(e) =>
-                        updateBonus(bonus.id, {
-                          amountMan: roundAmountMan(Number(e.target.value) || 0),
-                        })
-                      }
-                    />
-                    <span className="amount-unit">万円</span>
-                    <button
-                      type="button"
-                      className="bonus-remove-btn"
-                      onClick={() => removeBonus(bonus.id)}
-                      aria-label="賞与を削除"
-                    >
-                      −
-                    </button>
-                  </div>
-                ))}
-                <button type="button" className="inline-add-btn" onClick={addBonus}>
-                  ＋ 追加
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="income-period-card-identity">
 
-          <div className="income-amount-annual">
-            <div className="amount-inline">
-              <input
-                type="number"
-                className="amount-input"
-                value={annualInput ?? period.annualAmountMan}
-                min={0}
-                step={0.1}
-                onFocus={() => setAnnualInput(String(period.annualAmountMan))}
-                onChange={(e) => setAnnualInput(e.target.value)}
-                onBlur={commitAnnualInput}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.currentTarget.blur();
-                  }
-                }}
-              />
-              <span className="amount-unit">万円</span>
-            </div>
-          </div>
-        </div>
+          <div className="income-field">
 
-        {showDependentStatus ? (
-          <PeriodDependentSettings
-            period={period}
-            entry={entry}
-            member={member}
-            memberEntries={memberEntries}
-            familyMembers={familyMembers}
-            incomeByMember={incomeByMember}
-            referenceDate={referenceDate}
-            calendarYear={calendarYear}
-            onChange={onChange}
-          />
-        ) : null}
-      </div>
+            <span className="income-field-label">収入形態</span>
 
-      <div className="income-table-cell income-col-rate">
-        <div className="rate-stack">
-          <label className="rate-field">
-            <span className="rate-field-label">上昇率</span>
-            <span className="rate-field-controls">
-              <input
-                type="number"
-                className="rate-input"
-                value={period.annualIncreaseRate ?? 0}
-                step={0.1}
-                aria-label="年間上昇率"
-                onChange={(e) =>
+            {streamFixed ? (
+
+              <span className="stream-type-fixed">
+
+                {getIncomeStreamDisplayLabel(entry, period.streamType)}
+
+              </span>
+
+            ) : (
+
+              <FormSelect
+
+                wide
+
+                value={period.streamType}
+
+                onValueChange={(raw) =>
+
                   emitPeriod({
+
                     ...period,
-                    annualIncreaseRate: e.target.value
-                      ? Number(e.target.value)
-                      : 0,
-                  })
-                }
-              />
-              <span className="rate-unit">%/年</span>
-            </span>
-          </label>
-          <label className="rate-field">
-            <span className="rate-field-label">終了時</span>
-            <span className="rate-field-controls">
-              <input
-                type="number"
-                className="rate-end-input"
-                value={endAnnualInput ?? endAnnualAmountMan}
-                min={0}
-                step={0.1}
-                disabled={!canEditEndAnnual}
-                aria-label="期間終了時の年収"
-                title={
-                  canEditEndAnnual
-                    ? '期間終了時の年収。変更すると上昇率を逆算します'
-                    : '期間が12か月未満のため上昇は適用されません'
-                }
-                onFocus={() => {
-                  if (!canEditEndAnnual) return;
-                  setEndAnnualInput(String(endAnnualAmountMan));
-                }}
-                onChange={(e) => setEndAnnualInput(e.target.value)}
-                onBlur={commitEndAnnualInput}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.currentTarget.blur();
-                  }
-                }}
-              />
-              <span className="amount-unit">万円</span>
-            </span>
-          </label>
-        </div>
-      </div>
 
-      {showExpenseColumn ? (
-        <div className="income-table-cell income-col-expense">
-          {isExpenseInputStream(period.streamType) ? (
-            <div className="self-employed-field">
-              <div className="expense-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={entry.expenseManPerMonth ?? 0}
-                  min={0}
-                  onChange={(e) =>
-                    onEntryChange({
-                      ...entry,
-                      expenseManPerMonth: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円/月</span>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {showFilingColumn ? (
-        <div className="income-table-cell income-col-filing">
-          {isBusinessIncomeStream(period.streamType) &&
-          periodIndex ===
-            entry.periods.findIndex((p) =>
-              isBusinessIncomeStream(p.streamType),
-            ) ? (
-            <div className="self-employed-field">
-              <select
-                className="select-input select-input--wide"
-                value={entry.filingType ?? 'blue_65'}
-                onChange={(e) =>
-                  onEntryChange({
-                    ...entry,
-                    filingType: e.target.value as FilingType,
-                  })
-                }
-              >
-                {FILING_TYPE_OPTIONS.map((type) => (
-                  <option key={type} value={type}>
-                    {FILING_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+                    streamType: raw as IncomeStreamType,
 
-      <div className="income-table-cell income-col-actions">
-        {canRemove && (
-          <button
-            type="button"
-            className="remove-period-btn"
-            onClick={onRemove}
-            aria-label="期間を削除"
+                  })
+
+                }
+
+                options={streamOptions.map((type) => ({
+
+                  value: type,
+
+                  label: getIncomeStreamDisplayLabel(entry, type),
+
+                }))}
+
+              />
+
+            )}
+
+          </div>
+
+
+
+          {canRemove ? (
+
+            <button
+
+              type="button"
+
+              className="ui-btn ui-btn--ghost"
+
+              onClick={onRemove}
+
+            >
+
+              期間を削除
+
+            </button>
+
+          ) : null}
+
+        </div>
+
+
+
+        <div className="income-field">
+
+          <span className="income-field-label">期間</span>
+
+          <div
+
+            className={`income-period-range${showLumpSum ? ' income-period-range--lump' : ''}`}
+
           >
-            −
-          </button>
-        )}
+
+            <FormSelect
+
+              compact
+
+              value={period.startAge}
+
+              aria-label="開始年齢"
+
+              onValueChange={(raw) => {
+                emitPeriod(
+                  withSyncedLumpSumEnd(period, {
+                    startAge: Number(raw),
+                  }),
+                );
+              }}
+
+              options={startAgeOptions.map((age) => ({
+
+                value: age,
+
+                label: `${age}才`,
+
+              }))}
+
+            />
+
+            <FormSelect
+
+              compact
+
+              value={period.startMonth}
+
+              aria-label="開始月"
+
+              onValueChange={(raw) =>
+
+                emitPeriod(
+
+                  withSyncedLumpSumEnd(period, {
+
+                    startMonth: Number(raw),
+
+                  }),
+
+                )
+
+              }
+
+              options={MONTHS.map((m) => ({
+
+                value: m,
+
+                label: `${m}月`,
+
+              }))}
+
+            />
+
+            <span className="income-period-arrow" aria-hidden>
+
+              →
+
+            </span>
+
+            <FormSelect
+
+              compact
+
+              value={period.endAge}
+
+              aria-label="終了年齢"
+
+              onValueChange={(raw) => updatePeriodEnd({ endAge: Number(raw) })}
+
+              options={END_AGES.map((a) => ({
+
+                value: a,
+
+                label: `${a}才`,
+
+              }))}
+
+            />
+
+            <FormSelect
+
+              compact
+
+              value={period.endMonth}
+
+              aria-label="終了月"
+
+              onValueChange={(raw) => updatePeriodEnd({ endMonth: Number(raw) })}
+
+              options={MONTHS.map((m) => ({
+
+                value: m,
+
+                label: `${m}月`,
+
+              }))}
+
+            />
+
+            {showLumpSum ? (
+
+              <div className="income-period-lump-row">
+
+                <p className="income-period-year-note">
+
+                  {formatEndYearLabel(
+
+                    period.endAge,
+
+                    period.endMonth,
+
+                    birthYear,
+
+                    birthMonth,
+
+                  )}
+
+                </p>
+
+                <button
+
+                  type="button"
+
+                  className={`ui-btn ui-btn--ghost${isLumpSumPeriod ? ' is-active' : ''}`}
+
+                  onClick={toggleLumpSumPeriod}
+
+                  aria-pressed={isLumpSumPeriod}
+
+                  title="一時金の期間（単月）に切り替えます。もう一度押すと元の期間に戻ります"
+
+                >
+
+                  一時金
+
+                </button>
+
+              </div>
+
+            ) : (
+
+              <p className="income-period-year-note">
+
+                {formatEndYearLabel(
+
+                  period.startAge,
+
+                  period.startMonth,
+
+                  birthYear,
+
+                  birthMonth,
+
+                )}
+
+                {' 〜 '}
+
+                {formatEndYearLabel(
+
+                  period.endAge,
+
+                  period.endMonth,
+
+                  birthYear,
+
+                  birthMonth,
+
+                )}
+
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
       </div>
-    </div>
+
+
+
+      <div className="income-period-amounts">
+
+        <div className="income-field">
+
+          <span className="income-field-label">月額</span>
+
+          <div className="ui-amount">
+
+            <input
+
+              type="number"
+
+              className="ui-input ui-input--amount"
+
+              value={period.monthlyAmountMan}
+
+              min={0}
+
+              step={0.1}
+
+              onChange={(e) => setMonthly(Number(e.target.value) || 0)}
+
+            />
+
+            <span className="ui-amount-unit">万円</span>
+
+          </div>
+
+        </div>
+
+
+
+        {showBonus ? (
+
+          <div className="income-field income-field--bonus">
+
+            <span className="income-field-label">賞与</span>
+
+            <div className="income-bonus-list">
+
+              {period.bonuses.map((bonus) => (
+
+                <div key={bonus.id} className="income-bonus-row">
+
+                  <FormSelect
+
+                    compact
+
+                    value={bonus.paymentMonth}
+
+                    aria-label="賞与支給月"
+
+                    onValueChange={(raw) =>
+
+                      updateBonus(bonus.id, {
+
+                        paymentMonth: Number(raw),
+
+                      })
+
+                    }
+
+                    options={MONTHS.map((m) => ({
+
+                      value: m,
+
+                      label: `${m}月`,
+
+                    }))}
+
+                  />
+
+                  <div className="ui-amount">
+
+                    <input
+
+                      type="number"
+
+                      className="ui-input ui-input--amount"
+
+                      value={bonus.amountMan}
+
+                      min={0}
+
+                      step={0.1}
+
+                      onChange={(e) =>
+
+                        updateBonus(bonus.id, {
+
+                          amountMan: roundAmountMan(Number(e.target.value) || 0),
+
+                        })
+
+                      }
+
+                    />
+
+                    <span className="ui-amount-unit">万円</span>
+
+                  </div>
+
+                  <button
+
+                    type="button"
+
+                    className="ui-btn ui-btn--ghost"
+
+                    onClick={() => removeBonus(bonus.id)}
+
+                    aria-label="賞与を削除"
+
+                  >
+
+                    削除
+
+                  </button>
+
+                </div>
+
+              ))}
+
+              <button
+
+                type="button"
+
+                className="ui-btn ui-btn--ghost"
+
+                onClick={addBonus}
+
+              >
+
+                賞与を追加
+
+              </button>
+
+            </div>
+
+          </div>
+
+        ) : null}
+
+
+
+        <div className="income-field">
+
+          <span className="income-field-label">年額</span>
+
+          <div className="ui-amount">
+
+            <input
+
+              type="number"
+
+              className="ui-input ui-input--amount"
+
+              value={annualInput ?? period.annualAmountMan}
+
+              min={0}
+
+              step={0.1}
+
+              onFocus={() => setAnnualInput(String(period.annualAmountMan))}
+
+              onChange={(e) => setAnnualInput(e.target.value)}
+
+              onBlur={commitAnnualInput}
+
+              onKeyDown={(e) => {
+
+                if (e.key === 'Enter') {
+
+                  e.currentTarget.blur();
+
+                }
+
+              }}
+
+            />
+
+            <span className="ui-amount-unit">万円</span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <DisclosureSection
+
+        className="income-period-details"
+
+        title="詳細設定"
+
+        summary={
+
+          [
+
+            periodIndex === 0 && newIncomeStartMonth != null
+              ? '新しい収入'
+              : null,
+
+            '上昇率',
+
+            showExpenseColumn && isExpenseInputStream(period.streamType)
+
+              ? '経費'
+
+              : null,
+
+            showFilingColumn && isBusinessIncomeStream(period.streamType)
+
+              ? '申告'
+
+              : null,
+
+            showDependentStatus ? '扶養' : null,
+
+          ]
+
+            .filter(Boolean)
+
+            .join(' · ') || 'オプション'
+
+        }
+
+      >
+
+        <div className="income-period-advanced">
+
+          {periodIndex === 0 && newIncomeStartMonth != null ? (
+
+            <FormField
+
+              label="新しい収入"
+
+              hint="就職、開業などの場合はチェックを入れてください。"
+
+              className="income-new-income-field"
+
+            >
+
+              <label className="income-new-income-flag">
+
+                <input
+
+                  type="checkbox"
+
+                  checked={entry.isNewIncomeFromStart}
+
+                  onChange={(e) =>
+
+                    onEntryChange({
+
+                      ...entry,
+
+                      isNewIncomeFromStart: e.target.checked,
+
+                    })
+
+                  }
+
+                />
+
+                <span>{newIncomeStartMonth}月から始まる新しい収入</span>
+
+              </label>
+
+            </FormField>
+
+          ) : null}
+
+          <div className="income-rate-row">
+
+            <div className="income-field">
+
+              <span className="income-field-label">上昇率</span>
+
+              <div className="ui-amount">
+
+                <input
+
+                  type="number"
+
+                  className="ui-input ui-input--amount"
+
+                  value={period.annualIncreaseRate ?? 0}
+
+                  step={0.1}
+
+                  aria-label="年間上昇率"
+
+                  onChange={(e) =>
+
+                    emitPeriod({
+
+                      ...period,
+
+                      annualIncreaseRate: e.target.value
+
+                        ? Number(e.target.value)
+
+                        : 0,
+
+                    })
+
+                  }
+
+                />
+
+                <span className="ui-amount-unit">%/年</span>
+
+              </div>
+
+            </div>
+
+            <div className="income-field">
+
+              <span className="income-field-label">終了時年収</span>
+
+              <div className="ui-amount">
+
+                <input
+
+                  type="number"
+
+                  className="ui-input ui-input--amount"
+
+                  value={endAnnualInput ?? endAnnualAmountMan}
+
+                  min={0}
+
+                  step={0.1}
+
+                  disabled={!canEditEndAnnual}
+
+                  aria-label="期間終了時の年収"
+
+                  title={
+
+                    canEditEndAnnual
+
+                      ? '期間終了時の年収。変更すると上昇率を逆算します'
+
+                      : '期間が12か月未満のため上昇は適用されません'
+
+                  }
+
+                  onFocus={() => {
+
+                    if (!canEditEndAnnual) return;
+
+                    setEndAnnualInput(String(endAnnualAmountMan));
+
+                  }}
+
+                  onChange={(e) => setEndAnnualInput(e.target.value)}
+
+                  onBlur={commitEndAnnualInput}
+
+                  onKeyDown={(e) => {
+
+                    if (e.key === 'Enter') {
+
+                      e.currentTarget.blur();
+
+                    }
+
+                  }}
+
+                />
+
+                <span className="ui-amount-unit">万円</span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+
+          {showExpenseColumn && isExpenseInputStream(period.streamType) ? (
+
+            <div className="income-field">
+
+              <span className="income-field-label">経費</span>
+
+              <div className="ui-amount">
+
+                <input
+
+                  type="number"
+
+                  className="ui-input ui-input--amount"
+
+                  value={entry.expenseManPerMonth ?? 0}
+
+                  min={0}
+
+                  onChange={(e) =>
+
+                    onEntryChange({
+
+                      ...entry,
+
+                      expenseManPerMonth: Number(e.target.value) || 0,
+
+                    })
+
+                  }
+
+                />
+
+                <span className="ui-amount-unit">万円/月</span>
+
+              </div>
+
+            </div>
+
+          ) : null}
+
+
+
+          {showFilingColumn &&
+
+          isBusinessIncomeStream(period.streamType) &&
+
+          periodIndex ===
+
+            entry.periods.findIndex((p) =>
+
+              isBusinessIncomeStream(p.streamType),
+
+            ) ? (
+
+            <div className="income-field">
+
+              <span className="income-field-label">申告タイプ</span>
+
+              <FormSelect
+
+                wide
+
+                value={entry.filingType ?? 'blue_65'}
+
+                onValueChange={(raw) =>
+
+                  onEntryChange({
+
+                    ...entry,
+
+                    filingType: raw as FilingType,
+
+                  })
+
+                }
+
+                options={FILING_TYPE_OPTIONS.map((type) => ({
+
+                  value: type,
+
+                  label: FILING_TYPE_LABELS[type],
+
+                }))}
+
+              />
+
+            </div>
+
+          ) : null}
+
+
+
+          {showDependentStatus ? (
+
+            <PeriodDependentSettings
+
+              period={period}
+
+              entry={entry}
+
+              member={member}
+
+              memberEntries={memberEntries}
+
+              familyMembers={familyMembers}
+
+              incomeByMember={incomeByMember}
+
+              referenceDate={referenceDate}
+
+              calendarYear={calendarYear}
+
+              onChange={onChange}
+
+            />
+
+          ) : null}
+
+        </div>
+
+      </DisclosureSection>
+
+    </article>
+
   );
+
 }
 
 export function IncomeEntryCard({
@@ -956,17 +1390,20 @@ export function IncomeEntryCard({
     ...entry.periods.flatMap((p) => [p.startAge, p.endAge]),
   );
   const startAgeOptions = Array.from({ length: maxPeriodAge + 1 }, (_, i) => i);
-  const newIncomeStartMonth = resolveNewIncomeStartMonth(
-    entry,
-    member,
-    referenceDate.getMonth() + 1,
-  );
   const guidanceNote = getIncomeEntryGuidanceNote(entry, memberEntries);
   const dependentContext: PeriodDependentResolutionContext = {
     familyMembers,
     incomeByMember,
     referenceDate,
   };
+
+  useEffect(() => {
+    if (!entry.isNewIncomeFromStart) return;
+    if (resolveNewIncomeStartMonth(entry, member, referenceDate) != null) {
+      return;
+    }
+    onChange({ ...entry, isNewIncomeFromStart: false });
+  }, [entry, member, referenceDate, onChange]);
 
   const syncEntryChange = (updatedEntry: IncomeEntry) => {
     const syncedEntries = memberEntries.map((e) =>
@@ -1046,52 +1483,22 @@ export function IncomeEntryCard({
     });
   };
 
-  const tableClass = [
-    'income-table',
-    showFilingColumn ? 'income-table--self-employed' : '',
-    showExpenseColumn && !showFilingColumn
-      ? 'income-table--with-expense'
-      : '',
-    !showBonus ? 'income-table--no-bonus' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
     <div className="income-entry">
       <div className="income-entry-header">
         <div className="income-entry-header-left">
-          <span className="income-entry-index">{index + 1}. 収入</span>
+          <span className="income-entry-index">{index + 1}</span>
           <span className="occupation-badge">
             {getIncomeEntryDisplayLabel(entry)}
           </span>
         </div>
         <div className="income-entry-header-right">
-          {newIncomeStartMonth != null && (
-            <label className="contingency-check">
-              <input
-                type="checkbox"
-                checked={entry.isNewIncomeFromStart}
-                onChange={(e) =>
-                  onChange({
-                    ...entry,
-                    isNewIncomeFromStart: e.target.checked,
-                  })
-                }
-              />
-              <span>
-                {newIncomeStartMonth}月から始まる新しい収入
-                （就職、開業などの場合はチェックを入れてください。）
-              </span>
-            </label>
-          )}
           <button
             type="button"
-            className="remove-member-btn"
+            className="ui-btn ui-btn--danger"
             onClick={onRemove}
-            aria-label="収入を削除"
           >
-            −
+            削除
           </button>
         </div>
       </div>
@@ -1100,34 +1507,7 @@ export function IncomeEntryCard({
         <p className="income-entry-guidance">{guidanceNote}</p>
       ) : null}
 
-      <div className="income-table-scroll">
-        <div className={tableClass}>
-        <div className="income-table-header">
-          <div className="income-header-cell income-header-type" />
-          <div className="income-header-cell income-header-period">期間</div>
-          <div className="income-header-cell income-header-amount-group">
-            金額（額面）
-          </div>
-          <div className="income-header-cell income-header-rate">
-            上昇率
-            <span className="income-header-rate-sub">終了時年収</span>
-          </div>
-          {showExpenseColumn ? (
-            <div className="income-header-cell income-header-expense">経費</div>
-          ) : null}
-          {showFilingColumn ? (
-            <div className="income-header-cell income-header-filing">
-              申告タイプ
-            </div>
-          ) : null}
-          <div className="income-header-cell income-header-actions" />
-          <div className="income-header-cell income-header-sub-monthly">月額</div>
-          {showBonus && (
-            <div className="income-header-cell income-header-sub-bonus">賞与</div>
-          )}
-          <div className="income-header-cell income-header-sub-annual">年額</div>
-        </div>
-
+      <div className="income-period-list">
         {entry.periods.map((period, periodIndex) => (
           <PeriodRow
             key={period.id}
@@ -1156,10 +1536,15 @@ export function IncomeEntryCard({
             onEntryChange={syncEntryChange}
           />
         ))}
-        </div>
       </div>
 
       {retirementAllowances.length > 0 ? (
+        <DisclosureSection
+          className="income-retirement-disclosure"
+          title="退職金"
+          summary={`${retirementAllowances.length}件`}
+          defaultOpen
+        >
         <div className="income-retirement-list">
           {retirementAllowances.map((allowance, allowanceIndex) => {
             return (
@@ -1173,20 +1558,19 @@ export function IncomeEntryCard({
                   </span>
                   <button
                     type="button"
-                    className="remove-member-btn"
+                    className="ui-btn ui-btn--danger"
                     onClick={() => removeRetirementAllowance(allowance.id)}
-                    aria-label="退職金を削除"
                   >
-                    −
+                    削除
                   </button>
                 </div>
-                <div className="income-retirement-fields">
-                  <label className="income-retirement-field">
-                    <span>受取額</span>
-                    <div className="life-event-amount-field">
+                                <div className="income-retirement-fields">
+                  <div className="income-field">
+                    <span className="income-field-label">受取額</span>
+                    <div className="ui-amount">
                       <input
                         type="number"
-                        className="amount-input"
+                        className="ui-input ui-input--amount"
                         min={0}
                         step={10}
                         value={allowance.amountMan}
@@ -1196,105 +1580,95 @@ export function IncomeEntryCard({
                           })
                         }
                       />
-                      <span className="amount-unit">万円</span>
+                      <span className="ui-amount-unit">万円</span>
                     </div>
-                  </label>
-                  <label className="income-retirement-field">
-                    <span>勤続年数</span>
+                  </div>
+                  <div className="income-field">
+                    <span className="income-field-label">勤続年数</span>
                     <div className="income-retirement-years">
-                      <select
-                        className="select-input"
+                      <FormSelect
                         value={allowance.enrollmentMode}
                         aria-label="勤続年数の入力方法"
-                        onChange={(e) =>
+                        onValueChange={(raw) =>
                           updateRetirementAllowance(allowance.id, {
-                            enrollmentMode: e.target.value as
-                              | 'years'
-                              | 'period',
+                            enrollmentMode: raw as 'years' | 'period',
                           })
                         }
-                      >
-                        <option value="years">年数を入力</option>
-                        <option value="period">期間を入力</option>
-                      </select>
+                        options={[
+                          { value: 'years', label: '年数を入力' },
+                          { value: 'period', label: '期間を入力' },
+                        ]}
+                      />
                       {allowance.enrollmentMode === 'period' ? (
                         <div className="income-retirement-period-row">
-                          <select
-                            className="select-input"
+                          <FormSelect
+                            compact
                             value={allowance.enrollmentStartAge}
                             aria-label="勤続開始年齢"
-                            onChange={(e) =>
+                            onValueChange={(raw) =>
                               updateRetirementAllowance(allowance.id, {
-                                enrollmentStartAge: Number(e.target.value),
+                                enrollmentStartAge: Number(raw),
                               })
                             }
-                          >
-                            {ageOptions.map((age) => (
-                              <option key={age} value={age}>
-                                {age}歳
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className="select-input"
+                            options={ageOptions.map((age) => ({
+                              value: age,
+                              label: `${age}歳`,
+                            }))}
+                          />
+                          <FormSelect
+                            compact
                             value={allowance.enrollmentStartMonth}
                             aria-label="勤続開始月"
-                            onChange={(e) =>
+                            onValueChange={(raw) =>
                               updateRetirementAllowance(allowance.id, {
-                                enrollmentStartMonth: Number(e.target.value),
+                                enrollmentStartMonth: Number(raw),
                               })
                             }
-                          >
-                            {MONTHS.map((m) => (
-                              <option key={m} value={m}>
-                                {m}月
-                              </option>
-                            ))}
-                          </select>
-                          <span className="period-separator period-separator--arrow">
+                            options={MONTHS.map((m) => ({
+                              value: m,
+                              label: `${m}月`,
+                            }))}
+                          />
+                          <span className="income-period-arrow" aria-hidden>
                             →
                           </span>
-                          <select
-                            className="select-input"
+                          <FormSelect
+                            compact
                             value={allowance.enrollmentEndAge}
                             aria-label="勤続終了年齢"
-                            onChange={(e) =>
+                            onValueChange={(raw) =>
                               updateRetirementAllowance(allowance.id, {
-                                enrollmentEndAge: Number(e.target.value),
+                                enrollmentEndAge: Number(raw),
                               })
                             }
-                          >
-                            {ageOptions.map((age) => (
-                              <option key={age} value={age}>
-                                {age}歳
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className="select-input"
+                            options={ageOptions.map((age) => ({
+                              value: age,
+                              label: `${age}歳`,
+                            }))}
+                          />
+                          <FormSelect
+                            compact
                             value={allowance.enrollmentEndMonth}
                             aria-label="勤続終了月"
-                            onChange={(e) =>
+                            onValueChange={(raw) =>
                               updateRetirementAllowance(allowance.id, {
-                                enrollmentEndMonth: Number(e.target.value),
+                                enrollmentEndMonth: Number(raw),
                               })
                             }
-                          >
-                            {MONTHS.map((m) => (
-                              <option key={m} value={m}>
-                                {m}月
-                              </option>
-                            ))}
-                          </select>
+                            options={MONTHS.map((m) => ({
+                              value: m,
+                              label: `${m}月`,
+                            }))}
+                          />
                           <span className="income-retirement-period-years">
                             （{resolveRetirementEnrollmentYears(allowance)}年）
                           </span>
                         </div>
                       ) : (
-                        <div className="life-event-amount-field">
+                        <div className="ui-amount">
                           <input
                             type="number"
-                            className="amount-input"
+                            className="ui-input ui-input--amount"
                             min={1}
                             step={1}
                             value={allowance.enrollmentYears}
@@ -1308,66 +1682,63 @@ export function IncomeEntryCard({
                               })
                             }
                           />
-                          <span className="amount-unit">年</span>
+                          <span className="ui-amount-unit">年</span>
                         </div>
                       )}
                     </div>
-                  </label>
-                  <label className="income-retirement-field">
-                    <span>受取時期</span>
+                  </div>
+                  <div className="income-field">
+                    <span className="income-field-label">受取時期</span>
                     <div className="income-retirement-when">
-                      <select
-                        className="select-input"
+                      <FormSelect
+                        compact
                         value={allowance.receiveAge}
                         aria-label="退職金の受取年齢"
-                        onChange={(e) =>
+                        onValueChange={(raw) =>
                           updateRetirementAllowance(allowance.id, {
-                            receiveAge: Number(e.target.value),
+                            receiveAge: Number(raw),
                           })
                         }
-                      >
-                        {ageOptions.map((age) => (
-                          <option key={age} value={age}>
-                            {age}歳
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        className="select-input"
+                        options={ageOptions.map((age) => ({
+                          value: age,
+                          label: `${age}歳`,
+                        }))}
+                      />
+                      <FormSelect
+                        compact
                         value={allowance.receiveMonth}
                         aria-label="退職金の受取月"
-                        onChange={(e) =>
+                        onValueChange={(raw) =>
                           updateRetirementAllowance(allowance.id, {
-                            receiveMonth: Number(e.target.value),
+                            receiveMonth: Number(raw),
                           })
                         }
-                      >
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>
-                            {m}月
-                          </option>
-                        ))}
-                      </select>
+                        options={MONTHS.map((m) => ({
+                          value: m,
+                          label: `${m}月`,
+                        }))}
+                      />
                     </div>
-                  </label>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+        </DisclosureSection>
       ) : null}
 
       <div className="income-entry-footer">
-        <button type="button" className="footer-action-btn" onClick={addPeriod}>
-          ＋ 期間を追加
+        <button type="button" className="ui-btn ui-btn--ghost" onClick={addPeriod}>
+          期間を追加
         </button>
         {showRetirementAllowance ? (
           <button
             type="button"
-            className="footer-action-btn"
+            className="ui-btn ui-btn--ghost"
             onClick={addRetirementAllowance}
           >
-            ＋ 退職金追加
+            退職金を追加
           </button>
         ) : null}
       </div>

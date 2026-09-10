@@ -30,6 +30,7 @@ import type {
   SavingsState,
 } from '../../types/savings';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { StepHeading } from '../ui';
 import { AddSavingsCards } from './AddSavingsCards';
 import { SavingsEntryCard } from './SavingsEntryCard';
 
@@ -287,7 +288,7 @@ export function SavingsStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -295,27 +296,11 @@ export function SavingsStep({
 
   return (
     <div className="step-page savings-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">
-            Q11. 貯蓄・運用
-            <span className="step-subtitle">
-              現在残高・積立・利息／想定利回りを登録
-            </span>
-          </h2>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-        </div>
-      </div>
+      <StepHeading
+        number={11}
+        title="貯蓄・運用"
+        subtitle="現在残高・積立・利息／想定利回りを登録"
+      />
 
       <MemberIncomeTabs
         members={visibleMembers}

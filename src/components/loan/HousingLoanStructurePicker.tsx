@@ -98,7 +98,7 @@ export function HousingLoanStructurePicker({
 
       {!hasSpouse ? (
         <p className="loan-structure-picker-note">
-          ペアローン・連帯債務・収入合算は、Q1で配偶者を登録すると選択できます。
+          ペアローン・連帯債務・収入合算は、ご家族で配偶者を登録すると選択できます。
         </p>
       ) : null}
 

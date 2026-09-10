@@ -626,7 +626,7 @@ export function InsuranceEntryDetail({
               </select>
               {housingOptions.length === 0 ? (
                 <p className="insurance-link-hint">
-                  住まい（Q5）で物件を登録すると選択できます
+                  住まいで物件を登録すると選択できます
                 </p>
               ) : null}
             </LoanSettingsField>
@@ -652,7 +652,7 @@ export function InsuranceEntryDetail({
               </select>
               {vehicleOptions.length === 0 ? (
                 <p className="insurance-link-hint">
-                  乗り物（Q6）で登録すると選択できます
+                  乗り物で登録すると選択できます
                 </p>
               ) : null}
             </LoanSettingsField>

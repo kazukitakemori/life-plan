@@ -28,6 +28,7 @@ import type {
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
+import { StepHeading } from '../ui';
 import { AddLoanCards } from './AddLoanCards';
 import { LoanEntryCard } from './LoanEntryCard';
 
@@ -253,7 +254,7 @@ export function LoanStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -261,28 +262,15 @@ export function LoanStep({
 
   return (
     <div className="step-page loan-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q9. ローン</h2>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            参考リンク
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
+      <StepHeading
+        number={9}
+        title="ローン"
+        actions={
           <button type="button" className="show-all-btn" disabled>
             全員まとめて表示
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <MemberIncomeTabs
         members={visibleMembers}
@@ -326,7 +314,7 @@ export function LoanStep({
           </div>
         ) : (
           <div className="loan-empty">
-            ローンが登録されていません。下から追加するか、住まい（Q5）・乗り物（Q6）から追加してください。
+            ローンが登録されていません。下から追加するか、住まい・乗り物から追加してください。
           </div>
         )}
       </section>

@@ -265,7 +265,7 @@ export function SecondLifeHousingSection({
       {!placeholder && onApply ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
-            選択内容に応じて、この画面の住まい入力へ反映します（賃貸・購入は物件を追加、転居時は既存住まいを終了、リフォーム費用はQ3へ）。
+            選択内容に応じて、この画面の住まい入力へ反映します（賃貸・購入は物件を追加、転居時は既存住まいを終了、リフォーム費用はライフイベントへ）。
           </p>
           <button
             type="button"

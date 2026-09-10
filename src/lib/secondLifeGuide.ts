@@ -136,7 +136,7 @@ function buildHousingChecklistItem(
   return {
     id: 'housing',
     stepId: 'housing',
-    stepLabel: 'Q5',
+    stepLabel: '5',
     title: '住まい',
     status,
     summary:
@@ -216,7 +216,7 @@ function buildLivingChecklistItem(input: {
   return {
     id: 'living',
     stepId: 'living',
-    stepLabel: 'Q4',
+    stepLabel: '4',
     title: '生活水準',
     status,
     summary:
@@ -269,7 +269,7 @@ function buildNursingChecklistItem(
   return {
     id: 'nursing',
     stepId: 'life-event',
-    stepLabel: 'Q3',
+    stepLabel: '3',
     title: '介護',
     status,
     summary:

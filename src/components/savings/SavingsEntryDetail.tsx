@@ -550,7 +550,7 @@ function IdecoLimitPanel({
     <>
       <LoanSettingsField
         label="加入区分"
-        help="Q7の職歴に合わせて選択。積立期間は選んだ区分の収入期間に自動反映されます"
+        help="収入の職歴に合わせて選択。積立期間は選んだ区分の収入期間に自動反映されます"
       >
         <div className="savings-ideco-occupancy">
           <select
@@ -1300,7 +1300,7 @@ export function SavingsEntryDetail({
     );
     if (suggested.length === 0) {
       window.alert(
-        'Q7に会社員・パート等の過去期間がありません。手入力で区間を追加してください。',
+        '収入に会社員・パート等の過去期間がありません。手入力で区間を追加してください。',
       );
       return;
     }
@@ -2522,7 +2522,7 @@ export function SavingsEntryDetail({
             <>
               <LoanSettingsField
                 label="加入区分"
-                help="企業型DBは第2号被保険者（厚生年金加入）向けです。Q7の会社員・パート等から選択し、期間モードでは職歴に連動します"
+                help="企業型DBは第2号被保険者（厚生年金加入）向けです。収入の会社員・パート等から選択し、期間モードでは職歴に連動します"
               >
                 <div className="savings-ideco-occupancy">
                   <select
@@ -2905,7 +2905,7 @@ export function SavingsEntryDetail({
               <>
                 <LoanSettingsField
                   label="加入区分"
-                  help="企業型DCは第2号被保険者（厚生年金加入）向けです。Q7の会社員・パート等から選択し、積立期間は選んだ区分の収入期間に自動反映されます。別の勤務期間は区分を切り替えるか、口座を分けてください"
+                  help="企業型DCは第2号被保険者（厚生年金加入）向けです。収入の会社員・パート等から選択し、積立期間は選んだ区分の収入期間に自動反映されます。別の勤務期間は区分を切り替えるか、口座を分けてください"
                 >
                   <div className="savings-ideco-occupancy">
                     <select
@@ -3964,7 +3964,7 @@ export function SavingsEntryDetail({
                           </li>
                         </ul>
                         <p className="savings-entry-detail-hint">
-                          受取タイミングの10年・19年ルール図解は、収入タブ（Q7）の「退職一時金の受取タイミング」にまとめてあります
+                          受取タイミングの10年・19年ルール図解は、収入タブの「退職一時金の受取タイミング」にまとめてあります
                         </p>
                       </div>
                     ) : withdrawalMode === 'drawdown' ? (

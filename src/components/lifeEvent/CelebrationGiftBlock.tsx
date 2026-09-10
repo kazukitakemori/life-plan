@@ -53,7 +53,7 @@ export function CelebrationGiftBlock({
 
       {beneficiaries.length === 0 ? (
         <p className="celebration-gift-empty">
-          Q1で子ども・孫を登録すると、ここに名前が表示されます。
+          ご家族で子ども・孫を登録すると、ここに名前が表示されます。
         </p>
       ) : (
         <div className="celebration-gift-table">

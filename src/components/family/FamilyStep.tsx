@@ -2,6 +2,7 @@ import { formatReferenceSimSubtitle } from '../../lib/simulationTiming';
 import { createFamilyMember } from '../../lib/familyDefaults';
 import type { FamilyMember, FamilyMemberRole } from '../../types/family';
 import type { TaxSocialState } from '../../types/taxSocial';
+import { StepHeading } from '../ui';
 import { AddFamilyBar } from './AddFamilyBar';
 import { FamilyMemberRow } from './FamilyMemberRow';
 import { FamilyResidenceSection } from './FamilyResidenceSection';
@@ -38,50 +39,32 @@ export function FamilyStep({
   };
 
   return (
-    <div className="step-page">
-      <div className="step-header">
-        <h2 className="step-title">
-          Q1. ご家族情報
-          <span className="step-subtitle">
-            （{formatReferenceSimSubtitle(referenceDate)}）
-          </span>
-        </h2>
-        <div className="step-actions">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
-        </div>
-      </div>
+    <div className="step-page family-step">
+      <StepHeading
+        number={1}
+        title="ご家族"
+        className="family-step-header"
+        lead={
+          <>
+            ライフプランの基準になる家族構成を登録します。
+            <span className="family-step-lead-meta">
+              {formatReferenceSimSubtitle(referenceDate)}
+            </span>
+          </>
+        }
+      />
 
-      <div className="family-table">
-        <div className="family-table-header">
-          <div className="family-table-header-cell" />
-          <div className="family-table-header-cell">プロフィール</div>
-          <div className="family-table-header-cell">趣味/関心</div>
-          <div className="family-table-header-cell">
-            世帯主と生計を一にする期間
-          </div>
-          <div className="family-table-header-cell" />
-        </div>
-
-        <div className="family-table-body">
-          {members.map((member) => (
-            <FamilyMemberRow
-              key={member.id}
-              member={member}
-              referenceDate={referenceDate}
-              onChange={(updated) => updateMember(member.id, updated)}
-              onRemove={() => removeMember(member.id)}
-              canRemove={member.role !== 'head'}
-            />
-          ))}
-        </div>
+      <div className="family-member-list">
+        {members.map((member) => (
+          <FamilyMemberRow
+            key={member.id}
+            member={member}
+            referenceDate={referenceDate}
+            onChange={(updated) => updateMember(member.id, updated)}
+            onRemove={() => removeMember(member.id)}
+            canRemove={member.role !== 'head'}
+          />
+        ))}
       </div>
 
       <AddFamilyBar onAdd={addMember} canAddSpouse={!hasSpouse} />

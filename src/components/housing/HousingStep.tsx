@@ -48,6 +48,7 @@ import type {
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { SecondLifeHousingSection } from '../secondLife/SecondLifeHousingSection';
 import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
+import { StepHeading } from '../ui';
 import { OwnedPropertySection } from './OwnedPropertySection';
 import { RentalPropertySection } from './RentalPropertySection';
 import { HousingSecondLifeApplyConfirmModal } from './HousingSecondLifeApplyConfirmModal';
@@ -440,7 +441,7 @@ export function HousingStep({
     return (
       <div className="step-page">
         <p className="placeholder-message">
-          ご家族（Q1）で世帯主を登録してください。
+          ご家族で世帯主を登録してください。
         </p>
       </div>
     );
@@ -448,31 +449,16 @@ export function HousingStep({
 
   return (
     <div className="step-page housing-step">
-      <div className="step-header">
-        <div>
-          <h2 className="step-title">Q5. 住まい</h2>
-          <p className="step-description">
-            物件は負担する人のタブへ。賃貸は負担者を選べ、持ち家はローン契約者に連動します。
-          </p>
-        </div>
-        <div className="step-header-right">
-          <button type="button" className="step-action-btn" disabled>
-            解説
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            ガイド
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            参考リンク
-          </button>
-          <button type="button" className="step-action-btn" disabled>
-            メモ
-          </button>
+      <StepHeading
+        number={5}
+        title="住まい"
+        lead="物件は負担する人のタブへ。賃貸は負担者を選べ、持ち家はローン契約者に連動します。"
+        actions={
           <button type="button" className="show-all-btn" disabled>
             全員まとめて表示
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">

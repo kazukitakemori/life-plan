@@ -21,6 +21,12 @@ import type {
   OtherRelationship,
 } from '../../types/family';
 import { OTHER_RELATIONSHIP_LABELS, ROLE_LABELS } from '../../types/family';
+import {
+  DisclosureSection,
+  FormChoice,
+  FormField,
+  FormSelect,
+} from '../ui';
 import { MemberAvatar } from './MemberAvatar';
 
 interface FamilyMemberRowProps {
@@ -40,50 +46,8 @@ function getAgeOptions(role: FamilyMember['role']): number[] {
   return role === 'child' ? CHILD_AGES : AGES;
 }
 
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-  suffix,
-  allowEmpty = false,
-  emptyLabel = '選択',
-}: {
-  label: string;
-  value: number | string | null;
-  onChange: (value: number | null) => void;
-  options: { value: number; label: string }[];
-  suffix?: string;
-  allowEmpty?: boolean;
-  emptyLabel?: string;
-}) {
-  return (
-    <div className="inline-field">
-      <span className="inline-field-label">{label}</span>
-      <div className="inline-field-controls">
-        <select
-          className="select-input"
-          value={value ?? ''}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onChange(raw === '' ? null : Number(raw));
-          }}
-        >
-          {allowEmpty && (
-            <option value="" disabled={value != null}>
-              {emptyLabel}
-            </option>
-          )}
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {suffix && <span className="inline-field-suffix">{suffix}</span>}
-      </div>
-    </div>
-  );
+function parseOptionalNumber(raw: string): number | null {
+  return raw === '' ? null : Number(raw);
 }
 
 function HouseholdPeriodSection({
@@ -108,22 +72,10 @@ function HouseholdPeriodSection({
     });
   };
 
-  const setEndAge = (endAge: number) => {
-    onChange({
-      ...member,
-      householdPeriod: { ...householdPeriod, endAge },
-    });
-  };
-
-  const setEndMonth = (endMonth: number) => {
-    onChange({
-      ...member,
-      householdPeriod: { ...householdPeriod, endMonth },
-    });
-  };
-
   if (role === 'head') {
-    return <div className="period-cell period-cell--empty">—</div>;
+    return (
+      <p className="ui-note">世帯主のため設定不要です</p>
+    );
   }
 
   const showEducation = role === 'child';
@@ -140,71 +92,81 @@ function HouseholdPeriodSection({
       : null;
 
   return (
-    <div className="period-cell">
-      <fieldset className="period-options">
-        <label className="radio-option">
-          <input
-            type="radio"
-            name={`period-${member.id}`}
-            checked={householdPeriod.mode === 'lifetime'}
-            onChange={() => setMode('lifetime')}
-          />
-          <span>生涯</span>
-        </label>
+    <div className="family-period">
+      <fieldset className="family-period-options">
+        <legend className="visually-hidden">生計を一にする期間</legend>
+        <FormChoice
+          type="radio"
+          name={`period-${member.id}`}
+          checked={householdPeriod.mode === 'lifetime'}
+          onChange={() => setMode('lifetime')}
+        >
+          生涯
+        </FormChoice>
 
         {showEducation && (
-          <label className="radio-option">
-            <input
-              type="radio"
-              name={`period-${member.id}`}
-              checked={householdPeriod.mode === 'by_education'}
-              onChange={() => setMode('by_education')}
-            />
-            <span>最終学歴にあわせる</span>
-          </label>
-        )}
-
-        <label className="radio-option">
-          <input
+          <FormChoice
             type="radio"
             name={`period-${member.id}`}
-            checked={householdPeriod.mode === 'custom'}
-            onChange={() => setMode('custom')}
-          />
-          <span>期間を指定する</span>
-        </label>
+            checked={householdPeriod.mode === 'by_education'}
+            onChange={() => setMode('by_education')}
+          >
+            最終学歴にあわせる
+          </FormChoice>
+        )}
+
+        <FormChoice
+          type="radio"
+          name={`period-${member.id}`}
+          checked={householdPeriod.mode === 'custom'}
+          onChange={() => setMode('custom')}
+        >
+          期間を指定する
+        </FormChoice>
       </fieldset>
 
       {householdPeriod.mode === 'custom' && (
-        <div className="period-custom">
-          <div className="period-range">
-            <span className="period-range-label">生誕</span>
-            <span className="period-range-arrow">〜</span>
-            <select
-              className="select-input select-input--compact"
+        <div className="family-period-custom">
+          <div className="family-period-range">
+            <span>生誕</span>
+            <span aria-hidden>〜</span>
+            <FormSelect
+              compact
               value={householdPeriod.endAge}
-              onChange={(e) => setEndAge(Number(e.target.value))}
-            >
-              {AGES.map((age) => (
-                <option key={age} value={age}>
-                  {age}才
-                </option>
-              ))}
-            </select>
-            <select
-              className="select-input select-input--compact"
+              onValueChange={(raw) =>
+                onChange({
+                  ...member,
+                  householdPeriod: {
+                    ...householdPeriod,
+                    endAge: Number(raw),
+                  },
+                })
+              }
+              options={AGES.map((age) => ({
+                value: age,
+                label: `${age}才`,
+              }))}
+            />
+            <FormSelect
+              compact
               value={householdPeriod.endMonth}
-              onChange={(e) => setEndMonth(Number(e.target.value))}
-            >
-              {MONTHS.map((m) => (
-                <option key={m} value={m}>
-                  {m}月
-                </option>
-              ))}
-            </select>
+              onValueChange={(raw) =>
+                onChange({
+                  ...member,
+                  householdPeriod: {
+                    ...householdPeriod,
+                    endMonth: Number(raw),
+                  },
+                })
+              }
+              options={MONTHS.map((m) => ({
+                value: m,
+                label: `${m}月`,
+              }))}
+            />
           </div>
           {endYear !== null && (
-            <p className="period-end-year">{endYear}年</p>
+            <p className="ui-note">{endYear}年まで</p>
           )}
         </div>
       )}
@@ -260,179 +222,232 @@ export function FamilyMemberRow({
     });
   };
 
+  const detailSummaryParts: string[] = [];
+  if (member.disability === 'has') detailSummaryParts.push('障害あり');
+  if (member.hobbies.length > 0) {
+    detailSummaryParts.push(`趣味${member.hobbies.length}`);
+  }
+  if (member.role === 'child' || member.role === 'other') {
+    detailSummaryParts.push('扶養設定');
+  }
+
   return (
-    <div className="family-row">
-      <div className="family-row-cell member-cell">
-        <input
-          type="text"
-          className="nickname-input"
-          placeholder="ニックネーム"
-          value={member.nickname}
-          onChange={(e) => onChange({ ...member, nickname: e.target.value })}
-        />
-        <MemberAvatar
-          role={member.role}
-          gender={member.gender}
-          age={member.age}
-        />
-        <span className="member-role">{ROLE_LABELS[member.role]}</span>
-      </div>
-
-      <div className="family-row-cell profile-cell">
-        <div className="profile-grid">
-          <div className="profile-birth">
-            <SelectField
-              label="生年月日"
-              value={member.age}
-              allowEmpty
-              emptyLabel=""
-              onChange={(age) => {
-                const birthDay = clampBirthDay({
-                  age,
-                  birthMonth: member.birthMonth,
-                  birthDay: member.birthDay,
-                });
-                onChange({
-                  ...member,
-                  age,
-                  birthDay,
-                  ...(member.role === 'other' &&
-                  age != null &&
-                  age < ELDERLY_DEPENDENT_MIN_AGE
-                    ? { isCohabiting: undefined }
-                    : {}),
-                });
-              }}
-              options={getAgeOptions(member.role).map((a) => ({
-                value: a,
-                label: `${a}才`,
-              }))}
+    <article className="family-member-card">
+      <header className="family-member-card-head">
+        <div className="family-member-identity">
+          <MemberAvatar
+            role={member.role}
+            gender={member.gender}
+            age={member.age}
+          />
+          <div className="family-member-identity-text">
+            <input
+              type="text"
+              className="ui-input ui-input--title"
+              placeholder="ニックネーム"
+              value={member.nickname}
+              onChange={(e) =>
+                onChange({ ...member, nickname: e.target.value })
+              }
+              aria-label="ニックネーム"
             />
-            <SelectField
-              label=""
-              value={member.birthMonth}
-              allowEmpty
-              emptyLabel=""
-              onChange={(birthMonth) => {
-                const birthDay = clampBirthDay({
-                  age: member.age,
-                  birthMonth,
-                  birthDay: member.birthDay,
-                });
-                onChange({ ...member, birthMonth, birthDay });
-              }}
-              options={MONTHS.map((m) => ({ value: m, label: `${m}月` }))}
-            />
-            <SelectField
-              label=""
-              value={member.birthDay}
-              allowEmpty
-              emptyLabel=""
-              onChange={(birthDay) => onChange({ ...member, birthDay })}
-              options={dayOptions.map((d) => ({
-                value: d,
-                label: `${d}日`,
-              }))}
-            />
-            {birthLabel ? <p className="birth-label">{birthLabel}</p> : null}
+            <span className="family-role-badge">{ROLE_LABELS[member.role]}</span>
           </div>
-
-          <SelectField
-            label="性別"
-            value={member.gender === 'male' ? 0 : 1}
-            onChange={(v) => {
-              if (v == null) return;
-              onChange({ ...member, gender: v === 0 ? 'male' : 'female' });
-            }}
-            options={[
-              { value: 0, label: '男' },
-              { value: 1, label: '女' },
-            ]}
-          />
-
-          <SelectField
-            label="想定寿命"
-            value={member.expectedLifespan}
-            onChange={(expectedLifespan) => {
-              if (expectedLifespan == null) return;
-              onChange({ ...member, expectedLifespan });
-            }}
-            options={LIFESPANS.map((a) => ({ value: a, label: `${a}才` }))}
-          />
-
-          <SelectField
-            label="障害"
-            value={member.disability === 'none' ? 0 : 1}
-            onChange={(v) => {
-              if (v == null) return;
-              onChange({
-                ...member,
-                disability: v === 0 ? 'none' : 'has',
-              });
-            }}
-            options={[
-              { value: 0, label: 'なし' },
-              { value: 1, label: 'あり' },
-            ]}
-          />
-
-          {(member.role === 'child' || member.role === 'other') && (
-            <DependentSettingsSection member={member} onChange={onChange} />
-          )}
         </div>
-      </div>
 
-      <div className="family-row-cell hobbies-cell">
-        <div className="hobbies-box">
-          {member.hobbies.length === 0 ? (
-            <span className="hobbies-placeholder">趣味・関心</span>
-          ) : (
-            <ul className="hobbies-list">
-              {member.hobbies.map((hobby, i) => (
-                <li key={i}>
-                  <span>{hobby}</span>
-                  <button
-                    type="button"
-                    className="hobby-remove"
-                    onClick={() => removeHobby(i)}
-                    aria-label="削除"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <button type="button" className="hobby-add-btn" onClick={addHobby}>
-            追加
-          </button>
-        </div>
-      </div>
-
-      <div className="family-row-cell period-column">
-        {member.role !== 'head' && (
-          <p className="period-column-title">世帯主と生計を一にする期間</p>
-        )}
-        <HouseholdPeriodSection
-          member={member}
-          referenceDate={referenceDate}
-          onChange={onChange}
-        />
-      </div>
-
-      <div className="family-row-cell action-cell">
         {canRemove && (
           <button
             type="button"
-            className="remove-member-btn"
+            className="ui-btn ui-btn--danger"
             onClick={onRemove}
-            aria-label="家族を削除"
           >
-            −
+            削除
           </button>
         )}
+      </header>
+
+      <div className="family-member-card-body">
+        <section className="family-basics" aria-label="よく使う項目">
+          <h3 className="family-section-label">基本情報</h3>
+          <div className="family-basics-grid">
+            <FormField label="生年月日" className="family-basics-birth">
+              <div className="family-birth-controls">
+                <FormSelect
+                  allowEmpty
+                  emptyLabel="才"
+                  value={member.age ?? ''}
+                  onValueChange={(raw) => {
+                    const age = parseOptionalNumber(raw);
+                    const birthDay = clampBirthDay({
+                      age,
+                      birthMonth: member.birthMonth,
+                      birthDay: member.birthDay,
+                    });
+                    onChange({
+                      ...member,
+                      age,
+                      birthDay,
+                      ...(member.role === 'other' &&
+                      age != null &&
+                      age < ELDERLY_DEPENDENT_MIN_AGE
+                        ? { isCohabiting: undefined }
+                        : {}),
+                    });
+                  }}
+                  options={getAgeOptions(member.role).map((a) => ({
+                    value: a,
+                    label: `${a}才`,
+                  }))}
+                />
+                <FormSelect
+                  allowEmpty
+                  emptyLabel="月"
+                  value={member.birthMonth ?? ''}
+                  onValueChange={(raw) => {
+                    const birthMonth = parseOptionalNumber(raw);
+                    const birthDay = clampBirthDay({
+                      age: member.age,
+                      birthMonth,
+                      birthDay: member.birthDay,
+                    });
+                    onChange({ ...member, birthMonth, birthDay });
+                  }}
+                  options={MONTHS.map((m) => ({
+                    value: m,
+                    label: `${m}月`,
+                  }))}
+                />
+                <FormSelect
+                  allowEmpty
+                  emptyLabel="日"
+                  value={member.birthDay ?? ''}
+                  onValueChange={(raw) =>
+                    onChange({
+                      ...member,
+                      birthDay: parseOptionalNumber(raw),
+                    })
+                  }
+                  options={dayOptions.map((d) => ({
+                    value: d,
+                    label: `${d}日`,
+                  }))}
+                />
+              </div>
+              {birthLabel ? <p className="ui-note">{birthLabel}</p> : null}
+            </FormField>
+
+            <FormField label="性別">
+              <FormSelect
+                value={member.gender === 'male' ? 0 : 1}
+                onValueChange={(raw) =>
+                  onChange({
+                    ...member,
+                    gender: Number(raw) === 0 ? 'male' : 'female',
+                  })
+                }
+                options={[
+                  { value: 0, label: '男' },
+                  { value: 1, label: '女' },
+                ]}
+              />
+            </FormField>
+
+            <FormField label="想定寿命">
+              <FormSelect
+                value={member.expectedLifespan}
+                onValueChange={(raw) =>
+                  onChange({
+                    ...member,
+                    expectedLifespan: Number(raw),
+                  })
+                }
+                options={LIFESPANS.map((a) => ({
+                  value: a,
+                  label: `${a}才`,
+                }))}
+              />
+            </FormField>
+          </div>
+
+          {member.role !== 'head' && (
+            <div className="family-period-block">
+              <h3 className="family-section-label">
+                世帯主と生計を一にする期間
+              </h3>
+              <HouseholdPeriodSection
+                member={member}
+                referenceDate={referenceDate}
+                onChange={onChange}
+              />
+            </div>
+          )}
+        </section>
+
+        <DisclosureSection
+          className="family-details"
+          title="詳細設定"
+          summary={
+            detailSummaryParts.length > 0
+              ? detailSummaryParts.join(' · ')
+              : '障害・趣味・扶養など'
+          }
+        >
+          <div className="family-details-grid">
+            <FormField label="障害">
+              <FormSelect
+                value={member.disability === 'none' ? 0 : 1}
+                onValueChange={(raw) =>
+                  onChange({
+                    ...member,
+                    disability: Number(raw) === 0 ? 'none' : 'has',
+                  })
+                }
+                options={[
+                  { value: 0, label: 'なし' },
+                  { value: 1, label: 'あり' },
+                ]}
+              />
+            </FormField>
+
+            <div className="family-hobbies-block">
+              <div className="family-panel-title-row">
+                <h4 className="family-section-label">趣味・関心</h4>
+                <button
+                  type="button"
+                  className="ui-btn ui-btn--ghost"
+                  onClick={addHobby}
+                >
+                  追加
+                </button>
+              </div>
+              {member.hobbies.length === 0 ? (
+                <p className="ui-note">まだ登録がありません</p>
+              ) : (
+                <ul className="family-hobbies-list">
+                  {member.hobbies.map((hobby, i) => (
+                    <li key={i}>
+                      <span>{hobby}</span>
+                      <button
+                        type="button"
+                        className="family-hobby-remove"
+                        onClick={() => removeHobby(i)}
+                        aria-label={`${hobby}を削除`}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {(member.role === 'child' || member.role === 'other') && (
+              <DependentSettingsSection member={member} onChange={onChange} />
+            )}
+          </div>
+        </DisclosureSection>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -455,96 +470,84 @@ function DependentSettingsSection({
     : null;
 
   return (
-    <div className="profile-dependent">
+    <div className="family-dependent">
+      <h4 className="family-section-label">扶養・続柄</h4>
+
       {member.role === 'other' && (
-        <div className="inline-field">
-          <span className="inline-field-label">続柄</span>
-          <div className="inline-field-controls">
-            <select
-              className="select-input select-input--wide"
-              value={member.otherRelationship ?? 'parent'}
-              onChange={(e) =>
-                onChange({
-                  ...member,
-                  otherRelationship: e.target.value as OtherRelationship,
-                  isCohabiting:
-                    e.target.value === 'parent' || e.target.value === 'grandparent'
-                      ? (member.isCohabiting ?? false)
-                      : undefined,
-                })
-              }
-            >
-              {(
-                Object.entries(OTHER_RELATIONSHIP_LABELS) as [
-                  OtherRelationship,
-                  string,
-                ][]
-              ).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <FormField label="続柄">
+          <FormSelect
+            wide
+            value={member.otherRelationship ?? 'parent'}
+            onValueChange={(raw) =>
+              onChange({
+                ...member,
+                otherRelationship: raw as OtherRelationship,
+                isCohabiting:
+                  raw === 'parent' || raw === 'grandparent'
+                    ? (member.isCohabiting ?? false)
+                    : undefined,
+              })
+            }
+            options={(
+              Object.entries(OTHER_RELATIONSHIP_LABELS) as [
+                OtherRelationship,
+                string,
+              ][]
+            ).map(([key, label]) => ({ value: key, label }))}
+          />
+        </FormField>
       )}
 
       {isElderlyParentOrGrandparent(member) && (
-        <label className="profile-checkbox-option">
-          <input
-            type="checkbox"
-            checked={member.isCohabiting ?? false}
-            onChange={(e) =>
-              onChange({ ...member, isCohabiting: e.target.checked })
-            }
-          />
-          <span>同居（同居老親等控除）</span>
-        </label>
+        <FormChoice
+          checked={member.isCohabiting ?? false}
+          onChange={(e) =>
+            onChange({ ...member, isCohabiting: e.target.checked })
+          }
+        >
+          同居（同居老親等控除）
+        </FormChoice>
       )}
 
       {isParentOrGrandparent(member) &&
         (member.age ?? 0) < ELDERLY_DEPENDENT_MIN_AGE && (
-          <p className="profile-dependent-note">
+          <p className="ui-note">
             70歳未満のため一般扶養控除の対象です。同居老親等控除・老人扶養控除は70歳以上から適用されます。
           </p>
         )}
 
-      <label className="profile-checkbox-option">
-        <input
-          type="checkbox"
-          checked={taxDep}
-          onChange={(e) =>
-            onChange({ ...member, taxDependentDefault: e.target.checked })
-          }
-        />
-        <span>税法上の扶養に入れる</span>
-      </label>
+      <FormChoice
+        checked={taxDep}
+        onChange={(e) =>
+          onChange({ ...member, taxDependentDefault: e.target.checked })
+        }
+      >
+        税法上の扶養に入れる
+      </FormChoice>
 
-      <label className="profile-checkbox-option">
-        <input
-          type="checkbox"
-          checked={siDep}
-          onChange={(e) =>
-            onChange({
-              ...member,
-              socialInsuranceDependentDefault: e.target.checked,
-            })
-          }
-        />
-        <span>社会保険の扶養に入れる</span>
-      </label>
+      <FormChoice
+        checked={siDep}
+        onChange={(e) =>
+          onChange({
+            ...member,
+            socialInsuranceDependentDefault: e.target.checked,
+          })
+        }
+      >
+        社会保険の扶養に入れる
+      </FormChoice>
 
       {warnings.map((w) => (
-        <p key={w.id} className="profile-dependent-warning">
+        <p key={w.id} className="ui-callout ui-callout--danger">
           {w.message}
         </p>
       ))}
 
       {pensionGuideMessage && (
-        <p className="profile-dependent-guide">{pensionGuideMessage}</p>
+        <p className="ui-callout ui-callout--brand">{pensionGuideMessage}</p>
       )}
 
-      <p className="profile-dependent-note">
+      <p className="ui-note">
         合計所得58万円超の年は税法上の扶養控除は外れます（令和7年分以降。給与のみの目安は年収約123万円）。
         {siDep && '収入130万円以上の年は社保の扶養から外れます。'}
       </p>
