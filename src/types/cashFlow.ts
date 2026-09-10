@@ -843,7 +843,7 @@ export interface HousingExpenseDetail {
   loanRepaymentDetail: HousingLoanRepaymentDetail;
   rentalInsurancePremium: number;
   ownedInsurancePremium: number;
-  /** 所有物件（居住中・簡単入力）の月々の住居費 */
+  /** 所有物件（居住中・簡単入力）の住居費(簡) */
   simpleMonthlyCost: number;
 }
 
@@ -955,7 +955,7 @@ export const HOUSING_OWNED_DIRECT_DETAIL_ROWS = [
   { key: 'repairReserve', label: '修繕積立金' },
   { key: 'selfRepairCost', label: '自主修繕費' },
   { key: 'improvementCost', label: '改良費' },
-  { key: 'simpleMonthlyCost', label: '月々の住居費' },
+  { key: 'simpleMonthlyCost', label: '住居費(簡)' },
 ] as const satisfies ReadonlyArray<{
   key: keyof Pick<
     HousingExpenseDetail,

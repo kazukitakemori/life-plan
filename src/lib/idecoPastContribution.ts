@@ -6,6 +6,10 @@ import type {
   SavingsPastContributionSegment,
 } from '../types/savings';
 import { isCorporateDcEligibleIncomeCategory } from './dcContribution';
+import {
+  resolveReferenceNowAgeMonth,
+  resolveSimulationStartAgeMonth,
+} from './periodTimingBounds';
 import { calcEnrollmentYearsFromAgeMonths } from './retirementIncomeTax';
 import { nextAgeMonth } from './savingsWithdrawalPeriod';
 import { resolveSavingsContributionMode } from './savingsLabels';
@@ -97,13 +101,10 @@ function isSamePastSyncResult(prev: SavingsEntry, next: SavingsEntry): boolean {
 }
 
 function referenceNow(
-  member: Pick<FamilyMember, 'age'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
   referenceDate: Date,
 ): { age: number; month: number } {
-  return {
-    age: Math.max(0, Number(member.age) || 0),
-    month: referenceDate.getMonth() + 1,
-  };
+  return resolveReferenceNowAgeMonth(member, referenceDate);
 }
 
 /**
@@ -640,7 +641,7 @@ export function suggestDcPastSegmentsFromIncome(
  */
 export function resolveIdecoDcOpeningBalanceMan(
   entry: SavingsEntry,
-  member: Pick<FamilyMember, 'age'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
   referenceDate: Date,
 ): number {
   if (!isIdecoOrDc(entry.category)) {
@@ -714,24 +715,23 @@ export function resolveIdecoDcOpeningBalanceMan(
 
 /** 試算上の「いま」（年齢・月） */
 export function resolveIdecoDcReferenceNow(
-  member: Pick<FamilyMember, 'age'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
   referenceDate: Date,
 ): { age: number; month: number } {
   return referenceNow(member, referenceDate);
 }
 
-/** これからの積立開始の初期値（現在の翌月） */
+/** これからの積立開始の初期値（現在の翌月＝試算開始） */
 export function resolveIdecoDcMainContributionStartDefault(
-  member: Pick<FamilyMember, 'age'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
   referenceDate: Date,
 ): { age: number; month: number } {
-  const now = referenceNow(member, referenceDate);
-  return nextAgeMonth(now.age, now.month);
+  return resolveSimulationStartAgeMonth(member, referenceDate);
 }
 
 /** @deprecated 別名互換。初期値用 */
 export function resolveIdecoDcMainContributionStart(
-  member: Pick<FamilyMember, 'age'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
   referenceDate: Date,
 ): { age: number; month: number } {
   return resolveIdecoDcMainContributionStartDefault(member, referenceDate);

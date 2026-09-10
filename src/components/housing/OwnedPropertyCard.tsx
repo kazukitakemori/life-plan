@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   OWNED_PROPERTY_TYPE_ICONS,
   OWNED_PROPERTY_TYPE_LABELS,
@@ -11,6 +11,8 @@ import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
 import { OwnedPropertyDetail } from './OwnedPropertyDetail';
+import { housingPropertyElementId } from './HousingSecondLifeApplySummary';
+import { useHousingApplyFlash } from './useHousingApplyFlash';
 
 interface OwnedPropertyCardProps {
   property: OwnedProperty;
@@ -25,7 +27,13 @@ interface OwnedPropertyCardProps {
   vehicleState: VehicleState;
   contractorMembers: FamilyMember[];
   hasSpouse: boolean;
+  viewRole?: 'owner' | 'linked';
   canRemove: boolean;
+  canAddLoan?: boolean;
+  /** セカンドライフ反映で追加されたときのフラッシュ用トークン */
+  highlightToken?: number;
+  /** セカンドライフ反映で終了された */
+  endedBySecondLife?: boolean;
   onChange: (property: OwnedProperty) => void;
   onRemove: () => void;
   onAddLoan: (
@@ -63,7 +71,11 @@ export function OwnedPropertyCard({
   vehicleState,
   contractorMembers,
   hasSpouse,
+  viewRole = 'owner',
   canRemove,
+  canAddLoan = true,
+  highlightToken,
+  endedBySecondLife = false,
   onChange,
   onRemove,
   onAddLoan,
@@ -77,19 +89,42 @@ export function OwnedPropertyCard({
   onUpdateInsurance,
   onRemoveInsurance,
 }: OwnedPropertyCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const flashing = useHousingApplyFlash(highlightToken);
+  const [expanded, setExpanded] = useState(highlightToken != null);
   const icon = OWNED_PROPERTY_TYPE_ICONS[property.type];
   const typeLabel = OWNED_PROPERTY_TYPE_LABELS[property.type];
 
+  useEffect(() => {
+    if (highlightToken != null) {
+      setExpanded(true);
+    }
+  }, [highlightToken]);
+
   return (
     <div
-      className={`housing-owned-card-wrap${expanded ? ' housing-owned-card-wrap--expanded' : ''}`}
+      id={housingPropertyElementId('owned', property.id)}
+      className={[
+        'housing-owned-card-wrap',
+        expanded ? 'housing-owned-card-wrap--expanded' : '',
+        flashing ? 'is-flash' : '',
+        endedBySecondLife ? 'is-ended-by-second-life' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
+      {endedBySecondLife ? (
+        <div className="housing-second-life-ended-banner">
+          セカンドライフ反映で終了
+        </div>
+      ) : null}
       <div className="housing-owned-card">
         <span className="housing-owned-icon" aria-hidden>
           {icon}
         </span>
         <span className="housing-owned-type">{typeLabel}</span>
+        {viewRole === 'linked' ? (
+          <span className="housing-owned-linked-badge">ローン契約に連動</span>
+        ) : null}
         <input
           type="text"
           className="housing-owned-name-input"
@@ -147,6 +182,7 @@ export function OwnedPropertyCard({
           vehicleState={vehicleState}
           contractorMembers={contractorMembers}
           hasSpouse={hasSpouse}
+          canAddLoan={canAddLoan}
           onChange={onChange}
           onAddLoan={onAddLoan}
           onRemoveLoan={onRemoveLoan}

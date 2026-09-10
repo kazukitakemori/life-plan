@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   createIncomeEntry,
   createSideBusinessIncomeEntry,
 } from '../../lib/incomeDefaults';
-import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
 import { canAddSideBusinessIncome } from '../../lib/incomeGuidance';
 import type { AddIncomeOption } from '../../lib/incomeLabels';
 import { retirementAllowancesForEntry } from '../../lib/retirementAllowance';
@@ -12,12 +11,15 @@ import {
   isPensionStylePayoutCategory,
   resolveSavingsWithdrawalMode,
 } from '../../lib/savingsLabels';
+import { memberHasIncomeData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type {
   IncomeByMember,
   IncomeEntry,
   PriorYearIncomeByMember,
 } from '../../types/income';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { SavingsState } from '../../types/savings';
 import { RetirementDeductionTimingGuide } from '../shared/RetirementDeductionTimingGuide';
 import { AddIncomeBar } from './AddIncomeBar';
@@ -32,6 +34,8 @@ interface IncomeStepProps {
   priorYearIncomeByMember: PriorYearIncomeByMember;
   savingsState: SavingsState;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   onChange: (income: IncomeByMember) => void;
   onPriorYearIncomeChange: (priorYearIncome: PriorYearIncomeByMember) => void;
   /** 教育費試算など、目的に応じた注記 */
@@ -44,25 +48,44 @@ export function IncomeStep({
   priorYearIncomeByMember,
   savingsState,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   onChange,
   onPriorYearIncomeChange,
   purposeNote,
 }: IncomeStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
+  const headMember = members.find((m) => m.role === 'head');
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
+
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasIncomeData(incomeByMember, memberId),
+    [incomeByMember],
   );
 
-  const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'income',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
 
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
     ? activeMemberId
-    : defaultActiveId;
+    : fallbackActiveId;
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
   const entries = incomeByMember[resolvedActiveId] ?? [];
   const savingsEntries = useMemo(
     () => getMemberSavingsEntries(savingsState, resolvedActiveId),
@@ -85,11 +108,11 @@ export function IncomeStep({
 
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const member of eligibleMembers) {
+    for (const member of visibleMembers) {
       counts[member.id] = incomeByMember[member.id]?.length ?? 0;
     }
     return counts;
-  }, [eligibleMembers, incomeByMember]);
+  }, [visibleMembers, incomeByMember]);
 
   const persistEntries = (memberId: string, updated: IncomeEntry[]) => {
     onChange({ ...incomeByMember, [memberId]: updated });
@@ -173,11 +196,15 @@ export function IncomeStep({
       ) : null}
 
       <MemberIncomeTabs
-        members={eligibleMembers}
+        members={visibleMembers}
         activeMemberId={resolvedActiveId}
         entryCounts={entryCounts}
         referenceDate={referenceDate}
         onSelect={setActiveMemberId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
       />
 
       <PriorYearIncomeSection

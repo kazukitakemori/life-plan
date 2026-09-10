@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   createInsuranceEntry,
   getInsuranceEntryCounts,
@@ -6,6 +6,8 @@ import {
   updateInsuranceByMember,
 } from '../../lib/insuranceDefaults';
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
+import { memberHasInsuranceData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { HousingState } from '../../types/housing';
 import type {
@@ -13,6 +15,7 @@ import type {
   InsuranceEntry,
   InsuranceState,
 } from '../../types/insurance';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { AddInsuranceCards } from './AddInsuranceCards';
@@ -24,6 +27,8 @@ interface InsuranceStepProps {
   vehicleState: VehicleState;
   insuranceState: InsuranceState;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   onChange: (state: InsuranceState) => void;
 }
 
@@ -57,6 +62,8 @@ export function InsuranceStep({
   vehicleState,
   insuranceState,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   onChange,
 }: InsuranceStepProps) {
   const eligibleMembers = useMemo(
@@ -65,19 +72,41 @@ export function InsuranceStep({
   );
 
   const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
-
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
   const [dragEntryId, setDragEntryId] = useState<string | null>(null);
   const [dropInsertIndex, setDropInsertIndex] = useState<number | null>(null);
   const dragEntryIdRef = useRef<string | null>(null);
   const dropInsertIndexRef = useRef<number | null>(null);
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
-    ? activeMemberId
-    : defaultActiveId;
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasInsuranceData(insuranceState, memberId),
+    [insuranceState],
+  );
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'insurance',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
+
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
+
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
+    ? activeMemberId
+    : fallbackActiveId;
+
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
 
   const entries = useMemo(
     () => getMemberInsuranceEntries(insuranceState, resolvedActiveId),
@@ -88,9 +117,9 @@ export function InsuranceStep({
     () =>
       getInsuranceEntryCounts(
         insuranceState,
-        eligibleMembers.map((m) => m.id),
+        visibleMembers.map((m) => m.id),
       ),
-    [eligibleMembers, insuranceState],
+    [visibleMembers, insuranceState],
   );
 
   const housingPropertyNames = useMemo(() => {
@@ -230,11 +259,15 @@ export function InsuranceStep({
       </div>
 
       <MemberIncomeTabs
-        members={eligibleMembers}
+        members={visibleMembers}
         activeMemberId={resolvedActiveId}
         entryCounts={entryCounts}
         referenceDate={referenceDate}
         onSelect={setActiveMemberId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
       />
 
       <section className="insurance-section">

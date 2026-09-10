@@ -4,10 +4,17 @@ import {
 } from '../../data/fukuokaMunicipalities';
 import { calcBirthYear, formatYearAtAgeLabel } from '../../lib/birthDate';
 import { resolveMemberAge } from '../../lib/familyDefaults';
+import {
+  clampFutureStartFields,
+  filterAgesAtOrAfter,
+  filterMonthsAtOrAfter,
+  resolveSimulationStartAgeMonth,
+} from '../../lib/periodTimingBounds';
 import { getResidenceAgeOptions } from '../../lib/taxSocialDefaults';
 import { normalizePrefectureCode } from '../../lib/taxSocialRegions';
 import type { FamilyMember } from '../../types/family';
 import type { ResidencePeriod } from '../../types/taxSocial';
+import { useEffect, useMemo } from 'react';
 
 interface ResidenceCardProps {
   periods: ResidencePeriod[];
@@ -42,16 +49,39 @@ function ResidencePeriodRow({
     referenceDate,
   );
   const isBasePeriod = index === 0;
+  const simStart = useMemo(
+    () => resolveSimulationStartAgeMonth(headMember, referenceDate),
+    [headMember, referenceDate],
+  );
+  const startAgeOptions = isBasePeriod
+    ? ageOptions
+    : filterAgesAtOrAfter(ageOptions, simStart);
+  const startMonthOptions = isBasePeriod
+    ? MONTHS
+    : filterMonthsAtOrAfter(period.startAge, simStart, MONTHS);
 
   const updatePeriod = (patch: Partial<ResidencePeriod>) => {
-    onChange({
+    const next = {
       ...period,
       ...patch,
       prefectureCode: normalizePrefectureCode(
         patch.prefectureCode ?? period.prefectureCode,
       ),
-    });
+    };
+    onChange(isBasePeriod ? next : clampFutureStartFields(next, simStart));
   };
+
+  useEffect(() => {
+    if (isBasePeriod) return;
+    const clamped = clampFutureStartFields(period, simStart);
+    if (
+      clamped.startAge !== period.startAge ||
+      clamped.startMonth !== period.startMonth
+    ) {
+      onChange(clamped);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simStart.age, simStart.month, isBasePeriod]);
 
   return (
     <div className="residence-period-row">
@@ -69,7 +99,7 @@ function ResidencePeriodRow({
                 }
                 aria-label="開始年齢"
               >
-                {ageOptions.map((age) => (
+                {startAgeOptions.map((age) => (
                   <option key={age} value={age}>
                     {formatYearAtAgeLabel(
                       age,
@@ -88,7 +118,7 @@ function ResidencePeriodRow({
                 }
                 aria-label="開始月"
               >
-                {MONTHS.map((month) => (
+                {startMonthOptions.map((month) => (
                   <option key={month} value={month}>
                     {month}月
                   </option>

@@ -2,13 +2,19 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
   getLifetimeChartTickAges,
+  suggestLifetimeChartYAxisMaxStep,
   type LifetimeBalanceChartPoint,
 } from '../../lib/lifetimeBalanceChartData';
 import { SIMULATION_CHART_MARGIN_LEFT } from '../../lib/simulationLayout';
 
 export const ASSET_CHART_HEIGHT = 280;
+/** 全画面時の各グラフプロット高さ（2枚縦並びを想定） */
+export const ASSET_CHART_HEIGHT_FULLSCREEN = 380;
+/** 貯蓄・資産タブの各グラフプロット高さ */
+export const ASSET_SAVINGS_CHART_HEIGHT = 360;
+export const ASSET_SAVINGS_CHART_HEIGHT_FULLSCREEN = 460;
 export const ASSET_CHART_MARGIN_LEFT = SIMULATION_CHART_MARGIN_LEFT;
-export const ASSET_CHART_MARGIN_TOP = 16;
+export const ASSET_CHART_MARGIN_TOP = 26;
 export const ASSET_EXPENSE_BAR_MAX_SIZE = 36;
 /** ゼロ跨ぎ補間点を含む折れ線専用の非表示 X 軸 */
 export const ASSET_LINE_X_AXIS_ID = 'line';
@@ -16,7 +22,7 @@ const X_AXIS_ROW_HEIGHT = 14;
 const X_AXIS_ROW_GAP = 2;
 const X_AXIS_ROW_START = 18;
 
-/** 生涯収支シミュレーションと同じカテゴリ色 */
+/** 生涯収支グラフと同じカテゴリ色 */
 export const ASSET_CHART_COLORS = {
   lifeEvent: '#ee9cba',
   education: '#6db86d',
@@ -183,14 +189,34 @@ export function sumVisibleAssetIncome(
 
 export type AssetChartAggregation = 'year' | 'cumulative';
 
+export const ASSET_CHART_AGGREGATION_OPTIONS: {
+  id: AssetChartAggregation;
+  label: string;
+}[] = [
+  { id: 'year', label: '単年' },
+  { id: 'cumulative', label: '累計' },
+];
+
 const ASSET_INCOME_CUMULATIVE_KEYS = [
   ...ASSET_INCOME_STACK_ORDER,
   'income',
+  ...ASSET_EXPENSE_STACK_ORDER,
 ] as const satisfies ReadonlyArray<keyof LifetimeBalanceChartPoint>;
 
 const ASSET_EXPENSE_CUMULATIVE_KEYS = [
   ...ASSET_EXPENSE_STACK_ORDER,
+  'income',
 ] as const satisfies ReadonlyArray<keyof LifetimeBalanceChartPoint>;
+
+/** 支出合計（積み上げ全カテゴリ、万円） */
+export function sumAssetExpenseTotal(point: LifetimeBalanceChartPoint): number {
+  return sumVisibleAssetExpense(point, ALL_ASSET_EXPENSE_SERIES_VISIBLE);
+}
+
+export const ASSET_INCOME_LINE_COLOR = ASSET_CHART_COLORS.income;
+export const ASSET_EXPENSE_LINE_COLOR = '#e11d48';
+export const ASSET_INCOME_LINE_LABEL = '収入';
+export const ASSET_EXPENSE_LINE_LABEL = '支出';
 
 function accumulateSeriesValues(
   points: LifetimeBalanceChartPoint[],
@@ -388,20 +414,21 @@ export function AssetChartZoomToolbar({
       >
         −
       </button>
-      {canZoomOut ? (
-        <button
-          type="button"
-          className="lifetime-chart-reset-btn"
-          onClick={onReset}
-        >
-          全期間
-        </button>
-      ) : null}
+      <button
+        type="button"
+        className="lifetime-chart-reset-btn"
+        disabled={!canZoomOut}
+        onClick={onReset}
+      >
+        全期間
+      </button>
     </div>
   );
 }
 
-export function useAssetChartWindow(points: LifetimeBalanceChartPoint[]) {
+export function useAssetChartWindow<T extends LifetimeBalanceChartPoint>(
+  points: T[],
+) {
   const [windowStart, setWindowStart] = useState(0);
   const [windowEnd, setWindowEnd] = useState<number | null>(null);
 
@@ -510,5 +537,184 @@ export function AssetTooltipRow({
       <span>{label}</span>
       <span>{formatTooltipMan(value)}</span>
     </p>
+  );
+}
+
+export function AssetChartSummaryPanel({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: ReadonlyArray<{ label: string; value: string }>;
+}) {
+  return (
+    <div className="lifetime-chart-summary">
+      <h3 className="lifetime-chart-summary-title">{title}</h3>
+      <dl className="lifetime-chart-summary-list">
+        {rows.map((row) => (
+          <div key={row.label} className="lifetime-chart-summary-row">
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+export type AssetChartYAxisMaxMode = 'auto' | 'manual';
+
+export function useAssetChartYAxisMax(autoYAxisMax: number) {
+  const [yAxisMaxMode, setYAxisMaxMode] =
+    useState<AssetChartYAxisMaxMode>('auto');
+  const [manualYAxisMax, setManualYAxisMax] = useState(500);
+
+  const axisMax =
+    yAxisMaxMode === 'manual'
+      ? Math.max(1, manualYAxisMax)
+      : Math.max(1, autoYAxisMax);
+
+  return {
+    yAxisMaxMode,
+    manualYAxisMax,
+    autoYAxisMax,
+    axisMax,
+    setYAxisMaxMode,
+    setManualYAxisMax,
+  };
+}
+
+/**
+ * プラス／マイナス両振りのグラフ用。
+ * 手動時は上限を「表示幅」として扱い、下限も −上限 でクリップする。
+ */
+export function resolveSignedAssetChartAxisDomain(
+  autoMin: number,
+  autoMax: number,
+  yAxisMaxMode: AssetChartYAxisMaxMode,
+  axisMax: number,
+): { min: number; max: number } {
+  const max = Math.max(1, axisMax);
+  if (yAxisMaxMode === 'manual') {
+    return {
+      min: autoMin < 0 ? Math.max(autoMin, -max) : autoMin,
+      max,
+    };
+  }
+  return {
+    min: autoMin,
+    max: Math.max(autoMax, autoMin + 1),
+  };
+}
+
+/** 手動設定の初期値・ヒント用（上下の大きい方） */
+export function signedAssetChartAutoAxisMax(
+  autoMin: number,
+  autoMax: number,
+): number {
+  return Math.max(1, autoMax, Math.abs(autoMin));
+}
+
+export function AssetChartYAxisMaxPanel({
+  yAxisMaxMode,
+  manualYAxisMax,
+  autoYAxisMax,
+  onYAxisMaxModeChange,
+  onManualYAxisMaxChange,
+  title = 'Y軸の上限',
+  ariaLabel = 'Y軸上限の設定',
+}: {
+  yAxisMaxMode: AssetChartYAxisMaxMode;
+  manualYAxisMax: number;
+  autoYAxisMax: number;
+  onYAxisMaxModeChange: (mode: AssetChartYAxisMaxMode) => void;
+  onManualYAxisMaxChange: (value: number) => void;
+  title?: string;
+  ariaLabel?: string;
+}) {
+  const step = suggestLifetimeChartYAxisMaxStep(
+    yAxisMaxMode === 'manual' ? manualYAxisMax : autoYAxisMax,
+  );
+
+  return (
+    <div className="lifetime-chart-yaxis-panel">
+      <h3 className="lifetime-chart-summary-title">{title}</h3>
+      <div
+        className="lifetime-chart-yaxis-mode"
+        role="group"
+        aria-label={ariaLabel}
+      >
+        <button
+          type="button"
+          className={
+            yAxisMaxMode === 'auto'
+              ? 'lifetime-chart-yaxis-mode-btn is-active'
+              : 'lifetime-chart-yaxis-mode-btn'
+          }
+          aria-pressed={yAxisMaxMode === 'auto'}
+          onClick={() => onYAxisMaxModeChange('auto')}
+        >
+          自動
+        </button>
+        <button
+          type="button"
+          className={
+            yAxisMaxMode === 'manual'
+              ? 'lifetime-chart-yaxis-mode-btn is-active'
+              : 'lifetime-chart-yaxis-mode-btn'
+          }
+          aria-pressed={yAxisMaxMode === 'manual'}
+          onClick={() => {
+            onManualYAxisMaxChange(
+              Math.max(1, Math.round(manualYAxisMax || autoYAxisMax)),
+            );
+            onYAxisMaxModeChange('manual');
+          }}
+        >
+          手動
+        </button>
+      </div>
+      {yAxisMaxMode === 'manual' ? (
+        <div className="lifetime-chart-yaxis-manual">
+          <button
+            type="button"
+            className="lifetime-chart-yaxis-step-btn"
+            aria-label="上限を下げる"
+            onClick={() =>
+              onManualYAxisMaxChange(Math.max(1, manualYAxisMax - step))
+            }
+          >
+            −
+          </button>
+          <label className="lifetime-chart-yaxis-input-wrap">
+            <input
+              type="number"
+              className="lifetime-chart-yaxis-input"
+              min={1}
+              step={step}
+              value={Math.round(manualYAxisMax)}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (!Number.isFinite(next)) return;
+                onManualYAxisMaxChange(Math.max(1, next));
+              }}
+            />
+            <span>万円</span>
+          </label>
+          <button
+            type="button"
+            className="lifetime-chart-yaxis-step-btn"
+            aria-label="上限を上げる"
+            onClick={() => onManualYAxisMaxChange(manualYAxisMax + step)}
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <p className="lifetime-chart-yaxis-auto-hint">
+          自動: {Math.round(autoYAxisMax).toLocaleString('ja-JP')}万円
+        </p>
+      )}
+    </div>
   );
 }

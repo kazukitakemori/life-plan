@@ -30,6 +30,7 @@ import {
   syncEducationWithFamily,
 } from './lib/educationDefaults';
 import { migrateHousingState } from './lib/housingDefaults';
+import { migrateHouseholdHousingToHead } from './lib/housingRentalPayer';
 import {
   addAutoInsuranceForVehicle,
   addFireInsuranceForHousing,
@@ -56,6 +57,7 @@ import {
   syncLifeEventsWithFamily,
 } from './lib/lifeEventDefaults';
 import { syncAllIncomeWithFamilyDefaults } from './lib/memberDependentDefaults';
+import { pruneMemberTabExtras } from './lib/memberTabVisibility';
 import { syncPriorYearIncomeWithFamily } from './lib/priorYearIncomeDefaults';
 import {
   syncSavingsWithFamily,
@@ -119,6 +121,7 @@ import type { LoanEntry, LoanState, LoanStructureType } from './types/loan';
 import type { IncomeByMember, PriorYearIncomeByMember } from './types/income';
 import type { LifeEventState } from './types/lifeEvent';
 import type { LivingExpenseState } from './types/living';
+import type { MemberTabExtras } from './types/memberTabVisibility';
 import type { PensionByMember } from './types/pension';
 import { migrateRequiredCoverageState } from './lib/requiredCoverage';
 import type { RequiredCoveragePageView, RequiredCoverageState } from './types/requiredCoverage';
@@ -130,18 +133,22 @@ import type { StepId } from './types/steps';
 import type { SecondLifeState } from './types/secondLife';
 import {
   addSecondLifeNursingTemplates,
-  applySecondLifeHousingOneTimeToLifeEvent,
-  applySecondLifeHousingToHousingState,
+  applySecondLifeHousingDesign,
   applySecondLifeLivingDesign,
 } from './lib/secondLifeTemplates';
 import type { TaxSocialState } from './types/taxSocial';
 import type { VehicleEntry, VehicleState } from './types/vehicle';
 
 const planRepository = getLocalPlanRepository();
-const INITIAL_PLAN = createEmptyPlanAppState();
+/** 初回マウント時に生成（モジュール読込時点の月に固定しない） */
+function createSessionInitialPlan(): PlanAppState {
+  return createEmptyPlanAppState();
+}
 const AUTOSAVE_DELAY_MS = 500;
 
 export default function App() {
+  const [sessionInitialPlan] = useState(createSessionInitialPlan);
+  const INITIAL_PLAN = sessionInitialPlan;
   const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
   const [adminTab, setAdminTab] = useState<AdminTabId>('license');
@@ -224,6 +231,9 @@ export default function App() {
   const [secondLifeState, setSecondLifeState] = useState<SecondLifeState>(
     () => INITIAL_PLAN.secondLifeState,
   );
+  const [memberTabExtras, setMemberTabExtras] = useState<MemberTabExtras>(
+    () => INITIAL_PLAN.memberTabExtras,
+  );
   const [referenceDate, setReferenceDate] = useState<Date>(
     () => INITIAL_PLAN.referenceDate,
   );
@@ -271,6 +281,7 @@ export default function App() {
       taxSocialState,
       requiredCoverageState,
       secondLifeState,
+      memberTabExtras,
       referenceDate,
     },
   };
@@ -384,6 +395,7 @@ export default function App() {
     setPensionByMember(state.pensionByMember);
     setRequiredCoverageState(state.requiredCoverageState);
     setSecondLifeState(state.secondLifeState);
+    setMemberTabExtras(state.memberTabExtras);
     setReferenceDate(state.referenceDate);
     if (options?.switchToInput !== false) {
       setHeaderTab('input');
@@ -936,21 +948,75 @@ export default function App() {
     setLivingState(state);
   };
 
+  const handleMemberTabExtrasChange = (extras: MemberTabExtras) => {
+    markPlanInputsChanged();
+    setMemberTabExtras(extras);
+  };
+
   const handleLoanChange = (state: LoanState) => {
     markPlanInputsChanged();
+    const head = familyMembers.find((member) => member.role === 'head');
     const { housingState: syncedHousing, loanState: syncedLoans } =
       applyHousingAndLoanSync(housingState, state, vehicleState);
     setLoanState(syncedLoans);
-    setHousingState(migrateHousingState(syncedHousing));
+    setHousingState(
+      migrateHousingState(
+        syncedHousing,
+        head,
+        referenceDate.getMonth() + 1,
+        referenceDate.getFullYear(),
+        { headId: head?.id },
+      ),
+    );
+  };
+
+  const applyHousingLoanInsurance = (
+    nextHousing: HousingState,
+    nextLoans: LoanState,
+    nextInsurance: InsuranceState | undefined = insuranceState,
+  ) => {
+    markPlanInputsChanged();
+    const head = familyMembers.find((member) => member.role === 'head');
+    const migrated = migrateHousingState(
+      nextHousing,
+      head,
+      referenceDate.getMonth() + 1,
+      referenceDate.getFullYear(),
+      { headId: head?.id },
+    );
+    const remapped = migrateHouseholdHousingToHead({
+      housingState: migrated,
+      loanState: nextLoans,
+      insuranceState: nextInsurance,
+      headId: head?.id,
+    });
+    const { housingState: syncedHousing, loanState: syncedLoans } =
+      applyHousingAndLoanSync(
+        remapped.housingState,
+        remapped.loanState,
+        vehicleState,
+      );
+    setHousingState(syncedHousing);
+    setLoanState(syncedLoans);
+    if (remapped.insuranceState) {
+      setInsuranceState(remapped.insuranceState);
+    }
   };
 
   const handleHousingChange = (state: HousingState) => {
-    markPlanInputsChanged();
-    const migrated = migrateHousingState(state);
-    const { housingState: syncedHousing, loanState: syncedLoans } =
-      applyHousingAndLoanSync(migrated, loanState, vehicleState);
-    setHousingState(syncedHousing);
-    setLoanState(syncedLoans);
+    applyHousingLoanInsurance(state, loanState, insuranceState);
+  };
+
+  const handleHousingBundleChange = (bundle: {
+    housingState: HousingState;
+    loanState: LoanState;
+    insuranceState?: InsuranceState;
+  }) => {
+    applyHousingLoanInsurance(
+      bundle.housingState,
+      bundle.loanState,
+      bundle.insuranceState,
+    );
   };
 
   const handleVehicleChange = (state: VehicleState) => {
@@ -1211,6 +1277,7 @@ export default function App() {
             deviceLabel={getDefaultDeviceLabel()}
             errorMessage={license.errorMessage}
             busy={license.busy}
+            isDevUnlock={license.isDevUnlock}
             onManageLicense={license.openLicenseModal}
             onStartWithoutKey={() => {
               void handleStartTrialWithoutKey();
@@ -1268,6 +1335,7 @@ export default function App() {
             onChange={(members) => {
               markPlanInputsChanged();
               setFamilyMembers(members);
+              setMemberTabExtras((prev) => pruneMemberTabExtras(prev, members));
               setIncomeByMember((prev) =>
                 syncAllIncomeWithFamilyDefaults(members, prev),
               );
@@ -1305,6 +1373,8 @@ export default function App() {
             priorYearIncomeByMember={priorYearIncomeByMember}
             taxSocialState={taxSocialState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             purposeNote={
               hasPlanPurpose(planPurposes, 'education') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1325,6 +1395,8 @@ export default function App() {
             members={familyMembers}
             lifeEventState={lifeEventState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             secondLifeState={secondLifeState}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
@@ -1361,6 +1433,8 @@ export default function App() {
             members={familyMembers}
             livingState={livingState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             secondLifeState={secondLifeState}
             incomeByMember={incomeByMember}
             pensionByMember={pensionByMember}
@@ -1401,6 +1475,8 @@ export default function App() {
             vehicleState={vehicleState}
             insuranceState={insuranceState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             secondLifeState={secondLifeState}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
@@ -1409,6 +1485,7 @@ export default function App() {
                 : undefined
             }
             onChange={handleHousingChange}
+            onHousingBundleChange={handleHousingBundleChange}
             onSecondLifeChange={(state) => {
               markPlanInputsChanged();
               setSecondLifeState(state);
@@ -1417,23 +1494,33 @@ export default function App() {
               const head = familyMembers.find((member) => member.role === 'head');
               if (!head) return;
               markPlanInputsChanged();
-              setHousingState(
-                applySecondLifeHousingToHousingState({
-                  housingState,
-                  secondLifeState,
-                  member: head,
-                  referenceDate,
-                }),
-              );
-              setLifeEventState(
-                applySecondLifeHousingOneTimeToLifeEvent({
-                  lifeEventState,
-                  secondLifeState,
-                  familyMembers,
-                  referenceDate,
-                }),
-              );
+              const applied = applySecondLifeHousingDesign({
+                housingState,
+                lifeEventState,
+                secondLifeState,
+                member: head,
+                familyMembers,
+                referenceDate,
+                targetId: head.id,
+              });
+              setHousingState(applied.housingState);
+              setLifeEventState(applied.lifeEventState);
+              return applied;
             }}
+            onPreviewSecondLifeHousing={() => {
+              const head = familyMembers.find((member) => member.role === 'head');
+              if (!head) return;
+              return applySecondLifeHousingDesign({
+                housingState,
+                lifeEventState,
+                secondLifeState,
+                member: head,
+                familyMembers,
+                referenceDate,
+                targetId: head.id,
+              });
+            }}
+            onNavigateToStep={setActiveStep}
             onAddHousingLoan={handleAddHousingLoan}
             onRemoveHousingLoan={handleRemoveHousingLoan}
             onUpdateLoan={handleUpdateLoan}
@@ -1457,6 +1544,8 @@ export default function App() {
             housingState={housingState}
             insuranceState={insuranceState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1482,6 +1571,8 @@ export default function App() {
             vehicleState={vehicleState}
             loanState={loanState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             onChange={handleLoanChange}
             onHousingChange={handleHousingChange}
           />
@@ -1496,6 +1587,8 @@ export default function App() {
             vehicleState={vehicleState}
             insuranceState={insuranceState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             onChange={(state) => {
               markPlanInputsChanged();
               setInsuranceState(state);
@@ -1511,6 +1604,8 @@ export default function App() {
             savingsState={savingsState}
             incomeByMember={incomeByMember}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             onChange={(state) => {
               markPlanInputsChanged();
               setSavingsState(state);
@@ -1527,6 +1622,8 @@ export default function App() {
             priorYearIncomeByMember={priorYearIncomeByMember}
             savingsState={savingsState}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             purposeNote={(() => {
               if (hasPlanPurpose(planPurposes, 'life_plan')) return undefined;
               const notes: string[] = [];
@@ -1566,6 +1663,8 @@ export default function App() {
             pensionByMember={pensionByMember}
             incomeByMember={incomeByMember}
             referenceDate={referenceDate}
+            memberTabExtras={memberTabExtras}
+            onMemberTabExtrasChange={handleMemberTabExtrasChange}
             purposeNote={
               hasPlanPurpose(planPurposes, 'pension') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1627,6 +1726,7 @@ export default function App() {
           key={analysisSession}
           analysisSession={analysisSession}
           activeTab={assetBuildingTab}
+          onTabChange={setAssetBuildingTab}
           data={analysisSnapshot.cashFlowData}
           familyMembers={analysisSnapshot.cashFlowInput.familyMembers}
           incomeByMember={analysisSnapshot.cashFlowInput.incomeByMember}
@@ -1638,6 +1738,7 @@ export default function App() {
           lifeEventState={analysisSnapshot.cashFlowInput.lifeEventState}
           pensionByMember={analysisSnapshot.cashFlowInput.pensionByMember}
           referenceDate={analysisSnapshot.cashFlowInput.referenceDate}
+          secondLifeState={secondLifeState}
         />
       );
     }

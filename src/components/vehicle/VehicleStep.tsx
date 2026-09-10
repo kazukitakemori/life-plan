@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getInsurancesForVehicle } from '../../lib/insuranceDefaults';
 import { getVehicleLinkedLoans } from '../../lib/loanResolution';
 import { createVehicleEntryFromPreset } from '../../lib/vehicleDefaults';
-import {
-  getIncomeEligibleMembers,
-  getMemberTabLabel,
-} from '../../lib/memberDisplay';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
+import { memberHasVehicleData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/loan';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { AddVehicleCards } from './AddVehicleCards';
@@ -22,6 +22,8 @@ interface VehicleStepProps {
   housingState: HousingState;
   insuranceState?: InsuranceState;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   purposeNote?: string;
   onChange: (state: VehicleState) => void;
   onAddVehicleLoan: (memberId: string, vehicle: VehicleEntry) => void;
@@ -39,6 +41,8 @@ export function VehicleStep({
   housingState,
   insuranceState,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   purposeNote,
   onChange,
   onAddVehicleLoan,
@@ -48,34 +52,50 @@ export function VehicleStep({
   onUpdateInsurance,
   onRemoveInsurance,
 }: VehicleStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
-  );
   const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
+  const [copySourceId, setCopySourceId] = useState(headMember?.id ?? '');
 
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
-  const [copySourceId, setCopySourceId] = useState(
-    headMember?.id ?? eligibleMembers[0]?.id ?? '',
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasVehicleData(vehicleState, memberId),
+    [vehicleState],
   );
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
-    ? activeMemberId
-    : defaultActiveId;
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'vehicle',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
+
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
+    ? activeMemberId
+    : fallbackActiveId;
+
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
   const entries = activeMember
     ? (vehicleState.byMember[activeMember.id] ?? [])
     : [];
 
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const member of eligibleMembers) {
+    for (const member of visibleMembers) {
       counts[member.id] = vehicleState.byMember[member.id]?.length ?? 0;
     }
     return counts;
-  }, [eligibleMembers, vehicleState.byMember]);
+  }, [visibleMembers, vehicleState.byMember]);
 
   const linkedLoansByVehicleId = useMemo(() => {
     const map: Record<string, VehicleLinkedLoanView[]> = {};
@@ -105,11 +125,11 @@ export function VehicleStep({
 
   const copySourceOptions = useMemo(
     () =>
-      eligibleMembers.map((member) => ({
+      visibleMembers.map((member) => ({
         id: member.id,
         label: getMemberTabLabel(member),
       })),
-    [eligibleMembers],
+    [visibleMembers],
   );
 
   const persistEntries = (memberId: string, updated: typeof entries) => {
@@ -186,11 +206,15 @@ export function VehicleStep({
 
       <div className="vehicle-toolbar">
         <MemberIncomeTabs
-          members={eligibleMembers}
+          members={visibleMembers}
           activeMemberId={resolvedActiveId}
           entryCounts={entryCounts}
           referenceDate={referenceDate}
           onSelect={setActiveMemberId}
+          addableMembers={addableMembers}
+          onAddMemberTab={handleAddMemberTab}
+          removableMemberIds={removableMemberIds}
+          onRemoveMemberTab={handleRemoveMemberTab}
         />
 
         <div className="life-event-copy-bar">

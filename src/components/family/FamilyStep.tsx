@@ -1,4 +1,4 @@
-import { formatReferenceDate } from '../../lib/birthDate';
+import { formatReferenceSimSubtitle } from '../../lib/simulationTiming';
 import { createFamilyMember } from '../../lib/familyDefaults';
 import type { FamilyMember, FamilyMemberRole } from '../../types/family';
 import type { TaxSocialState } from '../../types/taxSocial';
@@ -43,7 +43,7 @@ export function FamilyStep({
         <h2 className="step-title">
           Q1. ご家族情報
           <span className="step-subtitle">
-            （{formatReferenceDate(referenceDate)}）
+            （{formatReferenceSimSubtitle(referenceDate)}）
           </span>
         </h2>
         <div className="step-actions">

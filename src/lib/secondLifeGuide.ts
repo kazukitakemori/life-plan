@@ -65,19 +65,41 @@ function isLivingScheduleActiveAtHeadAge(
   return true;
 }
 
-function collectHouseholdHousingItems(housingState: HousingState) {
-  const data = getHousingTargetData(housingState, HOUSEHOLD_HOUSING_KEY);
-  return {
-    rentals: data.rentals,
-    owned: data.owned,
-  };
+function collectHouseholdHousingItems(
+  housingState: HousingState,
+  headId?: string,
+) {
+  const primaryId = headId ?? HOUSEHOLD_HOUSING_KEY;
+  const primary = getHousingTargetData(housingState, primaryId);
+  const household = getHousingTargetData(housingState, HOUSEHOLD_HOUSING_KEY);
+  // 移行前後どちらも拾う（重複は id で除外）
+  const rentals = [...primary.rentals];
+  const owned = [...primary.owned];
+  for (const rental of household.rentals) {
+    if (!rentals.some((item) => item.id === rental.id)) rentals.push(rental);
+  }
+  for (const property of household.owned) {
+    if (!owned.some((item) => item.id === property.id)) owned.push(property);
+  }
+  // 配偶者など他タブの物件もチェックリスト対象
+  for (const [targetId, data] of Object.entries(housingState.byTarget)) {
+    if (targetId === primaryId || targetId === HOUSEHOLD_HOUSING_KEY) continue;
+    for (const rental of data.rentals) {
+      if (!rentals.some((item) => item.id === rental.id)) rentals.push(rental);
+    }
+    for (const property of data.owned) {
+      if (!owned.some((item) => item.id === property.id)) owned.push(property);
+    }
+  }
+  return { rentals, owned };
 }
 
 function buildHousingChecklistItem(
   housingState: HousingState,
   startAge: number,
+  headId?: string,
 ): SecondLifeChecklistItem {
-  const { rentals, owned } = collectHouseholdHousingItems(housingState);
+  const { rentals, owned } = collectHouseholdHousingItems(housingState, headId);
   const secondLifeRentals = rentals.filter((rental) => rental.startAge >= startAge);
   const secondLifeOwned = owned.filter((property) => property.startAge >= startAge);
   const hasCurrentOnly =
@@ -149,9 +171,13 @@ function buildLivingChecklistItem(input: {
       })
     : 0;
 
-  const householdSchedules =
-    input.livingState.byTarget[HOUSEHOLD_LIVING_KEY] ?? [];
-  const secondLifeSchedules = householdSchedules.filter(
+  const payerSchedules =
+    (head
+      ? input.livingState.byTarget[head.id]
+      : undefined) ??
+    input.livingState.byTarget[HOUSEHOLD_LIVING_KEY] ??
+    [];
+  const secondLifeSchedules = payerSchedules.filter(
     (schedule) =>
       schedule.startAge >= input.startAge &&
       head != null &&
@@ -163,7 +189,7 @@ function buildLivingChecklistItem(input: {
       ),
   );
   const hasPreSecondLifeOnly =
-    householdSchedules.some(
+    payerSchedules.some(
       (schedule) =>
         schedule.endMode === 'until'
           ? schedule.endAge < input.startAge
@@ -173,7 +199,7 @@ function buildLivingChecklistItem(input: {
   let status: SecondLifeChecklistStatus = 'missing';
   if (secondLifeSchedules.length > 0 || atSecondLife > 0) {
     status = 'done';
-  } else if (hasPreSecondLifeOnly || householdSchedules.length > 0) {
+  } else if (hasPreSecondLifeOnly || payerSchedules.length > 0) {
     status = 'partial';
   }
 
@@ -265,10 +291,11 @@ export function buildSecondLifeGuide(input: {
   referenceDate: Date;
 }): SecondLifeGuide {
   const startAge = input.startAge;
+  const headId = input.familyMembers.find((m) => m.role === 'head')?.id;
   return {
     startAge,
     items: [
-      buildHousingChecklistItem(input.housingState, startAge),
+      buildHousingChecklistItem(input.housingState, startAge, headId),
       buildLivingChecklistItem({
         livingState: input.livingState,
         familyMembers: input.familyMembers,

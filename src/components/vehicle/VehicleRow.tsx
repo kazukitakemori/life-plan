@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   calcBirthYear,
   calcYearAtAge,
@@ -7,6 +7,16 @@ import {
 } from '../../lib/birthDate';
 import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
 import { toJapaneseEra } from '../../lib/era';
+import {
+  clampFutureStartFields,
+  clampPastInclusiveStartFields,
+  filterAgesAtOrAfter,
+  filterAgesAtOrBefore,
+  filterMonthsAtOrAfter,
+  filterMonthsAtOrBefore,
+  resolveReferenceNowAgeMonth,
+  resolveSimulationStartAgeMonth,
+} from '../../lib/periodTimingBounds';
 import { getVehicleAgeOptions } from '../../lib/vehicleDefaults';
 import {
   type DuplicateVehicleOptions,
@@ -77,6 +87,10 @@ interface VehicleRowProps {
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const END_AGES = Array.from({ length: 101 }, (_, i) => i);
+const OWNED_VEHICLE_PAYMENT_MODES: VehiclePaymentMode[] = [
+  'monthlyRepayment',
+  'alreadyOwned',
+];
 
 export function VehicleRow({
   entry,
@@ -109,6 +123,25 @@ export function VehicleRow({
   const ageOptions = getVehicleAgeOptions(member);
   const resolvedKind = resolveVehicleKind(entry.type, entry.kind);
   const resolvedCondition = resolveVehicleCondition(entry);
+  const simStart = useMemo(
+    () => resolveSimulationStartAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const refNow = useMemo(
+    () => resolveReferenceNowAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const isOwnedVehicle = resolvedCondition === 'owned';
+  const paymentModeOptions = isOwnedVehicle
+    ? OWNED_VEHICLE_PAYMENT_MODES
+    : VEHICLE_PAYMENT_MODE_OPTIONS;
+  const enforceFutureStart = !isOwnedVehicle;
+  const startAgeOptions = enforceFutureStart
+    ? filterAgesAtOrAfter(ageOptions, simStart)
+    : filterAgesAtOrBefore(ageOptions, refNow);
+  const startMonthOptions = enforceFutureStart
+    ? filterMonthsAtOrAfter(entry.startAge, simStart, MONTHS)
+    : filterMonthsAtOrBefore(entry.startAge, refNow, MONTHS);
   const requiresInspection = vehicleRequiresInspection(entry);
   const nextInspection = resolveNextInspection(
     entry,
@@ -135,10 +168,42 @@ export function VehicleRow({
 
   const applyAutoInspection = (next: VehicleEntry) =>
     withAutoNextInspection(next, birthYear, memberBirthMonth);
+  const commitVehicle = (next: VehicleEntry) => {
+    const clamped = enforceFutureStart
+      ? clampFutureStartFields(next, simStart)
+      : clampPastInclusiveStartFields(next, refNow);
+    onChange(applyAutoInspection(clamped));
+  };
+
+  useEffect(() => {
+    const clamped = enforceFutureStart
+      ? clampFutureStartFields(entry, simStart)
+      : clampPastInclusiveStartFields(entry, refNow);
+    if (
+      clamped.startAge !== entry.startAge ||
+      clamped.startMonth !== entry.startMonth
+    ) {
+      onChange(applyAutoInspection(clamped));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    simStart.age,
+    simStart.month,
+    refNow.age,
+    refNow.month,
+    enforceFutureStart,
+  ]);
+
   const annualCostCycleYears = resolveAnnualCostCycleYears(entry);
   const isMonthlyRepayment = entry.paymentMode === 'monthlyRepayment';
   const isAlreadyOwned = entry.paymentMode === 'alreadyOwned';
   const isPurchaseAmount = entry.paymentMode === 'purchaseAmount';
+  const isCash = entry.paymentMode === 'cash';
+  const showsPurchaseAmountInput = isPurchaseAmount || isCash;
+  const purchaseLoanMissing =
+    isPurchaseAmount &&
+    (entry.purchaseAmountMan <= 0 || linkedLoans.length === 0);
+  const cashPurchaseMissing = isCash && entry.purchaseAmountMan <= 0;
 
   const repaymentEndYear = entry.repaymentEndYear || startCalendarYear + 5;
   const repaymentEndMonth = entry.repaymentEndMonth || entry.startMonth;
@@ -164,13 +229,41 @@ export function VehicleRow({
   );
 
   useEffect(() => {
-    if ((isMonthlyRepayment || isAlreadyOwned) && linkedLoans.length > 0) {
+    if (
+      (isMonthlyRepayment || isAlreadyOwned || isCash) &&
+      linkedLoans.length > 0
+    ) {
       linkedLoans.forEach((loan) => onRemoveLoan(loan.entry.id));
     }
-  }, [isMonthlyRepayment, isAlreadyOwned, linkedLoans, onRemoveLoan]);
+  }, [isMonthlyRepayment, isAlreadyOwned, isCash, linkedLoans, onRemoveLoan]);
+
+  // 既保有では購入費系の支払い方法は使わない
+  useEffect(() => {
+    if (!isOwnedVehicle) return;
+    if (
+      entry.paymentMode !== 'cash' &&
+      entry.paymentMode !== 'purchaseAmount'
+    ) {
+      return;
+    }
+    onChange({ ...entry, paymentMode: 'alreadyOwned', purchaseAmountMan: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnedVehicle, entry.paymentMode]);
 
   const handlePaymentModeChange = (mode: VehiclePaymentMode) => {
+    if (isOwnedVehicle && !OWNED_VEHICLE_PAYMENT_MODES.includes(mode)) return;
     onChange({ ...entry, paymentMode: mode });
+  };
+
+  const withOwnedPaymentGuard = (next: VehicleEntry): VehicleEntry => {
+    if (resolveVehicleCondition(next) !== 'owned') return next;
+    if (
+      next.paymentMode !== 'cash' &&
+      next.paymentMode !== 'purchaseAmount'
+    ) {
+      return next;
+    }
+    return { ...next, paymentMode: 'alreadyOwned', purchaseAmountMan: 0 };
   };
 
   return (
@@ -221,11 +314,13 @@ export function VehicleRow({
             onChange={(e) => {
               const condition = parseVehicleCondition(e.target.value);
               onChange(
-                applyAutoInspection({
-                  ...entry,
-                  kind: condition,
-                  condition,
-                }),
+                withOwnedPaymentGuard(
+                  applyAutoInspection({
+                    ...entry,
+                    kind: condition,
+                    condition,
+                  }),
+                ),
               );
             }}
           >
@@ -242,10 +337,12 @@ export function VehicleRow({
               value={resolvedCondition}
               onChange={(e) =>
                 onChange(
-                  applyAutoInspection({
-                    ...entry,
-                    condition: parseVehicleCondition(e.target.value),
-                  }),
+                  withOwnedPaymentGuard(
+                    applyAutoInspection({
+                      ...entry,
+                      condition: parseVehicleCondition(e.target.value),
+                    }),
+                  ),
                 )
               }
               aria-label="新車・中古・既に保有"
@@ -285,10 +382,12 @@ export function VehicleRow({
             value={resolvedCondition === 'owned' ? 'owned' : 'new'}
             onChange={(e) =>
               onChange(
-                applyAutoInspection({
-                  ...entry,
-                  condition: parseVehicleCondition(e.target.value),
-                }),
+                withOwnedPaymentGuard(
+                  applyAutoInspection({
+                    ...entry,
+                    condition: parseVehicleCondition(e.target.value),
+                  }),
+                ),
               )
             }
             aria-label="購入区分"
@@ -310,15 +409,13 @@ export function VehicleRow({
                 className="select-input select-input--compact select-input--schedule"
                 value={entry.startAge}
                 onChange={(e) =>
-                  onChange(
-                    applyAutoInspection({
-                      ...entry,
-                      startAge: Number(e.target.value),
-                    }),
-                  )
+                  commitVehicle({
+                    ...entry,
+                    startAge: Number(e.target.value),
+                  })
                 }
               >
-                {ageOptions.map((age) => (
+                {startAgeOptions.map((age) => (
                   <option key={age} value={age}>
                     {age}才
                   </option>
@@ -328,15 +425,13 @@ export function VehicleRow({
                 className="select-input select-input--compact select-input--schedule"
                 value={entry.startMonth}
                 onChange={(e) =>
-                  onChange(
-                    applyAutoInspection({
-                      ...entry,
-                      startMonth: Number(e.target.value),
-                    }),
-                  )
+                  commitVehicle({
+                    ...entry,
+                    startMonth: Number(e.target.value),
+                  })
                 }
               >
-                {MONTHS.map((month) => (
+                {startMonthOptions.map((month) => (
                   <option key={month} value={month}>
                     {month}月
                   </option>
@@ -436,7 +531,7 @@ export function VehicleRow({
             role="radiogroup"
             aria-label="支払い方法の入力方法"
           >
-            {VEHICLE_PAYMENT_MODE_OPTIONS.map((mode) => (
+            {paymentModeOptions.map((mode) => (
               <label
                 key={mode}
                 className={[
@@ -523,99 +618,36 @@ export function VehicleRow({
             <p className="vehicle-already-owned-note">
               購入費・ローン返済は計上しません
             </p>
-          ) : isPurchaseAmount ? (
-            <div className="life-event-amount-field">
-              <input
-                type="number"
-                className="amount-input"
-                value={entry.purchaseAmountMan}
-                min={0}
-                step={1}
-                onChange={(e) =>
-                  onChange({
-                    ...entry,
-                    purchaseAmountMan: Number(e.target.value) || 0,
-                  })
-                }
-              />
-              <span className="amount-unit">万円</span>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-replace">
-        <div className="vehicle-replace-cell">
-          <div className="vehicle-duplicate-controls">
-            <select
-              className="select-input life-event-select"
-              value={
-                needsReplacementCondition
-                  ? duplicateReplacement === 'yes'
-                    ? 'none'
-                    : duplicateReplacement
-                  : duplicateReplacement === 'new' ||
-                      duplicateReplacement === 'used'
-                    ? 'yes'
-                    : duplicateReplacement
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === 'none') {
-                  setDuplicateReplacement('none');
-                  return;
-                }
-                if (!needsReplacementCondition) {
-                  setDuplicateReplacement('yes');
-                  return;
-                }
-                setDuplicateReplacement(
-                  value === 'used' ? 'used' : 'new',
-                );
-              }}
-              aria-label="買い替え"
-              disabled={!onDuplicate}
-            >
-              <option value="none">なし</option>
-              {needsReplacementCondition ? (
-                VEHICLE_REPLACEMENT_CONDITION_OPTIONS.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {VEHICLE_REPLACEMENT_CONDITION_LABELS[condition]}
-                  </option>
-                ))
-              ) : (
-                <option value="yes">あり</option>
-              )}
-            </select>
-            {duplicateReplacement !== 'none' && (
-              <button
-                type="button"
-                className="life-event-copy-btn vehicle-duplicate-btn"
-                onClick={() => {
-                  if (!onDuplicate) return;
-                  if (needsReplacementCondition) {
-                    if (
-                      duplicateReplacement !== 'new' &&
-                      duplicateReplacement !== 'used'
-                    ) {
-                      return;
-                    }
-                    onDuplicate({ condition: duplicateReplacement });
-                    return;
+          ) : showsPurchaseAmountInput ? (
+            <>
+              <div className="life-event-amount-field">
+                <input
+                  type="number"
+                  className="amount-input"
+                  value={entry.purchaseAmountMan}
+                  min={0}
+                  step={1}
+                  onChange={(e) =>
+                    onChange({
+                      ...entry,
+                      purchaseAmountMan: Number(e.target.value) || 0,
+                    })
                   }
-                  onDuplicate({});
-                }}
-                disabled={!canDuplicate}
-              >
-                複製
-              </button>
-            )}
-          </div>
-          {duplicateReplacement !== 'none' && (
-            <p className="vehicle-replace-hint">
-              利用期間の終わりの翌月から、同条件で次の台を追加します
-            </p>
-          )}
+                />
+                <span className="amount-unit">万円</span>
+              </div>
+              {purchaseLoanMissing ? (
+                <p className="vehicle-payment-error" role="alert">
+                  購入費の入力とローンの追加の両方が必要です
+                </p>
+              ) : null}
+              {cashPurchaseMissing ? (
+                <p className="vehicle-payment-error" role="alert">
+                  購入費を入力してください
+                </p>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -790,6 +822,81 @@ export function VehicleRow({
               </div>
             </>
           ) : null}
+        </div>
+      </div>
+
+      <div className="life-event-table-cell vehicle-col-replace">
+        <div className="vehicle-replace-cell">
+          <div className="vehicle-duplicate-controls">
+            <select
+              className="select-input life-event-select"
+              value={
+                needsReplacementCondition
+                  ? duplicateReplacement === 'yes'
+                    ? 'none'
+                    : duplicateReplacement
+                  : duplicateReplacement === 'new' ||
+                      duplicateReplacement === 'used'
+                    ? 'yes'
+                    : duplicateReplacement
+              }
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === 'none') {
+                  setDuplicateReplacement('none');
+                  return;
+                }
+                if (!needsReplacementCondition) {
+                  setDuplicateReplacement('yes');
+                  return;
+                }
+                setDuplicateReplacement(
+                  value === 'used' ? 'used' : 'new',
+                );
+              }}
+              aria-label="買い替え"
+              disabled={!onDuplicate}
+            >
+              <option value="none">なし</option>
+              {needsReplacementCondition ? (
+                VEHICLE_REPLACEMENT_CONDITION_OPTIONS.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {VEHICLE_REPLACEMENT_CONDITION_LABELS[condition]}
+                  </option>
+                ))
+              ) : (
+                <option value="yes">あり</option>
+              )}
+            </select>
+            {duplicateReplacement !== 'none' && (
+              <button
+                type="button"
+                className="life-event-copy-btn vehicle-duplicate-btn"
+                onClick={() => {
+                  if (!onDuplicate) return;
+                  if (needsReplacementCondition) {
+                    if (
+                      duplicateReplacement !== 'new' &&
+                      duplicateReplacement !== 'used'
+                    ) {
+                      return;
+                    }
+                    onDuplicate({ condition: duplicateReplacement });
+                    return;
+                  }
+                  onDuplicate({});
+                }}
+                disabled={!canDuplicate}
+              >
+                複製
+              </button>
+            )}
+          </div>
+          {duplicateReplacement !== 'none' && (
+            <p className="vehicle-replace-hint">
+              利用期間の終わりの翌月から、同条件で次の台を追加します
+            </p>
+          )}
         </div>
       </div>
 

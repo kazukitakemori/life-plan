@@ -7,6 +7,10 @@ import type { RequiredCoverageRiskKind } from '../../types/requiredCoverage';
 import type { StepId } from '../../types/steps';
 import { AnalysisStatusBanner } from '../shared/AnalysisStatusBanner';
 import { RequiredCoverageReadyBanner } from '../shared/RequiredCoverageReadyBanner';
+import {
+  ShellFullscreenProvider,
+  useShellFullscreen,
+} from './ShellFullscreenContext';
 import { Sidebar } from './Sidebar';
 import { TopHeader, type AutosaveStatus } from './TopHeader';
 
@@ -44,38 +48,41 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-export function AppShell({
-  activeStep,
-  enabledSteps,
-  requiredSteps = [],
-  showRequiredStepMarkers = false,
-  onStepChange,
-  onAnalyze,
-  analyzeDisabled,
-  showAnalyze = true,
-  showAnalysisStaleBanner = true,
-  activeHeaderTab,
-  onHeaderTabChange,
-  analysisUnlocked,
-  requiredCoverageUnlocked,
-  showRequiredCoverageReadyBanner = false,
-  requiredCoverageRiskKinds,
-  analysisStale = false,
-  isAnalyzing = false,
-  hasOpenPlan,
-  customerName,
-  planStatus,
-  autosaveStatus,
-  showHonorific,
-  isLicensed = false,
-  adminTab,
-  onAdminTabChange,
-  assetBuildingTab,
-  onAssetBuildingTabChange,
-  requiredCoverageRiskKind,
-  onRequiredCoverageRiskKindChange,
-  children,
-}: AppShellProps) {
+function AppShellFrame(props: AppShellProps) {
+  const {
+    activeStep,
+    enabledSteps,
+    requiredSteps = [],
+    showRequiredStepMarkers = false,
+    onStepChange,
+    onAnalyze,
+    analyzeDisabled,
+    showAnalyze = true,
+    showAnalysisStaleBanner = true,
+    activeHeaderTab,
+    onHeaderTabChange,
+    analysisUnlocked,
+    requiredCoverageUnlocked,
+    showRequiredCoverageReadyBanner = false,
+    requiredCoverageRiskKinds,
+    analysisStale = false,
+    isAnalyzing = false,
+    hasOpenPlan,
+    customerName,
+    planStatus,
+    autosaveStatus,
+    showHonorific,
+    isLicensed = false,
+    adminTab,
+    onAdminTabChange,
+    assetBuildingTab,
+    onAssetBuildingTabChange,
+    requiredCoverageRiskKind,
+    onRequiredCoverageRiskKindChange,
+    children,
+  } = props;
+
+  const { shellRef } = useShellFullscreen();
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
@@ -84,7 +91,7 @@ export function AppShell({
     !isAnalyzing;
 
   return (
-    <div className="shell">
+    <div ref={shellRef} className="shell">
       <TopHeader
         activeTab={activeHeaderTab}
         onTabChange={onHeaderTabChange}
@@ -128,5 +135,13 @@ export function AppShell({
         </main>
       </div>
     </div>
+  );
+}
+
+export function AppShell(props: AppShellProps) {
+  return (
+    <ShellFullscreenProvider>
+      <AppShellFrame {...props} />
+    </ShellFullscreenProvider>
   );
 }

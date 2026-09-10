@@ -31,6 +31,7 @@ import {
 import {
   CHART_COLORS,
   CHART_HEIGHT,
+  CHART_HEIGHT_FULLSCREEN,
   CHART_MARGIN_LEFT,
   CHART_MARGIN_TOP,
   CoverageChartZoomToolbar,
@@ -49,6 +50,7 @@ import {
   xAxisTotalHeight,
   type CoverageChartDisplayPoint,
 } from './requiredCoverageChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 type NeedLegendKey = 'expenseBase' | 'preparedFill' | 'incomeGap';
 type NeedLegendVisibility = Record<NeedLegendKey, boolean>;
@@ -438,6 +440,10 @@ export function RequiredCoverageNeedChart({
   );
   const xAxisRowCount = hasSpouse ? 2 : 1;
   const xAxisHeight = xAxisTotalHeight(xAxisRowCount);
+  const plotHeight = useFullscreenPlotHeight(
+    CHART_HEIGHT,
+    CHART_HEIGHT_FULLSCREEN,
+  );
   const hoveredPoint =
     visiblePoints.find((point) => point.headAge === hoveredHeadAge) ?? null;
   const nowSweep = displayPoints[0] ?? null;
@@ -445,7 +451,7 @@ export function RequiredCoverageNeedChart({
   if (points.length === 0) return null;
 
   const showLine = variant === 'line' || (compact && variant !== 'sweep');
-  const lineHeight = CHART_HEIGHT;
+  const lineHeight = plotHeight;
   const showExpense = visible.expenseBase;
   const showIncome = visible.preparedFill;
   const showNeed = visible.incomeGap;
@@ -603,7 +609,7 @@ export function RequiredCoverageNeedChart({
                 </p>
                 <ResponsiveContainer
                   width="100%"
-                  height={CHART_HEIGHT + xAxisHeight}
+                  height={plotHeight + xAxisHeight}
                 >
                   <ComposedChart
                     data={visiblePoints}

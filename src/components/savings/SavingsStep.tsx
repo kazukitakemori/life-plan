@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   createSavingsEntry,
   getMemberSavingsEntries,
@@ -19,9 +19,11 @@ import {
 } from '../../lib/idecoContributionLimit';
 import { ensureDcContributionFields } from '../../lib/dcContribution';
 import { resolveMemberAge } from '../../lib/familyDefaults';
-import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
+import { memberHasSavingsData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type {
   SavingsCategory,
   SavingsEntry,
@@ -36,6 +38,8 @@ interface SavingsStepProps {
   savingsState: SavingsState;
   incomeByMember: IncomeByMember;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   onChange: (state: SavingsState) => void;
 }
 
@@ -44,17 +48,12 @@ export function SavingsStep({
   savingsState,
   incomeByMember,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   onChange,
 }: SavingsStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
-  );
-
   const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
-
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
   const [dragEntryId, setDragEntryId] = useState<string | null>(null);
   const [dropInsertIndex, setDropInsertIndex] = useState<number | null>(null);
   const [expandRequest, setExpandRequest] = useState<{
@@ -64,6 +63,28 @@ export function SavingsStep({
   const dragEntryIdRef = useRef<string | null>(null);
   const dropInsertIndexRef = useRef<number | null>(null);
 
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasSavingsData(savingsState, memberId),
+    [savingsState],
+  );
+
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'savings',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
+
   const requestExpandEntry = (entryId: string) => {
     setExpandRequest((prev) => ({
       id: entryId,
@@ -71,11 +92,13 @@ export function SavingsStep({
     }));
   };
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
-    ? activeMemberId
-    : defaultActiveId;
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
+    ? activeMemberId
+    : fallbackActiveId;
+
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
 
   const entries = useMemo(
     () => getMemberSavingsEntries(savingsState, resolvedActiveId),
@@ -88,9 +111,9 @@ export function SavingsStep({
     () =>
       getSavingsEntryCounts(
         savingsState,
-        eligibleMembers.map((m) => m.id),
+        visibleMembers.map((m) => m.id),
       ),
-    [eligibleMembers, savingsState],
+    [visibleMembers, savingsState],
   );
 
   const persistEntries = (memberId: string, updated: SavingsEntry[]) => {
@@ -295,11 +318,15 @@ export function SavingsStep({
       </div>
 
       <MemberIncomeTabs
-        members={eligibleMembers}
+        members={visibleMembers}
         activeMemberId={resolvedActiveId}
         entryCounts={entryCounts}
         referenceDate={referenceDate}
         onSelect={setActiveMemberId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
       />
 
       <section className="savings-section">

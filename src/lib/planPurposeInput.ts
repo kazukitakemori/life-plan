@@ -38,15 +38,28 @@ export function isIncomeStepComplete(
   );
 }
 
-export function isLivingStepComplete(livingState: LivingExpenseState): boolean {
-  const schedules = livingState.byTarget[HOUSEHOLD_LIVING_KEY] ?? [];
-  return schedules.some((schedule) => {
-    if (schedule.inputMode === 'simple') {
-      return schedule.simpleMonthlyExpenseMan > 0;
-    }
-    const items = getLivingScheduleBillableItems(schedule);
-    return calcMonthlyEquivalentMan(items) > 0;
-  });
+export function isLivingStepComplete(
+  livingState: LivingExpenseState,
+  familyMembers?: FamilyMember[],
+): boolean {
+  const head = familyMembers?.find((member) => member.role === 'head');
+  const targetIds = new Set(Object.keys(livingState.byTarget));
+  if (head) targetIds.add(head.id);
+  // 旧データ互換: 未 migrate のご家族キーも見る
+  targetIds.add(HOUSEHOLD_LIVING_KEY);
+
+  for (const targetId of targetIds) {
+    const schedules = livingState.byTarget[targetId] ?? [];
+    const hasAmount = schedules.some((schedule) => {
+      if (schedule.inputMode === 'simple') {
+        return schedule.simpleMonthlyExpenseMan > 0;
+      }
+      const items = getLivingScheduleBillableItems(schedule);
+      return calcMonthlyEquivalentMan(items) > 0;
+    });
+    if (hasAmount) return true;
+  }
+  return false;
 }
 
 export function isEducationStepComplete(
@@ -73,7 +86,10 @@ export function isStepInputComplete(
         input.incomeByMember,
       );
     case 'living':
-      return isLivingStepComplete(input.livingState);
+      return isLivingStepComplete(
+        input.livingState,
+        input.familyMembers,
+      );
     case 'education':
       return isEducationStepComplete(
         input.familyMembers,

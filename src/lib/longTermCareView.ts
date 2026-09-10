@@ -4,6 +4,7 @@ import type { PensionByMember } from '../types/pension';
 import type { LongTermCareViewConfig } from '../types/longTermCareView';
 import { calcMemberAnnualPensionManByMember } from './calculationBreakdown';
 import { getMemberAgeAtYearEnd } from './memberYearIncome';
+import { resolveSimulationStartYear } from './simulationTiming';
 import { buildMemberTaxBreakdownData, TAX_RATE_CONSTANTS } from './taxCalculator';
 
 function formatYen(yen: number): string {
@@ -52,7 +53,7 @@ export function buildLongTermCareViewConfig(input: {
       annualPensionManByMember,
       pensionByMember: input.pensionByMember,
       simulationStartYear:
-        input.simulationStartYear ?? input.referenceDate.getFullYear(),
+        input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate),
     });
 
   if (!breakdownData) {

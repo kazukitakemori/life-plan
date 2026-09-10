@@ -1,4 +1,9 @@
-import { getMemberAgeMonth } from './birthDate';
+import {
+  calcBirthYear,
+  getMemberAgeMonth,
+  isSamePeriodAgeMonth,
+} from './birthDate';
+import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcEnrollmentYearsFromAgeMonths,
   calcMergedEnrollmentYearsFromPeriods,
@@ -12,6 +17,31 @@ import type {
 } from '../types/income';
 import { incomeCategoryShowsRetirementAllowance } from './incomeLabels';
 import type { IdecoLumpSumTaxInput } from './idecoTax';
+
+function isRetirementReceiveMonth(
+  allowance: RetirementAllowanceEntry,
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): boolean {
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return false;
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  return isSamePeriodAgeMonth(
+    ageMonth.age,
+    ageMonth.month,
+    allowance.receiveAge,
+    allowance.receiveMonth,
+    birthYear,
+    resolveMemberBirthMonth(member),
+  );
+}
 
 export function retirementAllowancesForEntry(
   entry: IncomeEntry,
@@ -79,19 +109,17 @@ export function calcRetirementAllowanceManForMonth(
 ): number {
   const allowances = retirementAllowancesForEntry(entry);
   if (allowances.length === 0) return 0;
-  const ageMonth = getMemberAgeMonth(
-    member,
-    referenceDate,
-    calendarYear,
-    calendarMonth,
-  );
-  if (!ageMonth) return 0;
 
   let total = 0;
   for (const allowance of allowances) {
     if (
-      ageMonth.age === allowance.receiveAge &&
-      ageMonth.month === allowance.receiveMonth
+      isRetirementReceiveMonth(
+        allowance,
+        member,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      )
     ) {
       total += Math.max(0, Number(allowance.amountMan) || 0);
     }
@@ -127,16 +155,14 @@ export function collectCompanyRetirementLumpByMember(input: {
         ) {
           continue;
         }
-        const ageMonth = getMemberAgeMonth(
-          member,
-          input.referenceDate,
-          input.calendarYear,
-          allowance.receiveMonth,
-        );
         if (
-          !ageMonth ||
-          ageMonth.age !== allowance.receiveAge ||
-          ageMonth.month !== allowance.receiveMonth
+          !isRetirementReceiveMonth(
+            allowance,
+            member,
+            input.referenceDate,
+            input.calendarYear,
+            allowance.receiveMonth,
+          )
         ) {
           continue;
         }

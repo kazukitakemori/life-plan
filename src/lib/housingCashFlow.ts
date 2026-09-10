@@ -1,4 +1,5 @@
 import { resolveMemberAge, resolveMemberBirthMonth } from "./familyDefaults";
+import { getRentalCfMonthlyRentMan } from "./housingRentalPayer";
 import {
   calcBirthYear,
   calcYearAtAge,
@@ -180,7 +181,7 @@ function calcRentalMonthlyHousingDetailMan(
     return detail;
   }
 
-  detail.monthlyCost = rental.monthlyRentMan;
+  detail.monthlyCost = getRentalCfMonthlyRentMan(rental);
 
   if (
     rental.occupancy === "upcoming" &&

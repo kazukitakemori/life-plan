@@ -126,6 +126,14 @@ import {
 import { previewPensionOnceTaxWithOverlap } from '../../lib/retirementDeductionOverlap';
 import type { IdecoAnnuityPeriodMode } from '../../types/savings';
 import { estimateInvestBalanceManAt } from '../../lib/savingsCashFlow';
+import { formatReferenceRelativeMonthHelp } from '../../lib/simulationTiming';
+import {
+  clampFutureStartFields,
+  filterAgesAtOrAfter,
+  filterAgesAtOrBefore,
+  filterMonthsAtOrAfter,
+  filterMonthsAtOrBefore,
+} from '../../lib/periodTimingBounds';
 import {
   calcBirthYear,
   formatEndYearLabel,
@@ -706,21 +714,23 @@ export function SavingsEntryDetail({
     age: entry.startAge,
     month: entry.startMonth,
   };
-  const pastStartAgeOptions = ageOptions.filter((age) => age <= idecoDcNow.age);
+  const pastStartAgeOptions = filterAgesAtOrBefore(ageOptions, idecoDcNow);
   const pastEndAgeOptions = ageOptions.filter(
     (age) =>
       age <= idecoDcNow.age &&
       age >= (entry.pastStartAge ?? 0),
   );
-  const pastStartMonthOptions =
-    (entry.pastStartAge ?? idecoDcNow.age) >= idecoDcNow.age
-      ? MONTHS.filter((month) => month <= idecoDcNow.month)
-      : MONTHS;
+  const pastStartMonthOptions = filterMonthsAtOrBefore(
+    entry.pastStartAge ?? idecoDcNow.age,
+    idecoDcNow,
+    MONTHS,
+  );
   const pastEndMonthOptions = (() => {
-    let months = MONTHS;
-    if ((entry.pastEndAge ?? idecoDcNow.age) >= idecoDcNow.age) {
-      months = months.filter((month) => month <= idecoDcNow.month);
-    }
+    let months = filterMonthsAtOrBefore(
+      entry.pastEndAge ?? idecoDcNow.age,
+      idecoDcNow,
+      MONTHS,
+    );
     if (
       (entry.pastEndAge ?? 0) <= (entry.pastStartAge ?? 0)
     ) {
@@ -730,13 +740,17 @@ export function SavingsEntryDetail({
     }
     return months;
   })();
-  const contributionStartAgeOptions = ageOptions.filter(
-    (age) => age >= idecoDcMainFloor.age,
+  const contributionStartAgeOptions = filterAgesAtOrAfter(
+    ageOptions,
+    idecoDcMainFloor,
   );
-  const contributionStartMonthOptions =
-    entry.startAge <= idecoDcMainFloor.age
-      ? MONTHS.filter((month) => month >= idecoDcMainFloor.month)
-      : MONTHS;
+  const contributionStartMonthOptions = filterMonthsAtOrAfter(
+    entry.startAge,
+    idecoDcMainFloor,
+    MONTHS,
+  );
+  const enforceFutureContributionStart =
+    isIdeco || isDc || isInvestSavingsCategory(entry.category) || isTimeDeposit;
   const idecoOccupancy = isIdeco
     ? resolveEffectiveIdecoOccupancy(
         entry,
@@ -1083,6 +1097,9 @@ export function SavingsEntryDetail({
   );
   const update = (patch: Partial<SavingsEntry>) => {
     let next: SavingsEntry = { ...entry, ...patch };
+    if (enforceFutureContributionStart) {
+      next = clampFutureStartFields(next, idecoDcMainFloor);
+    }
     const nextMode = resolveSavingsWithdrawalMode(next.withdrawalMode);
     if (canWithdraw && !isPensionPayout && nextMode === 'drawdown') {
       const startAge = next.withdrawalStartAge ?? memberAge;
@@ -1929,7 +1946,7 @@ export function SavingsEntryDetail({
                         update({ startAge: Number(e.target.value) })
                       }
                     >
-                      {ageOptions.map((age) => (
+                      {contributionStartAgeOptions.map((age) => (
                         <option key={age} value={age}>
                           {age}歳
                         </option>
@@ -1943,7 +1960,7 @@ export function SavingsEntryDetail({
                         update({ startMonth: Number(e.target.value) })
                       }
                     >
-                      {MONTHS.map((month) => (
+                      {contributionStartMonthOptions.map((month) => (
                         <option key={month} value={month}>
                           {month}月
                         </option>
@@ -2035,11 +2052,7 @@ export function SavingsEntryDetail({
             <>
               <LoanSettingsField
                 label="過去の積み立て"
-                help={
-                  isDc
-                    ? '移換や加入済みの資産がある場合に入力します。転職などで掛金が変わった期間は分けて入力できます。終了の最大は今月、これからの開始の初期値は来月です'
-                    : '移換や加入済みの資産がある場合に入力します。終了の最大は今月、これからの開始の初期値は来月です'
-                }
+                help={`移換や加入済みの資産がある場合に入力します。転職などで掛金が変わった期間は分けて入力できます。終了の最大は今月、これからの開始の初期値は来月です。${formatReferenceRelativeMonthHelp()}`}
               >
                 <select
                   className="select-input"
@@ -2177,7 +2190,11 @@ export function SavingsEntryDetail({
                                       })
                                     }
                                   >
-                                    {MONTHS.map((month) => (
+                                    {filterMonthsAtOrBefore(
+                                      seg.startAge,
+                                      idecoDcNow,
+                                      MONTHS,
+                                    ).map((month) => (
                                       <option key={month} value={month}>
                                         {month}月
                                       </option>
@@ -2212,11 +2229,19 @@ export function SavingsEntryDetail({
                                       })
                                     }
                                   >
-                                    {MONTHS.filter((month) =>
-                                      seg.endAge >= idecoDcNow.age
-                                        ? month <= idecoDcNow.month
-                                        : true,
-                                    ).map((month) => (
+                                    {(() => {
+                                      let months = filterMonthsAtOrBefore(
+                                        seg.endAge,
+                                        idecoDcNow,
+                                        MONTHS,
+                                      );
+                                      if (seg.endAge <= seg.startAge) {
+                                        months = months.filter(
+                                          (month) => month >= seg.startMonth,
+                                        );
+                                      }
+                                      return months;
+                                    })().map((month) => (
                                       <option key={month} value={month}>
                                         {month}月
                                       </option>
@@ -2299,7 +2324,7 @@ export function SavingsEntryDetail({
                   <>
                     <LoanSettingsField
                       label="過去の積立期間"
-                      help="終了は今月まで選択できます。これからの積立と連続していなくても構いません"
+                      help={`終了は今月まで選択できます。これからの積立と連続していなくても構いません。${formatReferenceRelativeMonthHelp()}`}
                     >
                       <div className="savings-period-fields">
                         <div className="savings-period-start">
@@ -3118,8 +3143,8 @@ export function SavingsEntryDetail({
             <LoanSettingsField
               label="積立期間"
               help={
-                isIdeco || isDc
-                  ? '開始の初期値・下限は来月です。終了はそれ以降を指定できます'
+                enforceFutureContributionStart
+                  ? `開始の初期値・下限は来月です。終了はそれ以降を指定できます。${formatReferenceRelativeMonthHelp()}`
                   : undefined
               }
             >
@@ -3133,7 +3158,7 @@ export function SavingsEntryDetail({
                       update({ startAge: Number(e.target.value) })
                     }
                   >
-                    {(isIdeco || isDc
+                    {(enforceFutureContributionStart
                       ? contributionStartAgeOptions
                       : blocksLifetimeContribution
                         ? contributionEndAgeOptions
@@ -3152,7 +3177,7 @@ export function SavingsEntryDetail({
                       update({ startMonth: Number(e.target.value) })
                     }
                   >
-                    {(isIdeco || isDc
+                    {(enforceFutureContributionStart
                       ? contributionStartMonthOptions
                       : MONTHS
                     ).map((month) => (

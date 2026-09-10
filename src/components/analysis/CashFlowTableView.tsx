@@ -264,7 +264,10 @@ export function CashFlowTableView({
             {showTitle && (
               <h2 className="cashflow-title">
                 キャッシュフロー表
-                <span className="cashflow-help" title="収入・生活費の入力内容から算出">
+                <span
+                  className="cashflow-help"
+                  title={`収入・生活費の入力内容から算出。試算開始は基準月の翌月（初年度は${data.simulationMonthStart}月〜）。`}
+                >
                   ?
                 </span>
               </h2>
@@ -276,6 +279,9 @@ export function CashFlowTableView({
             <select className="cashflow-select" value={data.startYear} disabled>
               <option value={data.startYear}>
                 {data.startYear}年
+                {data.simulationMonthStart > 1
+                  ? `${data.simulationMonthStart}月〜`
+                  : ''}
                 {startHeadAge != null ? `（${startHeadAge}歳）` : ''}～
               </option>
             </select>

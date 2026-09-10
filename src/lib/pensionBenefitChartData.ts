@@ -1,5 +1,6 @@
 import { calcBirthYear } from './birthDate';
 import { calcMemberMonthlyPensionBreakdownMan } from './pensionIncome';
+import { resolveSimulationStartYear } from './simulationTiming';
 import {
   sumGeneralEmployeesDetail,
   sumOldAgeBasicDetail,
@@ -37,7 +38,7 @@ export function buildPensionBenefitChartPoints(input: {
     input.member.birthMonth,
     input.referenceDate,
   );
-  const startYear = input.referenceDate.getFullYear();
+  const startYear = resolveSimulationStartYear(input.referenceDate);
   const endYear = birthYear + endAge;
   const points: PensionBenefitChartPoint[] = [];
 

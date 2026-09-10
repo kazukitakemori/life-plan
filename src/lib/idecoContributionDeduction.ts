@@ -9,6 +9,7 @@ import {
 } from './savingsCashFlow';
 import { getMemberSavingsEntries } from './savingsDefaults';
 import { isDcCategory } from './dcContribution';
+import { resolveSimulationStartYear } from './simulationTiming';
 import type { FamilyMember } from '../types/family';
 import type { SavingsState } from '../types/savings';
 
@@ -127,7 +128,7 @@ export function calcMemberIdecoContributionDeductionYen(input: {
   const monthStart = input.monthStart ?? 1;
   const monthEnd = input.monthEnd ?? 12;
   const simulationStartYear =
-    input.simulationStartYear ?? input.referenceDate.getFullYear();
+    input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate);
 
   const contributionMan = calcMemberAnnualSmallScaleMutualAidContributionMan({
     member: input.member,

@@ -12,6 +12,7 @@ import {
   getPlanStatusLabel,
   type PlanStatus,
 } from '../../types/plan';
+import { useShellFullscreen } from './ShellFullscreenContext';
 
 export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
@@ -85,6 +86,7 @@ export function TopHeader({
   requiredCoverageRiskKind = 'death',
   onRequiredCoverageRiskKindChange,
 }: TopHeaderProps) {
+  const { isFullscreen, toggleFullscreen } = useShellFullscreen();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [assetMenuOpen, setAssetMenuOpen] = useState(false);
   const [coverageMenuOpen, setCoverageMenuOpen] = useState(false);
@@ -100,6 +102,14 @@ export function TopHeader({
     analysisUnlocked && onAssetBuildingTabChange != null;
   const showCoverageMenu =
     coverageUnlocked && onRequiredCoverageRiskKindChange != null;
+
+  const anyMenuOpen = adminMenuOpen || assetMenuOpen || coverageMenuOpen;
+
+  const closeAllMenus = () => {
+    setAdminMenuOpen(false);
+    setAssetMenuOpen(false);
+    setCoverageMenuOpen(false);
+  };
 
   useEffect(() => {
     if (!adminMenuOpen) return;
@@ -159,8 +169,8 @@ export function TopHeader({
   };
 
   const handleAssetClick = () => {
+    // ホバーで開閉。クリックでは閉じない（暗転のチカチカ防止）
     if (!showAssetMenu) return;
-    onTabChange('asset-building');
     setAssetMenuOpen(true);
   };
 
@@ -171,11 +181,8 @@ export function TopHeader({
   };
 
   const handleCoverageClick = () => {
-    if (!coverageUnlocked) return;
-    onTabChange('required-coverage');
-    if (showCoverageMenu && coverageKinds.length > 1) {
-      setCoverageMenuOpen(true);
-    }
+    if (!showCoverageMenu || coverageKinds.length === 0) return;
+    setCoverageMenuOpen(true);
   };
 
   const handleCoverageSubClick = (id: RequiredCoverageRiskKind) => {
@@ -185,11 +192,19 @@ export function TopHeader({
   };
 
   return (
-    <header className="top-header">
+    <header className={`top-header${anyMenuOpen ? ' has-menu-open' : ''}`}>
+      {anyMenuOpen ? (
+        <button
+          type="button"
+          className="top-header-menu-scrim"
+          aria-label="メニューを閉じる"
+          onClick={closeAllMenus}
+        />
+      ) : null}
       <div className="top-header-primary">
         <div className="top-header-brand">
           <h1 className="top-header-title">LIFE PLAN</h1>
-          {activeTab !== 'admin' && hasOpenPlan ? (
+          {hasOpenPlan ? (
             <div className="top-header-context" aria-live="polite">
               <span className="top-header-customer">
                 {formatPlanDisplayName(customerName, { honorific: showHonorific })}
@@ -205,7 +220,7 @@ export function TopHeader({
                 {autosaveLabel(autosaveStatus)}
               </span>
             </div>
-          ) : activeTab === 'admin' && !hasOpenPlan ? (
+          ) : activeTab === 'admin' ? (
             <p className="top-header-hint">
               {isLicensed
                 ? '管理タブでプランを作成・開くと入力できます'
@@ -213,7 +228,8 @@ export function TopHeader({
             </p>
           ) : null}
         </div>
-        <nav className="top-header-nav" aria-label="メインナビゲーション">
+        <div className="top-header-primary-right">
+          <nav className="top-header-nav" aria-label="メインナビゲーション">
           {HEADER_TABS.map((tab) => {
             const enabled = isHeaderTabEnabled(
               tab.id,
@@ -278,7 +294,8 @@ export function TopHeader({
                         className={`top-header-dropdown-item${adminTab === sub.id && isActive ? ' active' : ''}`}
                         onClick={() => handleAdminSubClick(sub.id)}
                       >
-                        {sub.label}
+                        <span className="top-header-dropdown-dot" aria-hidden />
+                        <span className="top-header-dropdown-label">{sub.label}</span>
                       </button>
                     ))}
                   </div>
@@ -300,7 +317,8 @@ export function TopHeader({
                     className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
                     aria-current={isActive ? 'page' : undefined}
                     aria-expanded={assetMenuOpen}
-                    aria-haspopup="true"
+                    aria-haspopup="menu"
+                    aria-label={`${tab.label}のメニューを開く`}
                     onClick={handleAssetClick}
                   >
                     {tab.label}
@@ -315,7 +333,8 @@ export function TopHeader({
                         className={`top-header-dropdown-item${assetBuildingTab === sub.id && isActive ? ' active' : ''}`}
                         onClick={() => handleAssetSubClick(sub.id)}
                       >
-                        {sub.label}
+                        <span className="top-header-dropdown-dot" aria-hidden />
+                        <span className="top-header-dropdown-label">{sub.label}</span>
                       </button>
                     ))}
                   </div>
@@ -323,58 +342,42 @@ export function TopHeader({
               );
             }
 
-            if (tab.id === 'required-coverage' && coverageUnlocked) {
-              if (coverageKinds.length > 1) {
-                return (
-                  <div
-                    key={tab.id}
-                    ref={coverageMenuRef}
-                    className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${coverageMenuOpen ? ' is-open' : ''}`}
-                    onMouseEnter={() => setCoverageMenuOpen(true)}
-                    onMouseLeave={() => setCoverageMenuOpen(false)}
-                  >
-                    <button
-                      type="button"
-                      className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
-                      aria-current={isActive ? 'page' : undefined}
-                      aria-expanded={coverageMenuOpen}
-                      aria-haspopup="true"
-                      onClick={handleCoverageClick}
-                    >
-                      {tab.label}
-                      <span className="top-header-nav-chevron" aria-hidden />
-                    </button>
-                    <div className="top-header-dropdown" role="menu">
-                      {coverageKinds.map((sub) => (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          role="menuitem"
-                          className={`top-header-dropdown-item${requiredCoverageRiskKind === sub.id && isActive ? ' active' : ''}`}
-                          onClick={() => handleCoverageSubClick(sub.id)}
-                        >
-                          {sub.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
+            if (tab.id === 'required-coverage' && showCoverageMenu) {
               return (
-                <button
+                <div
                   key={tab.id}
-                  type="button"
-                  className={`top-header-nav-item${isActive ? ' active' : ''}`}
-                  aria-current={isActive ? 'page' : undefined}
-                  onClick={() => {
-                    const only = coverageKinds[0]?.id;
-                    if (only) onRequiredCoverageRiskKindChange?.(only);
-                    onTabChange('required-coverage');
-                  }}
+                  ref={coverageMenuRef}
+                  className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${coverageMenuOpen ? ' is-open' : ''}`}
+                  onMouseEnter={() => setCoverageMenuOpen(true)}
+                  onMouseLeave={() => setCoverageMenuOpen(false)}
                 >
-                  {tab.label}
-                </button>
+                  <button
+                    type="button"
+                    className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    aria-expanded={coverageMenuOpen}
+                    aria-haspopup="menu"
+                    aria-label={`${tab.label}のメニューを開く`}
+                    onClick={handleCoverageClick}
+                  >
+                    {tab.label}
+                    <span className="top-header-nav-chevron" aria-hidden />
+                  </button>
+                  <div className="top-header-dropdown" role="menu">
+                    {coverageKinds.map((sub) => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        role="menuitem"
+                        className={`top-header-dropdown-item${requiredCoverageRiskKind === sub.id && isActive ? ' active' : ''}`}
+                        onClick={() => handleCoverageSubClick(sub.id)}
+                      >
+                        <span className="top-header-dropdown-dot" aria-hidden />
+                        <span className="top-header-dropdown-label">{sub.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               );
             }
 
@@ -394,6 +397,21 @@ export function TopHeader({
             );
           })}
         </nav>
+          <button
+            type="button"
+            className={
+              isFullscreen
+                ? 'top-header-fullscreen-btn is-active'
+                : 'top-header-fullscreen-btn'
+            }
+            aria-pressed={isFullscreen}
+            onClick={() => {
+              void toggleFullscreen();
+            }}
+          >
+            {isFullscreen ? '全画面終了' : '全画面'}
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -16,10 +16,20 @@ import type { EducationByMember } from '../types/education';
 import type { FamilyMember } from '../types/family';
 import type { IncomeByMember, IncomeEntry, IncomePeriod } from '../types/income';
 import type { LifeEventState } from '../types/lifeEvent';
-import { HOUSEHOLD_LIVING_KEY, type LivingExpenseState } from '../types/living';
+import type { LivingExpenseState } from '../types/living';
 import type { PensionByMember } from '../types/pension';
+import type { SecondLifeState } from '../types/secondLife';
+import { buildSecondLifeLivingOptions } from './secondLifeEstimates';
+import { SECOND_LIFE_LIVING_LEVEL_LABELS } from './secondLifeLabels';
 
-export type TimelineItemStyle = 'income' | 'living' | 'pension' | 'housing' | 'education' | 'event';
+export type TimelineItemStyle =
+  | 'income'
+  | 'living'
+  | 'secondLifeLiving'
+  | 'pension'
+  | 'housing'
+  | 'education'
+  | 'event';
 
 /** 支出が発生する年（マーカー描画用） */
 export interface TimelineOccurrence {
@@ -47,6 +57,10 @@ export interface LifeEventTimelineItem {
    * 「支出がある年」のマーカー列として描画する。
    */
   occurrences?: TimelineOccurrence[];
+  /** 描画用の開始位置（年齢）。未指定時は startHeadAge - 0.5 */
+  plotStartHeadAge?: number;
+  /** 描画用の終了位置（年齢）。未指定時は endHeadAge + 0.5 */
+  plotEndHeadAge?: number;
 }
 
 export interface LifeEventTimelineCategory {
@@ -69,6 +83,8 @@ export interface BuildLifeEventTimelineInput {
   educationByMember: EducationByMember;
   lifeEventState: LifeEventState;
   referenceDate: Date;
+  /** セカンドライフ生活費の区別用（未反映でも開始年齢で判定） */
+  secondLifeState?: SecondLifeState | null;
 }
 
 function memberAgeToHeadAge(
@@ -197,45 +213,92 @@ function assignLifeCategoryLanes(
     return memberId != null ? memberById.get(memberId)?.role : undefined;
   };
 
-  const hasSpouseIncome = items.some(
-    (item) => item.style === 'income' && memberRole(item) === 'spouse',
-  );
-  const hasHeadPension = items.some(
-    (item) => item.style === 'pension' && memberRole(item) === 'head',
-  );
-  const hasSpousePension = items.some(
-    (item) => item.style === 'pension' && memberRole(item) === 'spouse',
+  const isMemberIncomeOrPension = (
+    item: LifeEventTimelineItem,
+    role: FamilyMember['role'],
+  ) =>
+    (item.style === 'income' || item.style === 'pension') &&
+    memberRole(item) === role;
+
+  const hasHead = items.some((item) => isMemberIncomeOrPension(item, 'head'));
+  const hasSpouse = items.some((item) =>
+    isMemberIncomeOrPension(item, 'spouse'),
   );
 
-  const headIncomeLane = 0;
-  const spouseIncomeLane = 1;
-  const pensionBaseLane = hasSpouseIncome ? 2 : 1;
-  const headPensionLane = pensionBaseLane;
-  const spousePensionLane = hasHeadPension ? pensionBaseLane + 1 : pensionBaseLane;
-  const livingLane =
-    pensionBaseLane +
-    (hasHeadPension ? 1 : 0) +
-    (hasSpousePension ? 1 : 0);
+  let nextLane = 0;
+  const headLane = hasHead ? nextLane++ : -1;
+  const spouseLane = hasSpouse ? nextLane++ : -1;
+  const livingLane = nextLane;
 
   return items.map((item) => {
-    if (item.style === 'living') {
+    if (item.style === 'living' || item.style === 'secondLifeLiving') {
       return { ...item, lane: livingLane };
     }
 
     const role = memberRole(item);
 
-    if (item.style === 'income') {
-      if (role === 'spouse') return { ...item, lane: spouseIncomeLane };
-      return { ...item, lane: headIncomeLane };
-    }
-
-    if (item.style === 'pension') {
-      if (role === 'spouse') return { ...item, lane: spousePensionLane };
-      return { ...item, lane: headPensionLane };
+    if (item.style === 'income' || item.style === 'pension') {
+      if (role === 'spouse') return { ...item, lane: spouseLane };
+      return { ...item, lane: headLane };
     }
 
     return { ...item, lane: livingLane };
   });
+}
+
+/**
+ * 同じ行の期間バーが重ならないよう、描画用の開始・終了位置を決める。
+ * 例: 年収が65歳まで・年金が65歳から → 65歳カラムの中央で切り替える。
+ * セカンドライフ生活費は開始年齢ちょうど（棒の左端ではなく年齢位置）に合わせる。
+ */
+export function assignSameLanePlotRanges(
+  items: LifeEventTimelineItem[],
+): LifeEventTimelineItem[] {
+  const withRanges = items.map((item) => ({
+    ...item,
+    plotStartHeadAge:
+      item.style === 'secondLifeLiving'
+        ? item.startHeadAge
+        : item.startHeadAge - 0.5,
+    plotEndHeadAge: item.endHeadAge + 0.5,
+  }));
+
+  const byLane = new Map<number, LifeEventTimelineItem[]>();
+  for (const item of withRanges) {
+    if ((item.occurrences?.length ?? 0) > 0) continue;
+    const laneItems = byLane.get(item.lane) ?? [];
+    laneItems.push(item);
+    byLane.set(item.lane, laneItems);
+  }
+
+  for (const laneItems of byLane.values()) {
+    laneItems.sort(
+      (left, right) =>
+        left.startHeadAge - right.startHeadAge ||
+        left.endHeadAge - right.endHeadAge,
+    );
+
+    for (let index = 0; index < laneItems.length - 1; index += 1) {
+      const current = laneItems[index];
+      const next = laneItems[index + 1];
+      const abutsSecondLife =
+        current.style === 'living' &&
+        next.style === 'secondLifeLiving' &&
+        current.endHeadAge + 1 === next.startHeadAge;
+      if (current.endHeadAge < next.startHeadAge && !abutsSecondLife) {
+        continue;
+      }
+
+      const junction = next.startHeadAge;
+      current.plotEndHeadAge = Math.min(
+        current.plotEndHeadAge ?? current.endHeadAge + 0.5,
+        junction,
+      );
+      next.plotStartHeadAge = junction;
+    }
+  }
+
+  return withRanges;
 }
 
 function buildIncomeItems(
@@ -310,37 +373,162 @@ function buildIncomeItems(
   return items;
 }
 
-function buildLivingItems(
-  livingState: LivingExpenseState,
-  head: FamilyMember,
-  referenceDate: Date,
+function buildLivingItemsFromCashFlow(
+  input: BuildLifeEventTimelineInput,
+  headRow: MemberAgeRow,
 ): LifeEventTimelineItem[] {
-  const schedules = livingState.byTarget[HOUSEHOLD_LIVING_KEY] ?? [];
+  const points: {
+    headAge: number;
+    calendarYear: number;
+    amountMan: number;
+  }[] = [];
 
-  return schedules.map((schedule, index) => {
-    const monthlyTotal = schedule.items.reduce(
-      (sum, item) => sum + item.amountMan,
-      0,
-    );
-    const startHeadAge = memberAgeToHeadAge(
-      head,
-      schedule.startAge,
-      head,
-      referenceDate,
-    );
-    const endHeadAge = memberAgeToHeadAge(head, schedule.endAge, head, referenceDate);
+  let lastSimHeadAge: number | null = null;
+  let lastSimCalendarYear: number | null = null;
 
-    return {
-      id: `living-${schedule.id}`,
-      style: 'living',
-      icon: '🏠',
-      title: index === 0 ? '現在生活費' : '生活費',
-      detail: formatMan(monthlyTotal, true),
-      startHeadAge,
-      endHeadAge: Math.max(startHeadAge, endHeadAge),
+  for (const year of input.cashFlowData.years) {
+    const headAge = headRow.agesByYear[year.calendarYear];
+    if (headAge == null) continue;
+    lastSimHeadAge = headAge;
+    lastSimCalendarYear = year.calendarYear;
+
+    const amountMan = year.expenseBreakdown.living;
+    if (amountMan <= 0) continue;
+    points.push({
+      headAge,
+      calendarYear: year.calendarYear,
+      amountMan,
+    });
+  }
+
+  const secondLifeState = input.secondLifeState;
+  const splitAge =
+    secondLifeState && !secondLifeState.livingSkip
+      ? secondLifeState.startAge
+      : null;
+
+  const items: LifeEventTimelineItem[] = [];
+
+  const pushSegment = (
+    id: string,
+    style: 'living' | 'secondLifeLiving',
+    title: string,
+    segmentPoints: typeof points,
+    fallback: {
+      startHeadAge: number;
+      endHeadAge: number;
+      startCalendarYear?: number;
+      endCalendarYear?: number;
+      monthlyMan: number;
+      levelLabel?: string;
+    } | null,
+  ) => {
+    if (segmentPoints.length > 0) {
+      const total = segmentPoints.reduce(
+        (sum, point) => sum + point.amountMan,
+        0,
+      );
+      const averageMonthly = total / segmentPoints.length / 12;
+      const first = segmentPoints[0];
+      const last = segmentPoints[segmentPoints.length - 1];
+      // セカンドライフは開始年齢ちょうど。CFの先頭より左には伸ばさない。
+      const startHeadAge =
+        style === 'secondLifeLiving' && fallback?.startHeadAge != null
+          ? fallback.startHeadAge
+          : first.headAge;
+      items.push({
+        id,
+        style,
+        icon: style === 'secondLifeLiving' ? '🌅' : '🏠',
+        title,
+        detail: fallback?.levelLabel
+          ? `${formatMan(averageMonthly, true)}・${fallback.levelLabel}`
+          : formatMan(averageMonthly, true),
+        startHeadAge,
+        endHeadAge: last.headAge,
+        startCalendarYear:
+          style === 'secondLifeLiving' && fallback?.startCalendarYear != null
+            ? fallback.startCalendarYear
+            : first.calendarYear,
+        endCalendarYear: last.calendarYear,
+        lane: 0,
+      });
+      return;
+    }
+
+    if (!fallback || fallback.monthlyMan <= 0) return;
+    if (fallback.endHeadAge < fallback.startHeadAge) return;
+
+    items.push({
+      id,
+      style,
+      icon: style === 'secondLifeLiving' ? '🌅' : '🏠',
+      title,
+      detail: fallback.levelLabel
+        ? `${formatMan(fallback.monthlyMan, true)}・${fallback.levelLabel}`
+        : formatMan(fallback.monthlyMan, true),
+      startHeadAge: fallback.startHeadAge,
+      endHeadAge: fallback.endHeadAge,
+      startCalendarYear: fallback.startCalendarYear,
+      endCalendarYear: fallback.endCalendarYear,
       lane: 0,
-    };
+    });
+  };
+
+  if (splitAge == null || secondLifeState == null) {
+    pushSegment('living-current', 'living', '生活費', points, null);
+    return items;
+  }
+
+  const beforePoints = points.filter((point) => point.headAge < splitAge);
+  const afterPoints = points.filter((point) => point.headAge >= splitAge);
+
+  pushSegment('living-current', 'living', '生活費', beforePoints, null);
+
+  const levelLabel = SECOND_LIFE_LIVING_LEVEL_LABELS[secondLifeState.livingLevel];
+  const options = buildSecondLifeLivingOptions({
+    livingState: input.livingState,
+    familyMembers: input.familyMembers,
+    incomeByMember: input.incomeByMember,
+    pensionByMember: input.pensionByMember,
+    referenceDate: input.referenceDate,
+    startAge: splitAge,
   });
+  const selected = options.find(
+    (option) => option.level === secondLifeState.livingLevel,
+  );
+  const plannedMonthly = selected?.monthlyMan ?? 0;
+
+  const fallbackEndHeadAge =
+    lastSimHeadAge != null && lastSimHeadAge >= splitAge
+      ? lastSimHeadAge
+      : splitAge;
+  const fallbackEndCalendarYear =
+    lastSimCalendarYear != null &&
+    lastSimHeadAge != null &&
+    lastSimHeadAge >= splitAge
+      ? lastSimCalendarYear
+      : undefined;
+  const startCalendarYear = input.cashFlowData.years.find(
+    (year) => headRow.agesByYear[year.calendarYear] === splitAge,
+  )?.calendarYear;
+
+  pushSegment(
+    'living-second-life',
+    'secondLifeLiving',
+    'セカンドライフ生活費',
+    afterPoints,
+    {
+      startHeadAge: splitAge,
+      endHeadAge: fallbackEndHeadAge,
+      startCalendarYear,
+      endCalendarYear: fallbackEndCalendarYear,
+      monthlyMan: plannedMonthly,
+      levelLabel,
+    },
+  );
+
+  return items;
 }
 
 function buildMemberPensionItem(
@@ -668,7 +856,7 @@ export function buildLifeEventTimelineData(
               head,
               input.referenceDate,
             ),
-            ...buildLivingItems(input.livingState, head, input.referenceDate),
+            ...buildLivingItemsFromCashFlow(input, headRow),
             ...buildPensionItems(
               input.familyMembers,
               input,

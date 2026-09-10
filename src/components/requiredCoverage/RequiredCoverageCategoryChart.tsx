@@ -22,6 +22,7 @@ import {
 import { ASSET_CHART_COLORS } from '../assetBuilding/assetBuildingChartShared';
 import {
   CHART_HEIGHT,
+  CHART_HEIGHT_FULLSCREEN,
   CHART_MARGIN_LEFT,
   CHART_MARGIN_TOP,
   CoverageChartZoomToolbar,
@@ -34,6 +35,7 @@ import {
   useCoverageChartWindow,
   xAxisTotalHeight,
 } from './requiredCoverageChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 export type CoverageCategoryKind = 'expense' | 'income';
 export type CoverageCategoryAggregation = 'year' | 'cumulative';
@@ -372,6 +374,10 @@ function RequiredCoverageCategoryChart({
   );
   const xAxisRowCount = hasSpouse ? 2 : 1;
   const xAxisHeight = xAxisTotalHeight(xAxisRowCount);
+  const plotHeight = useFullscreenPlotHeight(
+    CHART_HEIGHT,
+    CHART_HEIGHT_FULLSCREEN,
+  );
   const copy = headingCopy(kind, aggregation);
   const seriesByKey = new Map(series.map((item) => [item.key, item]));
 
@@ -410,7 +416,7 @@ function RequiredCoverageCategoryChart({
             </p>
             <ResponsiveContainer
               width="100%"
-              height={CHART_HEIGHT + xAxisHeight}
+              height={plotHeight + xAxisHeight}
             >
               <ComposedChart
                 data={visiblePoints}

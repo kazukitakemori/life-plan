@@ -11,6 +11,8 @@ interface LicenseStatusPanelProps {
   onReleaseDevice?: () => Promise<boolean> | boolean;
   busy?: boolean;
   trialAnalysisUsed?: boolean;
+  /** 開発中だけキーなしで全機能が使える状態 */
+  isDevUnlock?: boolean;
 }
 
 const STATE_LABELS = {
@@ -37,19 +39,23 @@ export function LicenseStatusPanel({
   onReleaseDevice,
   busy = false,
   trialAnalysisUsed = false,
+  isDevUnlock = false,
 }: LicenseStatusPanelProps) {
-  const description =
-    licenseState === 'inactive' && trialAnalysisUsed
+  const description = isDevUnlock
+    ? '開発中のため、ライセンスキーなしで全機能を使えます。完成版（本番）ではキーが必要です。'
+    : licenseState === 'inactive' && trialAnalysisUsed
       ? '体験分析は利用済みです。2回目以降の分析と書き出しにはキーの登録が必要です。'
       : STATE_DESCRIPTIONS[licenseState];
-  const featureSummary =
-    licenseState === 'active'
+  const featureSummary = isDevUnlock
+    ? 'データ入力 / ライフプラン分析 / 複数プラン管理（開発用）'
+    : licenseState === 'active'
       ? entitlements.edition === 'advisor'
         ? 'データ入力 / ライフプラン分析 / 複数プラン管理'
         : 'データ入力 / ライフプラン分析（プラン1件）'
       : trialAnalysisUsed
         ? 'データ入力 / 体験分析済み'
         : 'データ入力 / ライフプラン分析（1回まで）';
+  const statusLabel = isDevUnlock ? '開発モード' : STATE_LABELS[licenseState];
 
   return (
     <div className="license-admin-page">
@@ -59,16 +65,22 @@ export function LicenseStatusPanel({
             <h2 className="license-admin-card-title">ライセンス</h2>
             <p className="license-admin-card-desc">{description}</p>
           </div>
-          <span className={`license-status-badge license-status-badge--${licenseState}`}>
-            {STATE_LABELS[licenseState]}
+          <span
+            className={`license-status-badge license-status-badge--${isDevUnlock ? 'active' : licenseState}`}
+          >
+            {statusLabel}
           </span>
         </div>
 
         <dl className="license-admin-card-grid">
-          {licenseState === 'active' ? (
+          {licenseState === 'active' || isDevUnlock ? (
             <div>
               <dt>プラン種別</dt>
-              <dd>{LICENSE_EDITION_LABELS[entitlements.edition]}</dd>
+              <dd>
+                {isDevUnlock
+                  ? `${LICENSE_EDITION_LABELS[entitlements.edition]}（開発用）`
+                  : LICENSE_EDITION_LABELS[entitlements.edition]}
+              </dd>
             </div>
           ) : null}
           <div>
@@ -81,53 +93,57 @@ export function LicenseStatusPanel({
           </div>
         </dl>
 
-        {errorMessage ? <p className="license-inline-error">{errorMessage}</p> : null}
+        {errorMessage && !isDevUnlock ? (
+          <p className="license-inline-error">{errorMessage}</p>
+        ) : null}
 
-        <div className="license-admin-card-actions">
-          <button
-            type="button"
-            className="plan-bar-btn plan-bar-btn--primary"
-            onClick={onManageLicense}
-          >
-            {licenseState === 'active' ? 'キーを変更' : 'ライセンスキーを登録'}
-          </button>
-          {licenseState !== 'active' && licenseState !== 'checking' && onStartWithoutKey ? (
+        {!isDevUnlock ? (
+          <div className="license-admin-card-actions">
             <button
               type="button"
-              className="plan-bar-btn"
-              onClick={onStartWithoutKey}
+              className="plan-bar-btn plan-bar-btn--primary"
+              onClick={onManageLicense}
             >
-              キーなしで体験をはじめる
+              {licenseState === 'active' ? 'キーを変更' : 'ライセンスキーを登録'}
             </button>
-          ) : null}
-          {licenseState === 'active' && onReleaseDevice ? (
-            <button
-              type="button"
-              className="plan-bar-btn"
-              disabled={busy}
-              onClick={() => {
-                const confirmed = window.confirm(
-                  [
-                    'このブラウザのライセンス登録を解除しますか？',
-                    '',
-                    '解除すると、ライフプラン分析を使うには再度キーの登録が必要です。',
-                  ].join('\n'),
-                );
-                if (!confirmed || !onReleaseDevice) return;
-                void (async () => {
-                  const ok = await onReleaseDevice();
-                  window.alert(
-                    ok
-                      ? 'このブラウザの登録を解除しました。'
-                      : 'このブラウザの登録解除に失敗しました。',
+            {licenseState !== 'active' && licenseState !== 'checking' && onStartWithoutKey ? (
+              <button
+                type="button"
+                className="plan-bar-btn"
+                onClick={onStartWithoutKey}
+              >
+                キーなしで体験をはじめる
+              </button>
+            ) : null}
+            {licenseState === 'active' && onReleaseDevice ? (
+              <button
+                type="button"
+                className="plan-bar-btn"
+                disabled={busy}
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    [
+                      'このブラウザのライセンス登録を解除しますか？',
+                      '',
+                      '解除すると、ライフプラン分析を使うには再度キーの登録が必要です。',
+                    ].join('\n'),
                   );
-                })();
-              }}
-            >
-              このブラウザの登録を解除
-            </button>
-          ) : null}
-        </div>
+                  if (!confirmed || !onReleaseDevice) return;
+                  void (async () => {
+                    const ok = await onReleaseDevice();
+                    window.alert(
+                      ok
+                        ? 'このブラウザの登録を解除しました。'
+                        : 'このブラウザの登録解除に失敗しました。',
+                    );
+                  })();
+                }}
+              >
+                このブラウザの登録を解除
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </div>
   );

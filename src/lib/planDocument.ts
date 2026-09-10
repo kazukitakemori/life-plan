@@ -13,6 +13,7 @@ import {
   migrateFamilyMembers,
 } from './familyDefaults';
 import { createDefaultHousingState, migrateHousingState } from './housingDefaults';
+import { migrateHouseholdHousingToHead } from './housingRentalPayer';
 import { migrateIncomeByMember } from './incomeDefaults';
 import { createDefaultInsuranceState, migrateInsuranceState } from './insuranceDefaults';
 import { createDefaultLifeEventState, migrateLifeEventState } from './lifeEventDefaults';
@@ -37,11 +38,32 @@ import {
   normalizePlanPurposes,
 } from './planPurpose';
 import { createDefaultVehicleState, migrateVehicleState } from './vehicleDefaults';
+import { normalizeMemberTabExtras, pruneMemberTabExtras } from './memberTabVisibility';
 import type { FamilyMember } from '../types/family';
 import type { IncomeByMember } from '../types/income';
 
 function createReferenceDate(now = new Date()): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function yearMonthIndex(date: Date): number {
+  return date.getFullYear() * 12 + date.getMonth();
+}
+
+/**
+ * 基準月が実カレンダーより古い場合は今月（1日）へ進める。
+ * 「○月現在」が壁時計とずれないようにする。未来月は保存値を維持。
+ */
+export function advanceReferenceDateToPresent(
+  saved: Date,
+  now = new Date(),
+): Date {
+  const current = createReferenceDate(now);
+  const normalized = createReferenceDate(saved);
+  if (yearMonthIndex(normalized) < yearMonthIndex(current)) {
+    return current;
+  }
+  return normalized;
 }
 
 function toIsoDate(date: Date): string {
@@ -85,8 +107,15 @@ export function createEmptyPlanAppState(now = new Date()): PlanAppState {
     priorYearIncomeByMember: {},
     livingState: migrateLivingExpenseState(
       createDefaultLivingState(head, referenceMonth),
+      { headId: head?.id },
     ),
-    housingState: createDefaultHousingState(head, referenceMonth),
+    housingState: migrateHousingState(
+      createDefaultHousingState(head, referenceMonth),
+      head,
+      referenceMonth,
+      referenceDate.getFullYear(),
+      { headId: head?.id },
+    ),
     vehicleState: migrateVehicleState(createDefaultVehicleState()),
     loanState: createDefaultLoanState(),
     insuranceState: createDefaultInsuranceState(),
@@ -97,6 +126,7 @@ export function createEmptyPlanAppState(now = new Date()): PlanAppState {
     taxSocialState: createDefaultTaxSocialState(head?.age, referenceMonth),
     requiredCoverageState: createDefaultRequiredCoverageState(),
     secondLifeState: createDefaultSecondLifeState(),
+    memberTabExtras: {},
     referenceDate,
   };
 }
@@ -124,6 +154,7 @@ export function toPlanPayload(state: PlanAppState): PlanPayload {
       state.requiredCoverageState,
     ),
     secondLifeState: migrateSecondLifeState(state.secondLifeState),
+    memberTabExtras: normalizeMemberTabExtras(state.memberTabExtras),
     referenceDate: toIsoDate(state.referenceDate),
   };
 }
@@ -135,13 +166,20 @@ function migratePayloadToCurrent(payload: PlanPayload): PlanPayload {
       payload.requiredCoverageState,
     ),
     secondLifeState: migrateSecondLifeState(payload.secondLifeState),
+    memberTabExtras: normalizeMemberTabExtras(payload.memberTabExtras),
   };
 }
 
 /** 保存データを App 用に復元（既存 migrate* を適用） */
-export function fromPlanPayload(raw: PlanPayload): PlanAppState {
+export function fromPlanPayload(
+  raw: PlanPayload,
+  options?: { now?: Date },
+): PlanAppState {
   const payload = migratePayloadToCurrent(raw);
-  const referenceDate = parseReferenceDate(payload.referenceDate);
+  const referenceDate = advanceReferenceDateToPresent(
+    parseReferenceDate(payload.referenceDate),
+    options?.now,
+  );
   const familyMembers = migrateFamilyMembers(
     payload.familyMembers ?? createDefaultFamily(),
   );
@@ -150,6 +188,20 @@ export function fromPlanPayload(raw: PlanPayload): PlanAppState {
   );
   const head = familyMembers.find((m) => m.role === 'head');
   const referenceMonth = referenceDate.getMonth() + 1;
+
+  const housingMigrated = migrateHousingState(
+    payload.housingState ?? createDefaultHousingState(head, referenceMonth),
+    head,
+    referenceMonth,
+    referenceDate.getFullYear(),
+    { headId: head?.id },
+  );
+  const remappedHousing = migrateHouseholdHousingToHead({
+    housingState: housingMigrated,
+    loanState: migrateLoanState(payload.loanState ?? createDefaultLoanState()),
+    insuranceState: migrateInsuranceState(payload.insuranceState),
+    headId: head?.id,
+  });
 
   return {
     familyMembers,
@@ -160,15 +212,14 @@ export function fromPlanPayload(raw: PlanPayload): PlanAppState {
     priorYearIncomeByMember: payload.priorYearIncomeByMember ?? {},
     livingState: migrateLivingExpenseState(
       payload.livingState ?? createDefaultLivingState(head, referenceMonth),
+      { headId: head?.id },
     ),
-    housingState: migrateHousingState(
-      payload.housingState ?? createDefaultHousingState(head, referenceMonth),
-    ),
+    housingState: remappedHousing.housingState,
     vehicleState: migrateVehicleState(
       payload.vehicleState ?? createDefaultVehicleState(),
     ),
-    loanState: migrateLoanState(payload.loanState ?? createDefaultLoanState()),
-    insuranceState: migrateInsuranceState(payload.insuranceState),
+    loanState: remappedHousing.loanState,
+    insuranceState: remappedHousing.insuranceState ?? migrateInsuranceState(payload.insuranceState),
     savingsState: payload.savingsState ?? createDefaultSavingsState(),
     educationByMember:
       payload.educationByMember ?? createDefaultEducationByMember(familyMembers),
@@ -184,6 +235,10 @@ export function fromPlanPayload(raw: PlanPayload): PlanAppState {
       payload.requiredCoverageState,
     ),
     secondLifeState: migrateSecondLifeState(payload.secondLifeState),
+    memberTabExtras: pruneMemberTabExtras(
+      normalizeMemberTabExtras(payload.memberTabExtras),
+      familyMembers,
+    ),
     referenceDate,
   };
 }

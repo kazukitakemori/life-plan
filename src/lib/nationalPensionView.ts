@@ -7,8 +7,9 @@ import {
   NATIONAL_PENSION_ANNUAL_YEN,
   NATIONAL_PENSION_MONTHLY_YEN,
 } from './pensionConstants';
-import { buildMemberTaxBreakdownData } from './taxCalculator';
 import { calcMemberAnnualPensionManByMember } from './calculationBreakdown';
+import { resolveSimulationStartYear } from './simulationTiming';
+import { buildMemberTaxBreakdownData } from './taxCalculator';
 
 function formatYen(yen: number): string {
   return `${yen.toLocaleString('ja-JP')}円`;
@@ -106,7 +107,7 @@ export function buildNationalPensionViewConfig(input: {
       annualPensionManByMember,
       pensionByMember: input.pensionByMember,
       simulationStartYear:
-        input.simulationStartYear ?? input.referenceDate.getFullYear(),
+        input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate),
     });
 
   if (!breakdownData) {

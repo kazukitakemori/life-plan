@@ -27,6 +27,7 @@ import type { IncomeEntry } from '../../types/income';
 import type { PensionMemberState } from '../../types/pension';
 import {
   CHART_HEIGHT,
+  CHART_HEIGHT_FULLSCREEN,
   CHART_MARGIN_LEFT,
   CHART_MARGIN_TOP,
   CoverageChartZoomToolbar,
@@ -39,6 +40,7 @@ import {
   useCoverageChartWindow,
   xAxisTotalHeight,
 } from '../requiredCoverage/requiredCoverageChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 interface PensionBenefitEstimatePanelProps {
   member: FamilyMember;
@@ -207,6 +209,10 @@ export function PensionBenefitEstimatePanel({
     [axisMax],
   );
   const xAxisHeight = xAxisTotalHeight(1);
+  const plotHeight = useFullscreenPlotHeight(
+    CHART_HEIGHT,
+    CHART_HEIGHT_FULLSCREEN,
+  );
   const seriesByKey = new Map(SERIES.map((item) => [item.key, item]));
 
   return (
@@ -236,7 +242,7 @@ export function PensionBenefitEstimatePanel({
             </p>
             <ResponsiveContainer
               width="100%"
-              height={CHART_HEIGHT + xAxisHeight}
+              height={plotHeight + xAxisHeight}
             >
               <ComposedChart
                 data={visiblePoints}

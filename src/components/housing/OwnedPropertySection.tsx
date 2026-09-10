@@ -1,11 +1,11 @@
-import { createOwnedProperty } from '../../lib/housingDefaults';
 import {
   OWNED_PROPERTY_TYPE_DESCRIPTIONS,
   OWNED_PROPERTY_TYPE_ICONS,
   OWNED_PROPERTY_TYPE_LABELS,
 } from '../../lib/housingLabels';
+import type { OwnedTabView } from '../../lib/housingOwnedViews';
 import type { FamilyMember } from '../../types/family';
-import type { OwnedProperty, OwnedPropertyType, RentalProperty } from '../../types/housing';
+import type { OwnedProperty, OwnedPropertyType } from '../../types/housing';
 import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
@@ -13,8 +13,7 @@ import type { VehicleState } from '../../types/vehicle';
 import { OwnedPropertyCard } from './OwnedPropertyCard';
 
 interface OwnedPropertySectionProps {
-  owned: OwnedProperty[];
-  rentals: RentalProperty[];
+  ownedViews: OwnedTabView[];
   member: FamilyMember;
   members: FamilyMember[];
   referenceDate: Date;
@@ -26,8 +25,13 @@ interface OwnedPropertySectionProps {
   vehicleState: VehicleState;
   contractorMembers: FamilyMember[];
   hasSpouse: boolean;
-  onChange: (owned: OwnedProperty[]) => void;
+  highlightTokenById?: ReadonlyMap<string, number>;
+  endedPropertyIds?: ReadonlySet<string>;
+  onAddProperty: (type: OwnedPropertyType) => void;
+  onChangeProperty: (storageTargetId: string, property: OwnedProperty) => void;
+  onRemoveProperty: (storageTargetId: string, propertyId: string) => void;
   onAddHousingLoan: (
+    storageTargetId: string,
     property: OwnedProperty,
     structureType: LoanStructureType,
     contractorMemberIds: [string] | [string, string],
@@ -41,7 +45,7 @@ interface OwnedPropertySectionProps {
     entry: LoanEntry,
     patch: Partial<Pick<OwnedProperty, 'brokerageFeeMan' | 'registrationFeeMan'>>,
   ) => void;
-  onAddInsurance?: (property: OwnedProperty) => void;
+  onAddInsurance?: (storageTargetId: string, property: OwnedProperty) => void;
   onUpdateInsurance?: (entry: InsuranceEntry) => void;
   onRemoveInsurance?: (entryId: string) => void;
 }
@@ -53,8 +57,7 @@ const ADD_OPTIONS: OwnedPropertyType[] = [
 ];
 
 export function OwnedPropertySection({
-  owned,
-  rentals,
+  ownedViews,
   member,
   members,
   referenceDate,
@@ -66,7 +69,11 @@ export function OwnedPropertySection({
   vehicleState,
   contractorMembers,
   hasSpouse,
-  onChange,
+  highlightTokenById,
+  endedPropertyIds,
+  onAddProperty,
+  onChangeProperty,
+  onRemoveProperty,
   onAddHousingLoan,
   onRemoveHousingLoan,
   onUpdateLoan,
@@ -78,64 +85,72 @@ export function OwnedPropertySection({
   onUpdateInsurance,
   onRemoveInsurance,
 }: OwnedPropertySectionProps) {
-  const refMonth = referenceDate.getMonth() + 1;
-  const refYear = referenceDate.getFullYear();
-
-  const updateProperty = (id: string, updated: OwnedProperty) => {
-    onChange(owned.map((property) => (property.id === id ? updated : property)));
-  };
-
-  const removeProperty = (id: string) => {
-    onChange(owned.filter((property) => property.id !== id));
-  };
-
-  const addProperty = (type: OwnedPropertyType) => {
-    onChange([
-      ...owned,
-      createOwnedProperty(type, member, refMonth, refYear, {}, { rentals, owned }),
-    ]);
-  };
-
   return (
-    <section className="housing-section">
-      <h3 className="housing-section-title">2. 所有物件</h3>
+    <section className="housing-section" id="housing-owned-section">
+      <div className="housing-section-header">
+        <h3 className="housing-section-title">所有物件</h3>
+        <p className="housing-section-desc">
+          購入・ローン・税金など。詳細は各カードを開いて入力します。
+        </p>
+      </div>
 
-      {owned.length > 0 ? (
+      {ownedViews.length > 0 ? (
         <div className="housing-owned-list">
-          {owned.map((property) => (
-            <OwnedPropertyCard
-              key={property.id}
-              property={property}
-              member={member}
-              members={members}
-              referenceDate={referenceDate}
-              linkedLoans={linkedLoansByPropertyId[property.id] ?? []}
-              linkedInsurances={linkedInsurancesByPropertyId[property.id] ?? []}
-              insuranceState={insuranceState}
-              loanState={loanState}
-              housingState={housingState}
-              vehicleState={vehicleState}
-              contractorMembers={contractorMembers}
-              hasSpouse={hasSpouse}
-              canRemove
-              onChange={(updated) => updateProperty(property.id, updated)}
-              onRemove={() => removeProperty(property.id)}
-              onAddLoan={(structureType, contractorMemberIds) =>
-                onAddHousingLoan(property, structureType, contractorMemberIds)
-              }
-              onRemoveLoan={onRemoveHousingLoan}
-              onUpdateLoan={onUpdateLoan}
-              onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
-              onPairShareChange={onPairShareChange}
-              onJointDebtShareChange={onJointDebtShareChange}
-              onLoanPropertyFeeChange={onLoanPropertyFeeChange}
-              onAddInsurance={
-                onAddInsurance ? () => onAddInsurance(property) : undefined
-              }
-              onUpdateInsurance={onUpdateInsurance}
-              onRemoveInsurance={onRemoveInsurance}
-            />
-          ))}
+          {ownedViews.map((view) => {
+            const periodMember =
+              members.find((item) => item.id === view.periodMemberId) ?? member;
+            return (
+              <OwnedPropertyCard
+                key={`${view.storageTargetId}:${view.property.id}:${view.viewRole}`}
+                property={view.property}
+                member={periodMember}
+                members={members}
+                referenceDate={referenceDate}
+                linkedLoans={linkedLoansByPropertyId[view.property.id] ?? []}
+                linkedInsurances={
+                  linkedInsurancesByPropertyId[view.property.id] ?? []
+                }
+                insuranceState={insuranceState}
+                loanState={loanState}
+                housingState={housingState}
+                vehicleState={vehicleState}
+                contractorMembers={contractorMembers}
+                hasSpouse={hasSpouse}
+                viewRole={view.viewRole}
+                canRemove={view.viewRole === 'owner'}
+                canAddLoan={view.viewRole === 'owner'}
+                highlightToken={highlightTokenById?.get(view.property.id)}
+                endedBySecondLife={endedPropertyIds?.has(view.property.id)}
+                onChange={(updated) =>
+                  onChangeProperty(view.storageTargetId, updated)
+                }
+                onRemove={() =>
+                  onRemoveProperty(view.storageTargetId, view.property.id)
+                }
+                onAddLoan={(structureType, contractorMemberIds) =>
+                  onAddHousingLoan(
+                    view.storageTargetId,
+                    view.property,
+                    structureType,
+                    contractorMemberIds,
+                  )
+                }
+                onRemoveLoan={onRemoveHousingLoan}
+                onUpdateLoan={onUpdateLoan}
+                onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
+                onPairShareChange={onPairShareChange}
+                onJointDebtShareChange={onJointDebtShareChange}
+                onLoanPropertyFeeChange={onLoanPropertyFeeChange}
+                onAddInsurance={
+                  onAddInsurance && view.viewRole === 'owner'
+                    ? () => onAddInsurance(view.storageTargetId, view.property)
+                    : undefined
+                }
+                onUpdateInsurance={onUpdateInsurance}
+                onRemoveInsurance={onRemoveInsurance}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="housing-owned-empty">
@@ -152,7 +167,7 @@ export function OwnedPropertySection({
               key={type}
               type="button"
               className="housing-owned-add-option"
-              onClick={() => addProperty(type)}
+              onClick={() => onAddProperty(type)}
             >
               <span className="housing-owned-add-icon" aria-hidden>
                 {OWNED_PROPERTY_TYPE_ICONS[type]}

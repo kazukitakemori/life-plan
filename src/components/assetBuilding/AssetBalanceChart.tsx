@@ -12,6 +12,7 @@ import {
 
 import {
   buildBalanceLinePoints,
+  formatLifetimeTotalMan,
   getLifetimeChartPlotAgeDomain,
   getLifetimeChartYTicks,
   LIFETIME_CHART_BALANCE_LINE_LABELS,
@@ -20,20 +21,27 @@ import {
 import { SIMULATION_CHART_MARGIN_RIGHT } from '../../lib/simulationLayout';
 import {
   ASSET_CHART_COLORS,
-  ASSET_CHART_HEIGHT,
   ASSET_CHART_MARGIN_LEFT,
   ASSET_CHART_MARGIN_TOP,
   ASSET_LINE_X_AXIS_ID,
+  ASSET_SAVINGS_CHART_HEIGHT,
+  ASSET_SAVINGS_CHART_HEIGHT_FULLSCREEN,
+  AssetChartSummaryPanel,
   AssetChartTooltipShell,
+  AssetChartYAxisMaxPanel,
   AssetChartZoomToolbar,
   AssetTooltipRow,
   DualAgeAxisTick,
   formatAxisMan,
   niceAxisMax,
   niceAxisMin,
+  resolveSignedAssetChartAxisDomain,
+  signedAssetChartAutoAxisMax,
   useAssetChartWindow,
+  useAssetChartYAxisMax,
   xAxisTotalHeight,
 } from './assetBuildingChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 interface AssetBalanceChartProps {
   points: LifetimeBalanceChartPoint[];
@@ -132,7 +140,7 @@ export function AssetBalanceChart({
     () => getLifetimeChartPlotAgeDomain(minHeadAge, maxHeadAge),
     [minHeadAge, maxHeadAge],
   );
-  const axisDomain = useMemo(() => {
+  const autoAxis = useMemo(() => {
     let peak = 0;
     let floor = 0;
     for (const point of visiblePoints) {
@@ -141,12 +149,70 @@ export function AssetBalanceChart({
     }
     return { min: niceAxisMin(floor), max: niceAxisMax(peak) };
   }, [visiblePoints]);
+  const autoControlMax = useMemo(
+    () => signedAssetChartAutoAxisMax(autoAxis.min, autoAxis.max),
+    [autoAxis.min, autoAxis.max],
+  );
+  const {
+    yAxisMaxMode,
+    manualYAxisMax,
+    axisMax,
+    setYAxisMaxMode,
+    setManualYAxisMax,
+  } = useAssetChartYAxisMax(autoControlMax);
+  const axisDomain = useMemo(
+    () =>
+      resolveSignedAssetChartAxisDomain(
+        autoAxis.min,
+        autoAxis.max,
+        yAxisMaxMode,
+        axisMax,
+      ),
+    [autoAxis.min, autoAxis.max, yAxisMaxMode, axisMax],
+  );
   const yTicks = useMemo(
     () => getLifetimeChartYTicks(axisDomain.min, axisDomain.max),
     [axisDomain.min, axisDomain.max],
   );
   const xAxisRowCount = hasSpouse ? 2 : 1;
   const xAxisHeight = xAxisTotalHeight(xAxisRowCount);
+  const plotHeight = useFullscreenPlotHeight(
+    ASSET_SAVINGS_CHART_HEIGHT,
+    ASSET_SAVINGS_CHART_HEIGHT_FULLSCREEN,
+  );
+  const summaryRows = useMemo(() => {
+    if (visiblePoints.length === 0) return [];
+
+    let minCashPoint = visiblePoints[0];
+    for (const point of visiblePoints) {
+      const cash = point.depositBalance;
+      const bestCash = minCashPoint.depositBalance;
+      if (cash < bestCash) {
+        minCashPoint = point;
+        continue;
+      }
+      if (cash === bestCash) {
+        const invest = point.financialAssets - point.depositBalance;
+        const bestInvest =
+          minCashPoint.financialAssets - minCashPoint.depositBalance;
+        if (invest > bestInvest) minCashPoint = point;
+      }
+    }
+
+    const investedAssets =
+      minCashPoint.financialAssets - minCashPoint.depositBalance;
+
+    return [
+      {
+        label: '最小現金・預金',
+        value: formatLifetimeTotalMan(minCashPoint.depositBalance),
+      },
+      {
+        label: '同時点の運用分',
+        value: formatLifetimeTotalMan(investedAssets),
+      },
+    ];
+  }, [visiblePoints]);
 
   if (points.length === 0) return null;
 
@@ -185,7 +251,7 @@ export function AssetBalanceChart({
             </p>
             <ResponsiveContainer
               width="100%"
-              height={ASSET_CHART_HEIGHT + xAxisHeight}
+              height={plotHeight + xAxisHeight}
             >
               <ComposedChart
                 data={visiblePoints}
@@ -235,6 +301,7 @@ export function AssetBalanceChart({
                   fontSize={11}
                   width={ASSET_CHART_MARGIN_LEFT}
                   domain={[axisDomain.min, axisDomain.max]}
+                  allowDataOverflow
                 />
                 <ReferenceLine
                   yAxisId="main"
@@ -322,6 +389,16 @@ export function AssetBalanceChart({
           </div>
           <div className="sim-align-gap" aria-hidden="true" />
           <aside className="sim-align-sidebar lifetime-chart-sidebar">
+            <AssetChartSummaryPanel title="表示期間" rows={summaryRows} />
+            <AssetChartYAxisMaxPanel
+              yAxisMaxMode={yAxisMaxMode}
+              manualYAxisMax={manualYAxisMax}
+              autoYAxisMax={autoControlMax}
+              onYAxisMaxModeChange={setYAxisMaxMode}
+              onManualYAxisMaxChange={setManualYAxisMax}
+              title="Y軸の表示幅"
+              ariaLabel="Y軸表示幅の設定"
+            />
             <div className="lifetime-chart-legend-panel">
               <h3 className="lifetime-chart-legend-title">凡例</h3>
               <ul className="lifetime-chart-legend">

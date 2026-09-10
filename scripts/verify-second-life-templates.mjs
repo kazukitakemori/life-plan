@@ -22,7 +22,6 @@ import {
   createLivingExpenseSchedule,
   syncLivingDetailSummary,
 } from '../src/lib/livingDefaults.ts';
-import { HOUSEHOLD_HOUSING_KEY } from '../src/types/housing.ts';
 import { HOUSEHOLD_LIVING_KEY } from '../src/types/living.ts';
 
 const referenceDate = new Date(2026, 5, 1);
@@ -43,8 +42,8 @@ const head = {
 const baseHousing = createDefaultHousingState();
 const currentRental = createCurrentRentalProperty(head, 6, 2026);
 currentRental.monthlyRentMan = 10;
-baseHousing.byTarget[HOUSEHOLD_HOUSING_KEY] = {
-  ...getHousingTargetData(baseHousing, HOUSEHOLD_HOUSING_KEY),
+baseHousing.byTarget[head.id] = {
+  ...getHousingTargetData(baseHousing, head.id),
   rentals: [currentRental],
 };
 
@@ -58,10 +57,10 @@ const housingAfterRent = applySecondLifeHousingToHousingState({
   secondLifeState: rentDesign,
   member: head,
   referenceDate,
+  targetId: head.id,
 });
 
-const rentals =
-  housingAfterRent.byTarget[HOUSEHOLD_HOUSING_KEY]?.rentals ?? [];
+const rentals = housingAfterRent.byTarget[head.id]?.rentals ?? [];
 assert.ok(
   rentals.some((rental) => rental.name === SECOND_LIFE_RENTAL_NAME),
   'second life rental should be added',
@@ -88,9 +87,10 @@ const housingAfterPurchase = applySecondLifeHousingToHousingState({
   secondLifeState: purchaseDesign,
   member: head,
   referenceDate,
+  targetId: head.id,
 });
 assert.ok(
-  (housingAfterPurchase.byTarget[HOUSEHOLD_HOUSING_KEY]?.owned ?? []).some(
+  (housingAfterPurchase.byTarget[head.id]?.owned ?? []).some(
     (property) => property.name === SECOND_LIFE_OWNED_NAME,
   ),
 );
@@ -130,7 +130,7 @@ const nextLiving = applySecondLifeLivingDesign({
   referenceDate,
 });
 
-const schedules = nextLiving.byTarget[HOUSEHOLD_LIVING_KEY] ?? [];
+const schedules = nextLiving.byTarget[head.id] ?? [];
 assert.ok(schedules.some((schedule) => schedule.startAge === startAge));
 assert.ok(
   schedules.some(

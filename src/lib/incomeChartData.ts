@@ -1,8 +1,9 @@
-import { calcBirthYear, calcFutureYear } from './birthDate';
+import { calcBirthYear, calcYearAtAge } from './birthDate';
 import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcMemberMonthlyEarnedIncomeBreakdown,
 } from './memberEarnedIncome';
+import { resolveSimulationStartYear } from './simulationTiming';
 import {
   sumBonusDetail,
   sumIncomeBreakdown,
@@ -61,28 +62,28 @@ function resolveChartEndYear(
     referenceDate,
   );
   const birthMonth = resolveMemberBirthMonth(member);
-  let endYear = referenceDate.getFullYear();
+  let endYear = resolveSimulationStartYear(referenceDate);
 
   for (const entry of entries) {
     for (const period of entry.periods) {
       endYear = Math.max(
         endYear,
-        calcFutureYear(
+        calcYearAtAge(
           birthYear,
+          birthMonth,
           period.endAge,
           period.endMonth,
-          birthMonth,
         ),
       );
     }
     for (const allowance of entry.retirementAllowances ?? []) {
       endYear = Math.max(
         endYear,
-        calcFutureYear(
+        calcYearAtAge(
           birthYear,
+          birthMonth,
           allowance.receiveAge,
           allowance.receiveMonth,
-          birthMonth,
         ),
       );
     }
@@ -104,7 +105,7 @@ export function buildIncomeChartPoints(input: {
     member.birthMonth,
     referenceDate,
   );
-  const startYear = referenceDate.getFullYear();
+  const startYear = resolveSimulationStartYear(referenceDate);
   const endYear = resolveChartEndYear(member, entries, referenceDate);
   const earnedInput = {
     familyMembers,

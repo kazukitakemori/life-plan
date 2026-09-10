@@ -1,4 +1,5 @@
 import { toJapaneseEra } from './era';
+import { formatReferenceMonthLabel } from './simulationTiming';
 import type { FamilyMember } from '../types/family';
 
 export function getMemberAgeMonth(
@@ -93,7 +94,7 @@ export function calcFutureYear(
 }
 
 export function formatReferenceDate(date: Date): string {
-  return `${date.getFullYear()}年${date.getMonth() + 1}月現在`;
+  return formatReferenceMonthLabel(date);
 }
 
 /**

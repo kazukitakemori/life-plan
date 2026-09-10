@@ -119,6 +119,12 @@ export function VehicleTable({
           <div className="life-event-header-cell vehicle-col-purchase">
             購入費・返済額
           </div>
+          <div className="life-event-header-cell vehicle-col-monthly">
+            月次維持費
+          </div>
+          <div className="life-event-header-cell vehicle-col-annual">
+            税金・メンテナンス費
+          </div>
           <div className="life-event-header-cell vehicle-col-replace">
             買い替え
             <span
@@ -127,12 +133,6 @@ export function VehicleTable({
             >
               ?
             </span>
-          </div>
-          <div className="life-event-header-cell vehicle-col-monthly">
-            月次維持費
-          </div>
-          <div className="life-event-header-cell vehicle-col-annual">
-            税金・メンテナンス費
           </div>
           <div className="life-event-header-cell life-event-col-action" />
         </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { activateLicense, deactivateLicense, fetchLicenseStatus } from './api';
+import { isLicenseDevUnlock } from './devUnlock';
 import { getLicenseEntitlements, resolveLicenseEdition } from './edition';
 import {
   clearStoredLicenseKey,
@@ -20,15 +21,23 @@ interface PendingAnalysis {
   resolve: (allowed: boolean) => void;
 }
 
+const DEV_UNLOCK = isLicenseDevUnlock();
+
 export function useLicense() {
   const deviceId = useMemo(() => getOrCreateDeviceId(), []);
-  const [licenseState, setLicenseState] = useState<LicenseState>('checking');
+  const [licenseState, setLicenseState] = useState<LicenseState>(
+    DEV_UNLOCK ? 'active' : 'checking',
+  );
   const [licenseKey, setLicenseKey] = useState<string | null>(() => getStoredLicenseKey());
-  const [edition, setEdition] = useState<LicenseEdition>('personal');
-  const [keyHint, setKeyHint] = useState<string | null>(null);
+  const [edition, setEdition] = useState<LicenseEdition>(DEV_UNLOCK ? 'advisor' : 'personal');
+  const [keyHint, setKeyHint] = useState<string | null>(DEV_UNLOCK ? '開発モード' : null);
   const [devices, setDevices] = useState<LicenseDevice[]>([]);
   const [maxDevices, setMaxDevices] = useState(2);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    DEV_UNLOCK
+      ? '開発中のため、ライセンスキーなしで全機能を使えます。完成版ではキーが必要です。'
+      : null,
+  );
   const [keyModalOpen, setKeyModalOpen] = useState(false);
   const [deviceLimitModalOpen, setDeviceLimitModalOpen] = useState(false);
   const [pendingKey, setPendingKey] = useState('');
@@ -128,6 +137,7 @@ export function useLicense() {
   }, [applyActive, applyOfflineActive, deviceId]);
 
   useEffect(() => {
+    if (DEV_UNLOCK) return;
     void verifyStoredLicense();
   }, [verifyStoredLicense]);
 
@@ -205,6 +215,8 @@ export function useLicense() {
   );
 
   const ensureLicensed = useCallback(async () => {
+    if (DEV_UNLOCK) return true;
+
     if (licenseState === 'active') {
       const ok = await verifyStoredLicense();
       if (ok) return true;
@@ -222,6 +234,8 @@ export function useLicense() {
   }, [licenseState, verifyStoredLicense]);
 
   const ensureCanRunAnalysis = useCallback(async () => {
+    if (DEV_UNLOCK) return true;
+
     if (licenseState === 'active' || licenseState === 'checking') {
       const ok = await verifyStoredLicense();
       if (ok) return true;
@@ -310,6 +324,7 @@ export function useLicense() {
     isAnalysisAllowed: isLicensed,
     canRunAnalysis,
     trialAnalysisUsed,
+    isDevUnlock: DEV_UNLOCK,
     keyModalOpen,
     deviceLimitModalOpen,
     pendingKey,

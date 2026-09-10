@@ -20,7 +20,10 @@ import {
   VEHICLE_TYPE_ICONS,
   VEHICLE_TYPE_LABELS,
 } from './vehicleLabels';
-import { resolveDefaultStartAgeMonth } from './simulationTiming';
+import {
+  resolveReferenceNowAgeMonth,
+  resolveSimulationStartAgeMonth,
+} from './periodTimingBounds';
 import type {
   VehicleByMember,
   VehicleEntry,
@@ -186,7 +189,9 @@ function normalizeVehicleEntry(
       ? 'monthlyRepayment'
       : rawPaymentMode === 'alreadyOwned'
         ? 'alreadyOwned'
-        : 'purchaseAmount';
+        : rawPaymentMode === 'cash'
+          ? 'cash'
+          : 'purchaseAmount';
 
   let next: VehicleEntry = {
     ...entry,
@@ -266,8 +271,8 @@ export function createVehicleEntry(
   referenceDate: Date,
   overrides: Partial<VehicleEntry> = {},
 ): VehicleEntry {
-  const referenceMonth = referenceDate.getMonth() + 1;
-  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
+  const defaultStart = resolveSimulationStartAgeMonth(member, referenceDate);
+  const refNow = resolveReferenceNowAgeMonth(member, referenceDate);
   const type = overrides.type ?? 'other';
   const kind =
     overrides.kind !== undefined
@@ -277,18 +282,29 @@ export function createVehicleEntry(
     overrides.condition ??
     getDefaultVehicleCondition(type);
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const resolvedCondition = resolveVehicleCondition({
+    type,
+    kind,
+    condition,
+  });
+  /** 既保有は基準月、これから購入は試算開始（翌月） */
+  const startDefault =
+    resolvedCondition === 'owned'
+      ? { startAge: refNow.age, startMonth: refNow.month }
+      : { startAge: defaultStart.age, startMonth: defaultStart.month };
 
   const entry: VehicleEntry = {
     id: createId(),
     label: '乗り物',
     type,
     condition,
-    paymentMode: 'purchaseAmount',
+    paymentMode:
+      resolvedCondition === 'owned' ? 'alreadyOwned' : 'purchaseAmount',
     monthlyRepaymentMan: 0,
     repaymentEndYear: 0,
     repaymentEndMonth: 0,
-    startAge: defaultStart.startAge,
-    startMonth: defaultStart.startMonth,
+    startAge: startDefault.startAge,
+    startMonth: startDefault.startMonth,
     endMode: 'lifetime',
     endAge: member.expectedLifespan,
     endMonth: 12,

@@ -32,7 +32,7 @@ import {
   SAVINGS_CATEGORY_SECTOR,
   resolveDefaultSavingsContributionEndAge,
 } from './savingsLabels';
-import { resolveDefaultStartAgeMonth } from './simulationTiming';
+import { resolveSimulationStartAgeMonth } from './periodTimingBounds';
 
 export {
   memberHasCorporateDcEntry,
@@ -141,8 +141,7 @@ export function createSavingsEntry(
   referenceDate: Date,
   overrides: Partial<SavingsEntry> = {},
 ): SavingsEntry {
-  const referenceMonth = referenceDate.getMonth() + 1;
-  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
+  const defaultStart = resolveSimulationStartAgeMonth(member, referenceDate);
   const endMode = 'until';
   const endAge = resolveDefaultSavingsContributionEndAge({
     age: resolveMemberAge(member),
@@ -157,8 +156,8 @@ export function createSavingsEntry(
     contributionMan: defaultContributionMan(category),
     contributionMode: defaultContributionMode(category),
     expectedReturnRatePct: SAVINGS_CATEGORY_DEFAULT_RETURN_PCT[category],
-    startAge: defaultStart.startAge,
-    startMonth: defaultStart.startMonth,
+    startAge: defaultStart.age,
+    startMonth: defaultStart.month,
     endMode,
     endAge,
     endMonth: 12,
@@ -175,8 +174,8 @@ export function createSavingsEntry(
       nisaCurrentReturnRatePct: 0,
       withdrawalMode: 'none',
       withdrawalMan: 0,
-      withdrawalStartAge: defaultStart.startAge,
-      withdrawalStartMonth: defaultStart.startMonth,
+      withdrawalStartAge: defaultStart.age,
+      withdrawalStartMonth: defaultStart.month,
       withdrawalEndMode: 'lifetime',
       withdrawalEndAge: member.expectedLifespan,
       withdrawalEndMonth: 12,
@@ -194,8 +193,8 @@ export function createSavingsEntry(
       nisaCurrentReturnRatePct: 0,
       withdrawalMode: 'none',
       withdrawalMan: 0,
-      withdrawalStartAge: defaultStart.startAge,
-      withdrawalStartMonth: defaultStart.startMonth,
+      withdrawalStartAge: defaultStart.age,
+      withdrawalStartMonth: defaultStart.month,
       withdrawalEndMode: 'lifetime',
       withdrawalEndAge: member.expectedLifespan,
       withdrawalEndMonth: 12,

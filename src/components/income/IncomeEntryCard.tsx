@@ -1200,43 +1200,6 @@ export function IncomeEntryCard({
                     </div>
                   </label>
                   <label className="income-retirement-field">
-                    <span>受取時期</span>
-                    <div className="income-retirement-when">
-                      <select
-                        className="select-input"
-                        value={allowance.receiveAge}
-                        aria-label="退職金の受取年齢"
-                        onChange={(e) =>
-                          updateRetirementAllowance(allowance.id, {
-                            receiveAge: Number(e.target.value),
-                          })
-                        }
-                      >
-                        {ageOptions.map((age) => (
-                          <option key={age} value={age}>
-                            {age}歳
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        className="select-input"
-                        value={allowance.receiveMonth}
-                        aria-label="退職金の受取月"
-                        onChange={(e) =>
-                          updateRetirementAllowance(allowance.id, {
-                            receiveMonth: Number(e.target.value),
-                          })
-                        }
-                      >
-                        {MONTHS.map((m) => (
-                          <option key={m} value={m}>
-                            {m}月
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                  <label className="income-retirement-field">
                     <span>勤続年数</span>
                     <div className="income-retirement-years">
                       <select
@@ -1348,6 +1311,43 @@ export function IncomeEntryCard({
                           <span className="amount-unit">年</span>
                         </div>
                       )}
+                    </div>
+                  </label>
+                  <label className="income-retirement-field">
+                    <span>受取時期</span>
+                    <div className="income-retirement-when">
+                      <select
+                        className="select-input"
+                        value={allowance.receiveAge}
+                        aria-label="退職金の受取年齢"
+                        onChange={(e) =>
+                          updateRetirementAllowance(allowance.id, {
+                            receiveAge: Number(e.target.value),
+                          })
+                        }
+                      >
+                        {ageOptions.map((age) => (
+                          <option key={age} value={age}>
+                            {age}歳
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select-input"
+                        value={allowance.receiveMonth}
+                        aria-label="退職金の受取月"
+                        onChange={(e) =>
+                          updateRetirementAllowance(allowance.id, {
+                            receiveMonth: Number(e.target.value),
+                          })
+                        }
+                      >
+                        {MONTHS.map((m) => (
+                          <option key={m} value={m}>
+                            {m}月
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </label>
                 </div>

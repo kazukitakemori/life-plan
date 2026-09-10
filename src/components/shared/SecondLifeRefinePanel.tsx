@@ -4,6 +4,9 @@ interface SecondLifeRefinePanelProps {
   title: string;
   summary?: string;
   defaultOpen?: boolean;
+  /** 指定時は開閉を親が制御する（住まい反映後に閉じるなど） */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }
 
@@ -11,10 +14,21 @@ export function SecondLifeRefinePanel({
   title,
   summary,
   defaultOpen = false,
+  open: openProp,
+  onOpenChange,
   children,
 }: SecondLifeRefinePanelProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+  const open = isControlled ? openProp : uncontrolledOpen;
   const titleId = useId();
+
+  const setOpen = (next: boolean) => {
+    if (!isControlled) {
+      setUncontrolledOpen(next);
+    }
+    onOpenChange?.(next);
+  };
 
   useEffect(() => {
     if (!open) return;

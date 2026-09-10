@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { createDefaultPensionMemberState } from '../../lib/pensionDefaults';
-import { getIncomeEligibleMembers, getMemberTabLabel } from '../../lib/memberDisplay';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
+import { memberHasPensionData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { PensionByMember } from '../../types/pension';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { PensionBenefitEstimatePanel } from './PensionBenefitEstimatePanel';
@@ -13,6 +16,8 @@ interface PensionStepProps {
   pensionByMember: PensionByMember;
   incomeByMember: IncomeByMember;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   onChange: (pension: PensionByMember) => void;
   purposeNote?: string;
 }
@@ -22,24 +27,43 @@ export function PensionStep({
   pensionByMember,
   incomeByMember,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   onChange,
   purposeNote,
 }: PensionStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
+  const headMember = members.find((m) => m.role === 'head');
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
+
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasPensionData(pensionByMember, memberId),
+    [pensionByMember],
   );
 
-  const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'pension',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
 
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
     ? activeMemberId
-    : defaultActiveId;
+    : fallbackActiveId;
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
   const memberState =
     pensionByMember[resolvedActiveId] ?? createDefaultPensionMemberState();
   const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
@@ -107,11 +131,15 @@ export function PensionStep({
       ) : null}
 
       <MemberIncomeTabs
-        members={eligibleMembers}
+        members={visibleMembers}
         activeMemberId={resolvedActiveId}
         entryCounts={{}}
         referenceDate={referenceDate}
         onSelect={setActiveMemberId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
       />
 
       <PublicPensionSection

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-
-import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memberHasIncomeData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import {
   buildOtherTabYearView,
   OTHER_TAB_IDS,
@@ -9,6 +9,7 @@ import {
 import type { CashFlowTableData } from '../../types/cashFlow';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { PensionByMember } from '../../types/pension';
 import type { TaxBreakdownReferenceDetail } from '../../types/taxBreakdownReference';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
@@ -22,6 +23,9 @@ export interface OtherTaxSocialBreakdownProps {
   referenceDate: Date;
   cashFlowData: CashFlowTableData;
   calendarYear: number;
+  /** 未指定時は基本ルール＋収入データのみ（分析モーダル向け） */
+  memberTabExtras?: MemberTabExtras;
+  onMemberTabExtrasChange?: (extras: MemberTabExtras) => void;
   initialMemberId?: string;
   onOpenReference?: (detail: TaxBreakdownReferenceDetail) => void;
 }
@@ -34,40 +38,66 @@ export function OtherTaxSocialBreakdown({
   referenceDate,
   cashFlowData,
   calendarYear,
+  memberTabExtras = {},
+  onMemberTabExtrasChange,
   initialMemberId,
   onOpenReference,
 }: OtherTaxSocialBreakdownProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
-  );
-
   const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
-
   const [activeMemberId, setActiveMemberId] = useState(
-    initialMemberId ?? defaultActiveId,
+    initialMemberId ?? headMember?.id ?? '',
   );
   const [activeTabId, setActiveTabId] = useState<string>(
     OTHER_TAB_IDS.incomeTax,
   );
 
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasIncomeData(incomeByMember, memberId),
+    [incomeByMember],
+  );
+
+  const handleExtrasChange = useCallback(
+    (extras: MemberTabExtras) => {
+      onMemberTabExtrasChange?.(extras);
+    },
+    [onMemberTabExtrasChange],
+  );
+
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'taxSocialBreakdown',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange: handleExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
+
   useEffect(() => {
     if (!initialMemberId) return;
-    if (!eligibleMembers.some((member) => member.id === initialMemberId)) {
+    if (!visibleMembers.some((member) => member.id === initialMemberId)) {
       return;
     }
     setActiveMemberId(initialMemberId);
     setActiveTabId(OTHER_TAB_IDS.incomeTax);
-  }, [calendarYear, initialMemberId, eligibleMembers]);
+  }, [calendarYear, initialMemberId, visibleMembers]);
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
+
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
     ? activeMemberId
-    : defaultActiveId;
+    : fallbackActiveId;
 
   const activeMember = useMemo(
-    () => eligibleMembers.find((member) => member.id === resolvedActiveId),
-    [eligibleMembers, resolvedActiveId],
+    () => visibleMembers.find((member) => member.id === resolvedActiveId),
+    [visibleMembers, resolvedActiveId],
   );
 
   const yearView = useMemo(() => {
@@ -107,11 +137,11 @@ export function OtherTaxSocialBreakdown({
 
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const member of eligibleMembers) {
+    for (const member of visibleMembers) {
       counts[member.id] = incomeByMember[member.id]?.length ?? 0;
     }
     return counts;
-  }, [eligibleMembers, incomeByMember]);
+  }, [visibleMembers, incomeByMember]);
 
   if (!headMember) {
     return (
@@ -124,11 +154,21 @@ export function OtherTaxSocialBreakdown({
   return (
     <div className="other-tax-social-breakdown">
       <MemberIncomeTabs
-        members={eligibleMembers}
+        members={visibleMembers}
         activeMemberId={resolvedActiveId}
         entryCounts={entryCounts}
         referenceDate={referenceDate}
         onSelect={setActiveMemberId}
+        addableMembers={onMemberTabExtrasChange ? addableMembers : []}
+        onAddMemberTab={
+          onMemberTabExtrasChange ? handleAddMemberTab : undefined
+        }
+        removableMemberIds={
+          onMemberTabExtrasChange ? removableMemberIds : []
+        }
+        onRemoveMemberTab={
+          onMemberTabExtrasChange ? handleRemoveMemberTab : undefined
+        }
       />
 
       {yearView ? (

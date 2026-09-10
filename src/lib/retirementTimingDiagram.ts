@@ -2,7 +2,7 @@ import { resolveMemberAge } from './familyDefaults';
 import type { FamilyMember } from '../types/family';
 import type { IncomeEntry } from '../types/income';
 import type { SavingsEntry } from '../types/savings';
-import { calcBirthYear } from './birthDate';
+import { calcBirthYear, calcYearAtAge } from './birthDate';
 import { resolveDbEnrollmentPeriod, ensureDbEnrollmentFields } from './dbEnrollment';
 import {
   calcPensionRetirementDeductionEnrollmentYears,
@@ -311,9 +311,9 @@ function collectCompanyPoints(
         label: '退職金',
         age: allowance.receiveAge,
         month: clampMonth(allowance.receiveMonth),
-        calendarYear: calendarYearFromAgeMonth(
-          member,
-          referenceDate,
+        calendarYear: calcYearAtAge(
+          calcBirthYear(member.age, member.birthMonth, referenceDate),
+          member.birthMonth ?? 1,
           allowance.receiveAge,
           allowance.receiveMonth,
         ),

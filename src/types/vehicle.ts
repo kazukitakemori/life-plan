@@ -20,11 +20,13 @@ export type VehicleEndMode = 'lifetime' | 'until';
 
 /**
  * 支払いの入力方法。
- * purchaseAmount = 購入費用とローンを入力（ローン未追加なら一括計上、追加時は借入額の基準）/
+ * cash = 現金一括（購入費を保有開始月に一括計上。ローンなし。誕生日ずれ時はUI開始月にも計上）/
+ * purchaseAmount = 購入費用とローンを入力（両方必須。購入費は借入額の基準、CFはローン返済）/
  * monthlyRepayment = 月々の返済額をおおよその金額で直接入力（ローン試算はしない）/
  * alreadyOwned = 残債なし（購入費は計上しない。残債があればローン追加可）
  */
 export type VehiclePaymentMode =
+  | 'cash'
   | 'purchaseAmount'
   | 'monthlyRepayment'
   | 'alreadyOwned';

@@ -8,7 +8,7 @@ import type {
   LifeEventType,
 } from '../types/lifeEvent';
 import { getIncomeEligibleMembers } from './memberDisplay';
-import { resolveDefaultStartAgeMonth } from './simulationTiming';
+import { resolveSimulationStartAgeMonth } from './periodTimingBounds';
 
 const DEFAULT_CELEBRATION_TARGET_AGE = 30;
 
@@ -161,14 +161,18 @@ export function createLifeEventEntry(
   member: FamilyMember,
   referenceMonth: number,
   overrides: Partial<LifeEventEntry> = {},
+  referenceYear: number = new Date().getFullYear(),
 ): LifeEventEntry {
-  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
+  const defaultStart = resolveSimulationStartAgeMonth(
+    member,
+    new Date(referenceYear, referenceMonth - 1, 1),
+  );
   return {
     id: createId(),
     label: 'イベント',
     type: 'event',
-    startAge: defaultStart.startAge,
-    startMonth: defaultStart.startMonth,
+    startAge: defaultStart.age,
+    startMonth: defaultStart.month,
     endMode: 'lifetime',
     endAge: member.expectedLifespan,
     endMonth: 12,

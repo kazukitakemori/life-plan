@@ -15,7 +15,6 @@ import {
 import { createDefaultLoanState } from '../src/lib/loanDefaults.ts';
 import { createDefaultPensionByMember } from '../src/lib/pensionDefaults.ts';
 import { createDefaultTaxSocialState } from '../src/lib/taxSocialDefaults.ts';
-import { HOUSEHOLD_LIVING_KEY } from '../src/types/living.ts';
 
 const referenceDate = new Date(2026, 5, 1);
 
@@ -45,13 +44,17 @@ function buildTable(livingState) {
   });
 }
 
-// 1. 既定は生活費1行（詳細UI）
+// 1. 既定は空。世帯主タブに生活費1行を置いて CF される
 const defaultState = createDefaultLivingState(head, 6);
-assert.equal(
-  defaultState.byTarget[HOUSEHOLD_LIVING_KEY][0].inputMode,
-  'detail',
+assert.deepEqual(defaultState.byTarget, {});
+const singleSchedule = syncLivingDetailSummary(
+  createLivingExpenseSchedule(40, 6, {
+    inputMode: 'detail',
+    items: [createLivingExpenseItem({ label: '生活費', amountMan: 30 })],
+  }),
 );
-const singleTable = buildTable(defaultState);
+const singleState = { byTarget: { [head.id]: [singleSchedule] } };
+const singleTable = buildTable(singleState);
 const single2027 = singleTable.years.find((y) => y.calendarYear === 2027);
 assert.ok(single2027);
 assert.ok(single2027.expenseBreakdown.living > 0);
@@ -76,7 +79,7 @@ const detailSchedule = syncLivingDetailSummary(
   }),
 );
 const detailState = {
-  byTarget: { [HOUSEHOLD_LIVING_KEY]: [detailSchedule] },
+  byTarget: { [head.id]: [detailSchedule] },
 };
 const detailTable = buildTable(detailState);
 const detail2027 = detailTable.years.find((y) => y.calendarYear === 2027);
@@ -98,7 +101,7 @@ assert.equal(withSummary.items[0].amountMan, 10);
 assert.equal(withSummary.items[0].label, '生活費');
 
 const summaryState = {
-  byTarget: { [HOUSEHOLD_LIVING_KEY]: [withSummary] },
+  byTarget: { [head.id]: [withSummary] },
 };
 const summaryTable = buildTable(summaryState);
 const summary2027 = summaryTable.years.find((y) => y.calendarYear === 2027);

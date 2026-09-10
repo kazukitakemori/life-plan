@@ -3,6 +3,7 @@
  * npx tsx scripts/verify-plan-document.mjs
  */
 import {
+  advanceReferenceDateToPresent,
   createEmptyPlanAppState,
   createPlanRecord,
   fromPlanPayload,
@@ -22,7 +23,7 @@ if (payload.referenceDate !== '2026-08-01') {
   throw new Error(`Expected 2026-08-01, got ${payload.referenceDate}`);
 }
 
-const restored = fromPlanPayload(payload);
+const restored = fromPlanPayload(payload, { now: new Date(2026, 7, 20) });
 if (restored.familyMembers.length !== state.familyMembers.length) {
   throw new Error('Family member count mismatch after roundtrip');
 }
@@ -48,12 +49,34 @@ if (restored.requiredCoverageState.detailDesigns?.head?.living?.ratePct !== 100)
   throw new Error('default living design rate should be 100');
 }
 
-const restoredLegacy = fromPlanPayload({
-  ...payload,
-  requiredCoverageState: undefined,
-});
+const restoredLegacy = fromPlanPayload(
+  {
+    ...payload,
+    requiredCoverageState: undefined,
+  },
+  { now: new Date(2026, 7, 20) },
+);
 if (restoredLegacy.requiredCoverageState.kind !== 'youngest_child_education') {
   throw new Error('legacy payload should migrate requiredCoverageState');
+}
+
+const advanced = advanceReferenceDateToPresent(
+  new Date(2026, 7, 1),
+  new Date(2026, 8, 5),
+);
+if (advanced.getFullYear() !== 2026 || advanced.getMonth() !== 8) {
+  throw new Error('stale August reference should advance to September');
+}
+const advancedPayload = fromPlanPayload(payload, { now: new Date(2026, 8, 5) });
+if (advancedPayload.referenceDate.getMonth() !== 8) {
+  throw new Error('fromPlanPayload should advance stale reference to current month');
+}
+const sameMonth = advanceReferenceDateToPresent(
+  new Date(2026, 8, 1),
+  new Date(2026, 8, 20),
+);
+if (sameMonth.getMonth() !== 8) {
+  throw new Error('same-month reference should stay September');
 }
 
 const record = createPlanRecord({

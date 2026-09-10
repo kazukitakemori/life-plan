@@ -4,8 +4,9 @@ import type { PensionByMember } from '../types/pension';
 import type { LateElderlyHealthViewConfig } from '../types/lateElderlyHealthView';
 import { calcMemberAnnualPensionManByMember } from './calculationBreakdown';
 import { getMemberAgeAtYearEnd } from './memberYearIncome';
-import { buildMemberTaxBreakdownData } from './taxCalculator';
 import { resolveLevyIncomeReferenceYear } from './priorYearIncomeResolution';
+import { resolveSimulationStartYear } from './simulationTiming';
+import { buildMemberTaxBreakdownData } from './taxCalculator';
 
 function formatYen(yen: number): string {
   return `${yen.toLocaleString('ja-JP')}円`;
@@ -78,7 +79,7 @@ export function buildLateElderlyHealthViewConfig(input: {
       annualPensionManByMember,
       pensionByMember: input.pensionByMember,
       simulationStartYear:
-        input.simulationStartYear ?? input.referenceDate.getFullYear(),
+        input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate),
     });
 
   if (!breakdownData) {

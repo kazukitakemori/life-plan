@@ -23,6 +23,7 @@ import {
 import {
   CHART_COLORS,
   CHART_HEIGHT,
+  CHART_HEIGHT_FULLSCREEN,
   CHART_MARGIN_LEFT,
   CHART_MARGIN_TOP,
   CoverageChartZoomToolbar,
@@ -36,6 +37,7 @@ import {
   useCoverageChartWindow,
   xAxisTotalHeight,
 } from './requiredCoverageChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 interface RequiredCoverageYearNetChartProps {
   points: RequiredCoverageChartPoint[];
@@ -118,6 +120,10 @@ export function RequiredCoverageYearNetChart({
   );
   const xAxisRowCount = hasSpouse ? 2 : 1;
   const xAxisHeight = xAxisTotalHeight(xAxisRowCount);
+  const plotHeight = useFullscreenPlotHeight(
+    CHART_HEIGHT,
+    CHART_HEIGHT_FULLSCREEN,
+  );
 
   if (points.length === 0) return null;
 
@@ -157,7 +163,7 @@ export function RequiredCoverageYearNetChart({
             <p className="lifetime-chart-y-unit" aria-hidden>
               （万円）
             </p>
-            <ResponsiveContainer width="100%" height={CHART_HEIGHT + xAxisHeight}>
+            <ResponsiveContainer width="100%" height={plotHeight + xAxisHeight}>
               <ComposedChart
                 data={visiblePoints}
                 barCategoryGap={getSimulationBarCategoryGapPx(

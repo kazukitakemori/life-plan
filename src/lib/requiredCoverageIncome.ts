@@ -6,7 +6,7 @@ import {
 } from './cashFlow';
 import { calcHouseholdTaxYearResult } from './householdTaxYear';
 import { calcAnnualAmountMan } from './incomeAmount';
-import { resolveLevyPaymentFactorForYear } from './simulationTiming';
+import { resolveLevyPaymentFactorForYear, resolveSimulationStartYear } from './simulationTiming';
 import {
   createIncomeEntry,
   createSideBusinessIncomeEntry,
@@ -468,7 +468,7 @@ function accumulateCoverageTaxSocialByYear(
     if (prior) priorYearIncomeByMember[member.id] = prior;
   }
 
-  const simulationStartYear = input.referenceDate.getFullYear();
+  const simulationStartYear = resolveSimulationStartYear(input.referenceDate);
   const byYear: Record<number, number> = {};
   for (let year = start.year; year <= end.year; year += 1) {
     const monthStart = year === start.year ? start.month : 1;

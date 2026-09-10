@@ -54,12 +54,14 @@ export const VEHICLE_REPLACEMENT_CONDITION_OPTIONS: VehicleReplacementCondition[
   ['new', 'used'];
 
 export const VEHICLE_PAYMENT_MODE_LABELS: Record<VehiclePaymentMode, string> = {
+  cash: '現金一括',
   purchaseAmount: '購入費用とローンを入力',
   monthlyRepayment: '月々の返済額を入力',
   alreadyOwned: '残債なし',
 };
 
 export const VEHICLE_PAYMENT_MODE_OPTIONS: VehiclePaymentMode[] = [
+  'cash',
   'purchaseAmount',
   'monthlyRepayment',
   'alreadyOwned',

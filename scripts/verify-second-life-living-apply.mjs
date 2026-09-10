@@ -140,4 +140,47 @@ assert.equal(
   `household-only current should stay 12, got ${householdOnlyCurrent}`,
 );
 
+// 世帯主・配偶者に各30・年金反映後も「現在と同水準」が跳ねない
+const headSchedule = createLivingExpenseSchedule(45, 6, {
+  inputMode: 'simple',
+  simpleMonthlyExpenseMan: 30,
+});
+const spouseOnlySchedule = createLivingExpenseSchedule(43, 6, {
+  inputMode: 'simple',
+  simpleMonthlyExpenseMan: 30,
+});
+const personTabsState = {
+  byTarget: {
+    [head.id]: [headSchedule],
+    [spouse.id]: [spouseOnlySchedule],
+  },
+};
+const beforePersonTabs = getPreSecondLifeMonthlyLivingMan({
+  livingState: personTabsState,
+  familyMembers,
+  referenceDate,
+  startAge: 70,
+});
+assert.equal(beforePersonTabs, 60, `expected 30+30=60, got ${beforePersonTabs}`);
+
+const pensionApplyState = createDefaultSecondLifeState();
+pensionApplyState.startAge = 70;
+pensionApplyState.livingLevel = 'pension_based';
+const appliedPension = applySecondLifeLiving(
+  personTabsState,
+  pensionApplyState,
+  applyInput,
+);
+const afterPensionCurrent = getPreSecondLifeMonthlyLivingMan({
+  livingState: appliedPension,
+  familyMembers,
+  referenceDate,
+  startAge: 70,
+});
+assert.equal(
+  afterPensionCurrent,
+  60,
+  `current living should stay 60 after pension apply, got ${afterPensionCurrent}`,
+);
+
 console.log('verify-second-life-living-apply: ok');

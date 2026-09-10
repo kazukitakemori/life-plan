@@ -6,6 +6,7 @@ import type { InsuranceState } from './insurance';
 import type { LifeEventState } from './lifeEvent';
 import type { LivingExpenseState } from './living';
 import type { LoanState } from './loan';
+import type { MemberTabExtras } from './memberTabVisibility';
 import type { PensionByMember } from './pension';
 import type { RequiredCoverageState } from './requiredCoverage';
 import type { SecondLifeState } from './secondLife';
@@ -14,7 +15,7 @@ import type { TaxSocialState } from './taxSocial';
 import type { VehicleState } from './vehicle';
 
 /** 保存フォーマットのバージョン。フィールド追加時に上げる */
-export const PLAN_SCHEMA_VERSION = 7;
+export const PLAN_SCHEMA_VERSION = 8;
 
 export type PlanPurpose =
   | 'life_plan'
@@ -115,6 +116,11 @@ export interface PlanPayload {
   requiredCoverageState?: RequiredCoverageState;
   /** Q12 セカンドライフ設計。未設定の旧データは migrate で補完 */
   secondLifeState?: SecondLifeState;
+  /**
+   * 基本ルール外で個人タブを出すメンバーID（ドメイン別）。
+   * 未設定の旧データは migrate で {}。
+   */
+  memberTabExtras?: MemberTabExtras;
   /** 試算基準日（ISO 日付文字列） */
   referenceDate: string;
 }
@@ -167,6 +173,7 @@ export interface PlanAppState {
   taxSocialState: TaxSocialState;
   requiredCoverageState: RequiredCoverageState;
   secondLifeState: SecondLifeState;
+  memberTabExtras: MemberTabExtras;
   referenceDate: Date;
 }
 

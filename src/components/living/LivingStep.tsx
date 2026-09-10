@@ -1,32 +1,33 @@
-import { useMemo, useState } from 'react';
-import {
-  getIncomeEligibleMembers,
-  getMemberTabLabel,
-} from '../../lib/memberDisplay';
+import { useCallback, useMemo, useState } from 'react';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   createFollowUpLivingSchedule,
   createLivingExpenseSchedule,
 } from '../../lib/livingDefaults';
+import { memberHasLivingData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import { buildSecondLifeLivingOptions } from '../../lib/secondLifeEstimates';
 import { getSecondLifeLivingDesignSummary } from '../../lib/secondLifeLabels';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
-import {
-  HOUSEHOLD_LIVING_KEY,
-  type LivingExpenseSchedule,
-  type LivingExpenseState,
+import type {
+  LivingExpenseSchedule,
+  LivingExpenseState,
 } from '../../types/living';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { PensionByMember } from '../../types/pension';
 import type { SecondLifeState } from '../../types/secondLife';
+import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { SecondLifeLivingSection } from '../secondLife/SecondLifeLivingSection';
 import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { LivingScheduleCard } from './LivingScheduleCard';
-import { MemberLivingTabs } from './MemberLivingTabs';
 
 interface LivingStepProps {
   members: FamilyMember[];
   livingState: LivingExpenseState;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   secondLifeState?: SecondLifeState;
   incomeByMember?: IncomeByMember;
   pensionByMember?: PensionByMember;
@@ -40,6 +41,8 @@ export function LivingStep({
   members,
   livingState,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   secondLifeState,
   incomeByMember,
   pensionByMember,
@@ -48,16 +51,33 @@ export function LivingStep({
   onSecondLifeChange,
   onApplySecondLifeLiving,
 }: LivingStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
-  );
   const headMember = members.find((m) => m.role === 'head');
+  const defaultActiveId = headMember?.id ?? '';
+  const [activeTargetId, setActiveTargetId] = useState(defaultActiveId);
 
-  const [activeTargetId, setActiveTargetId] = useState(HOUSEHOLD_LIVING_KEY);
-  const [copySourceId, setCopySourceId] = useState(
-    headMember?.id ?? eligibleMembers[0]?.id ?? HOUSEHOLD_LIVING_KEY,
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasLivingData(livingState, memberId),
+    [livingState],
   );
+
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'living',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: defaultActiveId,
+    activeId: activeTargetId,
+    setActiveId: setActiveTargetId,
+  });
+
+  const [copySourceId, setCopySourceId] = useState(defaultActiveId);
 
   const livingOptions = useMemo(() => {
     if (!secondLifeState) return [];
@@ -78,18 +98,11 @@ export function LivingStep({
     referenceDate,
   ]);
 
-  const resolvedTargetId = (() => {
-    if (activeTargetId === HOUSEHOLD_LIVING_KEY) return HOUSEHOLD_LIVING_KEY;
-    return eligibleMembers.some((m) => m.id === activeTargetId)
-      ? activeTargetId
-      : HOUSEHOLD_LIVING_KEY;
-  })();
+  const resolvedTargetId = visibleMembers.some((m) => m.id === activeTargetId)
+    ? activeTargetId
+    : (visibleMembers[0]?.id ?? defaultActiveId);
 
-  const contextMember =
-    resolvedTargetId === HOUSEHOLD_LIVING_KEY
-      ? headMember
-      : eligibleMembers.find((m) => m.id === resolvedTargetId);
-
+  const contextMember = visibleMembers.find((m) => m.id === resolvedTargetId);
   const schedules = livingState.byTarget[resolvedTargetId] ?? [];
 
   const scheduleCounts = useMemo(() => {
@@ -97,22 +110,20 @@ export function LivingStep({
     for (const [targetId, list] of Object.entries(livingState.byTarget)) {
       counts[targetId] = list.length;
     }
-    for (const member of eligibleMembers) {
+    for (const member of visibleMembers) {
       counts[member.id] ??= 0;
     }
-    counts[HOUSEHOLD_LIVING_KEY] ??= 0;
     return counts;
-  }, [eligibleMembers, livingState.byTarget]);
+  }, [visibleMembers, livingState.byTarget]);
 
-  const copySourceOptions = useMemo(() => {
-    const options: { id: string; label: string }[] = [
-      { id: HOUSEHOLD_LIVING_KEY, label: 'ご家族' },
-    ];
-    for (const member of eligibleMembers) {
-      options.push({ id: member.id, label: getMemberTabLabel(member) });
-    }
-    return options;
-  }, [eligibleMembers]);
+  const copySourceOptions = useMemo(
+    () =>
+      visibleMembers.map((member) => ({
+        id: member.id,
+        label: getMemberTabLabel(member),
+      })),
+    [visibleMembers],
+  );
 
   const persistSchedules = (
     targetId: string,
@@ -197,6 +208,9 @@ export function LivingStep({
       <div className="step-header">
         <div>
           <h2 className="step-title">Q4. 生活費</h2>
+          <p className="step-description">
+            世帯の共有費は負担している人（多くの場合は世帯主）のタブへ。小遣いなど個人分はそれぞれのタブへ入力します。
+          </p>
         </div>
         <div className="step-header-right">
           <button type="button" className="step-action-btn" disabled>
@@ -220,18 +234,26 @@ export function LivingStep({
         </p>
       ) : null}
 
-      <MemberLivingTabs
-        members={eligibleMembers}
-        activeTargetId={resolvedTargetId}
-        scheduleCounts={scheduleCounts}
+      <MemberIncomeTabs
+        members={visibleMembers}
+        activeMemberId={resolvedTargetId}
+        entryCounts={scheduleCounts}
         referenceDate={referenceDate}
         onSelect={setActiveTargetId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
       />
 
       <div className="living-copy-bar">
         <select
           className="select-input"
-          value={copySourceId}
+          value={
+            copySourceOptions.some((opt) => opt.id === copySourceId)
+              ? copySourceId
+              : (copySourceOptions[0]?.id ?? '')
+          }
           onChange={(e) => setCopySourceId(e.target.value)}
         >
           {copySourceOptions.map((opt) => (

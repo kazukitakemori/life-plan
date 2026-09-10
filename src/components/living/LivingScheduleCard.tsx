@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   calcBirthYear,
   formatEndYearLabel,
@@ -16,6 +16,12 @@ import {
   hasLivingDetailSummary,
   syncLivingDetailSummary,
 } from '../../lib/livingDefaults';
+import {
+  clampFutureStartFields,
+  filterAgesAtOrAfter,
+  filterMonthsAtOrAfter,
+  resolveSimulationStartAgeMonth,
+} from '../../lib/periodTimingBounds';
 import type { FamilyMember } from '../../types/family';
 import type {
   LivingCycleUnit,
@@ -50,6 +56,16 @@ export function LivingScheduleCard({
 
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const ageOptions = getLivingAgeOptions(member);
+  const simStart = useMemo(
+    () => resolveSimulationStartAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const startAgeOptions = filterAgesAtOrAfter(ageOptions, simStart);
+  const startMonthOptions = filterMonthsAtOrAfter(
+    schedule.startAge,
+    simStart,
+    MONTHS,
+  );
   const hasSummary = hasLivingDetailSummary(schedule);
   const billableItems = getLivingScheduleBillableItems(schedule);
   const monthlyTotal = calcMonthlyEquivalentMan(billableItems);
@@ -60,8 +76,23 @@ export function LivingScheduleCard({
     next: LivingExpenseSchedule,
     syncSummary = true,
   ) => {
-    onChange(syncSummary ? syncLivingDetailSummary(next) : next);
+    const clamped = clampFutureStartFields(next, simStart);
+    onChange(syncSummary ? syncLivingDetailSummary(clamped) : clamped);
   };
+
+  useEffect(() => {
+    const clamped = clampFutureStartFields(schedule, simStart);
+    if (
+      clamped.startAge !== schedule.startAge ||
+      clamped.startMonth !== schedule.startMonth ||
+      clamped.endAge !== schedule.endAge ||
+      clamped.endMonth !== schedule.endMonth
+    ) {
+      onChange(syncLivingDetailSummary(clamped));
+    }
+    // 初回・基準月更新時のみ押し上げ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simStart.age, simStart.month]);
 
   const updateItem = (
     itemId: string,
@@ -134,7 +165,7 @@ export function LivingScheduleCard({
               })
             }
           >
-            {ageOptions.map((age) => (
+            {startAgeOptions.map((age) => (
               <option key={age} value={age}>
                 {age}才
               </option>
@@ -150,7 +181,7 @@ export function LivingScheduleCard({
               })
             }
           >
-            {MONTHS.map((m) => (
+            {startMonthOptions.map((m) => (
               <option key={m} value={m}>
                 {m}月
               </option>

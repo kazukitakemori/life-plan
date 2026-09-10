@@ -27,7 +27,10 @@ import {
 import { calcBirthYear, calcYearAtAge } from './birthDate';
 import { getOwnedPropertyDefaultName } from './housingLabels';
 import { resolveNextHousingStartPeriod } from './housingPeriodChain';
-import { resolveDefaultStartAgeMonth } from './simulationTiming';
+import {
+  resolveReferenceNowAgeMonth,
+  resolveSimulationStartAgeMonth,
+} from './periodTimingBounds';
 
 function createId(): string {
   return crypto.randomUUID();
@@ -55,15 +58,22 @@ export function createRentalProperty(
   const chainedStart = chainFrom
     ? resolveNextHousingStartPeriod(member, chainFrom.rentals, chainFrom.owned)
     : null;
-  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
+  const refDate = new Date(year, referenceMonth - 1, 1);
+  const defaultStart = resolveSimulationStartAgeMonth(member, refDate);
+  const refNow = resolveReferenceNowAgeMonth(member, refDate);
+  /** 現在住まい: 基準月固定。入居予定: 試算開始（翌月） */
+  const occupancyDefault =
+    occupancy === 'current'
+      ? { startAge: refNow.age, startMonth: refNow.month }
+      : { startAge: defaultStart.age, startMonth: defaultStart.month };
   const startAge =
     overrides.startAge ??
     chainedStart?.age ??
-    (occupancy === 'current' ? defaultStart.startAge : (member.age ?? 0) + 1);
+    occupancyDefault.startAge;
   const startMonth =
     overrides.startMonth ??
     chainedStart?.month ??
-    (occupancy === 'current' ? defaultStart.startMonth : referenceMonth);
+    occupancyDefault.startMonth;
 
   return {
     id: createId(),
@@ -94,12 +104,16 @@ export function createCurrentRentalProperty(
   referenceMonth: number,
   referenceYear?: number,
 ): RentalProperty {
-  const defaultStart = resolveDefaultStartAgeMonth(member.age, referenceMonth);
+  const year = referenceYear ?? new Date().getFullYear();
+  const refNow = resolveReferenceNowAgeMonth(
+    member,
+    new Date(year, referenceMonth - 1, 1),
+  );
   return createRentalProperty(member, referenceMonth, referenceYear, {
     occupancy: 'current',
     name: '現在の住まい',
-    startAge: defaultStart.startAge,
-    startMonth: defaultStart.startMonth,
+    startAge: refNow.age,
+    startMonth: refNow.month,
   });
 }
 
@@ -109,11 +123,15 @@ export function createUpcomingRentalProperty(
   referenceYear?: number,
 ): RentalProperty {
   const year = referenceYear ?? new Date().getFullYear();
+  const defaultStart = resolveSimulationStartAgeMonth(
+    member,
+    new Date(year, referenceMonth - 1, 1),
+  );
   return createRentalProperty(member, referenceMonth, referenceYear, {
     occupancy: 'upcoming',
     name: '入居予定物件',
-    startAge: (member.age ?? 0) + 1,
-    startMonth: referenceMonth,
+    startAge: defaultStart.age,
+    startMonth: defaultStart.month,
     renewalNextYear: year + 2,
   });
 }
@@ -211,15 +229,27 @@ export function createOwnedProperty(
           chainFrom.owned,
         )
       : null;
-  const defaultStart = resolveDefaultStartAgeMonth(
-    member?.age ?? 40,
-    referenceMonth,
-  );
-  const startAge =
-    overrides.startAge ?? chainedStart?.age ?? defaultStart.startAge;
-  const startMonth =
-    overrides.startMonth ?? chainedStart?.month ?? defaultStart.startMonth;
   const refDate = new Date(year, referenceMonth - 1, 1);
+  const fallbackAge = 40;
+  const defaultStart = member
+    ? resolveSimulationStartAgeMonth(member, refDate)
+    : {
+        age: referenceMonth === 12 ? fallbackAge + 1 : fallbackAge,
+        month: referenceMonth === 12 ? 1 : referenceMonth + 1,
+      };
+  const refNow = member
+    ? resolveReferenceNowAgeMonth(member, refDate)
+    : { age: fallbackAge, month: referenceMonth };
+  const usage: OwnedPropertyUsage = migrateOwnedPropertyUsage(overrides.usage);
+  /** 居住中の既定は基準月。取得予定は試算開始（翌月） */
+  const usageDefault =
+    usage === 'current'
+      ? { startAge: refNow.age, startMonth: refNow.month }
+      : { startAge: defaultStart.age, startMonth: defaultStart.month };
+  const startAge =
+    overrides.startAge ?? chainedStart?.age ?? usageDefault.startAge;
+  const startMonth =
+    overrides.startMonth ?? chainedStart?.month ?? usageDefault.startMonth;
   const acquisitionTaxYear =
     overrides.acquisitionTaxYear ??
     (member && chainedStart
@@ -236,7 +266,7 @@ export function createOwnedProperty(
     id: createId(),
     type,
     name,
-    usage: 'current',
+    usage,
     currentExpenseMode: 'simple',
     simpleMonthlyExpenseMan: 0,
     startAge,
@@ -299,12 +329,7 @@ export function createDefaultHousingState(
   _referenceMonth = 1,
 ): HousingState {
   return {
-    byTarget: {
-      [HOUSEHOLD_HOUSING_KEY]: {
-        rentals: [],
-        owned: [],
-      },
-    },
+    byTarget: {},
   };
 }
 
@@ -313,9 +338,17 @@ export function migrateRentalProperty(
     endMode?: RentalEndMode;
     occupancy?: RentalOccupancy;
     insurances?: unknown;
+    payerMode?: RentalProperty['payerMode'];
+    spouseMonthlyRentMan?: number;
   },
 ): RentalProperty {
   const { insurances: _legacy, ...rest } = rental;
+  const payerMode =
+    rental.payerMode === 'head' ||
+    rental.payerMode === 'spouse' ||
+    rental.payerMode === 'both'
+      ? rental.payerMode
+      : undefined;
   return {
     ...rest,
     occupancy: rental.occupancy ?? 'current',
@@ -323,6 +356,10 @@ export function migrateRentalProperty(
     moveOutCostMan: rental.moveOutCostMan ?? 0,
     securityDepositRefundMan: rental.securityDepositRefundMan ?? 0,
     endMode: rental.endMode ?? 'lifetime',
+    ...(payerMode ? { payerMode } : {}),
+    ...(payerMode === 'both'
+      ? { spouseMonthlyRentMan: rental.spouseMonthlyRentMan ?? 0 }
+      : {}),
   };
 }
 
@@ -463,6 +500,7 @@ export function migrateHousingState(
   member?: FamilyMember,
   referenceMonth = 1,
   referenceYear?: number,
+  options?: { headId?: string | null },
 ): HousingState {
   const byTarget: HousingState['byTarget'] = {};
   for (const [targetId, data] of Object.entries(state.byTarget)) {
@@ -474,6 +512,18 @@ export function migrateHousingState(
       ),
     };
   }
+
+  const headId = options?.headId ?? member?.id;
+  const household = byTarget[HOUSEHOLD_HOUSING_KEY];
+  if (headId && household != null) {
+    const headData = byTarget[headId] ?? createEmptyHousingTargetData();
+    byTarget[headId] = {
+      rentals: [...headData.rentals, ...household.rentals],
+      owned: [...headData.owned, ...household.owned],
+    };
+    delete byTarget[HOUSEHOLD_HOUSING_KEY];
+  }
+
   return { ...state, byTarget };
 }
 export function getHousingTargetData(

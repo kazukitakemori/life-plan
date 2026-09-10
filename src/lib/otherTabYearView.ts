@@ -216,11 +216,11 @@ function buildYearDescription(input: {
 
   if (input.isFirstSimulationYear && input.levyPaymentFactor < 1) {
     parts.push(
-      `試算初年度は${formatSimulationPeriodLabel(input.monthStart, input.monthEnd)}を対象とし、年間算定額を${input.monthEnd - input.monthStart + 1}か月／12か月で按分してキャッシュフロー表に反映しています。`,
+      `試算開始は基準月の翌月です。試算初年度は${formatSimulationPeriodLabel(input.monthStart, input.monthEnd)}を対象とし、年間算定額を${input.monthEnd - input.monthStart + 1}か月／12か月で按分してキャッシュフロー表に反映しています。`,
     );
   } else if (input.isFirstSimulationYear) {
     parts.push(
-      '試算初年度の継続収入はQ7の12か月年収を算定基礎とします。',
+      '試算開始は基準月の翌月です。試算初年度の継続収入はQ7の12か月年収を算定基礎とします。',
     );
   } else {
     parts.push('継続収入はQ7の12か月年収を算定基礎とします。');

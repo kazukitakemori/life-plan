@@ -46,7 +46,10 @@ import {
 import { getMemberTabLabel } from './memberDisplay';
 import { STANDARD_OLD_AGE_START } from './pensionConstants';
 import { createDefaultPensionMemberState } from './pensionDefaults';
-import { resolveSimulationMonthStart } from './simulationTiming';
+import {
+  resolveSimulationMonthStart,
+  resolveSimulationStartCalendar,
+} from './simulationTiming';
 import { calcMemberMonthlyVehicleDetailMan } from './vehicleCashFlow';
 import type { EducationByMember, EducationExpenseEntry } from '../types/education';
 import type { FamilyMember } from '../types/family';
@@ -2440,15 +2443,16 @@ export function buildRequiredCoverageResult(
 ): RequiredCoverageResult {
   const designStage = options?.designStage ?? 'detail';
   const head = input.familyMembers.find((m) => m.role === 'head');
+  const simStart = resolveSimulationStartCalendar(input.referenceDate);
   const startMonth = head
     ? resolveSimulationMonthStart(
         head,
         input.incomeByMember,
         input.referenceDate,
       )
-    : input.referenceDate.getMonth() + 1;
+    : simStart.month;
   const coverageStart: CalendarYearMonth = {
-    year: input.referenceDate.getFullYear(),
+    year: simStart.year,
     month: startMonth,
   };
   if (coverageStart.month < 1 || coverageStart.month > 12) {

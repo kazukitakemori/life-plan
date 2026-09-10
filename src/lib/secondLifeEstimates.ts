@@ -112,6 +112,7 @@ export function getSecondLifePeriodMonthlyLivingMan(input: {
 /**
  * 「現在と同水準」「7割」の基準となる生活費（月額・万円）。
  * Q4 のご家族＋各メンバー入力を合算（詳細内訳を含む）。
+ * セカンドライフ開始以降のスケジュールは含めない。
  */
 export function getPreSecondLifeMonthlyLivingMan(input: {
   livingState: LivingExpenseState;
@@ -131,6 +132,7 @@ export function getPreSecondLifeMonthlyLivingMan(input: {
   const enteredTotal = sumEnteredLivingMonthlyMan({
     familyMembers: input.familyMembers,
     livingState: input.livingState,
+    secondLifeStartAge: input.startAge,
   });
   const baseline = Math.max(atReference, enteredTotal);
   if (baseline > 0) {
@@ -249,6 +251,7 @@ export function buildSecondLifeLivingOptions(input: {
     referenceDate: input.referenceDate,
     calendarYear: referenceYear,
     calendarMonth: referenceMonth,
+    secondLifeStartAge: input.startAge,
   });
 
   return [

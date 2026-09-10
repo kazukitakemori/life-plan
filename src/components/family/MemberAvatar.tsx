@@ -1,21 +1,34 @@
-import type { FamilyMemberRole } from '../../types/family';
-
-const AVATARS: Record<FamilyMemberRole, string> = {
-  head: '👨',
-  spouse: '👩',
-  child: '👶',
-  other: '👤',
-  pet: '🐾',
-};
+import type { FamilyMemberRole, Gender } from '../../types/family';
+import {
+  memberAvatarEmoji,
+  resolveMemberAvatarSrc,
+} from '../../lib/memberAvatar';
 
 interface MemberAvatarProps {
   role: FamilyMemberRole;
+  gender?: Gender;
+  age?: number | null;
 }
 
-export function MemberAvatar({ role }: MemberAvatarProps) {
+export function MemberAvatar({
+  role,
+  gender = 'male',
+  age = null,
+}: MemberAvatarProps) {
+  const src = resolveMemberAvatarSrc(role, gender, age);
+
   return (
     <div className="member-avatar" aria-hidden>
-      {AVATARS[role]}
+      {src ? (
+        <img
+          className="member-avatar-img"
+          src={src}
+          alt=""
+          draggable={false}
+        />
+      ) : (
+        memberAvatarEmoji(role)
+      )}
     </div>
   );
 }

@@ -93,6 +93,7 @@ import {
 import {
   resolveLevyPaymentFactorForYear,
   resolveSimulationMonthStart,
+  resolveSimulationStartYear,
 } from './simulationTiming';
 import { buildMemberCashFlowYearSlices } from './memberCashFlowYear';
 import {
@@ -414,7 +415,7 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
   }
 
   const birthYear = calcBirthYear(head.age, head.birthMonth, input.referenceDate);
-  const startYear = input.referenceDate.getFullYear();
+  const startYear = resolveSimulationStartYear(input.referenceDate);
   const simulationMonthStart = resolveSimulationMonthStart(
     head,
     input.incomeByMember,

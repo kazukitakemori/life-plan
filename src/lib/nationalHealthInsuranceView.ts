@@ -11,6 +11,7 @@ import { createDefaultPensionMemberState } from './pensionDefaults';
 import { calcMemberMonthlyPensionBreakdownMan } from './pensionIncome';
 import { sumPensionBreakdown } from '../types/cashFlow';
 import { buildMemberTaxBreakdownData } from './taxCalculator';
+import { resolveSimulationStartYear } from './simulationTiming';
 import {
   calcFukuokaHouseholdNhiBreakdown,
   FUKUOKA_NHI_RATES,
@@ -247,7 +248,7 @@ export function buildNationalHealthInsuranceViewConfig(input: {
       annualPensionManByMember,
       pensionByMember: input.pensionByMember,
       simulationStartYear:
-        input.simulationStartYear ?? input.referenceDate.getFullYear(),
+        input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate),
     });
 
   const nhi = breakdownData?.nhiInsurance;

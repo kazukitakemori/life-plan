@@ -122,7 +122,7 @@ export function SecondLifeLivingSection({
       {!placeholder && onApply ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
-            選択した生活水準で、世帯の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。
+            選択した生活水準で、負担者（世帯主）の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。
           </p>
           <button
             type="button"

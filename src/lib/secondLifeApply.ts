@@ -14,6 +14,8 @@ import {
 
   getLivingScheduleBillableItems,
 
+  migrateLivingExpenseState,
+
   syncLivingDetailSummary,
 
 } from './livingDefaults';
@@ -68,7 +70,7 @@ import type {
 
 
 
-const SECOND_LIFE_HOUSING_EVENT_LABEL = 'セカンドライフ住まい';
+export const SECOND_LIFE_HOUSING_EVENT_LABEL = 'セカンドライフ住まい';
 
 const SECOND_LIFE_NURSING_EVENT_LABEL = 'セカンドライフ介護';
 
@@ -254,10 +256,8 @@ function resolveLivingSplitAge(
 
 ): number {
 
-  if (targetId === HOUSEHOLD_LIVING_KEY) {
-
+  if (targetId === HOUSEHOLD_LIVING_KEY || targetId === head.id) {
     return secondLifeStartAge;
-
   }
 
   return (
@@ -314,11 +314,14 @@ export function applySecondLifeLiving(
 
   if (!head) return livingState;
 
-
+  // 旧ご家族キーは負担者（世帯主）へ寄せてから分割・新規行を書く
+  const migratedLiving = migrateLivingExpenseState(livingState, {
+    headId: head.id,
+  });
 
   const options = buildSecondLifeLivingOptions({
 
-    livingState,
+    livingState: migratedLiving,
 
     ...input,
 
@@ -338,7 +341,7 @@ export function applySecondLifeLiving(
 
   const byTarget: LivingExpenseState['byTarget'] = {
 
-    ...livingState.byTarget,
+    ...migratedLiving.byTarget,
 
   };
 
@@ -348,7 +351,7 @@ export function applySecondLifeLiving(
 
     input.familyMembers,
 
-    livingState,
+    migratedLiving,
 
   )) {
 
@@ -378,7 +381,7 @@ export function applySecondLifeLiving(
 
 
 
-    if (targetId === HOUSEHOLD_LIVING_KEY) {
+    if (targetId === head.id) {
 
       schedules = schedules.filter(
 

@@ -2,7 +2,7 @@ import { resolveMemberAge } from './familyDefaults';
 import type { FamilyMember } from '../types/family';
 import type { IncomeByMember, IncomeEntry } from '../types/income';
 import type { SavingsEntry, SavingsState } from '../types/savings';
-import { calcBirthYear } from './birthDate';
+import { calcBirthYear, calcYearAtAge } from './birthDate';
 import {
   ensureDbEnrollmentFields,
   resolveDbEnrollmentPeriod,
@@ -316,9 +316,15 @@ export function collectAllRetirementLumpEvents(input: {
         const revenueMan = Math.max(0, Number(allowance.amountMan) || 0);
         if (revenueMan <= 0) continue;
         const enrollmentYears = resolveRetirementEnrollmentYears(allowance);
-        const calendarYear = calendarYearFromAgeMonth(
-          member,
+        const birthYear = calcBirthYear(
+          member.age,
+          member.birthMonth,
           input.referenceDate,
+        );
+        // 受取時期は期間ラベル（A歳になる年のM月）
+        const calendarYear = calcYearAtAge(
+          birthYear,
+          member.birthMonth ?? 1,
           allowance.receiveAge,
           allowance.receiveMonth,
         );

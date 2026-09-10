@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   calcBirthYear,
   formatEndYearLabel,
@@ -10,6 +10,17 @@ import {
   OWNED_PROPERTY_LOAN_PAYMENT_LABELS,
 } from '../../lib/housingLabels';
 import { getLivingAgeOptions } from '../../lib/livingDefaults';
+import {
+  clampFutureStartFields,
+  clampPastInclusiveStartFields,
+  filterAgesAtOrAfter,
+  filterAgesAtOrBefore,
+  filterMonthsAtOrAfter,
+  filterMonthsAtOrBefore,
+  pinStartToAgeMonth,
+  resolveReferenceNowAgeMonth,
+  resolveSimulationStartAgeMonth,
+} from '../../lib/periodTimingBounds';
 import type { FamilyMember } from '../../types/family';
 import type {
   OwnedProperty,
@@ -31,6 +42,7 @@ import { AcquisitionTaxDetailModal } from './AcquisitionTaxDetailModal';
 import { buildAcquisitionFeeBreakdownFromProperty } from '../../lib/housingAcquisitionFees';
 import { isPairLoanEntry } from '../../lib/pairLoanShare';
 import { HousingManInput } from './HousingManInput';
+import { HousingOwnedDetailFold } from './HousingOwnedDetailFold';
 import { OwnedPropertyMaintenanceSection } from './OwnedPropertyMaintenanceSection';
 import { OwnedPropertyTargetSection } from './OwnedPropertyTargetSection';
 
@@ -47,6 +59,7 @@ interface OwnedPropertyDetailProps {
   vehicleState: VehicleState;
   contractorMembers: FamilyMember[];
   hasSpouse: boolean;
+  canAddLoan?: boolean;
   onChange: (property: OwnedProperty) => void;
   onAddLoan: (
     structureType: LoanStructureType,
@@ -88,6 +101,7 @@ export function OwnedPropertyDetail({
   vehicleState,
   contractorMembers,
   hasSpouse,
+  canAddLoan = true,
   onChange,
   onAddLoan,
   onRemoveLoan,
@@ -105,7 +119,26 @@ export function OwnedPropertyDetail({
   const acquisitionTotal = formatOwnedAcquisitionTotalMan(property);
   const showBuildingField = property.type !== 'land';
   const isCurrentlyOccupied = property.usage === 'current';
+  const isUpcoming = property.usage === 'upcoming';
   const isSimpleMode = isCurrentlyOccupied && property.currentExpenseMode === 'simple';
+  const simStart = useMemo(
+    () => resolveSimulationStartAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const refNow = useMemo(
+    () => resolveReferenceNowAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const startAgeOptions = isUpcoming
+    ? filterAgesAtOrAfter(ageOptions, simStart)
+    : isCurrentlyOccupied && !isSimpleMode
+      ? filterAgesAtOrBefore(ageOptions, refNow)
+      : ageOptions;
+  const startMonthOptions = isUpcoming
+    ? filterMonthsAtOrAfter(property.startAge, simStart, MONTHS)
+    : isCurrentlyOccupied && !isSimpleMode
+      ? filterMonthsAtOrBefore(property.startAge, refNow, MONTHS)
+      : MONTHS;
   // ローン分析時は借入額の元になる取得価格・諸費用が必要なため、居住中でも表示する
   const showAcquisitionSection = !isSimpleMode;
   const hasAcquisitionAmount =
@@ -128,8 +161,63 @@ export function OwnedPropertyDetail({
     linkedLoans.filter((loan) => isPairLoanEntry(loan.entry)).length >= 2;
 
   const update = (patch: Partial<OwnedProperty>) => {
-    onChange({ ...property, ...patch });
+    let next = { ...property, ...patch };
+    const nextSimple =
+      (patch.usage ?? next.usage) === 'current' &&
+      (patch.currentExpenseMode ?? next.currentExpenseMode) === 'simple';
+    const nextUpcoming = (patch.usage ?? next.usage) === 'upcoming';
+    const nextCurrentDetail =
+      (patch.usage ?? next.usage) === 'current' && !nextSimple;
+    if (nextUpcoming) {
+      next = clampFutureStartFields(next, simStart);
+    } else if (nextSimple) {
+      next = pinStartToAgeMonth(next, refNow);
+    } else if (nextCurrentDetail) {
+      next = clampPastInclusiveStartFields(next, refNow);
+    }
+    onChange(next);
   };
+
+  useEffect(() => {
+    if (isUpcoming) {
+      const clamped = clampFutureStartFields(property, simStart);
+      if (
+        clamped.startAge !== property.startAge ||
+        clamped.startMonth !== property.startMonth
+      ) {
+        onChange(clamped);
+      }
+      return;
+    }
+    if (isSimpleMode) {
+      const pinned = pinStartToAgeMonth(property, refNow);
+      if (
+        pinned.startAge !== property.startAge ||
+        pinned.startMonth !== property.startMonth
+      ) {
+        onChange(pinned);
+      }
+      return;
+    }
+    if (isCurrentlyOccupied) {
+      const clamped = clampPastInclusiveStartFields(property, refNow);
+      if (
+        clamped.startAge !== property.startAge ||
+        clamped.startMonth !== property.startMonth
+      ) {
+        onChange(clamped);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    simStart.age,
+    simStart.month,
+    refNow.age,
+    refNow.month,
+    isUpcoming,
+    isSimpleMode,
+    isCurrentlyOccupied,
+  ]);
 
   // 居住中は過去の支出を試算しないため、現金一括の選択肢を持たせない
   useEffect(() => {
@@ -170,12 +258,24 @@ export function OwnedPropertyDetail({
     setAcqBreakdown(breakdown);
   };
 
+  const insuranceSummary =
+    linkedInsurances.length > 0
+      ? `${linkedInsurances.length}件登録済み`
+      : '未設定';
+
+  const loanSummary =
+    property.paymentMethod === 'cash'
+      ? '現金一括'
+      : linkedLoans.length > 0
+        ? `ローン ${linkedLoans.length}件`
+        : 'ローン未設定';
+
   const insuranceSection =
     onAddInsurance && onUpdateInsurance && onRemoveInsurance && insuranceState ? (
-      <section className="housing-owned-detail-section">
-        <h4 className="housing-owned-detail-title">
-          ({insuranceSectionNumber}) 保険
-        </h4>
+      <HousingOwnedDetailFold
+        title={`(${insuranceSectionNumber}) 保険`}
+        summary={insuranceSummary}
+      >
         <HousingInsuranceLinks
           propertyName={property.name}
           insurances={linkedInsurances}
@@ -188,7 +288,7 @@ export function OwnedPropertyDetail({
           onUpdateInsurance={onUpdateInsurance}
           onRemoveInsurance={onRemoveInsurance}
         />
-      </section>
+      </HousingOwnedDetailFold>
     ) : null;
 
   return (
@@ -219,32 +319,59 @@ export function OwnedPropertyDetail({
           <div className="living-schedule-inputs">
             <div className="living-schedule-side">
               <div className="living-schedule-fields">
-                <select
-                  className="select-input select-input--compact select-input--schedule"
-                  value={property.startAge}
-                  onChange={(e) =>
-                    update({ startAge: Number(e.target.value) })
-                  }
-                >
-                  {ageOptions.map((age) => (
-                    <option key={age} value={age}>
-                      {age}才
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="select-input select-input--compact select-input--schedule"
-                  value={property.startMonth}
-                  onChange={(e) =>
-                    update({ startMonth: Number(e.target.value) })
-                  }
-                >
-                  {MONTHS.map((month) => (
-                    <option key={month} value={month}>
-                      {month}月
-                    </option>
-                  ))}
-                </select>
+                {isSimpleMode ? (
+                  <>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={property.startAge}
+                      disabled
+                      aria-label="所有開始年齢（基準月）"
+                    >
+                      <option value={property.startAge}>
+                        {property.startAge}才
+                      </option>
+                    </select>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={property.startMonth}
+                      disabled
+                      aria-label="所有開始月（基準月）"
+                    >
+                      <option value={property.startMonth}>
+                        {property.startMonth}月
+                      </option>
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={property.startAge}
+                      onChange={(e) =>
+                        update({ startAge: Number(e.target.value) })
+                      }
+                    >
+                      {startAgeOptions.map((age) => (
+                        <option key={age} value={age}>
+                          {age}才
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={property.startMonth}
+                      onChange={(e) =>
+                        update({ startMonth: Number(e.target.value) })
+                      }
+                    >
+                      {startMonthOptions.map((month) => (
+                        <option key={month} value={month}>
+                          {month}月
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
               </div>
               <p className="period-start-label">
                 {formatYearAtAgeLabel(
@@ -253,6 +380,7 @@ export function OwnedPropertyDetail({
                   birthYear,
                   member.birthMonth,
                 )}
+                {isSimpleMode ? '（基準月）' : ''}
               </p>
             </div>
 
@@ -350,7 +478,7 @@ export function OwnedPropertyDetail({
       {isSimpleMode && (
         <section className="housing-owned-detail-section">
           <h4 className="housing-owned-detail-title">
-            ({simpleExpenseSectionNumber}) 月々の住居費
+            ({simpleExpenseSectionNumber}) 住居費(簡)
           </h4>
           <div className="housing-owned-simple-expense">
             <HousingManInput
@@ -544,11 +672,10 @@ export function OwnedPropertyDetail({
         }}
       />
 
-      <section className="housing-owned-detail-section">
-        <h4 className="housing-owned-detail-title">
-          ({paymentSectionNumber}) {isCurrentlyOccupied ? 'ローン' : '支払い方法'}
-        </h4>
-
+      <HousingOwnedDetailFold
+        title={`(${paymentSectionNumber}) ${isCurrentlyOccupied ? 'ローン' : '支払い方法'}`}
+        summary={loanSummary}
+      >
         {!isCurrentlyOccupied && (
           <div className="housing-owned-payment-options" role="radiogroup" aria-label="支払い方法">
             {PAYMENT_METHODS.map((method) => (
@@ -582,7 +709,7 @@ export function OwnedPropertyDetail({
               housingState={housingState}
               vehicleState={vehicleState}
               referenceDate={referenceDate}
-              addLoanEnabled={hasAcquisitionAmount}
+              addLoanEnabled={canAddLoan && hasAcquisitionAmount}
               onAddLoan={onAddLoan}
               onUpdateLoan={onUpdateLoan}
               onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
@@ -593,19 +720,21 @@ export function OwnedPropertyDetail({
             />
           </>
         ) : null}
-      </section>
+      </HousingOwnedDetailFold>
 
       {insuranceSection}
 
-      <section className="housing-owned-detail-section">
-        <h4 className="housing-owned-detail-title">({maintenanceSectionNumber}) 保守設定</h4>
+      <HousingOwnedDetailFold
+        title={`(${maintenanceSectionNumber}) 保守設定`}
+        summary="管理費・修繕・固定資産税など"
+      >
         <OwnedPropertyMaintenanceSection
           property={property}
           member={member}
           referenceDate={referenceDate}
           onChange={onChange}
         />
-      </section>
+      </HousingOwnedDetailFold>
         </>
       )}
     </div>

@@ -11,6 +11,7 @@ import {
   buildOtherProrationContext,
   prorateAnnualLevyYen,
 } from './otherCashFlowLinkage';
+import { resolveSimulationStartYear } from './simulationTiming';
 import type { SavingsState } from '../types/savings';
 import { calcMemberSelectiveDcManForMonth } from './dcContribution';
 import {
@@ -127,7 +128,7 @@ function usesAnnualIncomeTaxBasis(
   monthEnd: number,
   calendarYear: number,
   referenceDate: Date,
-  simulationStartYear: number = referenceDate.getFullYear(),
+  simulationStartYear: number = resolveSimulationStartYear(referenceDate),
 ): boolean {
   return memberUsesAnnualBasisForIncomeTax(
     member,
@@ -2079,7 +2080,7 @@ export function calcHouseholdTaxSocialMan(input: {
   const annualPensionManByMember = input.annualPensionManByMember ?? {};
   const priorYearIncomeByMember = input.priorYearIncomeByMember ?? {};
   const simulationStartYear =
-    input.simulationStartYear ?? input.referenceDate.getFullYear();
+    input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate);
   const levyIncomeCalendarYear = resolveLevyIncomeReferenceYear(input.calendarYear);
   const levyMonths = resolveResidentTaxLevyMonthRange({
     assessmentCalendarYear: input.calendarYear,
@@ -3552,7 +3553,7 @@ export function buildMemberTaxBreakdownData(input: {
   const annualPensionManByMember = input.annualPensionManByMember ?? {};
   const priorYearIncomeByMember = input.priorYearIncomeByMember ?? {};
   const simulationStartYear =
-    input.simulationStartYear ?? input.referenceDate.getFullYear();
+    input.simulationStartYear ?? resolveSimulationStartYear(input.referenceDate);
   const levyIncomeCalendarYear = resolveLevyIncomeReferenceYear(input.calendarYear);
   const levyMonths = resolveResidentTaxLevyMonthRange({
     assessmentCalendarYear: input.calendarYear,

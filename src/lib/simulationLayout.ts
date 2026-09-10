@@ -85,10 +85,10 @@ export function headAgeToPlotPercent(
 }
 
 /**
- * 隣接する期間バーが密着しないよう、終端をわずかに短くする（年換算）。
- * 例: 年収が65歳まで・年金が65歳からでも、見た目上のすき間を残す。
+ * 期間バーの描画位置（すでに ±0.5 などを反映した値）をパーセントへ変換する。
+ * 隣接期間のすき間用に、終端をわずかに短くできる。
  */
-const TIMELINE_SPAN_END_GAP_YEARS = 0.35;
+const TIMELINE_SPAN_END_GAP_YEARS = 0.15;
 
 export function getTimelineSpanPercent(
   startHeadAge: number,
@@ -97,7 +97,11 @@ export function getTimelineSpanPercent(
   maxHeadAge: number,
   options?: { endGap?: boolean },
 ): { left: number; width: number } {
-  const left = headAgeToPlotPercent(startHeadAge, minHeadAge, maxHeadAge);
+  const left = headAgeToPlotPercent(
+    Math.min(startHeadAge, endHeadAge),
+    minHeadAge,
+    maxHeadAge,
+  );
   const right = headAgeToPlotPercent(
     Math.max(endHeadAge, startHeadAge),
     minHeadAge,

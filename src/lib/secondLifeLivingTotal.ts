@@ -29,16 +29,21 @@ function createLivingCalcInput(
   } as CashFlowInput;
 }
 
-/** ご家族タブ＋各メンバータブ（Q4 と同じ対象） */
+/** ご家族タブ＋各メンバータブ（Q4 と同じ対象）。旧 __household__ も互換で残す */
 export function collectLivingTargetIds(
   familyMembers: FamilyMember[],
   livingState: LivingExpenseState,
 ): string[] {
-  const ids: string[] = [HOUSEHOLD_LIVING_KEY];
+  const ids: string[] = [];
   for (const member of getIncomeEligibleMembers(familyMembers)) {
-    if (!ids.includes(member.id)) {
-      ids.push(member.id);
-    }
+    ids.push(member.id);
+  }
+  // 未 migrate のご家族キー（世帯主へ寄せる前）も読む
+  if (
+    livingState.byTarget[HOUSEHOLD_LIVING_KEY] != null &&
+    !ids.includes(HOUSEHOLD_LIVING_KEY)
+  ) {
+    ids.push(HOUSEHOLD_LIVING_KEY);
   }
   for (const targetId of Object.keys(livingState.byTarget)) {
     if (!ids.includes(targetId)) {
@@ -98,13 +103,14 @@ function getTargetLivingSchedulesAtMonth(
   );
 }
 
-/** Q12 基準表示用。未開始でも入力済みスケジュールを1件拾う。 */
+/** Q12 基準表示用。未開始でも入力済みスケジュールを1件拾う（セカンドライフ開始以降は除外）。 */
 function getTargetLivingSchedulesForBaseline(
   schedules: LivingExpenseSchedule[],
   member: FamilyMember,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
+  secondLifeStartAge?: number,
 ): LivingExpenseSchedule[] {
   const active = getTargetLivingSchedulesAtMonth(
     schedules,
@@ -112,23 +118,46 @@ function getTargetLivingSchedulesForBaseline(
     referenceDate,
     calendarYear,
     calendarMonth,
+  ).filter((schedule) =>
+    isPreSecondLifeLivingSchedule(schedule, secondLifeStartAge),
   );
   if (active.length > 0) {
     return active;
   }
 
   const entered = schedules.find(
-    (schedule) => getLivingScheduleMonthlyMan(schedule) > 0,
+    (schedule) =>
+      isPreSecondLifeLivingSchedule(schedule, secondLifeStartAge) &&
+      getLivingScheduleMonthlyMan(schedule) > 0,
   );
   return entered ? [entered] : [];
 }
 
 /**
+ * セカンドライフ開始以降に始まるスケジュールは「現在」基準に含めない。
+ * （反映後のご家族タブへ書いた開始年齢〜の行が基準を膨らませないようにする）
+ */
+export function isPreSecondLifeLivingSchedule(
+  schedule: LivingExpenseSchedule,
+  secondLifeStartAge?: number,
+): boolean {
+  if (secondLifeStartAge == null || !Number.isFinite(secondLifeStartAge)) {
+    return true;
+  }
+  if (schedule.startAge < secondLifeStartAge) return true;
+  if (schedule.startAge > secondLifeStartAge) return false;
+  // startAge === secondLifeStartAge: 1月開始は SL 反映行として除外
+  return schedule.startMonth > 1;
+}
+
+/**
  * Q12 の「現在」基準用。試算月に未開始でも、入力済みスケジュールを拾う。
+ * secondLifeStartAge 以降に始まる行（反映後の合算スケジュール等）は除外する。
  */
 export function sumEnteredLivingMonthlyMan(input: {
   familyMembers: FamilyMember[];
   livingState: LivingExpenseState;
+  secondLifeStartAge?: number;
 }): number {
   let total = 0;
 
@@ -138,7 +167,9 @@ export function sumEnteredLivingMonthlyMan(input: {
   )) {
     const schedules = input.livingState.byTarget[targetId] ?? [];
     const schedule = schedules.find(
-      (entry) => getLivingScheduleMonthlyMan(entry) > 0,
+      (entry) =>
+        isPreSecondLifeLivingSchedule(entry, input.secondLifeStartAge) &&
+        getLivingScheduleMonthlyMan(entry) > 0,
     );
     if (schedule) {
       total += getLivingScheduleMonthlyMan(schedule);
@@ -276,6 +307,7 @@ export function buildQ4LivingBreakdown(input: {
   referenceDate: Date;
   calendarYear: number;
   calendarMonth: number;
+  secondLifeStartAge?: number;
 }): SecondLifeLivingBreakdownItem[] {
   const byLabel = new Map<string, number>();
 
@@ -295,6 +327,7 @@ export function buildQ4LivingBreakdown(input: {
       input.referenceDate,
       input.calendarYear,
       input.calendarMonth,
+      input.secondLifeStartAge,
     )) {
       for (const item of getLivingScheduleBillableItems(schedule)) {
         const label = item.label.trim() || '（無題）';

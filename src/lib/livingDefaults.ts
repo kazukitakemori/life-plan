@@ -80,6 +80,7 @@ export function migrateLivingExpenseSchedule(
 
 export function migrateLivingExpenseState(
   state: LivingExpenseState & { inflationRate?: number },
+  options?: { headId?: string | null },
 ): LivingExpenseState {
   const byTarget: LivingExpenseState['byTarget'] = {};
   for (const [targetId, schedules] of Object.entries(state.byTarget ?? {})) {
@@ -87,6 +88,25 @@ export function migrateLivingExpenseState(
       migrateLivingExpenseSchedule(schedule),
     );
   }
+
+  // ご家族タブの生活費は負担者（世帯主）へ寄せる
+  const headId = options?.headId;
+  const householdSchedules = byTarget[HOUSEHOLD_LIVING_KEY];
+  if (headId && householdSchedules != null) {
+    if (householdSchedules.length > 0) {
+      byTarget[headId] = [
+        ...(byTarget[headId] ?? []),
+        ...householdSchedules,
+      ];
+    }
+    delete byTarget[HOUSEHOLD_LIVING_KEY];
+  } else if (
+    householdSchedules != null &&
+    householdSchedules.length === 0
+  ) {
+    delete byTarget[HOUSEHOLD_LIVING_KEY];
+  }
+
   // 旧・全体物価上昇率は行の上昇率と二重適用になるため破棄する
   return { byTarget };
 }
@@ -242,11 +262,9 @@ export function createDefaultLivingState(
   _head?: FamilyMember,
   _referenceMonth = 1,
 ): LivingExpenseState {
-  // 新規入力はスケジュール未登録（追加ボタンから開始）
+  // 新規入力はスケジュール未登録（個人タブで追加）
   return {
-    byTarget: {
-      [HOUSEHOLD_LIVING_KEY]: [],
-    },
+    byTarget: {},
   };
 }
 

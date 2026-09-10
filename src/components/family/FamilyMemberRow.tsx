@@ -270,7 +270,11 @@ export function FamilyMemberRow({
           value={member.nickname}
           onChange={(e) => onChange({ ...member, nickname: e.target.value })}
         />
-        <MemberAvatar role={member.role} />
+        <MemberAvatar
+          role={member.role}
+          gender={member.gender}
+          age={member.age}
+        />
         <span className="member-role">{ROLE_LABELS[member.role]}</span>
       </div>
 

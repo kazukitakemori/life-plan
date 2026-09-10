@@ -23,6 +23,10 @@ export default defineConfig({
     port: 5173,
     host: '127.0.0.1',
     strictPort: false,
+    // Windows で public 配下の大きな PNG 追加時に FSWatcher が EBUSY で落ちるのを回避
+    watch: {
+      ignored: ['**/public/icons/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8787',

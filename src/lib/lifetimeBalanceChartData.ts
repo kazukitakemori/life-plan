@@ -95,7 +95,7 @@ export const ALL_LIFETIME_CHART_SERIES_VISIBLE: LifetimeChartSeriesVisibility = 
   taxSocial: true,
   income: true,
   financialAssets: false,
-  depositBalance: true,
+  depositBalance: false,
 };
 
 export const LIFETIME_CHART_BALANCE_LINE_LABELS: Record<
@@ -152,6 +152,15 @@ export function resolveActiveBalanceLineMode(
   if (visibleSeries.depositBalance) return 'deposit';
   if (visibleSeries.financialAssets) return 'financialAssets';
   return null;
+}
+
+/** 残高線の表示有無に応じて Y 軸スケールを決める */
+export function resolveLifetimeChartScaleMode(
+  visibleSeries: LifetimeChartSeriesVisibility,
+): LifetimeChartScaleMode {
+  return resolveActiveBalanceLineMode(visibleSeries) != null
+    ? 'assets'
+    : 'cashFlow';
 }
 
 export function toggleLifetimeChartVisibleSeries(
@@ -332,6 +341,80 @@ function visibleExpenseStackTotal(
   return total;
 }
 
+/** 凡例で ON の支出カテゴリ合計（万円） */
+export function visibleLifetimeChartExpenseTotal(
+  point: LifetimeBalanceChartPoint,
+  visibility: LifetimeChartSeriesVisibility,
+): number {
+  return visibleExpenseStackTotal(point, visibility);
+}
+
+export const LIFETIME_CHART_INCOME_SERIES_KEYS = [
+  'salary',
+  'bonus',
+  'oldAgeBasic',
+  'oldAgeEmployees',
+  'disabilityPension',
+  'survivorBasic',
+  'survivorEmployees',
+  'childAllowance',
+  'insuranceIncome',
+  'retirementAllowance',
+  'businessCf',
+  'realEstateCf',
+  'transferCf',
+  'taxFreeIncome',
+  'otherIncome',
+] as const;
+
+export type LifetimeChartIncomeSeriesKey =
+  (typeof LIFETIME_CHART_INCOME_SERIES_KEYS)[number];
+
+export type LifetimeChartIncomeSeriesVisibility = Record<
+  LifetimeChartIncomeSeriesKey,
+  boolean
+>;
+
+function visibleIncomeBreakdownTotal(
+  point: LifetimeBalanceChartPoint,
+  incomeVisibility: LifetimeChartIncomeSeriesVisibility,
+): number {
+  let total = 0;
+  for (const key of LIFETIME_CHART_INCOME_SERIES_KEYS) {
+    if (incomeVisibility[key]) total += point[key];
+  }
+  return total;
+}
+
+export function visibleLifetimeChartIncomeTotal(
+  point: LifetimeBalanceChartPoint,
+  incomeVisibility: LifetimeChartIncomeSeriesVisibility,
+): number {
+  return visibleIncomeBreakdownTotal(point, incomeVisibility);
+}
+
+export function hasVisibleLifetimeChartIncomeSeries(
+  incomeVisibility: LifetimeChartIncomeSeriesVisibility,
+): boolean {
+  return LIFETIME_CHART_INCOME_SERIES_KEYS.some((key) => incomeVisibility[key]);
+}
+
+export function createDefaultLifetimeChartIncomeVisibility(): LifetimeChartIncomeSeriesVisibility {
+  const next = {} as LifetimeChartIncomeSeriesVisibility;
+  for (const key of LIFETIME_CHART_INCOME_SERIES_KEYS) {
+    next[key] = true;
+  }
+  return next;
+}
+
+export function createHiddenLifetimeChartIncomeVisibility(): LifetimeChartIncomeSeriesVisibility {
+  const next = {} as LifetimeChartIncomeSeriesVisibility;
+  for (const key of LIFETIME_CHART_INCOME_SERIES_KEYS) {
+    next[key] = false;
+  }
+  return next;
+}
+
 function resolveAxisFloor(peak: number): number {
   if (peak <= 0) return 1;
   const scaled = niceAxisMax(peak * 1.1, 1);
@@ -342,11 +425,18 @@ function collectVisibleChartValues(
   points: LifetimeBalanceChartPoint[],
   visibility: LifetimeChartSeriesVisibility,
   balanceLineMode: LifetimeChartBalanceLineMode | null,
+  incomeBreakdownVisibility: LifetimeChartIncomeSeriesVisibility | null,
 ): number[] {
   const values: number[] = [];
 
   for (const point of points) {
-    if (visibility.income) {
+    if (incomeBreakdownVisibility) {
+      if (hasVisibleLifetimeChartIncomeSeries(incomeBreakdownVisibility)) {
+        values.push(
+          visibleIncomeBreakdownTotal(point, incomeBreakdownVisibility),
+        );
+      }
+    } else if (visibility.income) {
       values.push(point.income);
     }
 
@@ -361,6 +451,12 @@ function collectVisibleChartValues(
   }
 
   return values;
+}
+
+export function hasVisibleLifetimeChartExpenseSeries(
+  visibility: LifetimeChartSeriesVisibility,
+): boolean {
+  return hasVisibleExpenseSeries(visibility);
 }
 
 function hasVisibleExpenseSeries(
@@ -379,12 +475,40 @@ function hasVisibleExpenseSeries(
   );
 }
 
+const LIFETIME_CHART_EXPENSE_SERIES_KEYS = [
+  'lifeEvent',
+  'education',
+  'housing',
+  'vehicle',
+  'living',
+  'loan',
+  'insurance',
+  'assetContribution',
+  'taxSocial',
+] as const satisfies ReadonlyArray<LifetimeChartSeriesKey>;
+
+/** 支出カテゴリを一括 ON/OFF（収入棒モードの「支出」折れ線用） */
+export function setLifetimeChartExpenseSeriesVisible(
+  visibility: LifetimeChartSeriesVisibility,
+  visible: boolean,
+): LifetimeChartSeriesVisibility {
+  const next = { ...visibility };
+  for (const key of LIFETIME_CHART_EXPENSE_SERIES_KEYS) {
+    next[key] = visible;
+  }
+  return next;
+}
+
 function hasAnyVisibleSeries(
   visibility: LifetimeChartSeriesVisibility,
   balanceLineMode: LifetimeChartBalanceLineMode | null,
+  incomeBreakdownVisibility: LifetimeChartIncomeSeriesVisibility | null = null,
 ): boolean {
+  const hasIncome = incomeBreakdownVisibility
+    ? hasVisibleLifetimeChartIncomeSeries(incomeBreakdownVisibility)
+    : visibility.income;
   return (
-    visibility.income ||
+    hasIncome ||
     hasVisibleExpenseSeries(visibility) ||
     balanceLineMode != null
   );
@@ -395,31 +519,50 @@ function hasAnyVisibleSeries(
  * - cashFlow: 収入・支出を優先（残高線が大きくても棒が見やすい）
  * - assets: 表示中の残高線を含む全系列が見えるよう軸を広げる
  * - visibility: 凡例で ON の系列のみを軸計算に反映
+ * スケールは resolveLifetimeChartScaleMode で残高表示に合わせて自動切替する。
+ * manualMax 指定時は上限のみ手動値を使い、下限は自動のまま。
  */
 export function resolveLifetimeChartAxisDomain(
   points: LifetimeBalanceChartPoint[],
   mode: LifetimeChartScaleMode = 'cashFlow',
   balanceLineMode: LifetimeChartBalanceLineMode | null = 'deposit',
   visibility: LifetimeChartSeriesVisibility = ALL_LIFETIME_CHART_SERIES_VISIBLE,
+  manualMax: number | null = null,
+  incomeBreakdownVisibility: LifetimeChartIncomeSeriesVisibility | null = null,
 ): LifetimeChartAxisDomain {
   if (
     points.length === 0 ||
-    !hasAnyVisibleSeries(visibility, balanceLineMode)
+    !hasAnyVisibleSeries(
+      visibility,
+      balanceLineMode,
+      incomeBreakdownVisibility,
+    )
   ) {
-    return { min: 0, max: CASH_FLOW_AXIS_FLOOR };
+    const emptyMax =
+      manualMax != null && manualMax > 0
+        ? niceAxisMax(manualMax, CASH_FLOW_AXIS_FLOOR)
+        : CASH_FLOW_AXIS_FLOOR;
+    return { min: 0, max: emptyMax };
   }
 
   const chartValues = collectVisibleChartValues(
     points,
     visibility,
     balanceLineMode,
+    incomeBreakdownVisibility,
   );
 
   const cashFlowValues: number[] = [];
   const balanceValues: number[] = [];
 
   for (const point of points) {
-    if (visibility.income) {
+    if (incomeBreakdownVisibility) {
+      if (hasVisibleLifetimeChartIncomeSeries(incomeBreakdownVisibility)) {
+        cashFlowValues.push(
+          visibleIncomeBreakdownTotal(point, incomeBreakdownVisibility),
+        );
+      }
+    } else if (visibility.income) {
       cashFlowValues.push(point.income);
     }
     const stackTotal = visibleExpenseStackTotal(point, visibility);
@@ -445,28 +588,48 @@ export function resolveLifetimeChartAxisDomain(
   );
   const axisFloor = resolveAxisFloor(visiblePeak);
 
+  let domain: LifetimeChartAxisDomain;
+
   if (mode === 'assets') {
-    return {
+    domain = {
       min: niceAxisMin(Math.min(cashFlowMinRaw, balanceMinRaw)),
       max: niceAxisMax(
         Math.max(cashFlowMaxRaw, balanceMaxRaw),
         axisFloor,
       ),
     };
+  } else {
+    const flowPeak = Math.max(cashFlowMaxRaw, -cashFlowMinRaw, 1);
+    const balanceLimit = flowPeak / MIN_CASH_FLOW_AXIS_SHARE;
+
+    domain = {
+      min: niceAxisMin(
+        Math.min(cashFlowMinRaw, Math.max(balanceMinRaw, -balanceLimit)),
+      ),
+      max: niceAxisMax(
+        Math.max(cashFlowMaxRaw, Math.min(balanceMaxRaw, balanceLimit)),
+        axisFloor,
+      ),
+    };
   }
 
-  const flowPeak = Math.max(cashFlowMaxRaw, -cashFlowMinRaw, 1);
-  const balanceLimit = flowPeak / MIN_CASH_FLOW_AXIS_SHARE;
+  if (manualMax != null && Number.isFinite(manualMax) && manualMax > 0) {
+    return {
+      min: domain.min,
+      max: Math.max(manualMax, domain.min + 1),
+    };
+  }
 
-  return {
-    min: niceAxisMin(
-      Math.min(cashFlowMinRaw, Math.max(balanceMinRaw, -balanceLimit)),
-    ),
-    max: niceAxisMax(
-      Math.max(cashFlowMaxRaw, Math.min(balanceMaxRaw, balanceLimit)),
-      axisFloor,
-    ),
-  };
+  return domain;
+}
+
+/** 手動上限の増減ステップ（万円） */
+export function suggestLifetimeChartYAxisMaxStep(currentMax: number): number {
+  if (currentMax <= 100) return 10;
+  if (currentMax <= 500) return 50;
+  if (currentMax <= 2000) return 100;
+  if (currentMax <= 10000) return 500;
+  return 1000;
 }
 
 function findHeadRow(data: CashFlowTableData) {

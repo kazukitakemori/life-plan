@@ -7,6 +7,9 @@ export type RentalEndMode = 'lifetime' | 'until';
 /** 居住中 = 初期費用は試算に含めない / これから入居 = 入居月に初期費用を計上 */
 export type RentalOccupancy = 'current' | 'upcoming';
 
+/** 賃貸の家賃負担者。持ち家ローンの契約者とは別（段階導入の賃貸向け） */
+export type RentalPayerMode = 'head' | 'spouse' | 'both';
+
 export interface RentalProperty {
   id: string;
   name: string;
@@ -16,7 +19,12 @@ export interface RentalProperty {
   endMode: RentalEndMode;
   endAge: number;
   endMonth: number;
+  /** 家賃負担者。未設定時は格納タブから推定 */
+  payerMode?: RentalPayerMode;
+  /** 世帯主負担の月額家賃（万円）。単独負担時は本人分、両方負担時は世帯主分 */
   monthlyRentMan: number;
+  /** 両方負担時の配偶者負担家賃（万円） */
+  spouseMonthlyRentMan?: number;
   securityDepositMan: number;
   keyMoneyMan: number;
   brokerageFeeMan: number;
@@ -37,7 +45,7 @@ export interface RentalProperty {
 export type OwnedPropertyUsage = 'current' | 'upcoming';
 
 /**
- * 居住中のみ有効: analysis = ローン・控除等を詳細に試算 / simple = 月々の住居費を一括入力し
+ * 居住中のみ有効: analysis = ローン・控除等を詳細に試算 / simple = 住居費(簡)を一括入力し
  * ローン返済・住宅ローン控除等の詳細計算は行わずCF表に反映する
  */
 export type OwnedPropertyCurrentExpenseMode = 'analysis' | 'simple';
@@ -226,7 +234,7 @@ export interface OwnedProperty {
   usage: OwnedPropertyUsage;
   /** usage === 'current' のときのみ参照。既定は 'simple' */
   currentExpenseMode: OwnedPropertyCurrentExpenseMode;
-  /** currentExpenseMode === 'simple' のときの月々の住居費（万円） */
+  /** currentExpenseMode === 'simple' のときの住居費(簡)（万円） */
   simpleMonthlyExpenseMan: number;
   startAge: number;
   startMonth: number;

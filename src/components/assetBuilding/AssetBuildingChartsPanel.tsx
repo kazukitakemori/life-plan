@@ -4,6 +4,7 @@ import { buildLifetimeBalanceChartData } from '../../lib/lifetimeBalanceChartDat
 import type { CashFlowTableData } from '../../types/cashFlow';
 import { AssetAnnualBalanceChart } from './AssetAnnualBalanceChart';
 import { AssetBalanceChart } from './AssetBalanceChart';
+import type { AssetChartAggregation } from './assetBuildingChartShared';
 import { AssetExpenseChart } from './AssetExpenseChart';
 import { AssetIncomeChart } from './AssetIncomeChart';
 
@@ -12,11 +13,13 @@ export type AssetBuildingChartsGroup = 'income-expense' | 'savings-assets';
 interface AssetBuildingChartsPanelProps {
   cashFlowData: CashFlowTableData;
   group: AssetBuildingChartsGroup;
+  aggregation?: AssetChartAggregation;
 }
 
 export function AssetBuildingChartsPanel({
   cashFlowData,
   group,
+  aggregation = 'year',
 }: AssetBuildingChartsPanelProps) {
   const chartData = useMemo(
     () => buildLifetimeBalanceChartData(cashFlowData),
@@ -31,8 +34,16 @@ export function AssetBuildingChartsPanel({
         className="asset-building-charts-panel"
         aria-label="収入・支出グラフ"
       >
-        <AssetIncomeChart cashFlowData={cashFlowData} hasSpouse={hasSpouse} />
-        <AssetExpenseChart points={points} hasSpouse={hasSpouse} />
+        <AssetIncomeChart
+          cashFlowData={cashFlowData}
+          hasSpouse={hasSpouse}
+          aggregation={aggregation}
+        />
+        <AssetExpenseChart
+          points={points}
+          hasSpouse={hasSpouse}
+          aggregation={aggregation}
+        />
       </div>
     );
   }

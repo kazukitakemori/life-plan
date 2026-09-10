@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   createLifeEventEntryFromPreset,
 } from '../../lib/lifeEventDefaults';
-import {
-  getIncomeEligibleMembers,
-  getMemberTabLabel,
-} from '../../lib/memberDisplay';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
+import { memberHasLifeEventData } from '../../lib/memberTabVisibility';
+import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
+import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
 import { MemberLifeEventTabs } from './MemberLifeEventTabs';
@@ -19,6 +19,8 @@ interface LifeEventStepProps {
   members: FamilyMember[];
   lifeEventState: LifeEventState;
   referenceDate: Date;
+  memberTabExtras: MemberTabExtras;
+  onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
   secondLifeState?: SecondLifeState;
   purposeNote?: string;
   onChange: (state: LifeEventState) => void;
@@ -30,48 +32,66 @@ export function LifeEventStep({
   members,
   lifeEventState,
   referenceDate,
+  memberTabExtras,
+  onMemberTabExtrasChange,
   secondLifeState,
   purposeNote,
   onChange,
   onSecondLifeChange,
   onAddSecondLifeNursing,
 }: LifeEventStepProps) {
-  const eligibleMembers = useMemo(
-    () => getIncomeEligibleMembers(members),
-    [members],
-  );
   const headMember = members.find((m) => m.role === 'head');
-  const defaultActiveId = headMember?.id ?? eligibleMembers[0]?.id ?? '';
+  const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
+  const [copySourceId, setCopySourceId] = useState(headMember?.id ?? '');
 
-  const [activeMemberId, setActiveMemberId] = useState(defaultActiveId);
-  const [copySourceId, setCopySourceId] = useState(
-    headMember?.id ?? eligibleMembers[0]?.id ?? '',
+  const memberHasData = useCallback(
+    (memberId: string) => memberHasLifeEventData(lifeEventState, memberId),
+    [lifeEventState],
   );
 
-  const resolvedActiveId = eligibleMembers.some((m) => m.id === activeMemberId)
-    ? activeMemberId
-    : defaultActiveId;
+  const {
+    visibleMembers,
+    addableMembers,
+    removableMemberIds,
+    handleAddMemberTab,
+    handleRemoveMemberTab,
+  } = useMemberTabDomain({
+    domain: 'lifeEvent',
+    members,
+    memberTabExtras,
+    onMemberTabExtrasChange,
+    memberHasData,
+    fallbackActiveId: headMember?.id ?? '',
+    activeId: activeMemberId,
+    setActiveId: setActiveMemberId,
+  });
 
-  const activeMember = eligibleMembers.find((m) => m.id === resolvedActiveId);
+  const fallbackActiveId = headMember?.id ?? visibleMembers[0]?.id ?? '';
+
+  const resolvedActiveId = visibleMembers.some((m) => m.id === activeMemberId)
+    ? activeMemberId
+    : fallbackActiveId;
+
+  const activeMember = visibleMembers.find((m) => m.id === resolvedActiveId);
   const entries = activeMember
     ? (lifeEventState.byMember[activeMember.id] ?? [])
     : [];
 
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const member of eligibleMembers) {
+    for (const member of visibleMembers) {
       counts[member.id] = lifeEventState.byMember[member.id]?.length ?? 0;
     }
     return counts;
-  }, [eligibleMembers, lifeEventState.byMember]);
+  }, [visibleMembers, lifeEventState.byMember]);
 
   const copySourceOptions = useMemo(
     () =>
-      eligibleMembers.map((member) => ({
+      visibleMembers.map((member) => ({
         id: member.id,
         label: getMemberTabLabel(member),
       })),
-    [eligibleMembers],
+    [visibleMembers],
   );
 
   const persistEntries = (memberId: string, updated: typeof entries) => {
@@ -149,11 +169,15 @@ export function LifeEventStep({
 
       <div className="life-event-toolbar">
         <MemberLifeEventTabs
-          members={eligibleMembers}
+          members={visibleMembers}
           activeMemberId={resolvedActiveId}
           entryCounts={entryCounts}
           referenceDate={referenceDate}
           onSelect={setActiveMemberId}
+          addableMembers={addableMembers}
+          onAddMemberTab={handleAddMemberTab}
+          removableMemberIds={removableMemberIds}
+          onRemoveMemberTab={handleRemoveMemberTab}
         />
 
         <div className="life-event-copy-bar">

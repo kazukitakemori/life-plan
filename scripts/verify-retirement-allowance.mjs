@@ -6,6 +6,7 @@ import { calcBirthYear } from '../src/lib/birthDate.ts';
 import { buildCashFlowTable } from '../src/lib/cashFlow.ts';
 import { createDefaultFamily } from '../src/lib/familyDefaults.ts';
 import { createDefaultHeadIncome } from '../src/lib/incomeDefaults.ts';
+import { buildIncomeChartPoints } from '../src/lib/incomeChartData.ts';
 import { createDefaultHousingState } from '../src/lib/housingDefaults.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
 import { createDefaultLivingState } from '../src/lib/livingDefaults.ts';
@@ -302,6 +303,66 @@ console.log('OK company + iDeCo lump merge');
     `SI premiums decrease with selective DC (${siWithout} → ${siWith})`,
   );
   console.log('OK selective DC reduces standard remuneration / SI');
+}
+
+// ── 誕生月より前の受取月でもグラフ・CFに載る（期間ラベル照合） ───
+{
+  const juneMember = { ...head, age: 40, birthMonth: 6 };
+  const juneBirthYear = calcBirthYear(
+    juneMember.age,
+    juneMember.birthMonth,
+    referenceDate,
+  );
+  const juneReceiveYear = juneBirthYear + receiveAge;
+  let juneEntries = createDefaultHeadIncome(juneMember, 6);
+  juneEntries = [
+    {
+      ...juneEntries[0],
+      periods: juneEntries[0].periods.map((p, i) =>
+        i === 0
+          ? { ...p, startAge: 30, startMonth: 4, endAge: 60, endMonth: 3 }
+          : p,
+      ),
+      retirementAllowances: [
+        createRetirementAllowanceEntry(juneMember, {
+          amountMan: 2000,
+          receiveAge,
+          receiveMonth: 3,
+          enrollmentMode: 'years',
+          enrollmentYears: 30,
+        }),
+      ],
+    },
+  ];
+  const juneIncome = { [juneMember.id]: juneEntries };
+  const juneCompany = collectCompanyRetirementLumpByMember({
+    familyMembers: [juneMember],
+    incomeByMember: juneIncome,
+    referenceDate,
+    calendarYear: juneReceiveYear,
+  });
+  assertEq(
+    juneCompany[juneMember.id]?.revenueMan,
+    2000,
+    'June birth company lump in period year',
+  );
+
+  const chartPoints = buildIncomeChartPoints({
+    member: juneMember,
+    incomeByMember: juneIncome,
+    familyMembers: [juneMember],
+    referenceDate,
+  });
+  const chartHit = chartPoints.find(
+    (p) => p.calendarYear === juneReceiveYear,
+  );
+  assert(chartHit, `chart includes ${juneReceiveYear}`);
+  assertEq(
+    chartHit.retirementAllowance,
+    2000,
+    'Q7 chart shows retirement for June birth',
+  );
+  console.log('OK June birth retirement lands on Q7 chart');
 }
 
 console.log('All retirement allowance + selective DC SI checks passed');

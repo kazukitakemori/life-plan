@@ -30,6 +30,7 @@ import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember } from '../../types/income';
 import {
   CHART_HEIGHT,
+  CHART_HEIGHT_FULLSCREEN,
   CHART_MARGIN_LEFT,
   CHART_MARGIN_TOP,
   CoverageChartZoomToolbar,
@@ -42,6 +43,7 @@ import {
   useCoverageChartWindow,
   xAxisTotalHeight,
 } from '../requiredCoverage/requiredCoverageChartShared';
+import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
 
 interface IncomeAnnualChartProps {
   member: FamilyMember;
@@ -172,6 +174,10 @@ export function IncomeAnnualChart({
     [axisMax],
   );
   const xAxisHeight = xAxisTotalHeight(1);
+  const plotHeight = useFullscreenPlotHeight(
+    CHART_HEIGHT,
+    CHART_HEIGHT_FULLSCREEN,
+  );
   const seriesByKey = new Map(
     INCOME_CHART_SERIES.map((item) => [item.key, item]),
   );
@@ -203,7 +209,7 @@ export function IncomeAnnualChart({
             </p>
             <ResponsiveContainer
               width="100%"
-              height={CHART_HEIGHT + xAxisHeight}
+              height={plotHeight + xAxisHeight}
             >
               <ComposedChart
                 data={visiblePoints}

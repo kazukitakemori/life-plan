@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import {
   calcBirthYear,
   formatEndYearLabel,
@@ -9,6 +10,12 @@ import {
   LIFE_EVENT_TYPE_LABELS,
   LIFE_EVENT_TYPE_OPTIONS,
 } from '../../lib/lifeEventLabels';
+import {
+  clampFutureStartFields,
+  filterAgesAtOrAfter,
+  filterMonthsAtOrAfter,
+  resolveSimulationStartAgeMonth,
+} from '../../lib/periodTimingBounds';
 import { DebouncedTextInput } from '../shared/DebouncedTextInput';
 import type { FamilyMember } from '../../types/family';
 import type {
@@ -46,6 +53,33 @@ export function LifeEventRow({
 }: LifeEventRowProps) {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const ageOptions = getLifeEventAgeOptions(member);
+  const simStart = useMemo(
+    () => resolveSimulationStartAgeMonth(member, referenceDate),
+    [member, referenceDate],
+  );
+  const startAgeOptions = filterAgesAtOrAfter(ageOptions, simStart);
+  const startMonthOptions = filterMonthsAtOrAfter(
+    entry.startAge,
+    simStart,
+    MONTHS,
+  );
+
+  const commit = (next: LifeEventEntry) => {
+    onChange(clampFutureStartFields(next, simStart));
+  };
+
+  useEffect(() => {
+    const clamped = clampFutureStartFields(entry, simStart);
+    if (
+      clamped.startAge !== entry.startAge ||
+      clamped.startMonth !== entry.startMonth ||
+      clamped.endAge !== entry.endAge ||
+      clamped.endMonth !== entry.endMonth
+    ) {
+      onChange(clamped);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simStart.age, simStart.month]);
 
   return (
     <div
@@ -110,14 +144,14 @@ export function LifeEventRow({
                 value={entry.startAge}
                 onChange={(e) => {
                   const startAge = Number(e.target.value);
-                  onChange({
+                  commit({
                     ...entry,
                     startAge,
                     ...(entry.endMode === 'once' ? { endAge: startAge } : {}),
                   });
                 }}
               >
-                {ageOptions.map((age) => (
+                {startAgeOptions.map((age) => (
                   <option key={age} value={age}>
                     {age}才
                   </option>
@@ -128,14 +162,14 @@ export function LifeEventRow({
                 value={entry.startMonth}
                 onChange={(e) => {
                   const startMonth = Number(e.target.value);
-                  onChange({
+                  commit({
                     ...entry,
                     startMonth,
                     ...(entry.endMode === 'once' ? { endMonth: startMonth } : {}),
                   });
                 }}
               >
-                {MONTHS.map((month) => (
+                {startMonthOptions.map((month) => (
                   <option key={month} value={month}>
                     {month}月
                   </option>

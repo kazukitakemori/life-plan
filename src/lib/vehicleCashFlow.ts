@@ -1,5 +1,11 @@
 import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
-import { calcBirthYear, getMemberAgeMonth, isAgeCalendarMonthInRange } from './birthDate';
+import {
+  absoluteMonthIndexFromMemberAgeMonth,
+  absoluteMonthIndexFromPeriodAgeMonth,
+  calcBirthYear,
+  getMemberAgeMonth,
+  isAgeCalendarMonthInRange,
+} from './birthDate';
 import { yenToMan } from './educationCashFlow';
 import { resolveGroupCreditLifeSurchargeRatePct } from './groupCreditLife';
 import {
@@ -19,8 +25,8 @@ import {
 import { isVehicleInspectionDueMonth } from './vehicleInspection';
 import {
   getVehicleMonthlyMaintCostMan,
-  isVehicleAlreadyOwned,
   resolveAnnualCostCycleYears,
+  resolveVehicleCondition,
 } from './vehicleLabels';
 import type { FamilyMember } from '../types/family';
 import type { OwnedPropertyLoanSettings } from '../types/housing';
@@ -33,10 +39,6 @@ import {
 } from '../types/cashFlow';
 
 const MAN_TO_YEN = 10_000;
-
-function ageMonthIndex(age: number, month: number): number {
-  return age * 12 + month;
-}
 
 function getEntryEnd(
   entry: VehicleEntry,
@@ -169,6 +171,7 @@ function calcEntryMonthlyDetailMan(
 ): VehicleExpenseDetail {
   const detail = createEmptyVehicleExpenseDetail();
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
   const ageMonth = getMemberAgeMonth(
     member,
     referenceDate,
@@ -187,22 +190,28 @@ function calcEntryMonthlyDetailMan(
       endAge,
       endMonth,
       birthYear,
-      resolveMemberBirthMonth(member),
+      birthMonth,
     )
   ) {
     return detail;
   }
 
   const monthsFromStart =
-    ageMonthIndex(ageMonth.age, ageMonth.month) -
-    ageMonthIndex(entry.startAge, entry.startMonth);
+    absoluteMonthIndexFromMemberAgeMonth(
+      birthYear,
+      birthMonth,
+      ageMonth.age,
+      ageMonth.month,
+    ) -
+    absoluteMonthIndexFromPeriodAgeMonth(
+      birthYear,
+      entry.startAge,
+      entry.startMonth,
+    );
   if (monthsFromStart < 0) return detail;
 
   const isMonthlyRepayment = entry.paymentMode === 'monthlyRepayment';
-  const isAlreadyOwned = isVehicleAlreadyOwned(entry);
-  const hasLinkedLoans = Boolean(
-    loanState && getLoansForVehicle(loanState, member.id, entry.id).length > 0,
-  );
+  const isCash = entry.paymentMode === 'cash';
 
   let maintenance = getVehicleMonthlyMaintCostMan(entry);
 
@@ -219,7 +228,7 @@ function calcEntryMonthlyDetailMan(
       calendarYear,
       calendarMonth,
       birthYear,
-      resolveMemberBirthMonth(member),
+      birthMonth,
     )
   ) {
     maintenance += entry.inspectionCostMan ?? 0;
@@ -232,16 +241,22 @@ function calcEntryMonthlyDetailMan(
     }
   }
 
-  // 既に保有・ローン追加時・月々返済額入力時は購入費を一括計上しない
-  // （既に固定資産／借入額の基準／返済額入力のみ）
+  // 現金一括: 保有開始月に購入費を一括計上（既保有は対象外）。
+  // - 期間ラベル（A歳になる年のM月）と一致する暦月
+  // - または UI の開始年齢月と getMemberAgeMonth が一致する暦月
+  //   （誕生日が遅いと期間開始が試算開始より前になり、前者だけでは CF に載らない）
+  // 購入費用とローン: 購入費は借入額の基準のみ（CFの購入費行には載せない。返済はローン側）。
   let purchase = 0;
   if (
-    !isAlreadyOwned &&
-    !isMonthlyRepayment &&
-    !hasLinkedLoans &&
-    entry.purchaseAmountMan > 0
+    isCash &&
+    entry.purchaseAmountMan > 0 &&
+    resolveVehicleCondition(entry) !== 'owned'
   ) {
-    if (monthsFromStart === 0) {
+    const atPeriodStart = monthsFromStart === 0;
+    const atMemberStartLabel =
+      ageMonth.age === entry.startAge &&
+      ageMonth.month === entry.startMonth;
+    if (atPeriodStart || atMemberStartLabel) {
       purchase = entry.purchaseAmountMan;
     }
   }
@@ -255,7 +270,7 @@ function calcEntryMonthlyDetailMan(
     )
       ? entry.monthlyRepaymentMan
       : 0;
-  } else if (loanState) {
+  } else if (entry.paymentMode === 'purchaseAmount' && loanState) {
     const linkedLoans = getLoansForVehicle(loanState, member.id, entry.id);
     for (const loan of linkedLoans) {
       loanRepayment += calcVehicleLoanRepaymentMan(

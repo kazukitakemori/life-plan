@@ -1,14 +1,13 @@
-import { createRentalProperty } from '../../lib/housingDefaults';
 import type { FamilyMember } from '../../types/family';
-import type { OwnedProperty, RentalProperty } from '../../types/housing';
+import type { RentalPayerMode, RentalProperty } from '../../types/housing';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
+import type { RentalTabView } from '../../lib/housingRentalPayer';
 import { RentalPropertyCard } from './RentalPropertyCard';
 
 interface RentalPropertySectionProps {
-  rentals: RentalProperty[];
-  owned: OwnedProperty[];
+  rentalViews: RentalTabView[];
   member: FamilyMember;
   members: FamilyMember[];
   referenceDate: Date;
@@ -16,15 +15,24 @@ interface RentalPropertySectionProps {
   insuranceState?: InsuranceState;
   housingState: HousingState;
   vehicleState: VehicleState;
-  onChange: (rentals: RentalProperty[]) => void;
-  onAddInsurance?: (rental: RentalProperty) => void;
+  hasSpouse: boolean;
+  highlightTokenById?: ReadonlyMap<string, number>;
+  endedPropertyIds?: ReadonlySet<string>;
+  onAdd: () => void;
+  onChangeRental: (storageTargetId: string, rental: RentalProperty) => void;
+  onRemoveRental: (storageTargetId: string, rentalId: string) => void;
+  onPayerModeChange: (
+    storageTargetId: string,
+    rentalId: string,
+    payerMode: RentalPayerMode,
+  ) => void;
+  onAddInsurance?: (storageTargetId: string, rental: RentalProperty) => void;
   onUpdateInsurance?: (entry: InsuranceEntry) => void;
   onRemoveInsurance?: (entryId: string) => void;
 }
 
 export function RentalPropertySection({
-  rentals,
-  owned,
+  rentalViews,
   member,
   members,
   referenceDate,
@@ -32,65 +40,85 @@ export function RentalPropertySection({
   insuranceState,
   housingState,
   vehicleState,
-  onChange,
+  hasSpouse,
+  highlightTokenById,
+  endedPropertyIds,
+  onAdd,
+  onChangeRental,
+  onRemoveRental,
+  onPayerModeChange,
   onAddInsurance,
   onUpdateInsurance,
   onRemoveInsurance,
 }: RentalPropertySectionProps) {
-  const refMonth = referenceDate.getMonth() + 1;
-  const refYear = referenceDate.getFullYear();
-
-  const updateRental = (id: string, updated: RentalProperty) => {
-    onChange(rentals.map((rental) => (rental.id === id ? updated : rental)));
-  };
-
-  const removeRental = (id: string) => {
-    onChange(rentals.filter((rental) => rental.id !== id));
-  };
-
-  const addRental = () => {
-    onChange([
-      ...rentals,
-      createRentalProperty(member, refMonth, refYear, {}, { rentals, owned }),
-    ]);
-  };
-
   return (
-    <section className="housing-section">
-      <h3 className="housing-section-title">1. 賃貸物件</h3>
+    <section className="housing-section" id="housing-rental-section">
+      <div className="housing-section-header">
+        <h3 className="housing-section-title">賃貸物件</h3>
+        <p className="housing-section-desc">
+          家賃・初期費用など。負担者はこのタブで選べます。
+        </p>
+      </div>
 
       <div className="housing-rental-schedules">
-        {rentals.length === 0 ? (
+        {rentalViews.length === 0 ? (
           <div className="housing-rental-empty">
             賃貸物件が登録されていません。下のボタンから追加してください。
           </div>
         ) : (
-          rentals.map((rental) => (
-            <RentalPropertyCard
-              key={rental.id}
-              rental={rental}
-              member={member}
-              members={members}
-              referenceDate={referenceDate}
-              linkedInsurances={linkedInsurancesByPropertyId[rental.id] ?? []}
-              insuranceState={insuranceState}
-              housingState={housingState}
-              vehicleState={vehicleState}
-              onChange={(updated) => updateRental(rental.id, updated)}
-              onRemove={() => removeRental(rental.id)}
-              onAddInsurance={
-                onAddInsurance ? () => onAddInsurance(rental) : undefined
-              }
-              onUpdateInsurance={onUpdateInsurance}
-              onRemoveInsurance={onRemoveInsurance}
-            />
-          ))
+          rentalViews.map((view) => {
+            const periodMember =
+              members.find((item) => item.id === view.periodMemberId) ?? member;
+            return (
+              <RentalPropertyCard
+                key={`${view.storageTargetId}:${view.rental.id}:${view.amountRole}`}
+                rental={view.rental}
+                storageTargetId={view.storageTargetId}
+                amountRole={view.amountRole}
+                member={member}
+                periodMember={periodMember}
+                members={members}
+                referenceDate={referenceDate}
+                linkedInsurances={
+                  linkedInsurancesByPropertyId[view.rental.id] ?? []
+                }
+                insuranceState={insuranceState}
+                housingState={housingState}
+                vehicleState={vehicleState}
+                hasSpouse={hasSpouse}
+                highlightToken={highlightTokenById?.get(view.rental.id)}
+                endedBySecondLife={endedPropertyIds?.has(view.rental.id)}
+                onChange={(updated) =>
+                  onChangeRental(view.storageTargetId, updated)
+                }
+                onPayerModeChange={(payerMode) =>
+                  onPayerModeChange(
+                    view.storageTargetId,
+                    view.rental.id,
+                    payerMode,
+                  )
+                }
+                onRemove={() =>
+                  onRemoveRental(view.storageTargetId, view.rental.id)
+                }
+                onAddInsurance={
+                  onAddInsurance
+                    ? () => onAddInsurance(view.storageTargetId, view.rental)
+                    : undefined
+                }
+                onUpdateInsurance={onUpdateInsurance}
+                onRemoveInsurance={onRemoveInsurance}
+              />
+            );
+          })
         )}
       </div>
 
-      <button type="button" className="footer-action-btn" onClick={addRental}>
-        ＋ 賃貸物件を追加
-      </button>
+      <div className="living-footer-actions housing-rental-add-actions">
+        <button type="button" className="footer-action-btn" onClick={onAdd}>
+          ＋ 賃貸物件を追加
+        </button>
+      </div>
     </section>
   );
 }
