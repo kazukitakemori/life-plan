@@ -227,7 +227,8 @@ export function SecondLifeHousingSection({
                           type="checkbox"
                           checked={state.includeMovingCost}
                           onChange={(event) =>
-                            onChange({ includeMovingCost: event.target.checked })}
+                            onChange({ includeMovingCost: event.target.checked })
+                          }
                         />
                         引越し
                       </label>
