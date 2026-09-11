@@ -1,0 +1,136 @@
+/* Mobile-only responsive overrides. Desktop layout remains unchanged. */
+
+.mobile-sidebar-toggle,
+.mobile-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body {
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
+
+  .shell,
+  .shell-body {
+    min-width: 0;
+  }
+
+  .shell-body {
+    position: relative;
+  }
+
+  .shell-main {
+    width: 100%;
+    min-width: 0;
+    padding: 48px 12px 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .mobile-sidebar-toggle {
+    position: absolute;
+    z-index: 40;
+    top: 8px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgb(31 42 36 / 8%);
+  }
+
+  .mobile-sidebar-backdrop {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    border: 0;
+    background: rgb(20 28 24 / 36%);
+    transition: opacity 160ms ease, visibility 160ms ease;
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 80;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(84vw, 320px);
+    max-width: 320px;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    box-shadow: 8px 0 24px rgb(31 42 36 / 15%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .mobile-sidebar-open .mobile-sidebar-backdrop {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* Keep wide data views usable without shrinking text into illegibility. */
+  .shell-main table {
+    max-width: none;
+  }
+
+  .shell-main :where(.table-wrap, .table-scroll, .overflow-x-auto) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Forms should stack naturally on narrow screens unless a component opts out. */
+  .shell-main :where(.form-grid, .input-grid, .field-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shell-main input,
+  .shell-main select,
+  .shell-main textarea,
+  .shell-main button {
+    max-width: 100%;
+  }
+
+  .shell-main img,
+  .shell-main svg,
+  .shell-main canvas {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell-main {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .mobile-sidebar-toggle {
+    left: 8px;
+  }
+
+  .sidebar {
+    width: min(88vw, 300px);
+  }
+}
