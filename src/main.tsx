@@ -7,6 +7,7 @@ import {
   LicenseKeyAdminPage,
 } from './components/license/LicenseKeyAdminPage';
 import './index.css';
+import './secondLifeConsistency.css';
 import './mobile.css';
 
 const root = createRoot(document.getElementById('root')!);
