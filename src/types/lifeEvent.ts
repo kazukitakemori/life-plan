@@ -21,6 +21,11 @@ export type LifeEventCycleUnit = 'month' | 'year';
 
 export type LifeEventEndMode = 'lifetime' | 'until' | 'once';
 
+/** 通常入力では未設定。別設計から生成された計算用イベントだけ source を持つ。 */
+export type LifeEventSource =
+  | 'second_life_housing'
+  | 'second_life_nursing';
+
 /** 子・孫の祝い金の受取者（1人あたり） */
 export interface LifeEventCelebrationBeneficiary {
   memberId: string;
@@ -42,6 +47,8 @@ export interface LifeEventEntry {
   amountMan: number;
   /** 物価上昇率（%/年）。null のときは上昇なし */
   increaseRate: number | null;
+  /** セカンドライフ等、別設計を本体として自動生成された場合の出所 */
+  source?: LifeEventSource;
   /** type が celebration_gift のとき、子どもごとの祝い金設定 */
   celebrationBeneficiaries?: LifeEventCelebrationBeneficiary[];
 }
