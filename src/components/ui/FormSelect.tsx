@@ -5,8 +5,7 @@ export interface FormSelectOption {
   label: string;
 }
 
-interface FormSelectProps
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: FormSelectOption[];
   allowEmpty?: boolean;
   emptyLabel?: string;

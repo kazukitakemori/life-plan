@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode, type ToggleEvent } from 'react';
 
 interface DisclosureSectionProps {
   title: string;
@@ -16,10 +16,15 @@ export function DisclosureSection({
   children,
   className,
 }: DisclosureSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
     <details
       className={['ui-disclosure', className].filter(Boolean).join(' ')}
-      defaultOpen={defaultOpen}
+      open={open}
+      onToggle={(e: ToggleEvent<HTMLDetailsElement>) => {
+        setOpen(e.currentTarget.open);
+      }}
     >
       <summary className="ui-disclosure-summary">
         <span className="ui-disclosure-title">{title}</span>
