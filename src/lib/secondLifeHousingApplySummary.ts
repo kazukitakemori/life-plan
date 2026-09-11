@@ -129,7 +129,7 @@ export function getSecondLifeHousingApplyPlanLines(
       break;
     case 'renovate':
       lines.push(
-        '住まい物件は追加せず、リフォーム費用をライフイベントへ反映します',
+        '現在の住まいを継続し、リフォーム等の一時費用を計画へ反映します',
       );
       break;
     default: {
@@ -143,7 +143,8 @@ export function getSecondLifeHousingApplyPlanLines(
 
 /**
  * 反映前に注意喚起する警告行。
- * stay + 購入は既存住まいを自動終了しないため、重なりの可能性がある。
+ * 「セカンドライフ開始 = 転居」ではないため、実際に終了する既存住まいがある時だけ
+ * 時系列の切替を明示する。
  */
 export function getSecondLifeHousingApplyWarnings(input: {
   secondLifeState: Pick<
@@ -153,11 +154,26 @@ export function getSecondLifeHousingApplyWarnings(input: {
     | 'stayOption'
     | 'hometownOption'
     | 'newAreaOption'
+    | 'startAge'
   >;
   existingHousingCount: number;
+  changes?: SecondLifeHousingApplyChange[];
 }): string[] {
   const kind = getSecondLifeHousingTemplateKind(input.secondLifeState);
   const warnings: string[] = [];
+
+  const ended = (input.changes ?? []).filter(
+    (change): change is Extract<SecondLifeHousingApplyChange, { type: 'ended' }> =>
+      change.type === 'ended',
+  );
+
+  if (isRelocatingHousing(input.secondLifeState) && ended.length > 0) {
+    const names = ended.map((change) => `「${change.name}」`).join('・');
+    const end = ended[0];
+    warnings.push(
+      `${names}はセカンドライフ開始後も続く住まい設定です。今回の転居計画を優先すると、${formatAgeMonth(end.endAge, end.endMonth)}で終了します。`,
+    );
+  }
 
   if (
     kind === 'purchase' &&
