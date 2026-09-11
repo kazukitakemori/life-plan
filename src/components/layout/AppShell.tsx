@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { AdminTabId } from '../../types/adminTabs';
 import type { AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { HeaderTabId } from '../../types/headerTabs';
@@ -83,6 +83,7 @@ function AppShellFrame(props: AppShellProps) {
   } = props;
 
   const { shellRef } = useShellFullscreen();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
@@ -90,11 +91,22 @@ function AppShellFrame(props: AppShellProps) {
     analysisStale &&
     !isAnalyzing;
 
+  const handleStepChange = (step: StepId) => {
+    onStepChange(step);
+    setMobileSidebarOpen(false);
+  };
+
   return (
-    <div ref={shellRef} className="shell">
+    <div
+      ref={shellRef}
+      className={`shell ${mobileSidebarOpen ? 'mobile-sidebar-open' : ''}`}
+    >
       <TopHeader
         activeTab={activeHeaderTab}
-        onTabChange={onHeaderTabChange}
+        onTabChange={(tab) => {
+          setMobileSidebarOpen(false);
+          onHeaderTabChange(tab);
+        }}
         analysisUnlocked={analysisUnlocked}
         requiredCoverageUnlocked={requiredCoverageUnlocked}
         requiredCoverageRiskKinds={requiredCoverageRiskKinds}
@@ -113,16 +125,34 @@ function AppShellFrame(props: AppShellProps) {
       />
       <div className="shell-body">
         {showSidebar && (
-          <Sidebar
-            activeStep={activeStep}
-            enabledSteps={enabledSteps}
-            requiredSteps={requiredSteps}
-            showRequiredMarkers={showRequiredStepMarkers}
-            onStepChange={onStepChange}
-            onAnalyze={onAnalyze}
-            analyzeDisabled={analyzeDisabled}
-            showAnalyze={showAnalyze}
-          />
+          <>
+            <button
+              type="button"
+              className="mobile-sidebar-toggle"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="入力メニューを開く"
+              aria-expanded={mobileSidebarOpen}
+            >
+              <span aria-hidden="true">☰</span>
+              <span>入力メニュー</span>
+            </button>
+            <button
+              type="button"
+              className="mobile-sidebar-backdrop"
+              aria-label="入力メニューを閉じる"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+            <Sidebar
+              activeStep={activeStep}
+              enabledSteps={enabledSteps}
+              requiredSteps={requiredSteps}
+              showRequiredMarkers={showRequiredStepMarkers}
+              onStepChange={handleStepChange}
+              onAnalyze={onAnalyze}
+              analyzeDisabled={analyzeDisabled}
+              showAnalyze={showAnalyze}
+            />
+          </>
         )}
         <main className="shell-main">
           {showStatusBanner && (
