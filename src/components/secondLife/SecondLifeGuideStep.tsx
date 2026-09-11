@@ -21,6 +21,7 @@ import type { HousingState } from '../../types/housing';
 import type { SecondLifeState } from '../../types/secondLife';
 import type { StepId } from '../../types/steps';
 import { StepHeading } from '../ui';
+import { SecondLifeNursingSection } from './SecondLifeNursingSection';
 
 interface SecondLifeGuideStepProps {
   members: FamilyMember[];
@@ -36,10 +37,12 @@ interface SecondLifeGuideStepProps {
 function ChecklistCard({
   item,
   designNote,
+  actionLabel,
   onNavigate,
 }: {
   item: SecondLifeChecklistItem;
   designNote?: string;
+  actionLabel?: string;
   onNavigate: () => void;
 }) {
   return (
@@ -72,7 +75,7 @@ function ChecklistCard({
         className="second-life-guide-nav-btn"
         onClick={onNavigate}
       >
-        {item.stepLabel} で入力する →
+        {actionLabel ?? `${item.stepLabel} で入力する →`}
       </button>
     </article>
   );
@@ -94,6 +97,7 @@ export function SecondLifeGuideStep({
     () =>
       buildSecondLifeGuide({
         startAge: secondLifeState.startAge,
+        secondLifeState,
         familyMembers: members,
         housingState,
         livingState,
@@ -101,7 +105,7 @@ export function SecondLifeGuideStep({
         referenceDate,
       }),
     [
-      secondLifeState.startAge,
+      secondLifeState,
       members,
       housingState,
       livingState,
@@ -138,7 +142,7 @@ export function SecondLifeGuideStep({
       />
 
       <p className="second-life-guide-intro">
-        セカンドライフ開始年齢を基準に、住まい・生活費・介護の計画が現在の入力と矛盾しないか確認します。
+        セカンドライフ開始年齢を基準に、住まい・生活費・介護をここで設計し、各入力画面には計算用データとして反映します。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -203,9 +207,16 @@ export function SecondLifeGuideStep({
         </div>
       </section>
 
-      <h3 className="second-life-guide-checklist-title">入力状況チェック</h3>
+      <SecondLifeNursingSection
+        members={members}
+        state={secondLifeState}
+        onChange={onSecondLifeChange}
+        onOpenLifeEvent={() => onNavigateToStep('life-event')}
+      />
+
+      <h3 className="second-life-guide-checklist-title">設計・反映状況</h3>
       <p className="second-life-guide-checklist-lead">
-        各ステップでの設計・入力ができているか確認できます。
+        セカンドライフの設計と、各入力画面への反映状態を確認できます。
       </p>
 
       <div className="second-life-guide-grid">
@@ -219,6 +230,11 @@ export function SecondLifeGuideStep({
                 : item.id === 'living'
                   ? getSecondLifeLivingDesignSummary(secondLifeState)
                   : undefined
+            }
+            actionLabel={
+              item.id === 'nursing'
+                ? 'ライフイベントの反映先を見る →'
+                : undefined
             }
             onNavigate={() => onNavigateToStep(item.stepId)}
           />
