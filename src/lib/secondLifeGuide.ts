@@ -1,8 +1,14 @@
 import { getMemberAgeMonth } from './birthDate';
 import { getHousingTargetData } from './housingDefaults';
 import { getLivingScheduleBillableItems } from './livingDefaults';
+import {
+  getSecondLifeManagedLifeEventSource,
+} from './lifeEventSource';
 import { getMemberTabLabel } from './memberDisplay';
-import { getCalendarYearAtHeadAge } from './secondLifeEstimates';
+import {
+  getCalendarYearAtHeadAge,
+  getDefaultNursingAnnualCostMan,
+} from './secondLifeEstimates';
 import {
   getLivingScheduleMonthlyMan,
   sumConfiguredLivingMonthlyMan,
@@ -15,6 +21,11 @@ import {
   type LivingExpenseSchedule,
   type LivingExpenseState,
 } from '../types/living';
+import type {
+  SecondLifeNursingScenario,
+  SecondLifeNursingTarget,
+  SecondLifeState,
+} from '../types/secondLife';
 import type { StepId } from '../types/steps';
 
 export type SecondLifeChecklistStatus = 'missing' | 'partial' | 'done';
@@ -34,7 +45,11 @@ export interface SecondLifeGuide {
   items: SecondLifeChecklistItem[];
 }
 
-const SECOND_LIFE_NURSING_LABEL = 'セカンドライフ介護';
+const NURSING_SCENARIO_LABELS: Record<SecondLifeNursingScenario, string> = {
+  home: '在宅介護',
+  day_service: '在宅＋デイサービス',
+  facility: '施設介護',
+};
 
 function isLivingScheduleActiveAtHeadAge(
   schedule: LivingExpenseSchedule,
@@ -72,7 +87,6 @@ function collectHouseholdHousingItems(
   const primaryId = headId ?? HOUSEHOLD_HOUSING_KEY;
   const primary = getHousingTargetData(housingState, primaryId);
   const household = getHousingTargetData(housingState, HOUSEHOLD_HOUSING_KEY);
-  // 移行前後どちらも拾う（重複は id で除外）
   const rentals = [...primary.rentals];
   const owned = [...primary.owned];
   for (const rental of household.rentals) {
@@ -81,7 +95,6 @@ function collectHouseholdHousingItems(
   for (const property of household.owned) {
     if (!owned.some((item) => item.id === property.id)) owned.push(property);
   }
-  // 配偶者など他タブの物件もチェックリスト対象
   for (const [targetId, data] of Object.entries(housingState.byTarget)) {
     if (targetId === primaryId || targetId === HOUSEHOLD_HOUSING_KEY) continue;
     for (const rental of data.rentals) {
@@ -172,9 +185,7 @@ function buildLivingChecklistItem(input: {
     : 0;
 
   const payerSchedules =
-    (head
-      ? input.livingState.byTarget[head.id]
-      : undefined) ??
+    (head ? input.livingState.byTarget[head.id] : undefined) ??
     input.livingState.byTarget[HOUSEHOLD_LIVING_KEY] ??
     [];
   const secondLifeSchedules = payerSchedules.filter(
@@ -189,11 +200,10 @@ function buildLivingChecklistItem(input: {
       ),
   );
   const hasPreSecondLifeOnly =
-    payerSchedules.some(
-      (schedule) =>
-        schedule.endMode === 'until'
-          ? schedule.endAge < input.startAge
-          : schedule.startAge < input.startAge,
+    payerSchedules.some((schedule) =>
+      schedule.endMode === 'until'
+        ? schedule.endAge < input.startAge
+        : schedule.startAge < input.startAge,
     ) && secondLifeSchedules.length === 0;
 
   let status: SecondLifeChecklistStatus = 'missing';
@@ -229,42 +239,109 @@ function buildLivingChecklistItem(input: {
   };
 }
 
-function findNursingEntry(
+function findNursingProjection(
   entries: LifeEventEntry[],
 ): LifeEventEntry | undefined {
   return entries.find(
     (entry) =>
-      entry.label === SECOND_LIFE_NURSING_LABEL || entry.type === 'nursing',
+      getSecondLifeManagedLifeEventSource(entry) === 'second_life_nursing',
   );
 }
 
 function buildNursingChecklistItem(
   lifeEventState: LifeEventState,
   members: FamilyMember[],
-  _startAge: number,
+  secondLifeState?: SecondLifeState,
 ): SecondLifeChecklistItem {
-  const targets = members.filter(
-    (member) => member.role === 'head' || member.role === 'spouse',
-  );
-  const detailLines: string[] = [];
-  let configured = 0;
+  const targets = ([
+    ['head', 'head'],
+    ['spouse', 'spouse'],
+  ] as const)
+    .map(([key, role]) => ({
+      key,
+      member: members.find((member) => member.role === role),
+    }))
+    .filter(
+      (
+        item,
+      ): item is {
+        key: SecondLifeNursingTarget;
+        member: FamilyMember;
+      } => Boolean(item.member),
+    );
 
-  for (const member of targets) {
-    const entry = findNursingEntry(lifeEventState.byMember[member.id] ?? []);
-    if (entry) {
+  const detailLines: string[] = [];
+
+  if (!secondLifeState) {
+    let configured = 0;
+    for (const { member } of targets) {
+      const entry = findNursingProjection(lifeEventState.byMember[member.id] ?? []);
+      if (!entry) continue;
       configured += 1;
       detailLines.push(
         `${getMemberTabLabel(member)}：${entry.startAge}歳〜 年${entry.amountMan}万円`,
       );
     }
+    return {
+      id: 'nursing',
+      stepId: 'life-event',
+      stepLabel: '3',
+      title: '介護',
+      status:
+        configured === targets.length && targets.length > 0
+          ? 'done'
+          : configured > 0
+            ? 'partial'
+            : 'missing',
+      summary:
+        configured > 0
+          ? `介護費 ${configured}/${targets.length}人 反映済み`
+          : '介護費が未反映です',
+      detailLines,
+    };
   }
 
-  let status: SecondLifeChecklistStatus = 'missing';
-  if (targets.length > 0 && configured === targets.length) {
-    status = 'done';
-  } else if (configured > 0) {
-    status = 'partial';
+  let activeDesigns = 0;
+  let applied = 0;
+  let needsRefresh = 0;
+
+  for (const { key, member } of targets) {
+    const design = secondLifeState.nursingByTarget[key];
+    if (design.skip) {
+      detailLines.push(`${getMemberTabLabel(member)}：介護費を見込まない`);
+      continue;
+    }
+
+    activeDesigns += 1;
+    const annualCost =
+      design.annualCostMan > 0
+        ? design.annualCostMan
+        : getDefaultNursingAnnualCostMan(design.scenario);
+    const projection = findNursingProjection(
+      lifeEventState.byMember[member.id] ?? [],
+    );
+    const isApplied =
+      projection != null &&
+      projection.startAge === design.startAge &&
+      projection.amountMan === annualCost;
+
+    if (isApplied) {
+      applied += 1;
+    } else if (projection) {
+      needsRefresh += 1;
+    }
+
+    detailLines.push(
+      `${getMemberTabLabel(member)}：${design.startAge}歳〜 年${annualCost}万円（${NURSING_SCENARIO_LABELS[design.scenario]}） / ${
+        isApplied ? '反映済み' : projection ? '再反映が必要' : '未反映'
+      }`,
+    );
   }
+
+  const allSkipped = activeDesigns === 0;
+  const allApplied = activeDesigns > 0 && applied === activeDesigns;
+  const status: SecondLifeChecklistStatus =
+    allSkipped || allApplied ? 'done' : 'partial';
 
   return {
     id: 'nursing',
@@ -272,18 +349,20 @@ function buildNursingChecklistItem(
     stepLabel: '3',
     title: '介護',
     status,
-    summary:
-      status === 'done'
-        ? `介護費 ${configured}/${targets.length}人 入力済み`
-        : status === 'partial'
-          ? `介護費 ${configured}/${targets.length}人 のみ入力`
-          : '介護費が未入力です',
+    summary: allSkipped
+      ? '介護費は見込まない設定です'
+      : allApplied
+        ? `介護設計 ${applied}/${activeDesigns}人 反映済み`
+        : needsRefresh > 0
+          ? '介護設計を変更したため、ライフイベントへの再反映が必要です'
+          : '介護設計はありますが、ライフイベントへ未反映です',
     detailLines,
   };
 }
 
 export function buildSecondLifeGuide(input: {
   startAge: number;
+  secondLifeState?: SecondLifeState;
   familyMembers: FamilyMember[];
   housingState: HousingState;
   livingState: LivingExpenseState;
@@ -305,7 +384,7 @@ export function buildSecondLifeGuide(input: {
       buildNursingChecklistItem(
         input.lifeEventState,
         input.familyMembers,
-        startAge,
+        input.secondLifeState,
       ),
     ],
   };
