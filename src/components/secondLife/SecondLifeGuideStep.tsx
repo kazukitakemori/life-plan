@@ -7,6 +7,10 @@ import {
 } from '../../lib/secondLifeGuide';
 import { SECOND_LIFE_DEFAULT_START_AGE } from '../../lib/secondLifeDefaults';
 import {
+  buildSecondLifeHousingConsistency,
+  getSecondLifeHousingConsistencyStatusLabel,
+} from '../../lib/secondLifeHousingConsistency';
+import {
   getSecondLifeHousingDesignSummary,
   getSecondLifeLivingDesignSummary,
 } from '../../lib/secondLifeLabels';
@@ -106,6 +110,15 @@ export function SecondLifeGuideStep({
     ],
   );
 
+  const housingConsistency = useMemo(
+    () =>
+      buildSecondLifeHousingConsistency({
+        housingState,
+        secondLifeState,
+      }),
+    [housingState, secondLifeState],
+  );
+
   if (!head) {
     return (
       <div className="step-page">
@@ -121,11 +134,11 @@ export function SecondLifeGuideStep({
       <StepHeading
         number={12}
         title="セカンドライフ"
-        lead="住まい・生活費・介護の入力状況を確認します"
+        lead="これからの暮らし方と、現在の入力内容の整合性を確認します"
       />
 
       <p className="second-life-guide-intro">
-        開始年齢はライフイベント・生活費・住まいの各画面でも変更でき、すべて連動します。ここでは入力状況の確認ができます。
+        セカンドライフ開始年齢を基準に、住まい・生活費・介護の計画が現在の入力と矛盾しないか確認します。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -148,6 +161,47 @@ export function SecondLifeGuideStep({
           <span>歳〜</span>
         </label>
       </div>
+
+      <section
+        className={`second-life-consistency second-life-consistency--${housingConsistency.status}`}
+        aria-labelledby="second-life-housing-consistency-title"
+      >
+        <div className="second-life-consistency-head">
+          <div>
+            <p className="second-life-consistency-kicker">住まいとの整合性</p>
+            <h3 id="second-life-housing-consistency-title">
+              {housingConsistency.title}
+            </h3>
+          </div>
+          <span
+            className={`second-life-consistency-status second-life-consistency-status--${housingConsistency.status}`}
+          >
+            {getSecondLifeHousingConsistencyStatusLabel(housingConsistency.status)}
+          </span>
+        </div>
+        <p className="second-life-consistency-summary">
+          {housingConsistency.summary}
+        </p>
+        {housingConsistency.detailLines.length > 0 ? (
+          <ul className="second-life-consistency-details">
+            {housingConsistency.detailLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="second-life-consistency-actions">
+          <span className="second-life-consistency-design">
+            希望：{getSecondLifeHousingDesignSummary(secondLifeState)}
+          </span>
+          <button
+            type="button"
+            className="second-life-guide-nav-btn"
+            onClick={() => onNavigateToStep('housing')}
+          >
+            住まい計画を確認する →
+          </button>
+        </div>
+      </section>
 
       <h3 className="second-life-guide-checklist-title">入力状況チェック</h3>
       <p className="second-life-guide-checklist-lead">
