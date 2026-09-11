@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { isCelebrationGiftLifeEventType } from '../../lib/lifeEventLabels';
+import {
+  getSecondLifeManagedLifeEventSource,
+  getSecondLifeManagedLifeEventSourceLabel,
+  isSecondLifeManagedLifeEvent,
+} from '../../lib/lifeEventSource';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventEntry } from '../../types/lifeEvent';
 import { CelebrationGiftBlock } from './CelebrationGiftBlock';
@@ -22,11 +27,16 @@ export function LifeEventTable({
 }: LifeEventTableProps) {
   const [dragEntryId, setDragEntryId] = useState<string | null>(null);
 
-  const celebrationEntries = entries.filter((entry) =>
-    isCelebrationGiftLifeEventType(entry.type),
+  const managedEntries = entries.filter(isSecondLifeManagedLifeEvent);
+  const celebrationEntries = entries.filter(
+    (entry) =>
+      !isSecondLifeManagedLifeEvent(entry) &&
+      isCelebrationGiftLifeEventType(entry.type),
   );
   const regularEntries = entries.filter(
-    (entry) => !isCelebrationGiftLifeEventType(entry.type),
+    (entry) =>
+      !isSecondLifeManagedLifeEvent(entry) &&
+      !isCelebrationGiftLifeEventType(entry.type),
   );
 
   const updateEntry = (entryId: string, updated: LifeEventEntry) => {
@@ -46,7 +56,7 @@ export function LifeEventTable({
     const nextRegular = [...regularEntries];
     const [moved] = nextRegular.splice(fromIndex, 1);
     nextRegular.splice(toIndex, 0, moved);
-    onChange([...celebrationEntries, ...nextRegular]);
+    onChange([...managedEntries, ...celebrationEntries, ...nextRegular]);
   };
 
   if (entries.length === 0) {
@@ -61,6 +71,32 @@ export function LifeEventTable({
 
   return (
     <div className="life-event-entries">
+      {managedEntries.length > 0 ? (
+        <div
+          className="second-life-apply-status second-life-apply-status--applied"
+          role="note"
+        >
+          <strong>セカンドライフ連動データ</strong>
+          <p className="second-life-apply-note">
+            以下はセカンドライフ設計を計算へ反映するための行です。この画面では直接編集・削除せず、セカンドライフ側の設計を変更して再反映します。
+          </p>
+          <ul className="housing-second-life-apply-summary-list">
+            {managedEntries.map((entry) => {
+              const source = getSecondLifeManagedLifeEventSource(entry);
+              return (
+                <li key={entry.id}>
+                  <strong>{entry.label}</strong>
+                  {'：'}
+                  {entry.startAge}歳〜
+                  {entry.endMode === 'once' ? '1回' : '継続'} / {entry.amountMan}万円
+                  {source ? `（${getSecondLifeManagedLifeEventSourceLabel(source)}）` : ''}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
       {celebrationEntries.length > 0 && (
         <div className="life-event-celebration-list">
           {celebrationEntries.map((entry) => (
