@@ -4,10 +4,19 @@ import { getSecondLifeHousingTemplateKind } from './secondLifeLabels';
 
 export const SECOND_LIFE_MOVING_COST_MAN = 50;
 export const SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN = 300;
-export const SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN = 500;
-export const SECOND_LIFE_PURCHASE_REBUILD_MAN = 2_500;
-export const SECOND_LIFE_RENOVATE_PARENTS_HOME_MAN = 400;
-export const SECOND_LIFE_DEFAULT_RENT_MAN = 8;
+
+// 住宅リフォーム推進協議会 2025年度調査（50代以上・実施費用）。
+// 工事内容別の相場ではないため、リフォーム内容を変えても金額は自動変更しない。
+export const SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN = 220;
+export const SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN = 358.4;
+export const SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN =
+  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN;
+export const SECOND_LIFE_RENOVATE_PARENTS_HOME_MAN =
+  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN;
+
+// 購入・建て替え、家賃は地域・物件差が大きいため全国一律額を自動入力しない。
+export const SECOND_LIFE_PURCHASE_REBUILD_MAN = 0;
+export const SECOND_LIFE_DEFAULT_RENT_MAN = 0;
 
 export function getDefaultSecondLifeHousingBaseCostMan(
   state: Pick<

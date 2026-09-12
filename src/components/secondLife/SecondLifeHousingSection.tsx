@@ -3,7 +3,10 @@ import {
   estimateSecondLifeHousingTotalMan,
   formatSecondLifeMan,
 } from '../../lib/secondLifeEstimates';
-import { getSecondLifeHousingTemplateKind } from '../../lib/secondLifeLabels';
+import {
+  getSecondLifeHousingTemplateKind,
+  SECOND_LIFE_RENOVATION_SCOPE_LABELS,
+} from '../../lib/secondLifeLabels';
 import {
   estimateSecondLifeHousingLoanMonthlyMan,
   getDefaultSecondLifeHousingBaseCostMan,
@@ -12,6 +15,8 @@ import {
   isSecondLifeHousingLoanConfigured,
   SECOND_LIFE_MOVING_COST_MAN,
   SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
+  SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN,
+  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
 } from '../../lib/secondLifeHousingFinance';
 import { SecondLifeChoiceCard } from './SecondLifeChoiceCard';
 import { SecondLifeModeSelector } from './SecondLifeModeSelector';
@@ -41,6 +46,7 @@ export function SecondLifeHousingSection({
   const hasHousingAction = housingKind !== 'stay' && housingKind !== 'skip';
   const isRent = housingKind === 'rent';
   const needsBaseCost = housingKind === 'renovate' || housingKind === 'purchase';
+  const isRenovation = housingKind === 'renovate';
   const loanConfigured = isSecondLifeHousingLoanConfigured(state);
   const loanPrincipalMan = getSecondLifeHousingLoanPrincipalMan(state);
   const loanMonthlyMan = estimateSecondLifeHousingLoanMonthlyMan(state);
@@ -366,6 +372,41 @@ export function SecondLifeHousingSection({
             </div>
           ) : null}
 
+          {isRenovation ? (
+            <div className="second-life-renovation-scope">
+              <p className="second-life-renovation-scope-title">
+                どのようなリフォームを考えますか？
+              </p>
+              <div
+                className="second-life-renovation-scope-grid"
+                role="radiogroup"
+                aria-label="リフォーム内容"
+              >
+                {Object.entries(SECOND_LIFE_RENOVATION_SCOPE_LABELS).map(
+                  ([scope, label]) => (
+                    <label key={scope} className="second-life-renovation-scope-option">
+                      <input
+                        type="radio"
+                        name="second-life-renovation-scope"
+                        checked={state.renovationScope === scope}
+                        onChange={() =>
+                          onChange({
+                            renovationScope:
+                              scope as SecondLifeState['renovationScope'],
+                          })
+                        }
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ),
+                )}
+              </div>
+              <p className="second-life-apply-note">
+                工事内容は計画を整理するための分類です。選択を変えても費用は自動では変わりません。
+              </p>
+            </div>
+          ) : null}
+
           {needsBaseCost ? (
             <div className="second-life-section-toolbar">
               <label className="second-life-timing">
@@ -381,8 +422,32 @@ export function SecondLifeHousingSection({
                 <span>万円</span>
               </label>
               <p className="second-life-apply-note">
-                最初に入っている金額は比較用の仮設定です。見積額や希望額が分かる場合は、ここを変更してください。
+                {isRenovation
+                  ? `参考初期値は${SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN}万円です。見積額や希望額が分かる場合は、その金額を優先してください。`
+                  : '住宅購入・建て替えは地域や物件条件による差が大きいため、全国一律の金額は自動入力していません。見積額や希望額を入力してください。'}
               </p>
+              {isRenovation ? (
+                <details className="second-life-reference-details">
+                  <summary>参考値の根拠を見る</summary>
+                  <div className="second-life-reference-body">
+                    <p>
+                      住宅リフォーム推進協議会の2025年度調査では、50代以上のリフォーム実施費用は中央値
+                      {SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN}万円、平均
+                      {SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN}万円でした。
+                    </p>
+                    <p>
+                      これは工事内容別の相場ではありません。そのため、このソフトでは工事内容を選んでも金額を自動変更しません。
+                    </p>
+                    <a
+                      href="https://j-reform.com/publish/pdf/jitsurei-R7-c.pdf"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      調査資料を確認する
+                    </a>
+                  </div>
+                </details>
+              ) : null}
 
               <div role="radiogroup" aria-label="住まい費用の支払い方法">
                 <label className="second-life-inline-option">

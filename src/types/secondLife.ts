@@ -11,6 +11,13 @@ export type SecondLifeNewAreaOption = 'rent' | 'purchase';
 /** Q12の住まい本体費用の支払い方法 */
 export type SecondLifeHousingPaymentMethod = 'undecided' | 'cash' | 'loan';
 
+/** リフォーム内容。金額とは独立して保持する */
+export type SecondLifeRenovationScope =
+  | 'repair_equipment'
+  | 'partial_room'
+  | 'performance'
+  | 'full';
+
 /** 生活水準の選択 */
 export type SecondLifeLivingLevel =
   | 'same'
@@ -63,6 +70,8 @@ export interface SecondLifeDesignSnapshot {
   newAreaOption: SecondLifeNewAreaOption;
   includeMovingCost: boolean;
   includePostPurchaseRenovation: boolean;
+  /** リフォームを選んだ場合の工事内容。金額とは連動させない */
+  renovationScope: SecondLifeRenovationScope;
   /** リフォーム・購入など住まい本体の試算用目安額（万円） */
   housingBaseCostMan: number;
   /** 新しい土地で賃貸を選ぶ場合の月額家賃（万円） */

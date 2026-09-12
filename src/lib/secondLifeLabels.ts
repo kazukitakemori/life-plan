@@ -3,6 +3,7 @@ import type {
   SecondLifeHousingScenario,
   SecondLifeLivingLevel,
   SecondLifeNewAreaOption,
+  SecondLifeRenovationScope,
   SecondLifeState,
   SecondLifeStayOption,
 } from '../types/secondLife';
@@ -18,6 +19,16 @@ export const SECOND_LIFE_HOUSING_SCENARIO_LABELS: Record<
   stay: '今の場所に住み続けたい',
   hometown: '地元に帰りたい',
   new_area: '新しい土地で暮らしたい',
+};
+
+export const SECOND_LIFE_RENOVATION_SCOPE_LABELS: Record<
+  SecondLifeRenovationScope,
+  string
+> = {
+  repair_equipment: '設備交換・修繕中心',
+  partial_room: '一部の部屋をまとめて改修',
+  performance: '断熱・省エネ・耐震など性能向上',
+  full: '複数箇所・全面改修',
 };
 
 export const SECOND_LIFE_LIVING_LEVEL_LABELS: Record<
@@ -59,12 +70,20 @@ export function getSecondLifeHousingDesignSummary(
     | 'stayOption'
     | 'hometownOption'
     | 'newAreaOption'
+    | 'renovationScope'
   >,
 ): string {
   if (state.housingSkip) {
     return '住まいの変更なし（現在の入力を継続）';
   }
-  return `${SECOND_LIFE_HOUSING_SCENARIO_LABELS[state.housingScenario]}（${getSecondLifeHousingOptionLabel(state)}）`;
+  const base = `${SECOND_LIFE_HOUSING_SCENARIO_LABELS[state.housingScenario]}（${getSecondLifeHousingOptionLabel(state)}）`;
+  const isRenovation =
+    (state.housingScenario === 'stay' && state.stayOption === 'renovate') ||
+    (state.housingScenario === 'hometown' &&
+      state.hometownOption === 'renovate_parents');
+  return isRenovation
+    ? `${base}・${SECOND_LIFE_RENOVATION_SCOPE_LABELS[state.renovationScope]}`
+    : base;
 }
 
 export function getSecondLifeLivingDesignSummary(

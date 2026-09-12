@@ -80,13 +80,13 @@ export function SecondLifeNursingSection({
     <section className="second-life-section" aria-labelledby="second-life-nursing-title">
       <div className="second-life-section-toolbar">
         <div>
-          <p className="second-life-consistency-kicker">介護の設計</p>
+          <p className="second-life-consistency-kicker">サードライフ（介護）の設計</p>
           <h3 id="second-life-nursing-title">誰に・いつから・いくら見込むか</h3>
         </div>
       </div>
 
       <p className="second-life-apply-note">
-        介護の設計はこのセカンドライフ画面を本体にします。ライフイベントには計算用の連動データとして自動反映します。
+        このソフトでは、介護が必要になった後の時期を「サードライフ」として分けて整理します。介護費はライフイベントへ計算用データとして反映します。
       </p>
 
       <div className="second-life-guide-grid">

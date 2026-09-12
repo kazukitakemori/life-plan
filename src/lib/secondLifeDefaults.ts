@@ -8,11 +8,11 @@ import { captureSecondLifeQ3ApplySnapshot } from './secondLifeApplyStatus';
 import {
   getDefaultSecondLifeHousingBaseCostMan,
   SECOND_LIFE_DEFAULT_RENT_MAN,
+  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
 } from './secondLifeHousingFinance';
 
 export const SECOND_LIFE_DEFAULT_START_AGE = 70;
 export const SECOND_LIFE_DEFAULT_NURSING_START_AGE = 80;
-const SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN_FALLBACK = 500;
 
 export const SECOND_LIFE_PRIORITY_OPTIONS: {
   id: SecondLifeState['priority'];
@@ -48,7 +48,8 @@ export function createDefaultSecondLifeState(): SecondLifeState {
     newAreaOption: 'rent',
     includeMovingCost: false,
     includePostPurchaseRenovation: false,
-    housingBaseCostMan: SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN_FALLBACK,
+    renovationScope: 'repair_equipment',
+    housingBaseCostMan: SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
     housingRentMonthlyMan: SECOND_LIFE_DEFAULT_RENT_MAN,
     // 支払い方法は未定を初期値にし、勝手にローンを作らない。
     housingPaymentMethod: 'undecided',
@@ -177,6 +178,14 @@ export function migrateSecondLifeState(
       ? 'renovate'
       : storedStayOption;
 
+  const renovationScope =
+    value.renovationScope === 'repair_equipment' ||
+    value.renovationScope === 'partial_room' ||
+    value.renovationScope === 'performance' ||
+    value.renovationScope === 'full'
+      ? value.renovationScope
+      : defaults.renovationScope;
+
   const housingBaseCostMan =
     typeof value.housingBaseCostMan === 'number' && value.housingBaseCostMan >= 0
       ? value.housingBaseCostMan
@@ -224,6 +233,7 @@ export function migrateSecondLifeState(
     newAreaOption,
     livingSkip,
     stayOption,
+    renovationScope,
     housingBaseCostMan,
     housingRentMonthlyMan,
     housingPaymentMethod,

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   buildSecondLifeGuide,
@@ -27,6 +27,7 @@ import { StepHeading } from '../ui';
 import { SecondLifeHousingSection } from './SecondLifeHousingSection';
 import { SecondLifeLivingSection } from './SecondLifeLivingSection';
 import { SecondLifeNursingSection } from './SecondLifeNursingSection';
+import './SecondLifeWorkspaceTabs.css';
 
 interface SecondLifeGuideStepProps {
   members: FamilyMember[];
@@ -41,6 +42,15 @@ interface SecondLifeGuideStepProps {
   onApplySecondLifeNursing: () => void;
   onNavigateToStep: (stepId: StepId) => void;
 }
+
+type SecondLifeWorkspaceTab = 'housing' | 'living' | 'third-life' | 'summary';
+
+const SECOND_LIFE_WORKSPACE_TABS: { id: SecondLifeWorkspaceTab; label: string }[] = [
+  { id: 'housing', label: '住まい' },
+  { id: 'living', label: '生活費' },
+  { id: 'third-life', label: 'サードライフ' },
+  { id: 'summary', label: 'まとめ' },
+];
 
 function ChecklistCard({
   item,
@@ -103,6 +113,7 @@ export function SecondLifeGuideStep({
   onNavigateToStep,
 }: SecondLifeGuideStepProps) {
   const head = members.find((member) => member.role === 'head');
+  const [activeTab, setActiveTab] = useState<SecondLifeWorkspaceTab>('housing');
 
   const guide = useMemo(
     () =>
@@ -169,11 +180,11 @@ export function SecondLifeGuideStep({
       <StepHeading
         number={12}
         title="セカンドライフ"
-        lead="老後の住まい・生活費・介護を、今の計画と比べながら整理します"
+        lead="これからの住まい・生活費と、その先の介護まで整理します"
       />
 
       <p className="second-life-guide-intro">
-        まず、何歳からセカンドライフとして考えるかを決めます。住まいと生活費は、今の計画を続けるか、その年齢以降を見直すかを選べます。元の入力は消えません。
+        まず、何歳からセカンドライフとして考えるかを決めます。住まい・生活費はその時期以降を設計し、介護は「サードライフ」として別に整理します。元の入力は消えません。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -202,101 +213,166 @@ export function SecondLifeGuideStep({
         </label>
       </div>
 
-      <SecondLifeHousingSection
-        state={secondLifeState}
-        onChange={(patch) =>
-          onSecondLifeChange({ ...secondLifeState, ...patch })
-        }
-      />
-
-      <SecondLifeLivingSection
-        state={secondLifeState}
-        onChange={(patch) =>
-          onSecondLifeChange({ ...secondLifeState, ...patch })
-        }
-        options={livingOptions}
-      />
-
-      <section
-        className={`second-life-consistency second-life-consistency--${housingConsistency.status}`}
-        aria-labelledby="second-life-housing-consistency-title"
-      >
-        <div className="second-life-consistency-head">
-          <div>
-            <p className="second-life-consistency-kicker">住まいの確認</p>
-            <h3 id="second-life-housing-consistency-title">
-              {housingConsistency.title}
-            </h3>
-          </div>
-          <span
-            className={`second-life-consistency-status second-life-consistency-status--${housingConsistency.status}`}
-          >
-            {getSecondLifeHousingConsistencyStatusLabel(housingConsistency.status)}
-          </span>
-        </div>
-        <p className="second-life-consistency-summary">
-          {housingConsistency.summary}
-        </p>
-        {housingConsistency.detailLines.length > 0 ? (
-          <ul className="second-life-consistency-details">
-            {housingConsistency.detailLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="second-life-consistency-actions">
-          <span className="second-life-consistency-design">
-            今回の設定：{getSecondLifeHousingDesignSummary(secondLifeState)}
-          </span>
+      <div className="second-life-workspace-tabs" role="tablist" aria-label="セカンドライフ設計">
+        {SECOND_LIFE_WORKSPACE_TABS.map((tab) => (
           <button
+            key={tab.id}
             type="button"
-            className="second-life-guide-nav-btn"
-            onClick={() => onNavigateToStep('housing')}
+            id={`second-life-tab-${tab.id}`}
+            className={
+              activeTab === tab.id
+                ? 'second-life-workspace-tab is-active'
+                : 'second-life-workspace-tab'
+            }
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`second-life-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => setActiveTab(tab.id)}
           >
-            住まいの詳細を見る →
+            {tab.label}
           </button>
-        </div>
-      </section>
-
-      <SecondLifeNursingSection
-        members={members}
-        state={secondLifeState}
-        onChange={onSecondLifeChange}
-        applyStatus={guide.items.find((item) => item.id === 'nursing')?.status ?? 'missing'}
-        onApply={onApplySecondLifeNursing}
-        onOpenLifeEvent={() => onNavigateToStep('life-event')}
-      />
-
-      <h3 className="second-life-guide-checklist-title">設定内容の確認</h3>
-      <p className="second-life-guide-checklist-lead">
-        「今の計画をそのまま使う」を選んだ項目は現在の入力で計算します。「見直す」を選んだ項目は、指定した年齢から今回の設定に切り替えて試算します。
-      </p>
-
-      <div className="second-life-guide-grid">
-        {guide.items.map((item) => (
-          <ChecklistCard
-            key={item.id}
-            item={item}
-            designNote={
-              item.id === 'housing'
-                ? getSecondLifeHousingDesignSummary(secondLifeState)
-                : item.id === 'living'
-                  ? getSecondLifeLivingDesignSummary(secondLifeState)
-                  : undefined
-            }
-            actionLabel={
-              item.id === 'housing'
-                ? '住まいの詳細を見る →'
-                : item.id === 'living'
-                  ? '生活費の詳細を見る →'
-                  : item.id === 'nursing'
-                    ? 'ライフイベントの反映先を見る →'
-                    : undefined
-            }
-            onNavigate={() => onNavigateToStep(item.stepId)}
-          />
         ))}
       </div>
+
+      {activeTab === 'housing' ? (
+        <div
+          id="second-life-panel-housing"
+          className="second-life-workspace-panel"
+          role="tabpanel"
+          aria-labelledby="second-life-tab-housing"
+        >
+          <SecondLifeHousingSection
+            state={secondLifeState}
+            onChange={(patch) =>
+              onSecondLifeChange({ ...secondLifeState, ...patch })
+            }
+          />
+
+          <section
+            className={`second-life-consistency second-life-consistency--${housingConsistency.status}`}
+            aria-labelledby="second-life-housing-consistency-title"
+          >
+            <div className="second-life-consistency-head">
+              <div>
+                <p className="second-life-consistency-kicker">現在の住まいとの確認</p>
+                <h3 id="second-life-housing-consistency-title">
+                  {housingConsistency.title}
+                </h3>
+              </div>
+              <span
+                className={`second-life-consistency-status second-life-consistency-status--${housingConsistency.status}`}
+              >
+                {getSecondLifeHousingConsistencyStatusLabel(housingConsistency.status)}
+              </span>
+            </div>
+            <p className="second-life-consistency-summary">
+              {housingConsistency.summary}
+            </p>
+            {housingConsistency.detailLines.length > 0 ? (
+              <ul className="second-life-consistency-details">
+                {housingConsistency.detailLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="second-life-consistency-actions">
+              <span className="second-life-consistency-design">
+                今回の設定：{getSecondLifeHousingDesignSummary(secondLifeState)}
+              </span>
+              <button
+                type="button"
+                className="second-life-guide-nav-btn"
+                onClick={() => onNavigateToStep('housing')}
+              >
+                現在の住まい入力を確認する →
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {activeTab === 'living' ? (
+        <div
+          id="second-life-panel-living"
+          className="second-life-workspace-panel"
+          role="tabpanel"
+          aria-labelledby="second-life-tab-living"
+        >
+          <SecondLifeLivingSection
+            state={secondLifeState}
+            onChange={(patch) =>
+              onSecondLifeChange({ ...secondLifeState, ...patch })
+            }
+            options={livingOptions}
+          />
+        </div>
+      ) : null}
+
+      {activeTab === 'third-life' ? (
+        <div
+          id="second-life-panel-third-life"
+          className="second-life-workspace-panel"
+          role="tabpanel"
+          aria-labelledby="second-life-tab-third-life"
+        >
+          <SecondLifeNursingSection
+            members={members}
+            state={secondLifeState}
+            onChange={onSecondLifeChange}
+            applyStatus={guide.items.find((item) => item.id === 'nursing')?.status ?? 'missing'}
+            onApply={onApplySecondLifeNursing}
+            onOpenLifeEvent={() => onNavigateToStep('life-event')}
+          />
+        </div>
+      ) : null}
+
+      {activeTab === 'summary' ? (
+        <div
+          id="second-life-panel-summary"
+          className="second-life-workspace-panel second-life-workspace-panel--summary"
+          role="tabpanel"
+          aria-labelledby="second-life-tab-summary"
+        >
+          <h3 className="second-life-guide-checklist-title">設定内容の確認</h3>
+          <p className="second-life-guide-checklist-lead">
+            「今の計画をそのまま使う」を選んだ項目は現在の入力で計算します。「見直す」を選んだ項目は、指定した年齢から今回の設定に切り替えて試算します。
+          </p>
+
+          <div className="second-life-guide-grid">
+            {guide.items.map((item) => (
+              <ChecklistCard
+                key={item.id}
+                item={item}
+                designNote={
+                  item.id === 'housing'
+                    ? getSecondLifeHousingDesignSummary(secondLifeState)
+                    : item.id === 'living'
+                      ? getSecondLifeLivingDesignSummary(secondLifeState)
+                      : undefined
+                }
+                actionLabel={
+                  item.id === 'housing'
+                    ? '住まいを編集する →'
+                    : item.id === 'living'
+                      ? '生活費を編集する →'
+                      : 'サードライフを編集する →'
+                }
+                onNavigate={() =>
+                  setActiveTab(
+                    item.id === 'housing'
+                      ? 'housing'
+                      : item.id === 'living'
+                        ? 'living'
+                        : 'third-life',
+                  )
+                }
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
     </div>
   );
 }
