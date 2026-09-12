@@ -1,0 +1,42 @@
+name: Temporary Q12 UX accuracy patch
+
+on:
+  push:
+    branches:
+      - feat/second-life-housing-living-q12
+    paths:
+      - scripts/tmp_q12_ux_accuracy_review.py
+      - .github/workflows/tmp-q12-ux-accuracy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/second-life-housing-living-q12
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Apply reviewed patch
+        run: python scripts/tmp_q12_ux_accuracy_review.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Remove temporary patch files
+        run: |
+          rm scripts/tmp_q12_ux_accuracy_review.py
+          rm .github/workflows/tmp-q12-ux-accuracy.yml
+      - name: Commit verified changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine Q12 UX and calculation accuracy"
+          git push origin HEAD:feat/second-life-housing-living-q12
