@@ -204,7 +204,7 @@ type HousingApplyMutation = {
 };
 
 /**
- * Q12/Q5 の住まい設計を Q5 住まい入力へ反映する（変更インベントリ付き）。
+ * Q12 の住まい設計を Q5 住まい入力へ反映する（変更インベントリ付き）。
  */
 export function applySecondLifeHousingToHousingStateWithChanges(input: {
   housingState: HousingState;
@@ -478,7 +478,7 @@ export function applySecondLifeHousingToHousingState(input: {
   return applySecondLifeHousingToHousingStateWithChanges(input).housingState;
 }
 
-/** リフォーム等、Q5に載らない一時金だけを Q3 へ反映 */
+/** 旧バージョンで作成された住まい連動ライフイベントを除去する互換処理 */
 export function applySecondLifeHousingOneTimeToLifeEvent(input: {
   lifeEventState: LifeEventState;
   secondLifeState: SecondLifeState;
@@ -543,7 +543,7 @@ function lifeEventChangesForHousingApply(input: {
 }
 
 /**
- * 住まい設計の一括反映（Q5 + 必要時 Q3）。変更インベントリ付き。
+ * 住まい設計の一括反映。住まい費用の本体は Q5 / housingState のみ。
  * Phase 2 以降は `changeLines` / `changes` を UI に出す。
  */
 export function applySecondLifeHousingDesign(input: {

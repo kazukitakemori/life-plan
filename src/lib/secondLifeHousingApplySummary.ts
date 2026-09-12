@@ -193,5 +193,18 @@ export function getSecondLifeHousingApplyWarnings(input: {
     );
   }
 
+  const improvementApplied = (input.changes ?? []).some(
+    (change) => change.type === 'improvement',
+  );
+  if (
+    kind === 'renovate' &&
+    input.secondLifeState.housingScenario === 'stay' &&
+    !improvementApplied
+  ) {
+    warnings.push(
+      'リフォーム費を反映できる持ち家が見つかりません。Q5「住まい」で現在の持ち家を登録・確認してから、もう一度反映してください。リフォーム費はライフイベントには自動登録しません。',
+    );
+  }
+
   return warnings;
 }
