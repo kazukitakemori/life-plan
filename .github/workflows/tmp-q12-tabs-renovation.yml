@@ -1,0 +1,40 @@
+name: Temporary Q12 tabs and renovation patch
+
+on:
+  push:
+    branches:
+      - feat/second-life-housing-living-q12
+    paths:
+      - scripts/tmp_q12_tabs_renovation.py
+      - .github/workflows/tmp-q12-tabs-renovation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/second-life-housing-living-q12
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Apply Q12 tabs and renovation patch
+        run: python scripts/tmp_q12_tabs_renovation.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Remove temporary files
+        run: rm -f scripts/tmp_q12_tabs_renovation.py .github/workflows/tmp-q12-tabs-renovation.yml
+      - name: Commit verified changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Organize Q12 into tabs and ground renovation reference"
+          git push origin HEAD:feat/second-life-housing-living-q12
