@@ -25,6 +25,12 @@ jobs:
           cache: npm
       - name: Apply Q12 housing finance patch
         run: python scripts/tmp_q12_housing_finance.py
+      - name: Remove obsolete type imports
+        run: |
+          sed -i '/  SecondLifeHousingScenario,/d' src/lib/secondLifeEstimates.ts
+          sed -i '/  SecondLifeHometownOption,/d' src/lib/secondLifeEstimates.ts
+          sed -i '/  SecondLifeNewAreaOption,/d' src/lib/secondLifeEstimates.ts
+          sed -i '/  SecondLifeStayOption,/d' src/lib/secondLifeEstimates.ts
       - name: Install dependencies
         run: npm ci
       - name: Build
