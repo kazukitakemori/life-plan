@@ -30,6 +30,7 @@ import {
   isLoanMonthlyRepaymentMode,
 } from "./loanPaymentMode";
 import {
+  calcLoanRepaymentBalanceAfterMonthYen,
   calcLoanRepaymentMonthYen,
   calcRepaymentMonthIndex,
   getLoanRepaymentStartCalendar,
@@ -420,6 +421,59 @@ function calcOwnedImprovementCostMan(
   return totalMan;
 }
 
+function isSecondLifeFinanceStartMonth(
+  property: OwnedProperty,
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): boolean {
+  const plan = property.secondLifeFinancePlan;
+  if (!plan) return false;
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return false;
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  return isSamePeriodAgeMonth(
+    ageMonth.age,
+    ageMonth.month,
+    plan.startAge,
+    plan.startMonth,
+    birthYear,
+    resolveMemberBirthMonth(member),
+  );
+}
+
+function isOwnedFinalMonth(
+  property: OwnedProperty,
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): boolean {
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return false;
+  const end = getOwnedPeriodEnd(property, member);
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  return isSamePeriodAgeMonth(
+    ageMonth.age,
+    ageMonth.month,
+    end.age,
+    end.month,
+    birthYear,
+    resolveMemberBirthMonth(member),
+  );
+}
+
 function calcSecondLifeFinanceLoanMonth(
   property: OwnedProperty,
   member: FamilyMember,
@@ -455,16 +509,39 @@ function calcSecondLifeFinanceLoanMonth(
     return { principal: 0, interest: 0 };
   }
 
+  const principalYen = plan.loanPrincipalMan * 10_000;
+  const rateResolver = () => plan.interestRatePct ?? 0;
   const result = calcLoanRepaymentMonthYen(
-    plan.loanPrincipalMan * 10_000,
+    principalYen,
     totalMonths,
     repaymentMonthIndex,
     'equal_payment',
-    () => plan.interestRatePct ?? 0,
+    rateResolver,
     () => [],
   );
+
+  // 住まいの計画期間が返済期間より先に終わる場合、残債を消さず最終月に計上する。
+  const residualYen =
+    repaymentMonthIndex < totalMonths &&
+    isOwnedFinalMonth(
+      property,
+      member,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    )
+      ? calcLoanRepaymentBalanceAfterMonthYen(
+          principalYen,
+          totalMonths,
+          repaymentMonthIndex,
+          'equal_payment',
+          rateResolver,
+          () => [],
+        )
+      : 0;
+
   return {
-    principal: yenToMan(result.principalYen),
+    principal: yenToMan(result.principalYen + residualYen),
     interest: yenToMan(result.interestYen),
   };
 }
@@ -570,6 +647,31 @@ function calcOwnedMonthlyHousingDetailMan(
     property.currentExpenseMode === "simple";
   if (isCurrentSimple) {
     detail.simpleMonthlyCost = property.simpleMonthlyExpenseMan;
+
+    // Q5の簡単入力はそのまま維持し、Q12で追加したリフォーム分だけ重ねる。
+    const q12Finance = property.secondLifeFinancePlan;
+    if (
+      q12Finance?.purpose === 'renovation' &&
+      isSecondLifeFinanceStartMonth(
+        property,
+        member,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      )
+    ) {
+      detail.improvementCost = q12Finance.cashPaymentMan;
+    }
+    const q12Loan = calcSecondLifeFinanceLoanMonth(
+      property,
+      member,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    );
+    detail.loanRepaymentDetail.principal += q12Loan.principal;
+    detail.loanRepaymentDetail.interest += q12Loan.interest;
+    return detail;
   }
 
   // 居住中は過去の購入時支出を試算に含めない
@@ -638,10 +740,7 @@ function calcOwnedMonthlyHousingDetailMan(
   detail.loanRepaymentDetail.principal += q12Loan.principal;
   detail.loanRepaymentDetail.interest += q12Loan.interest;
 
-  // 簡単入力の現在住宅でも、Q12のリフォーム費・ローンだけは追加してから返す。
-  if (isCurrentSimple) {
-    return detail;
-  }
+  // current/simple は上で Q12 分だけ加算して返している。
 
   if (
     property.usage !== "current" &&
