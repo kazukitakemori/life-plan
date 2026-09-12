@@ -5,9 +5,14 @@ import type {
   SecondLifeState,
 } from '../types/secondLife';
 import { captureSecondLifeQ3ApplySnapshot } from './secondLifeApplyStatus';
+import {
+  getDefaultSecondLifeHousingBaseCostMan,
+  SECOND_LIFE_DEFAULT_RENT_MAN,
+} from './secondLifeHousingFinance';
 
 export const SECOND_LIFE_DEFAULT_START_AGE = 70;
 export const SECOND_LIFE_DEFAULT_NURSING_START_AGE = 80;
+const SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN_FALLBACK = 500;
 
 export const SECOND_LIFE_PRIORITY_OPTIONS: {
   id: SecondLifeState['priority'];
@@ -43,6 +48,13 @@ export function createDefaultSecondLifeState(): SecondLifeState {
     newAreaOption: 'rent',
     includeMovingCost: false,
     includePostPurchaseRenovation: false,
+    housingBaseCostMan: SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN_FALLBACK,
+    housingRentMonthlyMan: SECOND_LIFE_DEFAULT_RENT_MAN,
+    // 支払い方法は未定を初期値にし、勝手にローンを作らない。
+    housingPaymentMethod: 'undecided',
+    housingLoanDownPaymentMan: 0,
+    housingLoanInterestRatePct: null,
+    housingLoanYears: null,
     // 生活費も同様に、明示的に見直すまでは Q4 の原本を使う。
     livingSkip: true,
     livingLevel: 'same',
@@ -155,11 +167,51 @@ export function migrateSecondLifeState(
       ? value.livingSkip
       : defaults.livingSkip;
 
+  const housingScenario = value.housingScenario ?? defaults.housingScenario;
+  const hometownOption = value.hometownOption ?? defaults.hometownOption;
+  const newAreaOption = value.newAreaOption ?? defaults.newAreaOption;
+
   const storedStayOption = value.stayOption ?? defaults.stayOption;
   const stayOption =
     !housingSkip && storedStayOption === 'continue'
       ? 'renovate'
       : storedStayOption;
+
+  const housingBaseCostMan =
+    typeof value.housingBaseCostMan === 'number' && value.housingBaseCostMan >= 0
+      ? value.housingBaseCostMan
+      : getDefaultSecondLifeHousingBaseCostMan({
+          housingScenario,
+          stayOption,
+          hometownOption,
+          newAreaOption,
+        });
+  const housingRentMonthlyMan =
+    typeof value.housingRentMonthlyMan === 'number' && value.housingRentMonthlyMan >= 0
+      ? value.housingRentMonthlyMan
+      : defaults.housingRentMonthlyMan;
+  const housingPaymentMethod =
+    value.housingPaymentMethod === 'cash' ||
+    value.housingPaymentMethod === 'loan' ||
+    value.housingPaymentMethod === 'undecided'
+      ? value.housingPaymentMethod
+      : defaults.housingPaymentMethod;
+  const housingLoanDownPaymentMan = Math.min(
+    housingBaseCostMan,
+    typeof value.housingLoanDownPaymentMan === 'number' &&
+      value.housingLoanDownPaymentMan >= 0
+      ? value.housingLoanDownPaymentMan
+      : defaults.housingLoanDownPaymentMan,
+  );
+  const housingLoanInterestRatePct =
+    typeof value.housingLoanInterestRatePct === 'number' &&
+    value.housingLoanInterestRatePct >= 0
+      ? value.housingLoanInterestRatePct
+      : null;
+  const housingLoanYears =
+    typeof value.housingLoanYears === 'number' && value.housingLoanYears > 0
+      ? Math.min(50, Math.max(1, Math.round(value.housingLoanYears)))
+      : null;
 
   return {
     ...defaults,
@@ -167,8 +219,17 @@ export function migrateSecondLifeState(
     startAge,
     housingActionAge,
     housingSkip,
+    housingScenario,
+    hometownOption,
+    newAreaOption,
     livingSkip,
     stayOption,
+    housingBaseCostMan,
+    housingRentMonthlyMan,
+    housingPaymentMethod,
+    housingLoanDownPaymentMan,
+    housingLoanInterestRatePct,
+    housingLoanYears,
     nursingByTarget,
     lastAppliedQ3Snapshot: migrateLastAppliedQ3Snapshot(
       _ignoredQ3Snapshot,

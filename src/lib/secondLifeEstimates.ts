@@ -11,22 +11,16 @@ import type { IncomeByMember } from '../types/income';
 import type { LivingExpenseState } from '../types/living';
 import type { PensionByMember } from '../types/pension';
 import type {
-  SecondLifeHousingScenario,
-  SecondLifeHometownOption,
   SecondLifeLivingBreakdownItem,
   SecondLifeLivingLevel,
-  SecondLifeNewAreaOption,
   SecondLifeNursingScenario,
   SecondLifeState,
-  SecondLifeStayOption,
 } from '../types/secondLife';
 import { getMemberAgeAtYearEnd } from './memberYearIncome';
-
-const MOVING_COST_MAN = 50;
-const POST_PURCHASE_RENOVATION_MAN = 300;
-const RENOVATE_CURRENT_HOME_MAN = 500;
-const PURCHASE_REBUILD_MAN = 2_500;
-const RENOVATE_PARENTS_HOME_MAN = 400;
+import {
+  SECOND_LIFE_MOVING_COST_MAN,
+  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
+} from './secondLifeHousingFinance';
 
 const PENSION_LIVING_CATEGORY_WEIGHTS: {
   label: string;
@@ -299,26 +293,6 @@ export function buildSecondLifeLivingOptions(input: {
   return options;
 }
 
-function estimateBaseHousingCostMan(
-  scenario: SecondLifeHousingScenario,
-  stayOption: SecondLifeStayOption,
-  hometownOption: SecondLifeHometownOption,
-  newAreaOption: SecondLifeNewAreaOption,
-): number {
-  if (scenario === 'stay') {
-    if (stayOption === 'continue') return 0;
-    return stayOption === 'renovate'
-      ? RENOVATE_CURRENT_HOME_MAN
-      : PURCHASE_REBUILD_MAN;
-  }
-  if (scenario === 'hometown') {
-    return hometownOption === 'renovate_parents'
-      ? RENOVATE_PARENTS_HOME_MAN
-      : PURCHASE_REBUILD_MAN;
-  }
-  return newAreaOption === 'rent' ? 0 : PURCHASE_REBUILD_MAN;
-}
-
 export function estimateSecondLifeHousingTotalMan(
   state: Pick<
     SecondLifeState,
@@ -328,18 +302,14 @@ export function estimateSecondLifeHousingTotalMan(
     | 'newAreaOption'
     | 'includeMovingCost'
     | 'includePostPurchaseRenovation'
+    | 'housingBaseCostMan'
   >,
 ): number | null {
-  let total = estimateBaseHousingCostMan(
-    state.housingScenario,
-    state.stayOption,
-    state.hometownOption,
-    state.newAreaOption,
-  );
+  let total = Math.max(0, state.housingBaseCostMan);
 
   const needsMoving = state.includeMovingCost;
   if (needsMoving) {
-    total += MOVING_COST_MAN;
+    total += SECOND_LIFE_MOVING_COST_MAN;
   }
 
   const purchaseSelected =
@@ -351,7 +321,7 @@ export function estimateSecondLifeHousingTotalMan(
       state.newAreaOption === 'purchase');
 
   if (purchaseSelected && state.includePostPurchaseRenovation) {
-    total += POST_PURCHASE_RENOVATION_MAN;
+    total += SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN;
   }
 
   return total > 0 ? total : null;

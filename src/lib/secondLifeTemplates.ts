@@ -14,6 +14,12 @@ import {
   migrateHousingState,
 } from './housingDefaults';
 import { estimateSecondLifeHousingTotalMan } from './secondLifeEstimates';
+import {
+  buildSecondLifeHousingFinancePlan,
+  getSecondLifeHousingCashPaymentMan,
+  SECOND_LIFE_MOVING_COST_MAN,
+  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
+} from './secondLifeHousingFinance';
 import { formatSecondLifeHousingApplyChangeLines } from './secondLifeHousingApplySummary';
 import type { FamilyMember } from '../types/family';
 import type {
@@ -39,9 +45,7 @@ export const SECOND_LIFE_LIVING_LABEL = 'セカンドライフ生活費';
 
 const SECOND_LIFE_IMPROVEMENT_ID = 'second-life-renovation';
 
-const DEFAULT_SECOND_LIFE_RENT_MAN = 8;
-const PURCHASE_BUILDING_MAN = 2_000;
-const PURCHASE_LAND_MAN = 500;
+const SECOND_LIFE_POST_PURCHASE_IMPROVEMENT_ID = 'second-life-post-purchase-renovation';
 
 export type SecondLifeHousingApplyResult = {
   housingState: HousingState;
@@ -140,19 +144,6 @@ function endExistingHousingBeforeStartAge<
   return { items: next, ended };
 }
 
-function resolveMonthlyRentMan(
-  rentals: RentalProperty[],
-  startAge: number,
-): number {
-  const prior = rentals.find(
-    (rental) =>
-      !isSecondLifeHousingItem(rental.name) &&
-      rental.monthlyRentMan > 0 &&
-      rental.startAge < startAge,
-  );
-  return prior?.monthlyRentMan || DEFAULT_SECOND_LIFE_RENT_MAN;
-}
-
 function stripSecondLifeHousingItems(data: {
   rentals: RentalProperty[];
   owned: OwnedProperty[];
@@ -188,7 +179,9 @@ function stripSecondLifeHousingItems(data: {
       maintenance: {
         ...property.maintenance,
         improvements: property.maintenance.improvements.filter(
-          (entry) => entry.id !== SECOND_LIFE_IMPROVEMENT_ID,
+          (entry) =>
+            entry.id !== SECOND_LIFE_IMPROVEMENT_ID &&
+            entry.id !== SECOND_LIFE_POST_PURCHASE_IMPROVEMENT_ID,
         ),
       },
     }));
@@ -267,7 +260,11 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
   const refYear = input.referenceDate.getFullYear();
 
   if (kind === 'renovate') {
-    const amountMan = estimateSecondLifeHousingTotalMan(input.secondLifeState) ?? 0;
+    const amountMan =
+      getSecondLifeHousingCashPaymentMan(input.secondLifeState) +
+      (input.secondLifeState.includeMovingCost
+        ? SECOND_LIFE_MOVING_COST_MAN
+        : 0);
     const birthYear = calcBirthYear(
       input.member.age,
       input.member.birthMonth,
@@ -305,6 +302,11 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
           paymentMethod: 'cash',
           currentExpenseMode: 'simple',
           simpleMonthlyExpenseMan: 0,
+          secondLifeFinancePlan: buildSecondLifeHousingFinancePlan(
+            input.secondLifeState,
+            'renovation',
+            startAge,
+          ),
         },
         { rentals, owned },
       );
@@ -345,6 +347,11 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
         const property = owned[propertyIndex];
         const updated = {
           ...property,
+          secondLifeFinancePlan: buildSecondLifeHousingFinancePlan(
+            input.secondLifeState,
+            'renovation',
+            startAge,
+          ),
           maintenance: {
             ...property.maintenance,
             improvements: [
@@ -385,7 +392,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
   const includeMoving = input.secondLifeState.includeMovingCost;
 
   if (kind === 'rent') {
-    const monthlyRentMan = resolveMonthlyRentMan(stripped.rentals, startAge);
+    const monthlyRentMan = Math.max(0, input.secondLifeState.housingRentMonthlyMan);
     const rental = createRentalProperty(
       input.member,
       refMonth,
@@ -396,7 +403,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
         startAge,
         startMonth: 1,
         monthlyRentMan,
-        movingCostMan: includeMoving ? 50 : 0,
+        movingCostMan: includeMoving ? SECOND_LIFE_MOVING_COST_MAN : 0,
         securityDepositMan: monthlyRentMan,
         keyMoneyMan: monthlyRentMan,
         brokerageFeeMan: Math.round(monthlyRentMan * 0.5 * 10) / 10,
@@ -415,7 +422,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
   }
 
   if (kind === 'purchase') {
-    const property = createOwnedProperty(
+    let property = createOwnedProperty(
       'detached_house',
       input.member,
       refMonth,
@@ -425,13 +432,49 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
         name: SECOND_LIFE_OWNED_NAME,
         startAge,
         startMonth: 1,
-        buildingMan: PURCHASE_BUILDING_MAN,
-        landMan: PURCHASE_LAND_MAN,
-        paymentMethod: 'loan',
-        brokerageFeeMan: includeMoving ? 50 : 0,
+        // Q12では土地・建物の内訳を仮定せず、住まい本体の目安額を建物側に集約する。
+        buildingMan: Math.max(0, input.secondLifeState.housingBaseCostMan),
+        landMan: 0,
+        // 標準Q5ローンを自動作成せず、Q12専用の明示条件で計算する。
+        paymentMethod: 'cash',
+        brokerageFeeMan: 0,
+        secondLifeFinancePlan: buildSecondLifeHousingFinancePlan(
+          input.secondLifeState,
+          'purchase',
+          startAge,
+        ),
+        secondLifeInitialCashCostMan: includeMoving
+          ? SECOND_LIFE_MOVING_COST_MAN
+          : 0,
       },
       { rentals, owned },
     );
+    if (input.secondLifeState.includePostPurchaseRenovation) {
+      const birthYear = calcBirthYear(
+        input.member.age,
+        input.member.birthMonth,
+        input.referenceDate,
+      );
+      const improvementYear = calcYearAtAge(
+        birthYear,
+        input.member.birthMonth ?? 1,
+        startAge,
+        1,
+      );
+      property = {
+        ...property,
+        maintenance: {
+          ...property.maintenance,
+          improvements: [
+            ...property.maintenance.improvements,
+            createOwnedImprovementEntry(improvementYear, 1, {
+              id: SECOND_LIFE_POST_PURCHASE_IMPROVEMENT_ID,
+              amountMan: SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
+            }),
+          ],
+        },
+      };
+    }
     owned = [...owned, property];
     changes.push({
       type: 'added',

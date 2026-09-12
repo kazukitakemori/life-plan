@@ -239,6 +239,19 @@ export interface OwnedPropertyMaintenance {
   buildingTaxes: OwnedAnnualTaxEntry[];
 }
 
+/** Q12の計算専用オーバーレイ。Q5原本には保存しない。 */
+export interface SecondLifeHousingFinancePlan {
+  purpose: 'purchase' | 'renovation';
+  paymentMethod: 'undecided' | 'cash' | 'loan';
+  totalCostMan: number;
+  cashPaymentMan: number;
+  loanPrincipalMan: number;
+  interestRatePct: number | null;
+  years: number | null;
+  startAge: number;
+  startMonth: number;
+}
+
 export interface OwnedProperty {
   id: string;
   type: OwnedPropertyType;
@@ -255,6 +268,10 @@ export interface OwnedProperty {
   endMonth: number;
   /** Q12 の転居反映前に設定されていた終了条件 */
   secondLifeEndOverride?: SecondLifeEndOverride;
+  /** Q12の計算専用ローン・支払方法（原本には保存しない） */
+  secondLifeFinancePlan?: SecondLifeHousingFinancePlan;
+  /** Q12購入時に別途一括で見込む引越し等（万円） */
+  secondLifeInitialCashCostMan?: number;
   buildingMan: number;
   landMan: number;
   brokerageFeeMan: number;

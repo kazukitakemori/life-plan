@@ -30,6 +30,7 @@ import {
   isLoanMonthlyRepaymentMode,
 } from "./loanPaymentMode";
 import {
+  calcLoanRepaymentMonthYen,
   calcRepaymentMonthIndex,
   getLoanRepaymentStartCalendar,
   getOwnershipStartCalendar,
@@ -419,6 +420,55 @@ function calcOwnedImprovementCostMan(
   return totalMan;
 }
 
+function calcSecondLifeFinanceLoanMonth(
+  property: OwnedProperty,
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): { principal: number; interest: number } {
+  const plan = property.secondLifeFinancePlan;
+  if (
+    !plan ||
+    plan.paymentMethod !== 'loan' ||
+    plan.loanPrincipalMan <= 0 ||
+    plan.interestRatePct == null ||
+    plan.years == null ||
+    plan.years <= 0
+  ) {
+    return { principal: 0, interest: 0 };
+  }
+
+  const birthMonth = resolveMemberBirthMonth(member);
+  const birthYear = calcBirthYear(member.age, birthMonth, referenceDate);
+  const startYear = calcYearAtAge(
+    birthYear,
+    birthMonth,
+    plan.startAge,
+    plan.startMonth,
+  );
+  const startIndex = startYear * 12 + plan.startMonth;
+  const currentIndex = calendarYear * 12 + calendarMonth;
+  const repaymentMonthIndex = currentIndex - startIndex + 1;
+  const totalMonths = Math.round(plan.years * 12);
+  if (repaymentMonthIndex <= 0 || repaymentMonthIndex > totalMonths) {
+    return { principal: 0, interest: 0 };
+  }
+
+  const result = calcLoanRepaymentMonthYen(
+    plan.loanPrincipalMan * 10_000,
+    totalMonths,
+    repaymentMonthIndex,
+    'equal_payment',
+    () => plan.interestRatePct ?? 0,
+    () => [],
+  );
+  return {
+    principal: yenToMan(result.principalYen),
+    interest: yenToMan(result.interestYen),
+  };
+}
+
 function getOwnedOwnershipStartYear(
   property: OwnedProperty,
   member: FamilyMember,
@@ -515,12 +565,11 @@ function calcOwnedMonthlyHousingDetailMan(
     return detail;
   }
 
-  if (
+  const isCurrentSimple =
     property.usage === "current" &&
-    property.currentExpenseMode === "simple"
-  ) {
+    property.currentExpenseMode === "simple";
+  if (isCurrentSimple) {
     detail.simpleMonthlyCost = property.simpleMonthlyExpenseMan;
-    return detail;
   }
 
   // 居住中は過去の購入時支出を試算に含めない
@@ -534,17 +583,21 @@ function calcOwnedMonthlyHousingDetailMan(
       calendarMonth,
     )
   ) {
+    const q12Finance = property.secondLifeFinancePlan;
     detail.purchaseInitial =
-      property.paymentMethod === "cash"
-        ? calcOwnedCashPurchaseInitialMan(property)
-        : calcOwnedLoanDownPaymentMan(
-            property,
-            loanState && targetId
-              ? resolveOwnedPropertyLoanSettings(property, loanState, targetId)
-              : property.loan,
-            loanState,
-            targetId,
-          );
+      q12Finance?.purpose === 'purchase'
+        ? q12Finance.cashPaymentMan +
+          Math.max(0, property.secondLifeInitialCashCostMan ?? 0)
+        : property.paymentMethod === "cash"
+          ? calcOwnedCashPurchaseInitialMan(property)
+          : calcOwnedLoanDownPaymentMan(
+              property,
+              loanState && targetId
+                ? resolveOwnedPropertyLoanSettings(property, loanState, targetId)
+                : property.loan,
+              loanState,
+              targetId,
+            );
   }
 
   const yearsElapsed = calcOwnedYearsElapsed(
@@ -574,6 +627,21 @@ function calcOwnedMonthlyHousingDetailMan(
     calendarYear,
     calendarMonth,
   );
+
+  const q12Loan = calcSecondLifeFinanceLoanMonth(
+    property,
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  detail.loanRepaymentDetail.principal += q12Loan.principal;
+  detail.loanRepaymentDetail.interest += q12Loan.interest;
+
+  // 簡単入力の現在住宅でも、Q12のリフォーム費・ローンだけは追加してから返す。
+  if (isCurrentSimple) {
+    return detail;
+  }
 
   if (
     property.usage !== "current" &&

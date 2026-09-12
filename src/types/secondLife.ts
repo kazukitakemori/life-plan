@@ -8,6 +8,9 @@ export type SecondLifeStayOption = 'continue' | 'renovate' | 'purchase_rebuild';
 export type SecondLifeHometownOption = 'renovate_parents' | 'purchase_rebuild';
 export type SecondLifeNewAreaOption = 'rent' | 'purchase';
 
+/** Q12の住まい本体費用の支払い方法 */
+export type SecondLifeHousingPaymentMethod = 'undecided' | 'cash' | 'loan';
+
 /** 生活水準の選択 */
 export type SecondLifeLivingLevel =
   | 'same'
@@ -60,6 +63,17 @@ export interface SecondLifeDesignSnapshot {
   newAreaOption: SecondLifeNewAreaOption;
   includeMovingCost: boolean;
   includePostPurchaseRenovation: boolean;
+  /** リフォーム・購入など住まい本体の試算用目安額（万円） */
+  housingBaseCostMan: number;
+  /** 新しい土地で賃貸を選ぶ場合の月額家賃（万円） */
+  housingRentMonthlyMan: number;
+  housingPaymentMethod: SecondLifeHousingPaymentMethod;
+  /** ローンを選ぶ場合の頭金（万円） */
+  housingLoanDownPaymentMan: number;
+  /** ローンを選ぶ場合の固定金利の試算値（%）。未入力は null */
+  housingLoanInterestRatePct: number | null;
+  /** ローンを選ぶ場合の返済期間（年）。未入力は null */
+  housingLoanYears: number | null;
   livingSkip: boolean;
   livingLevel: SecondLifeLivingLevel;
   nursingByTarget: Record<SecondLifeNursingTarget, SecondLifeNursingDesign>;
