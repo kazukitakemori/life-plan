@@ -6,6 +6,7 @@ on:
       - feat/second-life-housing-living-q12
     paths:
       - scripts/tmp_q12_ux_accuracy_review.py
+      - scripts/tmp_q12_guide_normalize.py
       - .github/workflows/tmp-q12-ux-accuracy.yml
 
 permissions:
@@ -28,7 +29,10 @@ jobs:
         shell: bash
         run: |
           set +e
-          python scripts/tmp_q12_ux_accuracy_review.py > /tmp/q12-patch.log 2>&1
+          {
+            python scripts/tmp_q12_guide_normalize.py
+            python scripts/tmp_q12_ux_accuracy_review.py
+          } > /tmp/q12-patch.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
             git reset --hard HEAD
@@ -52,6 +56,7 @@ jobs:
         if: steps.patch.outputs.ok == 'true'
         run: |
           rm scripts/tmp_q12_ux_accuracy_review.py
+          rm scripts/tmp_q12_guide_normalize.py
           rm .github/workflows/tmp-q12-ux-accuracy.yml
           rm -f .q12-patch-error.txt
       - name: Commit verified changes
