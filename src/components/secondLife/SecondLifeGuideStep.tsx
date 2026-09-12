@@ -31,6 +31,7 @@ interface SecondLifeGuideStepProps {
   referenceDate: Date;
   secondLifeState: SecondLifeState;
   onSecondLifeChange: (state: SecondLifeState) => void;
+  onApplySecondLifeNursing: () => void;
   onNavigateToStep: (stepId: StepId) => void;
 }
 
@@ -89,6 +90,7 @@ export function SecondLifeGuideStep({
   referenceDate,
   secondLifeState,
   onSecondLifeChange,
+  onApplySecondLifeNursing,
   onNavigateToStep,
 }: SecondLifeGuideStepProps) {
   const head = members.find((member) => member.role === 'head');
@@ -122,6 +124,8 @@ export function SecondLifeGuideStep({
       }),
     [housingState, secondLifeState],
   );
+
+  const nursingItem = guide.items.find((item) => item.id === 'nursing');
 
   if (!head) {
     return (
@@ -210,7 +214,9 @@ export function SecondLifeGuideStep({
       <SecondLifeNursingSection
         members={members}
         state={secondLifeState}
+        applyStatus={nursingItem?.status ?? 'missing'}
         onChange={onSecondLifeChange}
+        onApply={onApplySecondLifeNursing}
         onOpenLifeEvent={() => onNavigateToStep('life-event')}
       />
 
@@ -233,7 +239,7 @@ export function SecondLifeGuideStep({
             }
             actionLabel={
               item.id === 'nursing'
-                ? 'ライフイベントの反映先を見る →'
+                ? '反映先のライフイベントを確認する →'
                 : undefined
             }
             onNavigate={() => onNavigateToStep(item.stepId)}
