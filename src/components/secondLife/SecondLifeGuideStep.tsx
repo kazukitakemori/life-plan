@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   buildSecondLifeGuide,
@@ -6,21 +6,32 @@ import {
   type SecondLifeChecklistItem,
 } from '../../lib/secondLifeGuide';
 import { SECOND_LIFE_DEFAULT_START_AGE } from '../../lib/secondLifeDefaults';
+import { buildSecondLifeLivingOptions } from '../../lib/secondLifeEstimates';
 import {
   buildSecondLifeHousingConsistency,
   getSecondLifeHousingConsistencyStatusLabel,
 } from '../../lib/secondLifeHousingConsistency';
 import {
+  formatSecondLifeHousingApplyPreviewLines,
+  getSecondLifeHousingApplyWarnings,
+} from '../../lib/secondLifeHousingApplySummary';
+import {
   getSecondLifeHousingDesignSummary,
   getSecondLifeLivingDesignSummary,
 } from '../../lib/secondLifeLabels';
+import type { SecondLifeHousingApplyResult } from '../../lib/secondLifeTemplates';
 import type { FamilyMember } from '../../types/family';
+import type { IncomeByMember } from '../../types/income';
 import type { LifeEventState } from '../../types/lifeEvent';
 import type { LivingExpenseState } from '../../types/living';
 import type { HousingState } from '../../types/housing';
+import type { PensionByMember } from '../../types/pension';
 import type { SecondLifeState } from '../../types/secondLife';
 import type { StepId } from '../../types/steps';
+import { HousingSecondLifeApplyConfirmModal } from '../housing/HousingSecondLifeApplyConfirmModal';
 import { StepHeading } from '../ui';
+import { SecondLifeHousingSection } from './SecondLifeHousingSection';
+import { SecondLifeLivingSection } from './SecondLifeLivingSection';
 import { SecondLifeNursingSection } from './SecondLifeNursingSection';
 
 interface SecondLifeGuideStepProps {
@@ -28,9 +39,14 @@ interface SecondLifeGuideStepProps {
   housingState: HousingState;
   livingState: LivingExpenseState;
   lifeEventState: LifeEventState;
+  incomeByMember: IncomeByMember;
+  pensionByMember: PensionByMember;
   referenceDate: Date;
   secondLifeState: SecondLifeState;
   onSecondLifeChange: (state: SecondLifeState) => void;
+  onApplySecondLifeHousing?: () => SecondLifeHousingApplyResult | void;
+  onPreviewSecondLifeHousing?: () => SecondLifeHousingApplyResult | void;
+  onApplySecondLifeLiving?: () => void;
   onApplySecondLifeNursing: () => void;
   onNavigateToStep: (stepId: StepId) => void;
 }
@@ -76,7 +92,7 @@ function ChecklistCard({
         className="second-life-guide-nav-btn"
         onClick={onNavigate}
       >
-        {actionLabel ?? `${item.stepLabel} で入力する →`}
+        {actionLabel ?? `${item.stepLabel} の詳細を見る →`}
       </button>
     </article>
   );
@@ -87,13 +103,21 @@ export function SecondLifeGuideStep({
   housingState,
   livingState,
   lifeEventState,
+  incomeByMember,
+  pensionByMember,
   referenceDate,
   secondLifeState,
   onSecondLifeChange,
+  onApplySecondLifeHousing,
+  onPreviewSecondLifeHousing,
+  onApplySecondLifeLiving,
   onApplySecondLifeNursing,
   onNavigateToStep,
 }: SecondLifeGuideStepProps) {
   const head = members.find((member) => member.role === 'head');
+  const [housingConfirmOpen, setHousingConfirmOpen] = useState(false);
+  const [housingPreviewLines, setHousingPreviewLines] = useState<string[]>([]);
+  const [housingWarnings, setHousingWarnings] = useState<string[]>([]);
 
   const guide = useMemo(
     () =>
@@ -116,6 +140,26 @@ export function SecondLifeGuideStep({
     ],
   );
 
+  const livingOptions = useMemo(
+    () =>
+      buildSecondLifeLivingOptions({
+        livingState,
+        familyMembers: members,
+        incomeByMember,
+        pensionByMember,
+        referenceDate,
+        startAge: secondLifeState.startAge,
+      }),
+    [
+      livingState,
+      members,
+      incomeByMember,
+      pensionByMember,
+      referenceDate,
+      secondLifeState.startAge,
+    ],
+  );
+
   const housingConsistency = useMemo(
     () =>
       buildSecondLifeHousingConsistency({
@@ -124,8 +168,6 @@ export function SecondLifeGuideStep({
       }),
     [housingState, secondLifeState],
   );
-
-  const nursingItem = guide.items.find((item) => item.id === 'nursing');
 
   if (!head) {
     return (
@@ -137,16 +179,46 @@ export function SecondLifeGuideStep({
     );
   }
 
+  const beginHousingApply = () => {
+    if (!onApplySecondLifeHousing) return;
+    const preview = onPreviewSecondLifeHousing?.();
+    if (!preview) {
+      onApplySecondLifeHousing();
+      return;
+    }
+    const target = housingState.byTarget[head.id];
+    const existingHousingCount =
+      (target?.rentals.length ?? 0) + (target?.owned.length ?? 0);
+    setHousingPreviewLines(
+      preview.changes.length > 0
+        ? formatSecondLifeHousingApplyPreviewLines(preview.changes)
+        : preview.changeLines,
+    );
+    setHousingWarnings(
+      getSecondLifeHousingApplyWarnings({
+        secondLifeState,
+        existingHousingCount,
+        changes: preview.changes,
+      }),
+    );
+    setHousingConfirmOpen(true);
+  };
+
+  const confirmHousingApply = () => {
+    onApplySecondLifeHousing?.();
+    setHousingConfirmOpen(false);
+  };
+
   return (
     <div className="step-page second-life-step">
       <StepHeading
         number={12}
         title="セカンドライフ"
-        lead="これからの暮らし方と、現在の入力内容の整合性を確認します"
+        lead="これからの暮らし方をここで具体化し、住まい・生活費・介護へ反映します"
       />
 
       <p className="second-life-guide-intro">
-        セカンドライフ開始年齢を基準に、住まい・生活費・介護をここで設計し、各入力画面には計算用データとして反映します。
+        セカンドライフ開始年齢を基準に、老後の住まい・生活水準・介護をこの画面で設計します。Q4・Q5・Q3は詳細データや反映結果を確認する画面として使います。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -169,6 +241,23 @@ export function SecondLifeGuideStep({
           <span>歳〜</span>
         </label>
       </div>
+
+      <SecondLifeHousingSection
+        state={secondLifeState}
+        onChange={(patch) =>
+          onSecondLifeChange({ ...secondLifeState, ...patch })
+        }
+        onApply={onApplySecondLifeHousing ? beginHousingApply : undefined}
+      />
+
+      <SecondLifeLivingSection
+        state={secondLifeState}
+        onChange={(patch) =>
+          onSecondLifeChange({ ...secondLifeState, ...patch })
+        }
+        options={livingOptions}
+        onApply={onApplySecondLifeLiving}
+      />
 
       <section
         className={`second-life-consistency second-life-consistency--${housingConsistency.status}`}
@@ -206,7 +295,7 @@ export function SecondLifeGuideStep({
             className="second-life-guide-nav-btn"
             onClick={() => onNavigateToStep('housing')}
           >
-            住まい計画を確認する →
+            住まいの詳細を見る →
           </button>
         </div>
       </section>
@@ -214,15 +303,15 @@ export function SecondLifeGuideStep({
       <SecondLifeNursingSection
         members={members}
         state={secondLifeState}
-        applyStatus={nursingItem?.status ?? 'missing'}
         onChange={onSecondLifeChange}
+        applyStatus={guide.items.find((item) => item.id === 'nursing')?.status ?? 'missing'}
         onApply={onApplySecondLifeNursing}
         onOpenLifeEvent={() => onNavigateToStep('life-event')}
       />
 
-      <h3 className="second-life-guide-checklist-title">設計・反映状況</h3>
+      <h3 className="second-life-guide-checklist-title">整合性・反映状況</h3>
       <p className="second-life-guide-checklist-lead">
-        セカンドライフの設計と、各入力画面への反映状態を確認できます。
+        Q12で決めた内容が、計算用データへ正しく反映されているか確認できます。
       </p>
 
       <div className="second-life-guide-grid">
@@ -238,14 +327,26 @@ export function SecondLifeGuideStep({
                   : undefined
             }
             actionLabel={
-              item.id === 'nursing'
-                ? '反映先のライフイベントを確認する →'
-                : undefined
+              item.id === 'housing'
+                ? '住まいの詳細を見る →'
+                : item.id === 'living'
+                  ? '生活費の詳細を見る →'
+                  : item.id === 'nursing'
+                    ? 'ライフイベントの反映先を見る →'
+                    : undefined
             }
             onNavigate={() => onNavigateToStep(item.stepId)}
           />
         ))}
       </div>
+
+      <HousingSecondLifeApplyConfirmModal
+        open={housingConfirmOpen}
+        previewLines={housingPreviewLines}
+        warnings={housingWarnings}
+        onClose={() => setHousingConfirmOpen(false)}
+        onConfirm={confirmHousingApply}
+      />
     </div>
   );
 }

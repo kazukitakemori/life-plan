@@ -29,6 +29,14 @@ export type SecondLifeHousingApplyChange =
       landMan?: number;
     }
   | {
+      type: 'improvement';
+      propertyId: string;
+      propertyName: string;
+      amountMan: number;
+      year: number;
+      month: number;
+    }
+  | {
       type: 'life_event';
       action: 'upserted';
       label: string;

@@ -1419,9 +1419,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            secondLifeState={secondLifeState}
-            incomeByMember={incomeByMember}
-            pensionByMember={pensionByMember}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1429,23 +1426,6 @@ export default function App() {
                 : undefined
             }
             onChange={handleLivingChange}
-            onSecondLifeChange={(state) => {
-              markPlanInputsChanged();
-              setSecondLifeState(state);
-            }}
-            onApplySecondLifeLiving={() => {
-              markPlanInputsChanged();
-              setLivingState(
-                applySecondLifeLivingDesign({
-                  livingState,
-                  secondLifeState,
-                  familyMembers,
-                  incomeByMember,
-                  pensionByMember,
-                  referenceDate,
-                }),
-              );
-            }}
           />
         );
       }
@@ -1461,7 +1441,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            secondLifeState={secondLifeState}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1470,41 +1449,6 @@ export default function App() {
             }
             onChange={handleHousingChange}
             onHousingBundleChange={handleHousingBundleChange}
-            onSecondLifeChange={(state) => {
-              markPlanInputsChanged();
-              setSecondLifeState(state);
-            }}
-            onApplySecondLifeHousing={() => {
-              const head = familyMembers.find((member) => member.role === 'head');
-              if (!head) return;
-              markPlanInputsChanged();
-              const applied = applySecondLifeHousingDesign({
-                housingState,
-                lifeEventState,
-                secondLifeState,
-                member: head,
-                familyMembers,
-                referenceDate,
-                targetId: head.id,
-              });
-              setHousingState(applied.housingState);
-              setLifeEventState(applied.lifeEventState);
-              return applied;
-            }}
-            onPreviewSecondLifeHousing={() => {
-              const head = familyMembers.find((member) => member.role === 'head');
-              if (!head) return;
-              return applySecondLifeHousingDesign({
-                housingState,
-                lifeEventState,
-                secondLifeState,
-                member: head,
-                familyMembers,
-                referenceDate,
-                targetId: head.id,
-              });
-            }}
-            onNavigateToStep={setActiveStep}
             onAddHousingLoan={handleAddHousingLoan}
             onRemoveHousingLoan={handleRemoveHousingLoan}
             onUpdateLoan={handleUpdateLoan}
@@ -1670,11 +1614,56 @@ export default function App() {
             housingState={housingState}
             livingState={livingState}
             lifeEventState={lifeEventState}
+            incomeByMember={incomeByMember}
+            pensionByMember={pensionByMember}
             referenceDate={referenceDate}
             secondLifeState={secondLifeState}
             onSecondLifeChange={(state) => {
               markPlanInputsChanged();
               setSecondLifeState(state);
+            }}
+            onApplySecondLifeLiving={() => {
+              markPlanInputsChanged();
+              setLivingState(
+                applySecondLifeLivingDesign({
+                  livingState,
+                  secondLifeState,
+                  familyMembers,
+                  incomeByMember,
+                  pensionByMember,
+                  referenceDate,
+                }),
+              );
+            }}
+            onApplySecondLifeHousing={() => {
+              const head = familyMembers.find((member) => member.role === 'head');
+              if (!head) return;
+              markPlanInputsChanged();
+              const applied = applySecondLifeHousingDesign({
+                housingState,
+                lifeEventState,
+                secondLifeState,
+                member: head,
+                familyMembers,
+                referenceDate,
+                targetId: head.id,
+              });
+              setHousingState(applied.housingState);
+              setLifeEventState(applied.lifeEventState);
+              return applied;
+            }}
+            onPreviewSecondLifeHousing={() => {
+              const head = familyMembers.find((member) => member.role === 'head');
+              if (!head) return;
+              return applySecondLifeHousingDesign({
+                housingState,
+                lifeEventState,
+                secondLifeState,
+                member: head,
+                familyMembers,
+                referenceDate,
+                targetId: head.id,
+              });
             }}
             onApplySecondLifeNursing={() => {
               markPlanInputsChanged();

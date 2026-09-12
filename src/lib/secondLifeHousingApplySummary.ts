@@ -69,6 +69,8 @@ function formatApplyChangeLines(
               : '';
           return `「${change.name}」を追加${done}${amounts}`;
         }
+      case 'improvement':
+        return `「${change.propertyName}」の住まい一時費用${change.amountMan}万円を${change.year}年${change.month}月に追加${done}`;
       case 'life_event':
         return `ライフイベント「${change.label}」に${change.amountMan}万円を反映${done}（${change.startAge}歳）`;
       default: {
@@ -129,7 +131,9 @@ export function getSecondLifeHousingApplyPlanLines(
       break;
     case 'renovate':
       lines.push(
-        '現在の住まいを継続し、リフォーム等の一時費用を計画へ反映します',
+        state.housingScenario === 'hometown'
+          ? 'セカンドライフ実家を住まいに追加し、リフォーム等の一時費用を物件へ反映します'
+          : '現在の持ち家にリフォーム等の一時費用を反映します',
       );
       break;
     default: {

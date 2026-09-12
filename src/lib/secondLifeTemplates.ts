@@ -4,8 +4,10 @@ import {
   applySecondLifeNursing,
   SECOND_LIFE_HOUSING_EVENT_LABEL,
 } from './secondLifeApply';
+import { calcBirthYear, calcYearAtAge } from './birthDate';
 import { createDefaultSecondLifeState } from './secondLifeDefaults';
 import {
+  createOwnedImprovementEntry,
   createOwnedProperty,
   createRentalProperty,
   getHousingTargetData,
@@ -32,7 +34,10 @@ import {
 
 export const SECOND_LIFE_RENTAL_NAME = 'セカンドライフ賃貸';
 export const SECOND_LIFE_OWNED_NAME = 'セカンドライフ購入住宅';
+export const SECOND_LIFE_HOMETOWN_HOME_NAME = 'セカンドライフ実家';
 export const SECOND_LIFE_LIVING_LABEL = 'セカンドライフ生活費';
+
+const SECOND_LIFE_IMPROVEMENT_ID = 'second-life-renovation';
 
 const DEFAULT_SECOND_LIFE_RENT_MAN = 8;
 const PURCHASE_BUILDING_MAN = 2_000;
@@ -54,7 +59,11 @@ function monthBefore(age: number, month: number): { age: number; month: number }
 }
 
 function isSecondLifeHousingItem(name: string): boolean {
-  return name === SECOND_LIFE_RENTAL_NAME || name === SECOND_LIFE_OWNED_NAME;
+  return (
+    name === SECOND_LIFE_RENTAL_NAME ||
+    name === SECOND_LIFE_OWNED_NAME ||
+    name === SECOND_LIFE_HOMETOWN_HOME_NAME
+  );
 }
 
 function endExistingHousingBeforeStartAge<
@@ -127,16 +136,26 @@ function stripSecondLifeHousingItems(data: {
     });
     return false;
   });
-  const owned = data.owned.filter((property) => {
-    if (!isSecondLifeHousingItem(property.name)) return true;
-    cleared.push({
-      type: 'cleared',
-      propertyKind: 'owned',
-      id: property.id,
-      name: property.name,
-    });
-    return false;
-  });
+  const owned = data.owned
+    .filter((property) => {
+      if (!isSecondLifeHousingItem(property.name)) return true;
+      cleared.push({
+        type: 'cleared',
+        propertyKind: 'owned',
+        id: property.id,
+        name: property.name,
+      });
+      return false;
+    })
+    .map((property) => ({
+      ...property,
+      maintenance: {
+        ...property.maintenance,
+        improvements: property.maintenance.improvements.filter(
+          (entry) => entry.id !== SECOND_LIFE_IMPROVEMENT_ID,
+        ),
+      },
+    }));
   return { rentals, owned, cleared };
 }
 
@@ -144,6 +163,7 @@ type HousingApplyMutation = {
   housingState: HousingState;
   kind: SecondLifeHousingTemplateKind;
   relocating: boolean;
+  renovationAppliedToHousing: boolean;
   changes: SecondLifeHousingApplyChange[];
 };
 
@@ -188,7 +208,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
     changes.push(...endedRentals.ended, ...endedOwned.ended);
   }
 
-  if (kind === 'skip' || kind === 'renovate') {
+  if (kind === 'skip') {
     return {
       housingState: migrateHousingState({
         ...input.housingState,
@@ -199,12 +219,130 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
       }),
       kind,
       relocating,
+      renovationAppliedToHousing: false,
       changes,
     };
   }
 
   const refMonth = input.referenceDate.getMonth() + 1;
   const refYear = input.referenceDate.getFullYear();
+
+  if (kind === 'renovate') {
+    const amountMan = estimateSecondLifeHousingTotalMan(input.secondLifeState) ?? 0;
+    const birthYear = calcBirthYear(
+      input.member.age,
+      input.member.birthMonth,
+      input.referenceDate,
+    );
+    const renovationYear = calcYearAtAge(
+      birthYear,
+      input.member.birthMonth ?? 1,
+      startAge,
+      1,
+    );
+    const improvement = () =>
+      createOwnedImprovementEntry(renovationYear, 1, {
+        id: SECOND_LIFE_IMPROVEMENT_ID,
+        amountMan,
+      });
+    let renovationAppliedToHousing = false;
+
+    if (
+      input.secondLifeState.housingScenario === 'hometown' &&
+      input.secondLifeState.hometownOption === 'renovate_parents'
+    ) {
+      let property = createOwnedProperty(
+        'detached_house',
+        input.member,
+        refMonth,
+        refYear,
+        {
+          usage: 'upcoming',
+          name: SECOND_LIFE_HOMETOWN_HOME_NAME,
+          startAge,
+          startMonth: 1,
+          buildingMan: 0,
+          landMan: 0,
+          paymentMethod: 'cash',
+          currentExpenseMode: 'simple',
+          simpleMonthlyExpenseMan: 0,
+        },
+        { rentals, owned },
+      );
+      property = {
+        ...property,
+        maintenance: {
+          ...property.maintenance,
+          improvements: [improvement()],
+        },
+      };
+      owned = [...owned, property];
+      renovationAppliedToHousing = true;
+      changes.push(
+        {
+          type: 'added',
+          propertyKind: 'owned',
+          id: property.id,
+          name: property.name,
+          buildingMan: 0,
+          landMan: 0,
+        },
+        {
+          type: 'improvement',
+          propertyId: property.id,
+          propertyName: property.name,
+          amountMan,
+          year: renovationYear,
+          month: 1,
+        },
+      );
+    } else {
+      const propertyIndex = owned.findIndex(
+        (property) =>
+          property.startAge <= startAge &&
+          (property.endMode === 'lifetime' || property.endAge >= startAge),
+      );
+      if (propertyIndex >= 0) {
+        const property = owned[propertyIndex];
+        const updated = {
+          ...property,
+          maintenance: {
+            ...property.maintenance,
+            improvements: [
+              ...property.maintenance.improvements,
+              improvement(),
+            ],
+          },
+        };
+        owned = owned.map((item, index) =>
+          index === propertyIndex ? updated : item,
+        );
+        renovationAppliedToHousing = true;
+        changes.push({
+          type: 'improvement',
+          propertyId: updated.id,
+          propertyName: updated.name,
+          amountMan,
+          year: renovationYear,
+          month: 1,
+        });
+      }
+    }
+
+    return {
+      housingState: migrateHousingState({
+        ...input.housingState,
+        byTarget: {
+          ...input.housingState.byTarget,
+          [targetId]: { ...data, rentals, owned },
+        },
+      }),
+      kind,
+      relocating,
+      renovationAppliedToHousing,
+      changes,
+    };
+  }
   const includeMoving =
     input.secondLifeState.includeMovingCost ||
     input.secondLifeState.housingScenario === 'hometown' ||
@@ -279,15 +417,16 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
     }),
     kind,
     relocating,
+    renovationAppliedToHousing: false,
     changes,
   };
 }
 
 /**
- * Q12/Q5 の住まい設計を Q5 住まい入力へ反映する。
+ * Q12 の住まい設計を Q5 住まい入力へ反映する。
  * - 賃貸: 月額家賃付きの入居予定賃貸を登録
  * - 購入: 所有物件（建物・土地の目安額）を登録
- * - リフォームのみ: Q5物件は追加せず、一時金は Q3 側で扱う
+ * - リフォーム: 原則として Q5 の持ち家改良費へ反映
  * - 転居（地元・新土地）: 既存住まいを開始年齢の直前で終了
  */
 export function applySecondLifeHousingToHousingState(input: {
@@ -306,12 +445,18 @@ export function applySecondLifeHousingOneTimeToLifeEvent(input: {
   secondLifeState: SecondLifeState;
   familyMembers: FamilyMember[];
   referenceDate: Date;
+  renovationAppliedToHousing?: boolean;
 }): LifeEventState {
   const head = input.familyMembers.find((member) => member.role === 'head');
   const kind = getSecondLifeHousingTemplateKind(input.secondLifeState);
 
-  // 賃貸・購入は Q5 で本体を持つので、一時金イベントはリフォーム系のみ
-  if (kind === 'rent' || kind === 'purchase' || kind === 'skip') {
+  // 住まい側に反映できた内容は Q3 に複製しない。旧連動イベントがあれば削除する。
+  if (
+    kind === 'rent' ||
+    kind === 'purchase' ||
+    kind === 'skip' ||
+    input.renovationAppliedToHousing
+  ) {
     return applySecondLifeHousing(
       input.lifeEventState,
       { ...input.secondLifeState, housingSkip: true },
@@ -384,6 +529,7 @@ export function applySecondLifeHousingDesign(input: {
     secondLifeState: input.secondLifeState,
     familyMembers: input.familyMembers,
     referenceDate: input.referenceDate,
+    renovationAppliedToHousing: housingMutation.renovationAppliedToHousing,
   });
 
   const changes: SecondLifeHousingApplyChange[] = [
