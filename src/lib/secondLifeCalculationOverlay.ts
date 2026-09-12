@@ -18,8 +18,8 @@ export interface SecondLifeCalculationStates {
  * Q4/Q5 の保存データを変更せず、キャッシュフロー計算にだけ Q12 の設計を重ねる。
  *
  * Q4/Q5 は常にユーザー入力の原本として保存する。
- * Q12 が有効な項目だけ、原本から計算専用の派生状態を毎回作る。
- * 「現在の入力内容から変更はしない」が ON の項目は、原本をそのまま返す。
+ * Q12 で「見直す」を選んだ項目だけ、原本から計算専用の派生状態を毎回作る。
+ * 「現在の計画をそのまま使う」を選んだ項目は、原本をそのまま返す。
  */
 export function buildSecondLifeCalculationStates(input: {
   housingState: HousingState;
