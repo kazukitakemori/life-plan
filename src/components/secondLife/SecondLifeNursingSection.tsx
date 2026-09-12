@@ -127,6 +127,11 @@ export function SecondLifeNursingSection({
           const design = state.nursingByTarget[key];
           const scenarioInfo = getThirdLifeCareScenarioInfo(design.scenario);
           const hasCost = design.initialCostMan > 0 || design.monthlyCostMan > 0;
+          const maxStartAge = Math.max(60, member.expectedLifespan);
+          const maxDurationYears = Math.max(
+            1,
+            member.expectedLifespan - Math.min(design.startAge, maxStartAge) + 1,
+          );
           return (
             <article
               key={key}
@@ -205,13 +210,28 @@ export function SecondLifeNursingSection({
                         type="number"
                         className="second-life-age-input"
                         min={60}
-                        max={110}
-                        value={design.startAge}
-                        onChange={(event) =>
+                        max={maxStartAge}
+                        value={Math.min(design.startAge, maxStartAge)}
+                        onChange={(event) => {
+                          const startAge = Math.min(
+                            maxStartAge,
+                            Math.max(60, Number(event.target.value) || 60),
+                          );
+                          const remainingYears = Math.max(
+                            1,
+                            member.expectedLifespan - startAge + 1,
+                          );
                           updateTarget(key, {
-                            startAge: Math.max(60, Number(event.target.value) || 60),
-                          })
-                        }
+                            startAge,
+                            durationYears:
+                              design.durationMode === 'years'
+                                ? Math.min(
+                                    remainingYears,
+                                    design.durationYears ?? 5,
+                                  )
+                                : null,
+                          });
+                        }}
                       />
                       歳〜
                     </span>
@@ -273,7 +293,7 @@ export function SecondLifeNursingSection({
                           durationMode,
                           durationYears:
                             durationMode === 'years'
-                              ? design.durationYears ?? 5
+                              ? Math.min(maxDurationYears, design.durationYears ?? 5)
                               : null,
                         });
                       }}
@@ -291,12 +311,15 @@ export function SecondLifeNursingSection({
                           type="number"
                           className="second-life-age-input"
                           min={1}
-                          max={50}
-                          value={design.durationYears ?? 5}
+                          max={maxDurationYears}
+                          value={Math.min(
+                            maxDurationYears,
+                            design.durationYears ?? Math.min(5, maxDurationYears),
+                          )}
                           onChange={(event) =>
                             updateTarget(key, {
                               durationYears: Math.min(
-                                50,
+                                maxDurationYears,
                                 Math.max(1, Number(event.target.value) || 1),
                               ),
                             })
