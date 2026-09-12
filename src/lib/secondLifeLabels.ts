@@ -24,9 +24,10 @@ export const SECOND_LIFE_LIVING_LEVEL_LABELS: Record<
   SecondLifeLivingLevel,
   string
 > = {
-  same: '現在と同水準の生活費',
-  seventy_percent: '現在の7割の生活費',
-  pension_based: '年金収入に応じた生活費',
+  same: '現在と同じ生活費（100%）',
+  eighty_percent: '現在の80%の生活費',
+  seventy_percent: '現在の70%の生活費',
+  pension_based: '年金収入を目安にした生活費',
 };
 
 export function getSecondLifeHousingOptionLabel(

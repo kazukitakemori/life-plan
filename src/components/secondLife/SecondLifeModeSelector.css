@@ -29,3 +29,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.second-life-choice-grid--living {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 960px) {
+  .second-life-choice-grid--living {
+    grid-template-columns: 1fr;
+  }
+}

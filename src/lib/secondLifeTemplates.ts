@@ -382,10 +382,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
       changes,
     };
   }
-  const includeMoving =
-    input.secondLifeState.includeMovingCost ||
-    input.secondLifeState.housingScenario === 'hometown' ||
-    input.secondLifeState.housingScenario === 'new_area';
+  const includeMoving = input.secondLifeState.includeMovingCost;
 
   if (kind === 'rent') {
     const monthlyRentMan = resolveMonthlyRentMan(stripped.rentals, startAge);

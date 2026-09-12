@@ -169,11 +169,11 @@ export function SecondLifeGuideStep({
       <StepHeading
         number={12}
         title="セカンドライフ"
-        lead="これからの暮らし方をここで具体化し、元の入力を残したまま計算へ反映します"
+        lead="老後の住まい・生活費・介護を、今の計画と比べながら整理します"
       />
 
       <p className="second-life-guide-intro">
-        セカンドライフ開始年齢を基準に、老後の住まい・生活水準・介護をこの画面で設計します。住まい・生活費はそれぞれ「現在の計画をそのまま使う」か「セカンドライフ用に見直す」かを選べます。
+        まず、何歳からセカンドライフとして考えるかを決めます。住まいと生活費は、今の計画を続けるか、その年齢以降を見直すかを選べます。元の入力は消えません。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -223,7 +223,7 @@ export function SecondLifeGuideStep({
       >
         <div className="second-life-consistency-head">
           <div>
-            <p className="second-life-consistency-kicker">住まいの計算ルール</p>
+            <p className="second-life-consistency-kicker">住まいの確認</p>
             <h3 id="second-life-housing-consistency-title">
               {housingConsistency.title}
             </h3>
@@ -246,7 +246,7 @@ export function SecondLifeGuideStep({
         ) : null}
         <div className="second-life-consistency-actions">
           <span className="second-life-consistency-design">
-            Q12：{getSecondLifeHousingDesignSummary(secondLifeState)}
+            今回の設定：{getSecondLifeHousingDesignSummary(secondLifeState)}
           </span>
           <button
             type="button"
@@ -267,9 +267,9 @@ export function SecondLifeGuideStep({
         onOpenLifeEvent={() => onNavigateToStep('life-event')}
       />
 
-      <h3 className="second-life-guide-checklist-title">計算ルール・反映状況</h3>
+      <h3 className="second-life-guide-checklist-title">設定内容の確認</h3>
       <p className="second-life-guide-checklist-lead">
-        「現在の計画をそのまま使う」を選んだ項目はQ4・Q5の入力をそのまま使用します。「見直す」を選んだ項目だけ、Q12の設計をキャッシュフロー計算時に優先します。
+        「今の計画をそのまま使う」を選んだ項目は現在の入力で計算します。「見直す」を選んだ項目は、指定した年齢から今回の設定に切り替えて試算します。
       </p>
 
       <div className="second-life-guide-grid">

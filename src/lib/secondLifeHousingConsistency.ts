@@ -93,9 +93,9 @@ export function buildSecondLifeHousingConsistency(input: {
   if (secondLifeState.housingSkip) {
     return {
       status: 'skipped',
-      title: 'Q5の現在の計画をそのまま使います',
+      title: '今の住まい計画で計算します',
       summary:
-        'Q12では住まいを見直さず、Q5「住まい」の入力をそのままキャッシュフロー計算に使用します。',
+        '「住まい」で入力した内容をそのまま使います。元の入力は変更しません。',
       detailLines: [],
     };
   }
@@ -119,15 +119,15 @@ export function buildSecondLifeHousingConsistency(input: {
         status: 'missing',
         title: `${secondLifeState.startAge}歳時点の住まいがQ5にありません`,
         summary:
-          'Q5の現在計画を使うため、Q5で現在の住まいを入力してください。',
+          '今の住まい計画を使うため、先に「住まい」で現在の住まいを入力してください。',
         detailLines: [],
       };
     }
     return {
       status: 'aligned',
-      title: 'Q5の現在の住まいをそのまま継続します',
+      title: '今の住まいをそのまま継続して計算します',
       summary:
-        'セカンドライフ開始後もQ5の住まい入力をそのまま計算に使用します。',
+        '現在入力している住まいの期間・費用をそのまま使います。',
       detailLines: activeHousing.map(formatHousingPeriod),
     };
   }
@@ -142,7 +142,7 @@ export function buildSecondLifeHousingConsistency(input: {
         status: 'missing',
         title: `${actionAge}歳時点の持ち家がQ5にありません`,
         summary:
-          '現在の住宅をリフォームする設計なので、Q5で対象となる持ち家を入力してください。',
+          '現在の住宅をリフォームするため、先に「住まい」で対象となる持ち家を入力してください。',
         detailLines: activeHousing.map(formatHousingPeriod),
       };
     }
@@ -150,18 +150,18 @@ export function buildSecondLifeHousingConsistency(input: {
       status: 'aligned',
       title: `${actionAge}歳のリフォーム費を計算上追加します`,
       summary:
-        'Q5の持ち家データは変更せず、キャッシュフロー上の住まい支出としてQ12のリフォーム費を重ねます。',
+        '元の持ち家設定は残したまま、この年齢にリフォーム費を追加して試算します。',
       detailLines: owned.map(formatHousingPeriod),
     };
   }
 
   return {
     status: 'aligned',
-    title: `${actionAge}歳からQ12の住まい設計を優先します`,
+    title: `${actionAge}歳から、選んだ住まい方に切り替えて計算します`,
     summary:
       activeHousing.length > 0
-        ? 'Q5の住まいがその後も続く入力でも、Q5自体は変更せず、計算上だけQ12の住まいへ切り替えます。'
-        : 'Q5の入力自体は変更せず、計算上だけQ12の住まいを使用します。',
+        ? '元の住まい設定は残したまま、この年齢から上で選んだ住まい方へ切り替えて試算します。'
+        : '元の入力は変更せず、この年齢から上で選んだ住まい方で試算します。',
     detailLines: activeHousing.map(formatHousingPeriod),
   };
 }
@@ -171,12 +171,12 @@ export function getSecondLifeHousingConsistencyStatusLabel(
 ): string {
   switch (status) {
     case 'aligned':
-      return '計算OK';
+      return '設定済み';
     case 'attention':
       return '要確認';
     case 'missing':
       return '要入力';
     case 'skipped':
-      return 'Q5を使用';
+      return '変更なし';
   }
 }

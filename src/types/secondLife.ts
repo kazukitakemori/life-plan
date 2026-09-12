@@ -9,7 +9,11 @@ export type SecondLifeHometownOption = 'renovate_parents' | 'purchase_rebuild';
 export type SecondLifeNewAreaOption = 'rent' | 'purchase';
 
 /** 生活水準の選択 */
-export type SecondLifeLivingLevel = 'same' | 'seventy_percent' | 'pension_based';
+export type SecondLifeLivingLevel =
+  | 'same'
+  | 'eighty_percent'
+  | 'seventy_percent'
+  | 'pension_based';
 
 /** 介護の想定 */
 export type SecondLifeNursingScenario = 'home' | 'day_service' | 'facility';

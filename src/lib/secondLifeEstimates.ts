@@ -110,7 +110,7 @@ export function getSecondLifePeriodMonthlyLivingMan(input: {
 }
 
 /**
- * 「現在と同水準」「7割」の基準となる生活費（月額・万円）。
+ * 「現在と同水準」「8割」「7割」の基準となる生活費（月額・万円）。
  * Q4 のご家族＋各メンバー入力を合算（詳細内訳を含む）。
  * セカンドライフ開始以降のスケジュールは含めない。
  */
@@ -134,9 +134,11 @@ export function getPreSecondLifeMonthlyLivingMan(input: {
     livingState: input.livingState,
     secondLifeStartAge: input.startAge,
   });
-  const baseline = Math.max(atReference, enteredTotal);
-  if (baseline > 0) {
-    return baseline;
+  if (atReference > 0) {
+    return atReference;
+  }
+  if (enteredTotal > 0) {
+    return enteredTotal;
   }
 
   const head = input.familyMembers.find((member) => member.role === 'head');
@@ -229,6 +231,7 @@ export function buildSecondLifeLivingOptions(input: {
     referenceDate: input.referenceDate,
     startAge: input.startAge,
   });
+  const eightyMonthly = roundMan(currentMonthly * 0.8);
   const seventyMonthly = roundMan(currentMonthly * 0.7);
   const calendarYear = getCalendarYearAtHeadAge(
     head,
@@ -254,32 +257,46 @@ export function buildSecondLifeLivingOptions(input: {
     secondLifeStartAge: input.startAge,
   });
 
-  return [
+  const options: SecondLifeLivingOption[] = [
     {
       level: 'same',
-      label: '現在と同水準の生活費',
+      label: '現在と同じ生活費（100%）',
       monthlyMan: roundMan(currentMonthly),
       breakdown: q4Breakdown,
       breakdownNote:
-        q4Breakdown.length > 0 ? 'Q4 生活費の内訳' : undefined,
+        q4Breakdown.length > 0 ? '現在の生活費の内訳' : undefined,
+    },
+    {
+      level: 'eighty_percent',
+      label: '現在の80%の生活費',
+      monthlyMan: eightyMonthly,
+      breakdown: scaleLivingBreakdown(q4Breakdown, 0.8),
+      breakdownNote:
+        q4Breakdown.length > 0 ? '現在の生活費の内訳（80%）' : undefined,
     },
     {
       level: 'seventy_percent',
-      label: '現在の7割の生活費',
+      label: '現在の70%の生活費',
       monthlyMan: seventyMonthly,
       breakdown: scaleLivingBreakdown(q4Breakdown, 0.7),
       breakdownNote:
-        q4Breakdown.length > 0 ? 'Q4 生活費の内訳（7割）' : undefined,
-    },
-    {
-      level: 'pension_based',
-      label: '年金収入に応じた生活費',
-      monthlyMan: pensionMonthly,
-      breakdown: buildPensionLivingBreakdown(pensionMonthly),
-      breakdownNote: '年金からの目安配分',
-      pensionAnnualMan: roundMan(pensionAnnual),
+        q4Breakdown.length > 0 ? '現在の生活費の内訳（70%）' : undefined,
     },
   ];
+
+  // 年金額が未入力のときに「0万円で暮らす」選択肢を出さない。
+  if (pensionAnnual > 0) {
+    options.push({
+      level: 'pension_based',
+      label: '年金収入を目安にする',
+      monthlyMan: pensionMonthly,
+      breakdown: buildPensionLivingBreakdown(pensionMonthly),
+      breakdownNote: '年金月額と同額を生活費の目安として配分',
+      pensionAnnualMan: roundMan(pensionAnnual),
+    });
+  }
+
+  return options;
 }
 
 function estimateBaseHousingCostMan(
@@ -320,10 +337,7 @@ export function estimateSecondLifeHousingTotalMan(
     state.newAreaOption,
   );
 
-  const needsMoving =
-    state.housingScenario === 'hometown' ||
-    state.housingScenario === 'new_area' ||
-    state.includeMovingCost;
+  const needsMoving = state.includeMovingCost;
   if (needsMoving) {
     total += MOVING_COST_MAN;
   }

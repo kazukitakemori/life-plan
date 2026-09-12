@@ -33,16 +33,22 @@ export function SecondLifeHousingSection({
 
   const startHousingReview = () => {
     const patch: Partial<SecondLifeState> = { housingSkip: false };
-    if (state.housingScenario === 'stay' && state.stayOption === 'continue') {
-      patch.stayOption = 'renovate';
+    if (state.housingScenario === 'stay') {
+      patch.includeMovingCost = false;
+      if (state.stayOption === 'continue') {
+        patch.stayOption = 'renovate';
+      }
     }
     onChange(patch);
   };
 
   const selectHousingScenario = (scenario: SecondLifeState['housingScenario']) => {
     const patch: Partial<SecondLifeState> = { housingScenario: scenario };
-    if (scenario === 'stay' && state.stayOption === 'continue') {
-      patch.stayOption = 'renovate';
+    if (scenario === 'stay') {
+      patch.includeMovingCost = false;
+      if (state.stayOption === 'continue') {
+        patch.stayOption = 'renovate';
+      }
     }
     onChange(patch);
   };
@@ -50,11 +56,12 @@ export function SecondLifeHousingSection({
   return (
     <section className="second-life-section">
       <SecondLifeModeSelector
+        title="これからの住まいはどうしますか？"
         useCurrent={useCurrentPlan}
-        currentLabel='Q5「住まい」の現在の計画をそのまま使う'
-        reviewLabel="セカンドライフの住まいを見直す"
-        currentDescription="Q5で入力している住まいの期間・費用を、そのままキャッシュフロー計算に使います。"
-        reviewDescription="リフォーム・建て替え・転居など、セカンドライフ用の住まい方をここで設定します。"
+        currentLabel="今の住まい計画をそのまま使う"
+        reviewLabel="これからの住まいを見直す"
+        currentDescription="「住まい」で入力している期間・費用のまま計算します。"
+        reviewDescription="リフォーム・建て替え・転居など、今の計画から変える内容を設定します。"
         name="second-life-housing-mode"
         onUseCurrent={() => onChange({ housingSkip: true })}
         onReview={startHousingReview}
@@ -63,14 +70,14 @@ export function SecondLifeHousingSection({
       {useCurrentPlan ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
-            Q5「住まい」の入力を変更せず、その計画をそのまま計算に使用します。
+            「住まい」で入力した内容のまま計算します。元の入力は変更しません。
           </p>
         </div>
       ) : (
         <>
           <div className="second-life-section-toolbar">
             <p className="second-life-apply-note">
-              セカンドライフ開始：{state.startAge}歳（開始年齢はこのページ上部で変更）
+              住まいを変える時期を設定してください（{state.startAge}歳以降）。
             </p>
             {hasHousingAction ? (
               <label className="second-life-timing">
@@ -286,7 +293,7 @@ export function SecondLifeHousingSection({
 
           <div className="second-life-section-actions">
             <p className="second-life-apply-note">
-              Q5「住まい」の入力自体は変更せず、住まいを変える年齢以降のキャッシュフロー計算だけこの設計を優先します。
+              元の「住まい」の入力は残ります。計算では、{state.housingActionAge}歳から上で選んだ住まい方に切り替わります。
             </p>
           </div>
         </>

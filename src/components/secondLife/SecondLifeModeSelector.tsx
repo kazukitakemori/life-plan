@@ -2,6 +2,7 @@ import { SecondLifeChoiceCard } from './SecondLifeChoiceCard';
 import './SecondLifeModeSelector.css';
 
 interface SecondLifeModeSelectorProps {
+  title?: string;
   useCurrent: boolean;
   currentLabel: string;
   reviewLabel: string;
@@ -13,6 +14,7 @@ interface SecondLifeModeSelectorProps {
 }
 
 export function SecondLifeModeSelector({
+  title,
   useCurrent,
   currentLabel,
   reviewLabel,
@@ -24,7 +26,7 @@ export function SecondLifeModeSelector({
 }: SecondLifeModeSelectorProps) {
   return (
     <div className="second-life-mode-selector">
-      <p className="second-life-mode-selector-title">この項目をどう扱いますか？</p>
+      <p className="second-life-mode-selector-title">{title ?? 'この項目をどうしますか？'}</p>
       <div
         className="second-life-mode-grid"
         role="radiogroup"

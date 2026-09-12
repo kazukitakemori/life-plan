@@ -23,15 +23,16 @@ export function SecondLifeLivingSection({
   return (
     <section className="second-life-section">
       <SecondLifeModeSelector
+        title={`${state.startAge}歳以降の生活費はどうしますか？`}
         useCurrent={useCurrentPlan}
-        currentLabel='Q4「生活費」の現在の計画をそのまま使う'
-        reviewLabel="セカンドライフの生活費を見直す"
+        currentLabel="今の生活費計画をそのまま使う"
+        reviewLabel={`${state.startAge}歳以降の生活費を設定する`}
         currentDescription={
           currentMonthly > 0
-            ? `Q4で入力している生活費（現在の目安 ${formatSecondLifeMan(currentMonthly)}万円／月）を、そのまま計算に使います。`
-            : 'Q4で入力している生活費スケジュールを、そのままキャッシュフロー計算に使います。'
+            ? `「生活費」で入力している現在の目安（月${formatSecondLifeMan(currentMonthly)}万円）を、そのまま使います。`
+            : '「生活費」で入力している計画を、そのまま使います。'
         }
-        reviewDescription="セカンドライフ開始年齢以降の生活水準を、現在と同じ・8割・7割などから改めて設定します。"
+        reviewDescription="現在の生活費を基準に、100%・80%・70%で比較できます。年金額が入力済みなら、年金収入を目安にした試算も選べます。"
         name="second-life-living-mode"
         onUseCurrent={() => onChange({ livingSkip: true })}
         onReview={() => onChange({ livingSkip: false })}
@@ -40,19 +41,19 @@ export function SecondLifeLivingSection({
       {useCurrentPlan ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
-            Q4「生活費」の入力を変更せず、その計画をそのまま計算に使用します。
+            「生活費」で入力した内容のまま計算します。元の入力は変更しません。
           </p>
         </div>
       ) : (
         <>
           <div className="second-life-section-toolbar">
             <p className="second-life-apply-note">
-              下で選んだ生活水準は、ページ上部のセカンドライフ開始 {state.startAge}歳から計算上だけ優先します。
+              基準となる現在の生活費：月{formatSecondLifeMan(currentMonthly)}万円。{state.startAge}歳以降の生活費を下から選んでください。
             </p>
           </div>
 
           <div
-            className="second-life-choice-grid"
+            className="second-life-choice-grid second-life-choice-grid--living"
             role="radiogroup"
             aria-label="セカンドライフの生活水準"
           >
@@ -97,9 +98,14 @@ export function SecondLifeLivingSection({
 
           <div className="second-life-section-actions">
             <p className="second-life-apply-note">
-              「現在と同じ水準」を選んだ場合も、Q4の入力を書き換えるのではなく、Q12で確認した生活水準として開始年齢以降の計算に使用します。
+              80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。元の「生活費」の入力は残したまま、{state.startAge}歳以降だけ選んだ金額で試算します。
             </p>
           </div>
+          {!options.some((option) => option.level === 'pension_based') ? (
+            <p className="second-life-apply-note">
+              年金額がまだ入力されていないため、「年金収入を目安にする」は表示していません。
+            </p>
+          ) : null}
         </>
       )}
     </section>

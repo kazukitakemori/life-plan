@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "/home/runner/work/life-plan/life-plan/scripts/tmp_q12_ux_accuracy_review.py", line 242, in <module>
-    replace(
-  File "/home/runner/work/life-plan/life-plan/scripts/tmp_q12_ux_accuracy_review.py", line 8, in replace
-    raise RuntimeError(f'pattern not found in {path}: {old[:120]!r}')
-RuntimeError: pattern not found in src/lib/secondLifeGuide.ts: "          ? 'Q5「住まい」の現在入力をそのまま計算に使用します'"
