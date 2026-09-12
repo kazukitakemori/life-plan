@@ -30,24 +30,30 @@ export function buildSecondLifeCalculationStates(input: {
 }): SecondLifeCalculationStates {
   const head = input.familyMembers.find((member) => member.role === 'head');
 
-  const housingState = head
-    ? applySecondLifeHousingToHousingStateWithChanges({
-        housingState: input.housingState,
-        secondLifeState: input.secondLifeState,
-        member: head,
-        referenceDate: input.referenceDate,
-        targetId: head.id,
-      }).housingState
-    : input.housingState;
+  // skip は「何も反映しない」を厳密に保証する。
+  // 派生処理すら通さず、Q5 の保存データをそのまま計算へ渡す。
+  const housingState =
+    input.secondLifeState.housingSkip || !head
+      ? input.housingState
+      : applySecondLifeHousingToHousingStateWithChanges({
+          housingState: input.housingState,
+          secondLifeState: input.secondLifeState,
+          member: head,
+          referenceDate: input.referenceDate,
+          targetId: head.id,
+        }).housingState;
 
-  const livingState = applySecondLifeLivingDesign({
-    livingState: input.livingState,
-    secondLifeState: input.secondLifeState,
-    familyMembers: input.familyMembers,
-    incomeByMember: input.incomeByMember,
-    pensionByMember: input.pensionByMember,
-    referenceDate: input.referenceDate,
-  });
+  // 生活費も同様に、skip 中は Q4 の保存データを一切加工しない。
+  const livingState = input.secondLifeState.livingSkip
+    ? input.livingState
+    : applySecondLifeLivingDesign({
+        livingState: input.livingState,
+        secondLifeState: input.secondLifeState,
+        familyMembers: input.familyMembers,
+        incomeByMember: input.incomeByMember,
+        pensionByMember: input.pensionByMember,
+        referenceDate: input.referenceDate,
+      });
 
   return { housingState, livingState };
 }
