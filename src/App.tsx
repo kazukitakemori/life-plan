@@ -1397,7 +1397,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            secondLifeState={secondLifeState}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1407,21 +1406,6 @@ export default function App() {
             onChange={(state) => {
               markPlanInputsChanged();
               setLifeEventState(state);
-            }}
-            onSecondLifeChange={(state) => {
-              markPlanInputsChanged();
-              setSecondLifeState(state);
-            }}
-            onAddSecondLifeNursing={() => {
-              markPlanInputsChanged();
-              setLifeEventState(
-                addSecondLifeNursingTemplates({
-                  lifeEventState,
-                  familyMembers,
-                  referenceDate,
-                  secondLifeState,
-                }),
-              );
             }}
           />
         );
@@ -1691,6 +1675,17 @@ export default function App() {
             onSecondLifeChange={(state) => {
               markPlanInputsChanged();
               setSecondLifeState(state);
+            }}
+            onApplySecondLifeNursing={() => {
+              markPlanInputsChanged();
+              setLifeEventState(
+                addSecondLifeNursingTemplates({
+                  lifeEventState,
+                  familyMembers,
+                  referenceDate,
+                  secondLifeState,
+                }),
+              );
             }}
             onNavigateToStep={setActiveStep}
           />
