@@ -31,6 +31,7 @@ import {
   formatThirdLifeCareDuration,
   getThirdLifeAnnualAdditionalCostMan,
   getThirdLifeCareEndAge,
+  getThirdLifeCareStartAge,
   THIRD_LIFE_CARE_SCENARIO_LABELS,
 } from './thirdLifeCare';
 
@@ -347,6 +348,10 @@ function buildNursingChecklistItem(
       continue;
     }
 
+    const expectedStartAge = getThirdLifeCareStartAge(
+      design,
+      member.expectedLifespan,
+    );
     const expectedEndAge = getThirdLifeCareEndAge(
       design,
       member.expectedLifespan,
@@ -355,7 +360,7 @@ function buildNursingChecklistItem(
       annualCost <= 0
         ? projections.recurring == null
         : projections.recurring != null &&
-          projections.recurring.startAge === design.startAge &&
+          projections.recurring.startAge === expectedStartAge &&
           projections.recurring.amountMan === annualCost &&
           projections.recurring.endMode ===
             (design.durationMode === 'years' ? 'until' : 'lifetime') &&
@@ -365,7 +370,7 @@ function buildNursingChecklistItem(
       initialCost <= 0
         ? projections.initial == null
         : projections.initial != null &&
-          projections.initial.startAge === design.startAge &&
+          projections.initial.startAge === expectedStartAge &&
           projections.initial.amountMan === initialCost &&
           projections.initial.endMode === 'once';
     const isApplied = recurringApplied && initialApplied;
@@ -377,7 +382,7 @@ function buildNursingChecklistItem(
     }
 
     detailLines.push(
-      `${getMemberTabLabel(member)}：${design.startAge}歳〜 ${THIRD_LIFE_CARE_SCENARIO_LABELS[design.scenario]}・月${design.monthlyCostMan}万円＋開始時${initialCost}万円（${formatThirdLifeCareDuration(design)}） / ${
+      `${getMemberTabLabel(member)}：${expectedStartAge}歳〜 ${THIRD_LIFE_CARE_SCENARIO_LABELS[design.scenario]}・月${design.monthlyCostMan}万円＋開始時${initialCost}万円（${formatThirdLifeCareDuration(design)}） / ${
         isApplied ? '反映済み' : projections.all.length > 0 ? '再反映が必要' : '未反映'
       }`,
     );

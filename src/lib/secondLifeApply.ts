@@ -35,6 +35,7 @@ import type { PensionByMember } from '../types/pension';
 import {
   getThirdLifeAnnualAdditionalCostMan,
   getThirdLifeCareEndAge,
+  getThirdLifeCareStartAge,
 } from './thirdLifeCare';
 import type {
   SecondLifeNursingDesign,
@@ -347,6 +348,7 @@ function upsertSecondLifeNursingEvent(
 
   const annualCost = getThirdLifeAnnualAdditionalCostMan(design);
   const initialCost = Math.max(0, design.initialCostMan);
+  const startAge = getThirdLifeCareStartAge(design, member.expectedLifespan);
   const generated = [] as (typeof without);
 
   if (annualCost > 0) {
@@ -360,7 +362,7 @@ function upsertSecondLifeNursingEvent(
       ...recurring,
       label: THIRD_LIFE_NURSING_RECURRING_EVENT_LABEL,
       type: 'nursing',
-      startAge: design.startAge,
+      startAge,
       startMonth: 1,
       endMode: design.durationMode === 'years' ? 'until' : 'lifetime',
       endAge,
@@ -375,10 +377,10 @@ function upsertSecondLifeNursingEvent(
       createLifeEventEntry(member, referenceMonth, {
         label: THIRD_LIFE_NURSING_INITIAL_EVENT_LABEL,
         type: 'nursing',
-        startAge: design.startAge,
+        startAge,
         startMonth: 1,
         endMode: 'once',
-        endAge: design.startAge,
+        endAge: startAge,
         endMonth: 1,
         cycleInterval: 1,
         cycleUnit: 'year',

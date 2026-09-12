@@ -102,6 +102,16 @@ export function getThirdLifeAnnualAdditionalCostMan(
   return Math.round(Math.max(0, design.monthlyCostMan) * 12 * 100) / 100;
 }
 
+export function getThirdLifeCareStartAge(
+  design: Pick<SecondLifeNursingDesign, 'startAge'>,
+  expectedLifespan: number,
+): number {
+  return Math.min(
+    Math.max(60, expectedLifespan),
+    Math.max(60, Math.round(design.startAge || 60)),
+  );
+}
+
 export function getThirdLifeCareEndAge(
   design: Pick<
     SecondLifeNursingDesign,
@@ -109,9 +119,10 @@ export function getThirdLifeCareEndAge(
   >,
   expectedLifespan: number,
 ): number {
-  if (design.durationMode === 'lifetime') return expectedLifespan;
+  const startAge = getThirdLifeCareStartAge(design, expectedLifespan);
+  if (design.durationMode === 'lifetime') return Math.max(startAge, expectedLifespan);
   const years = Math.max(1, Math.round(design.durationYears ?? 1));
-  return Math.min(expectedLifespan, design.startAge + years - 1);
+  return Math.min(Math.max(startAge, expectedLifespan), startAge + years - 1);
 }
 
 export function formatThirdLifeCareDuration(

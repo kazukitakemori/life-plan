@@ -2,6 +2,7 @@ import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   formatThirdLifeCareDuration,
   getThirdLifeCareScenarioInfo,
+  getThirdLifeCareStartAge,
   THIRD_LIFE_CARE_SCENARIOS,
 } from '../../lib/thirdLifeCare';
 import type { FamilyMember } from '../../types/family';
@@ -127,10 +128,14 @@ export function SecondLifeNursingSection({
           const design = state.nursingByTarget[key];
           const scenarioInfo = getThirdLifeCareScenarioInfo(design.scenario);
           const hasCost = design.initialCostMan > 0 || design.monthlyCostMan > 0;
+          const effectiveStartAge = getThirdLifeCareStartAge(
+            design,
+            member.expectedLifespan,
+          );
           const maxStartAge = Math.max(60, member.expectedLifespan);
           const maxDurationYears = Math.max(
             1,
-            member.expectedLifespan - Math.min(design.startAge, maxStartAge) + 1,
+            member.expectedLifespan - effectiveStartAge + 1,
           );
           return (
             <article
@@ -152,8 +157,8 @@ export function SecondLifeNursingSection({
                     {design.skip
                       ? '今回は介護費を見込まない'
                       : hasCost
-                        ? `${design.startAge}歳〜 ${scenarioInfo.label}・月${design.monthlyCostMan}万円＋開始時${design.initialCostMan}万円（${formatThirdLifeCareDuration(design)}）`
-                        : `${design.startAge}歳〜 ${scenarioInfo.label}（費用未入力）`}
+                        ? `${effectiveStartAge}歳〜 ${scenarioInfo.label}・月${design.monthlyCostMan}万円＋開始時${design.initialCostMan}万円（${formatThirdLifeCareDuration(design)}）`
+                        : `${effectiveStartAge}歳〜 ${scenarioInfo.label}（費用未入力）`}
                   </p>
                 </div>
               </div>
@@ -211,7 +216,7 @@ export function SecondLifeNursingSection({
                         className="second-life-age-input"
                         min={60}
                         max={maxStartAge}
-                        value={Math.min(design.startAge, maxStartAge)}
+                        value={effectiveStartAge}
                         onChange={(event) => {
                           const startAge = Math.min(
                             maxStartAge,
