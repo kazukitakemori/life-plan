@@ -16,7 +16,6 @@ import {
 } from './livingDefaults';
 import {
   buildSecondLifeLivingOptions,
-  estimateSecondLifeHousingTotalMan,
   getDefaultNursingAnnualCostMan,
   getMemberAgeWhenHeadReachesAge,
 } from './secondLifeEstimates';
@@ -291,23 +290,22 @@ function upsertOneTimeLifeEvent(
 
 export function applySecondLifeHousing(
   lifeEventState: LifeEventState,
-  secondLifeState: SecondLifeState,
+  _secondLifeState: SecondLifeState,
   head: FamilyMember | undefined,
   referenceMonth: number,
 ): LifeEventState {
-  if (!head || secondLifeState.housingSkip) {
-    return lifeEventState;
-  }
+  if (!head) return lifeEventState;
 
-  const total = estimateSecondLifeHousingTotalMan(secondLifeState);
+  // 住まい関連費用は Q5 / housingState を唯一の計算元にする。
+  // 旧バージョンで作成した「セカンドライフ住まい」ライフイベントだけを削除する。
   return upsertOneTimeLifeEvent(
     lifeEventState,
     head,
     referenceMonth,
     SECOND_LIFE_HOUSING_EVENT_LABEL,
     'second_life_housing',
-    secondLifeState.startAge,
-    total ?? 0,
+    0,
+    0,
   );
 }
 

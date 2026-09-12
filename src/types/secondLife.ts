@@ -4,7 +4,7 @@ export type SecondLifePriority = 'must' | 'want' | 'nice';
 /** 将来のお住まい：3つのシナリオ */
 export type SecondLifeHousingScenario = 'stay' | 'hometown' | 'new_area';
 
-export type SecondLifeStayOption = 'renovate' | 'purchase_rebuild';
+export type SecondLifeStayOption = 'continue' | 'renovate' | 'purchase_rebuild';
 export type SecondLifeHometownOption = 'renovate_parents' | 'purchase_rebuild';
 export type SecondLifeNewAreaOption = 'rent' | 'purchase';
 
@@ -30,6 +30,8 @@ export interface SecondLifeLivingBreakdownItem {
 
 export interface SecondLifeQ3ApplySnapshot {
   startAge: number;
+  /** 住まいを実際に変更・リフォームする世帯主年齢 */
+  housingActionAge: number;
   housingSkip: boolean;
   housingScenario: SecondLifeHousingScenario;
   stayOption: SecondLifeStayOption;
@@ -43,7 +45,10 @@ export interface SecondLifeQ3ApplySnapshot {
 /** 反映状態の判定に使う設計内容 */
 export interface SecondLifeDesignSnapshot {
   priority: SecondLifePriority;
+  /** セカンドライフ全体の開始年齢。Q12でのみ編集する */
   startAge: number;
+  /** 住まいを実際に変更・リフォームする世帯主年齢 */
+  housingActionAge: number;
   housingSkip: boolean;
   housingScenario: SecondLifeHousingScenario;
   stayOption: SecondLifeStayOption;

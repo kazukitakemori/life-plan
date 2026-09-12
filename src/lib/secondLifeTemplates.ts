@@ -216,7 +216,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
   const targetId = input.targetId ?? input.member.id;
   const data = getHousingTargetData(input.housingState, targetId);
   const stripped = stripSecondLifeHousingItems(data);
-  const startAge = input.secondLifeState.startAge;
+  const startAge = input.secondLifeState.housingActionAge;
   const kind = getSecondLifeHousingTemplateKind(input.secondLifeState);
   const relocating =
     !input.secondLifeState.housingSkip &&
@@ -247,7 +247,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
     changes.push(...endedRentals.ended, ...endedOwned.ended);
   }
 
-  if (kind === 'skip') {
+  if (kind === 'skip' || kind === 'stay') {
     return {
       housingState: migrateHousingState({
         ...input.housingState,

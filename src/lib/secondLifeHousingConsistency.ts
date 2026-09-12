@@ -112,7 +112,11 @@ export function buildSecondLifeHousingConsistency(input: {
   secondLifeState: SecondLifeState;
 }): SecondLifeHousingConsistency {
   const { housingState, secondLifeState } = input;
-  const startAge = secondLifeState.startAge;
+  const startAge =
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'continue'
+      ? secondLifeState.startAge
+      : secondLifeState.housingActionAge;
 
   if (secondLifeState.housingSkip) {
     return {
@@ -128,6 +132,23 @@ export function buildSecondLifeHousingConsistency(input: {
   );
 
   if (secondLifeState.housingScenario === 'stay') {
+    if (secondLifeState.stayOption === 'continue') {
+      if (activeHousing.length === 0) {
+        return {
+          status: 'missing',
+          title: `${secondLifeState.startAge}歳時点の住まいが未設定です`,
+          summary: '今の住まいをそのまま継続する計画ですが、セカンドライフ開始時点の住まいが見つかりません。',
+          detailLines: [],
+        };
+      }
+      return {
+        status: 'aligned',
+        title: '現在の住まいをそのまま継続できます',
+        summary: `${secondLifeState.startAge}歳からセカンドライフを始めても、住まいの変更は発生しません。`,
+        detailLines: activeHousing.map(formatHousingPeriod),
+      };
+    }
+
     if (secondLifeState.stayOption === 'purchase_rebuild') {
       if (activeHousing.length === 0) {
         return {
@@ -157,8 +178,8 @@ export function buildSecondLifeHousingConsistency(input: {
 
     return {
       status: 'aligned',
-      title: '現在の住まいをそのまま継続できます',
-      summary: `${startAge}歳からセカンドライフを始めても、住み替えは発生しません。`,
+      title: '現在の住まいにリフォーム費を反映できます',
+      summary: `${startAge}歳に現在の持ち家をリフォームする計画です。住み替えは発生しません。`,
       detailLines: activeHousing.map(formatHousingPeriod),
     };
   }
@@ -180,7 +201,7 @@ export function buildSecondLifeHousingConsistency(input: {
   return {
     status: 'attention',
     title: '現在の住まいから切り替える必要があります',
-    summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。セカンドライフ計画を優先すると、現在の住まいを${previousMonthLabel(startAge)}で終了し、${destination}へ切り替えます。`,
+    summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。住まい計画を優先すると、現在の住まいを${previousMonthLabel(startAge)}で終了し、${destination}へ切り替えます。`,
     detailLines: activeHousing.map(formatHousingPeriod),
   };
 }

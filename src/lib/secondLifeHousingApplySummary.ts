@@ -109,7 +109,7 @@ export function getSecondLifeHousingApplyPlanLines(
   const lines: string[] = [];
 
   if (isRelocatingHousing(state)) {
-    lines.push('転居のため、既存の住まいを開始年齢の直前で終了します');
+    lines.push('転居のため、既存の住まいを住まい変更年齢の直前で終了します');
   }
 
   switch (kind) {
@@ -117,6 +117,9 @@ export function getSecondLifeHousingApplyPlanLines(
       lines.push(
         '住まいの変更はせず、前回追加したセカンドライフ物件があれば削除します',
       );
+      break;
+    case 'stay':
+      lines.push('現在の住まいをそのまま継続します');
       break;
     case 'rent':
       lines.push('セカンドライフ賃貸を住まい入力に追加します');
@@ -159,6 +162,7 @@ export function getSecondLifeHousingApplyWarnings(input: {
     | 'hometownOption'
     | 'newAreaOption'
     | 'startAge'
+    | 'housingActionAge'
   >;
   existingHousingCount: number;
   changes?: SecondLifeHousingApplyChange[];
@@ -175,7 +179,7 @@ export function getSecondLifeHousingApplyWarnings(input: {
     const names = ended.map((change) => `「${change.name}」`).join('・');
     const end = ended[0];
     warnings.push(
-      `${names}はセカンドライフ開始後も続く住まい設定です。今回の転居計画を優先すると、${formatAgeMonth(end.endAge, end.endMonth)}で終了します。`,
+      `${names}は住まい変更年齢以降も続く設定です。今回の転居計画を優先すると、${formatAgeMonth(end.endAge, end.endMonth)}で終了します。`,
     );
   }
 

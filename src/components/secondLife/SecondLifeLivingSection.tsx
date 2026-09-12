@@ -3,7 +3,6 @@ import { formatSecondLifeMan } from '../../lib/secondLifeEstimates';
 import { SECOND_LIFE_SKIP_LABEL } from '../../lib/secondLifeLabels';
 import type { SecondLifeState } from '../../types/secondLife';
 import { SecondLifeChoiceCard } from './SecondLifeChoiceCard';
-import { SecondLifeStartAgeField } from './SecondLifeStartAgeField';
 
 interface SecondLifeLivingSectionProps {
   state: SecondLifeState;
@@ -32,10 +31,9 @@ export function SecondLifeLivingSection({
       }
     >
       <div className="second-life-section-toolbar">
-        <SecondLifeStartAgeField
-          value={state.startAge}
-          onChange={(startAge) => onChange({ startAge })}
-        />
+        <p className="second-life-apply-note">
+          生活水準の変更は、ページ上部のセカンドライフ開始 {state.startAge}歳から反映します。
+        </p>
       </div>
 
       <label

@@ -64,11 +64,13 @@ export function createDefaultSecondLifeState(): SecondLifeState {
 
     startAge: SECOND_LIFE_DEFAULT_START_AGE,
 
+    housingActionAge: SECOND_LIFE_DEFAULT_START_AGE,
+
     housingSkip: false,
 
     housingScenario: 'stay',
 
-    stayOption: 'renovate',
+    stayOption: 'continue',
 
     hometownOption: 'renovate_parents',
 
@@ -256,19 +258,25 @@ export function migrateSecondLifeState(
 
 
 
+  const startAge =
+    typeof value.startAge === 'number' && value.startAge >= 60
+      ? value.startAge
+      : defaults.startAge;
+
+  const housingActionAge =
+    typeof value.housingActionAge === 'number' && value.housingActionAge >= startAge
+      ? value.housingActionAge
+      : startAge;
+
   return {
 
     ...defaults,
 
     ...rest,
 
-    startAge:
+    startAge,
 
-      typeof value.startAge === 'number' && value.startAge >= 60
-
-        ? value.startAge
-
-        : defaults.startAge,
+    housingActionAge,
 
     nursingByTarget,
 

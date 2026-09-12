@@ -289,6 +289,7 @@ function estimateBaseHousingCostMan(
   newAreaOption: SecondLifeNewAreaOption,
 ): number {
   if (scenario === 'stay') {
+    if (stayOption === 'continue') return 0;
     return stayOption === 'renovate'
       ? RENOVATE_CURRENT_HOME_MAN
       : PURCHASE_REBUILD_MAN;

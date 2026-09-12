@@ -230,13 +230,18 @@ export function SecondLifeGuideStep({
             min={60}
             max={100}
             value={secondLifeState.startAge}
-            onChange={(event) =>
+            onChange={(event) => {
+              const startAge =
+                Number(event.target.value) || SECOND_LIFE_DEFAULT_START_AGE;
               onSecondLifeChange({
                 ...secondLifeState,
-                startAge:
-                  Number(event.target.value) || SECOND_LIFE_DEFAULT_START_AGE,
-              })
-            }
+                startAge,
+                housingActionAge: Math.max(
+                  startAge,
+                  secondLifeState.housingActionAge ?? startAge,
+                ),
+              });
+            }}
           />
           <span>歳〜</span>
         </label>

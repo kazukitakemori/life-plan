@@ -37,6 +37,7 @@ export function getSecondLifeHousingOptionLabel(
 ): string {
   switch (state.housingScenario) {
     case 'stay':
+      if (state.stayOption === 'continue') return '現在の住まいをそのまま継続';
       return state.stayOption === 'renovate'
         ? '現在の住宅をリフォーム'
         : '住宅購入・建て替え';
@@ -89,6 +90,7 @@ export function isSecondLifeRentalHousingDesign(
 
 export type SecondLifeHousingTemplateKind =
   | 'skip'
+  | 'stay'
   | 'rent'
   | 'renovate'
   | 'purchase';
@@ -104,6 +106,9 @@ export function getSecondLifeHousingTemplateKind(
   >,
 ): SecondLifeHousingTemplateKind {
   if (state.housingSkip) return 'skip';
+  if (state.housingScenario === 'stay' && state.stayOption === 'continue') {
+    return 'stay';
+  }
   if (isSecondLifeRentalHousingDesign(state)) return 'rent';
 
   if (
@@ -120,6 +125,7 @@ export function getSecondLifeHousingTemplateKind(
 export function getSecondLifeStayOptionLabel(
   option: SecondLifeStayOption,
 ): string {
+  if (option === 'continue') return '現在の住まいをそのまま継続';
   return option === 'renovate'
     ? '現在の住宅をリフォーム'
     : '住宅購入・建て替え';

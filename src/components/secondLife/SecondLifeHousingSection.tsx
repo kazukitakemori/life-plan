@@ -3,12 +3,14 @@ import {
   estimateSecondLifeHousingTotalMan,
   formatSecondLifeMan,
 } from '../../lib/secondLifeEstimates';
-import { SECOND_LIFE_SKIP_LABEL } from '../../lib/secondLifeLabels';
+import {
+  getSecondLifeHousingTemplateKind,
+  SECOND_LIFE_SKIP_LABEL,
+} from '../../lib/secondLifeLabels';
 import {
   SecondLifeChoiceCard,
   SecondLifePlaceholderBody,
 } from './SecondLifeChoiceCard';
-import { SecondLifeStartAgeField } from './SecondLifeStartAgeField';
 
 interface SecondLifeHousingSectionProps {
   state: SecondLifeState;
@@ -32,6 +34,8 @@ export function SecondLifeHousingSection({
 }: SecondLifeHousingSectionProps) {
   const total = estimateSecondLifeHousingTotalMan(state);
   const placeholder = state.housingSkip;
+  const housingKind = getSecondLifeHousingTemplateKind(state);
+  const hasHousingAction = housingKind !== 'stay' && housingKind !== 'skip';
 
   return (
     <section
@@ -41,13 +45,6 @@ export function SecondLifeHousingSection({
           : 'second-life-section'
       }
     >
-      <div className="second-life-section-toolbar">
-        <SecondLifeStartAgeField
-          value={state.startAge}
-          onChange={(startAge) => onChange({ startAge })}
-        />
-      </div>
-
       <label
         className={
           placeholder ? 'second-life-skip is-checked' : 'second-life-skip'
@@ -60,6 +57,39 @@ export function SecondLifeHousingSection({
         />
         {SECOND_LIFE_SKIP_LABEL}
       </label>
+
+      {!placeholder ? (
+        <div className="second-life-section-toolbar">
+          <p className="second-life-apply-note">
+            セカンドライフ開始：{state.startAge}歳（開始年齢はこのページ上部で変更）
+          </p>
+          {hasHousingAction ? (
+            <label className="second-life-timing">
+              <span>住まいを変える年齢（世帯主）</span>
+              <input
+                type="number"
+                className="second-life-age-input"
+                min={state.startAge}
+                max={110}
+                value={state.housingActionAge}
+                onChange={(event) =>
+                  onChange({
+                    housingActionAge: Math.max(
+                      state.startAge,
+                      Number(event.target.value) || state.startAge,
+                    ),
+                  })
+                }
+              />
+              <span>歳</span>
+            </label>
+          ) : (
+            <p className="second-life-apply-note">
+              今の住まいをそのまま継続するため、住まい変更年齢の入力は不要です。
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div
         className={
@@ -88,6 +118,20 @@ export function SecondLifeHousingSection({
                 <>
                   {scenario.id === 'stay' ? (
                     <>
+                      <label className="second-life-inline-option">
+                        <input
+                          type="radio"
+                          name="second-life-stay"
+                          checked={state.stayOption === 'continue'}
+                          onChange={() =>
+                            onChange({
+                              housingScenario: 'stay',
+                              stayOption: 'continue',
+                            })
+                          }
+                        />
+                        今の住まいにそのまま住み続ける
+                      </label>
                       <label className="second-life-inline-option">
                         <input
                           type="radio"
