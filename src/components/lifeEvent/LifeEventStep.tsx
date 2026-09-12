@@ -10,7 +10,6 @@ import type { FamilyMember } from '../../types/family';
 import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { SecondLifeState } from '../../types/secondLife';
-import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { StepHeading } from '../ui';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
@@ -35,10 +34,8 @@ export function LifeEventStep({
   referenceDate,
   memberTabExtras,
   onMemberTabExtrasChange,
-  secondLifeState,
   purposeNote,
   onChange,
-  onAddSecondLifeNursing,
 }: LifeEventStepProps) {
   const headMember = members.find((m) => m.role === 'head');
   const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
@@ -212,26 +209,6 @@ export function LifeEventStep({
       />
 
       <AddLifeEventCards activeMember={activeMember} onAdd={addEntryFromPreset} />
-
-      {onAddSecondLifeNursing && secondLifeState ? (
-        <SecondLifeRefinePanel
-          title="セカンドライフ連動を反映する"
-          summary="介護の設計本体は「12 セカンドライフ」で管理します"
-        >
-          <div className="second-life-nursing-actions">
-            <p className="second-life-apply-note">
-              「12 セカンドライフ」で設定した世帯主・配偶者の介護設計を、キャッシュフロー計算用の連動データとしてこの画面へ反映します。反映された行はここでは直接編集しません。
-            </p>
-            <button
-              type="button"
-              className="second-life-apply-btn"
-              onClick={onAddSecondLifeNursing}
-            >
-              セカンドライフの介護設計を反映する
-            </button>
-          </div>
-        </SecondLifeRefinePanel>
-      ) : null}
     </div>
   );
 }
