@@ -173,7 +173,7 @@ export function SecondLifeGuideStep({
       />
 
       <p className="second-life-guide-intro">
-        セカンドライフ開始年齢を基準に、老後の住まい・生活水準・介護をこの画面で設計します。住まい・生活費はQ4・Q5の元入力を書き換えず、キャッシュフロー計算時だけQ12の設計を優先します。
+        セカンドライフ開始年齢を基準に、老後の住まい・生活水準・介護をこの画面で設計します。住まい・生活費はそれぞれ「現在の計画をそのまま使う」か「セカンドライフ用に見直す」かを選べます。
       </p>
 
       <div className="second-life-guide-start-age">
@@ -269,7 +269,7 @@ export function SecondLifeGuideStep({
 
       <h3 className="second-life-guide-checklist-title">計算ルール・反映状況</h3>
       <p className="second-life-guide-checklist-lead">
-        住まい・生活費はQ12の設計を計算時に優先します。チェックを入れた項目はQ4・Q5の現在入力をそのまま使います。
+        「現在の計画をそのまま使う」を選んだ項目はQ4・Q5の入力をそのまま使用します。「見直す」を選んだ項目だけ、Q12の設計をキャッシュフロー計算時に優先します。
       </p>
 
       <div className="second-life-guide-grid">
@@ -297,7 +297,6 @@ export function SecondLifeGuideStep({
           />
         ))}
       </div>
-
     </div>
   );
 }
