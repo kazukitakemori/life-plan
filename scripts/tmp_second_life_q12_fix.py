@@ -17,6 +17,8 @@ text = text.replace(
     '''      <SecondLifeLivingSection\n        state={secondLifeState}\n        onChange={(patch) =>\n          onSecondLifeChange({ ...secondLifeState, ...patch })\n        }\n''',
     1,
 )
+text = text.replace('        title="1. 住まいを決める"\n', '', 1)
+text = text.replace('        title="2. 生活水準を決める"\n', '', 1)
 text = text.replace(
     "        applyStatus={guide.items.find((item) => item.id === 'nursing')}\n",
     "        applyStatus={guide.items.find((item) => item.id === 'nursing')?.status ?? 'missing'}\n",
