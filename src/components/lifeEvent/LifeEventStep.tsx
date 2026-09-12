@@ -2,19 +2,19 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   createLifeEventEntryFromPreset,
 } from '../../lib/lifeEventDefaults';
+import { isSecondLifeManagedLifeEvent } from '../../lib/lifeEventSource';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { memberHasLifeEventData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventPresetId, LifeEventState } from '../../types/lifeEvent';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
+import type { SecondLifeState } from '../../types/secondLife';
+import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { StepHeading } from '../ui';
 import { AddLifeEventCards } from './AddLifeEventCards';
 import { LifeEventTable } from './LifeEventTable';
 import { MemberLifeEventTabs } from './MemberLifeEventTabs';
-import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
-import { SecondLifeStartAgeField } from '../secondLife/SecondLifeStartAgeField';
-import type { SecondLifeState } from '../../types/secondLife';
 
 interface LifeEventStepProps {
   members: FamilyMember[];
@@ -38,7 +38,6 @@ export function LifeEventStep({
   secondLifeState,
   purposeNote,
   onChange,
-  onSecondLifeChange,
   onAddSecondLifeNursing,
 }: LifeEventStepProps) {
   const headMember = members.find((m) => m.role === 'head');
@@ -95,6 +94,14 @@ export function LifeEventStep({
     [visibleMembers],
   );
 
+  const copySourceManualCount = useMemo(
+    () =>
+      (lifeEventState.byMember[copySourceId] ?? []).filter(
+        (entry) => !isSecondLifeManagedLifeEvent(entry),
+      ).length,
+    [lifeEventState.byMember, copySourceId],
+  );
+
   const persistEntries = (memberId: string, updated: typeof entries) => {
     onChange({
       ...lifeEventState,
@@ -116,16 +123,21 @@ export function LifeEventStep({
 
   const copySettingsFrom = () => {
     const source = lifeEventState.byMember[copySourceId] ?? [];
-    if (source.length === 0 || copySourceId === resolvedActiveId) return;
+    if (copySourceId === resolvedActiveId) return;
 
-    const cloned = source.map((entry) => ({
-      ...entry,
-      id: crypto.randomUUID(),
-      celebrationBeneficiaries: entry.celebrationBeneficiaries?.map(
-        (beneficiary) => ({ ...beneficiary }),
-      ),
-    }));
-    persistEntries(resolvedActiveId, cloned);
+    const destinationManaged = entries.filter(isSecondLifeManagedLifeEvent);
+    const clonedManual = source
+      .filter((entry) => !isSecondLifeManagedLifeEvent(entry))
+      .map((entry) => ({
+        ...entry,
+        id: crypto.randomUUID(),
+        celebrationBeneficiaries: entry.celebrationBeneficiaries?.map(
+          (beneficiary) => ({ ...beneficiary }),
+        ),
+      }));
+
+    if (clonedManual.length === 0) return;
+    persistEntries(resolvedActiveId, [...destinationManaged, ...clonedManual]);
   };
 
   if (!headMember || !activeMember) {
@@ -183,8 +195,7 @@ export function LifeEventStep({
             className="life-event-copy-btn"
             onClick={copySettingsFrom}
             disabled={
-              copySourceId === resolvedActiveId ||
-              (lifeEventState.byMember[copySourceId]?.length ?? 0) === 0
+              copySourceId === resolvedActiveId || copySourceManualCount === 0
             }
           >
             設定をコピー
@@ -202,32 +213,21 @@ export function LifeEventStep({
 
       <AddLifeEventCards activeMember={activeMember} onAdd={addEntryFromPreset} />
 
-      {onAddSecondLifeNursing && secondLifeState && onSecondLifeChange ? (
+      {onAddSecondLifeNursing && secondLifeState ? (
         <SecondLifeRefinePanel
-          title="セカンドライフの介護を具体化する"
-          summary="世帯主・配偶者の介護費を追加できます"
+          title="セカンドライフ連動を反映する"
+          summary="介護の設計本体は「12 セカンドライフ」で管理します"
         >
-          <div className="second-life-section-toolbar">
-            <SecondLifeStartAgeField
-              value={secondLifeState.startAge}
-              onChange={(startAge) =>
-                onSecondLifeChange({
-                  ...secondLifeState,
-                  startAge,
-                })
-              }
-            />
-          </div>
           <div className="second-life-nursing-actions">
             <p className="second-life-apply-note">
-              世帯主・配偶者それぞれの介護費（継続）を追加します。内容はあとから編集できます。
+              「12 セカンドライフ」で設定した世帯主・配偶者の介護設計を、キャッシュフロー計算用の連動データとしてこの画面へ反映します。反映された行はここでは直接編集しません。
             </p>
             <button
               type="button"
               className="second-life-apply-btn"
               onClick={onAddSecondLifeNursing}
             >
-              セカンドライフ用の介護費を追加
+              セカンドライフの介護設計を反映する
             </button>
           </div>
         </SecondLifeRefinePanel>
