@@ -35,11 +35,6 @@ const PENSION_LIVING_CATEGORY_WEIGHTS: {
   { label: 'その他', weight: 0 },
 ];
 
-const NURSING_DEFAULT_ANNUAL_MAN: Record<SecondLifeNursingScenario, number> = {
-  home: 30,
-  day_service: 50,
-  facility: 120,
-};
 
 export function getCalendarYearAtHeadAge(
   head: FamilyMember,
@@ -328,9 +323,10 @@ export function estimateSecondLifeHousingTotalMan(
 }
 
 export function getDefaultNursingAnnualCostMan(
-  scenario: SecondLifeNursingScenario,
+  _scenario: SecondLifeNursingScenario,
 ): number {
-  return NURSING_DEFAULT_ANNUAL_MAN[scenario];
+  // 介護費は施設・利用条件による差が大きいため、Q12では自動設定しない。
+  return 0;
 }
 
 export function formatSecondLifeMan(value: number | null | undefined): string {

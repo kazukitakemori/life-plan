@@ -30,7 +30,10 @@ export function createDefaultSecondLifeNursingDesign(
     skip: false,
     scenario: 'home',
     startAge: SECOND_LIFE_DEFAULT_NURSING_START_AGE,
-    annualCostMan: 50,
+    initialCostMan: 0,
+    monthlyCostMan: 0,
+    durationMode: 'lifetime',
+    durationYears: null,
     ...overrides,
   };
 }
@@ -66,32 +69,51 @@ export function createDefaultSecondLifeState(): SecondLifeState {
   };
 }
 
+function normalizeNursingScenario(value: unknown): SecondLifeNursingDesign['scenario'] {
+  if (
+    value === 'home' ||
+    value === 'day_service' ||
+    value === 'special_nursing_home' ||
+    value === 'paid_care' ||
+    value === 'paid_residential' ||
+    value === 'serviced_elderly' ||
+    value === 'group_home' ||
+    value === 'other'
+  ) {
+    return value;
+  }
+  // 旧「施設介護」は施設種別を特定できないため「その他」へ移行する。
+  if (value === 'facility') return 'other';
+  return 'home';
+}
+
 function migrateLegacyNursingFields(
   value: Partial<SecondLifeState>,
   defaults: SecondLifeState,
 ): SecondLifeState['nursingByTarget'] {
   const legacy = value as Partial<SecondLifeState> & {
     nursingSkip?: boolean;
-    nursingScenario?: SecondLifeState['nursingByTarget']['head']['scenario'];
+    nursingScenario?: unknown;
     nursingStartAge?: number;
     nursingAnnualCostMan?: number;
   };
+
+  const annual =
+    typeof legacy.nursingAnnualCostMan === 'number' && legacy.nursingAnnualCostMan >= 0
+      ? legacy.nursingAnnualCostMan
+      : 0;
 
   const head = createDefaultSecondLifeNursingDesign({
     skip:
       typeof legacy.nursingSkip === 'boolean'
         ? legacy.nursingSkip
         : defaults.nursingByTarget.head.skip,
-    scenario: legacy.nursingScenario ?? defaults.nursingByTarget.head.scenario,
+    scenario: normalizeNursingScenario(legacy.nursingScenario),
     startAge:
       typeof legacy.nursingStartAge === 'number' && legacy.nursingStartAge >= 60
         ? legacy.nursingStartAge
         : defaults.nursingByTarget.head.startAge,
-    annualCostMan:
-      typeof legacy.nursingAnnualCostMan === 'number' &&
-      legacy.nursingAnnualCostMan >= 0
-        ? legacy.nursingAnnualCostMan
-        : defaults.nursingByTarget.head.annualCostMan,
+    monthlyCostMan: Math.round((annual / 12) * 100) / 100,
   });
 
   return {
@@ -106,17 +128,40 @@ function migrateNursingDesign(
 ): SecondLifeNursingDesign {
   if (!value) return fallback;
 
+  const legacy = value as Partial<SecondLifeNursingDesign> & {
+    annualCostMan?: number;
+    scenario?: unknown;
+  };
+  const legacyAnnual =
+    typeof legacy.annualCostMan === 'number' && legacy.annualCostMan >= 0
+      ? legacy.annualCostMan
+      : null;
+  const monthlyCostMan =
+    typeof value.monthlyCostMan === 'number' && value.monthlyCostMan >= 0
+      ? value.monthlyCostMan
+      : legacyAnnual != null
+        ? Math.round((legacyAnnual / 12) * 100) / 100
+        : fallback.monthlyCostMan;
+
   return createDefaultSecondLifeNursingDesign({
     skip: typeof value.skip === 'boolean' ? value.skip : fallback.skip,
-    scenario: value.scenario ?? fallback.scenario,
+    scenario: normalizeNursingScenario(legacy.scenario),
     startAge:
       typeof value.startAge === 'number' && value.startAge >= 60
         ? value.startAge
         : fallback.startAge,
-    annualCostMan:
-      typeof value.annualCostMan === 'number' && value.annualCostMan >= 0
-        ? value.annualCostMan
-        : fallback.annualCostMan,
+    initialCostMan:
+      typeof value.initialCostMan === 'number' && value.initialCostMan >= 0
+        ? value.initialCostMan
+        : fallback.initialCostMan,
+    monthlyCostMan,
+    durationMode: value.durationMode === 'years' ? 'years' : 'lifetime',
+    durationYears:
+      value.durationMode === 'years' &&
+      typeof value.durationYears === 'number' &&
+      value.durationYears > 0
+        ? Math.min(50, Math.max(1, Math.round(value.durationYears)))
+        : null,
   });
 }
 

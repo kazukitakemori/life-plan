@@ -136,3 +136,95 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.third-life-reference-details {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.third-life-reference-details > summary,
+.third-life-selected-description > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.third-life-reference-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.third-life-reference-item {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.third-life-reference-item h4 {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+}
+
+.third-life-reference-item p,
+.third-life-cost-note p,
+.third-life-selected-description p {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--color-muted);
+}
+
+.third-life-reference-item a,
+.third-life-selected-description a {
+  font-size: var(--text-sm);
+  color: var(--color-brand);
+}
+
+.third-life-person-grid {
+  margin-top: 14px;
+}
+
+.third-life-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.third-life-field-row {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.third-life-field-row > span:first-child {
+  font-weight: 600;
+}
+
+.third-life-selected-description {
+  margin: 2px 0 6px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-brand-soft);
+  background: #fafafa;
+}
+
+.third-life-selected-description[open] > summary {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 960px) {
+  .third-life-reference-list {
+    grid-template-columns: 1fr;
+  }
+
+  .third-life-field-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

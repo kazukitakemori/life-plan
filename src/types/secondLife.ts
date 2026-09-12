@@ -25,16 +25,31 @@ export type SecondLifeLivingLevel =
   | 'seventy_percent'
   | 'pension_based';
 
-/** 介護の想定 */
-export type SecondLifeNursingScenario = 'home' | 'day_service' | 'facility';
+/** サードライフ（介護）の想定 */
+export type SecondLifeNursingScenario =
+  | 'home'
+  | 'day_service'
+  | 'special_nursing_home'
+  | 'paid_care'
+  | 'paid_residential'
+  | 'serviced_elderly'
+  | 'group_home'
+  | 'other';
 
+export type SecondLifeNursingDurationMode = 'lifetime' | 'years';
 export type SecondLifeNursingTarget = 'head' | 'spouse';
 
 export interface SecondLifeNursingDesign {
   skip: boolean;
   scenario: SecondLifeNursingScenario;
   startAge: number;
-  annualCostMan: number;
+  /** Q4生活費・Q5住まいとは別に、介護開始時に追加で見込む費用（万円） */
+  initialCostMan: number;
+  /** Q4生活費・Q5住まいとは別に、介護で毎月追加して見込む費用（万円） */
+  monthlyCostMan: number;
+  durationMode: SecondLifeNursingDurationMode;
+  /** durationMode=years のときだけ使用 */
+  durationYears: number | null;
 }
 
 export interface SecondLifeLivingBreakdownItem {

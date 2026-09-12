@@ -48,7 +48,7 @@ type SecondLifeWorkspaceTab = 'housing' | 'living' | 'third-life' | 'summary';
 const SECOND_LIFE_WORKSPACE_TABS: { id: SecondLifeWorkspaceTab; label: string }[] = [
   { id: 'housing', label: '住まい' },
   { id: 'living', label: '生活費' },
-  { id: 'third-life', label: 'サードライフ' },
+  { id: 'third-life', label: '介護・サードライフ' },
   { id: 'summary', label: 'まとめ' },
 ];
 
@@ -179,12 +179,12 @@ export function SecondLifeGuideStep({
     <div className="step-page second-life-step">
       <StepHeading
         number={12}
-        title="セカンドライフ"
-        lead="これからの住まい・生活費と、その先の介護まで整理します"
+        title="老後の暮らし"
+        lead="元気に暮らす時期と、介護が必要になった後まで分けて整理します"
       />
 
       <p className="second-life-guide-intro">
-        まず、何歳からセカンドライフとして考えるかを決めます。住まい・生活費はその時期以降を設計し、介護は「サードライフ」として別に整理します。元の入力は消えません。
+        元気に暮らす時期を「セカンドライフ」、介護が必要になった後をこのソフトでは「サードライフ」と呼び、同じ「老後の暮らし」の中で分けて設計します。元の入力は消えません。
       </p>
 
       <div className="second-life-guide-start-age">
