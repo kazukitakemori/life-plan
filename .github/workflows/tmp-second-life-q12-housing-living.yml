@@ -24,7 +24,9 @@ jobs:
           cache: npm
 
       - name: Apply source changes
-        run: python scripts/tmp_second_life_q12_patch.py
+        run: |
+          python scripts/tmp_second_life_q12_patch.py
+          python scripts/tmp_second_life_q12_fix.py
 
       - name: Install dependencies
         run: npm ci
@@ -36,6 +38,7 @@ jobs:
         shell: bash
         run: |
           rm scripts/tmp_second_life_q12_patch.py
+          rm scripts/tmp_second_life_q12_fix.py
           rm .github/workflows/tmp-second-life-q12-housing-living.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
