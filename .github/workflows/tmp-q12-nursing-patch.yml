@@ -1,0 +1,85 @@
+name: Apply temporary Q12 nursing wiring patch
+
+on:
+  push:
+    branches: [feat/second-life-apply-from-q12]
+    paths:
+      - .github/workflows/tmp-q12-nursing-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/second-life-apply-from-q12
+          fetch-depth: 0
+
+      - name: Apply source patch
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          app_path = Path('src/App.tsx')
+          app = app_path.read_text()
+
+          old_q3 = '''            secondLifeState={secondLifeState}\n            purposeNote={\n'''
+          new_q3 = '''            purposeNote={\n'''
+          if old_q3 not in app:
+              raise SystemExit('App Q3 secondLifeState marker not found')
+          app = app.replace(old_q3, new_q3, 1)
+
+          old_q3_callbacks = '''            onSecondLifeChange={(state) => {\n              markPlanInputsChanged();\n              setSecondLifeState(state);\n            }}\n            onAddSecondLifeNursing={() => {\n              markPlanInputsChanged();\n              setLifeEventState(\n                addSecondLifeNursingTemplates({\n                  lifeEventState,\n                  familyMembers,\n                  referenceDate,\n                  secondLifeState,\n                }),\n              );\n            }}\n'''
+          if old_q3_callbacks not in app:
+              raise SystemExit('App Q3 nursing callbacks marker not found')
+          app = app.replace(old_q3_callbacks, '', 1)
+
+          old_q12 = '''            onSecondLifeChange={(state) => {\n              markPlanInputsChanged();\n              setSecondLifeState(state);\n            }}\n            onNavigateToStep={setActiveStep}\n'''
+          new_q12 = '''            onSecondLifeChange={(state) => {\n              markPlanInputsChanged();\n              setSecondLifeState(state);\n            }}\n            onApplySecondLifeNursing={() => {\n              markPlanInputsChanged();\n              setLifeEventState(\n                addSecondLifeNursingTemplates({\n                  lifeEventState,\n                  familyMembers,\n                  referenceDate,\n                  secondLifeState,\n                }),\n              );\n            }}\n            onNavigateToStep={setActiveStep}\n'''
+          if old_q12 not in app:
+              raise SystemExit('App Q12 marker not found')
+          app = app.replace(old_q12, new_q12, 1)
+          app_path.write_text(app)
+
+          guide_path = Path('src/lib/secondLifeGuide.ts')
+          guide = guide_path.read_text()
+
+          old_skip = '''    const design = secondLifeState.nursingByTarget[key];\n    if (design.skip) {\n      detailLines.push(`${getMemberTabLabel(member)}：介護費を見込まない`);\n      continue;\n    }\n\n    activeDesigns += 1;\n'''
+          new_skip = '''    const design = secondLifeState.nursingByTarget[key];\n    const projection = findNursingProjection(\n      lifeEventState.byMember[member.id] ?? [],\n    );\n    if (design.skip) {\n      if (projection) {\n        needsRefresh += 1;\n        detailLines.push(\n          `${getMemberTabLabel(member)}：介護費を見込まない / 既存の連動データ削除の反映が必要`,\n        );\n      } else {\n        detailLines.push(`${getMemberTabLabel(member)}：介護費を見込まない`);\n      }\n      continue;\n    }\n\n    activeDesigns += 1;\n'''
+          if old_skip not in guide:
+              raise SystemExit('Guide skip marker not found')
+          guide = guide.replace(old_skip, new_skip, 1)
+
+          old_projection = '''    const projection = findNursingProjection(\n      lifeEventState.byMember[member.id] ?? [],\n    );\n    const isApplied =\n'''
+          if old_projection not in guide:
+              raise SystemExit('Guide projection marker not found')
+          guide = guide.replace(old_projection, '''    const isApplied =\n''', 1)
+
+          old_status = '''  const allSkipped = activeDesigns === 0;\n  const allApplied = activeDesigns > 0 && applied === activeDesigns;\n  const status: SecondLifeChecklistStatus =\n    allSkipped || allApplied ? 'done' : 'partial';\n\n  return {\n'''
+          new_status = '''  const allSkipped = activeDesigns === 0;\n  const allApplied =\n    activeDesigns > 0 && applied === activeDesigns && needsRefresh === 0;\n  const status: SecondLifeChecklistStatus =\n    (allSkipped && needsRefresh === 0) || allApplied ? 'done' : 'partial';\n\n  return {\n'''
+          if old_status not in guide:
+              raise SystemExit('Guide status marker not found')
+          guide = guide.replace(old_status, new_status, 1)
+
+          old_summary = '''    summary: allSkipped\n      ? '介護費は見込まない設定です'\n      : allApplied\n        ? `介護設計 ${applied}/${activeDesigns}人 反映済み`\n        : needsRefresh > 0\n          ? '介護設計を変更したため、ライフイベントへの再反映が必要です'\n          : '介護設計はありますが、ライフイベントへ未反映です',\n'''
+          new_summary = '''    summary: allSkipped\n      ? needsRefresh > 0\n        ? '介護費を見込まない設定へ変更したため、既存の連動データ削除の反映が必要です'\n        : '介護費は見込まない設定です'\n      : allApplied\n        ? `介護設計 ${applied}/${activeDesigns}人 反映済み`\n        : needsRefresh > 0\n          ? '介護設計を変更したため、最新内容の再反映が必要です'\n          : '介護設計はありますが、まだ反映されていません',\n'''
+          if old_summary not in guide:
+              raise SystemExit('Guide summary marker not found')
+          guide = guide.replace(old_summary, new_summary, 1)
+          guide_path.write_text(guide)
+
+          Path('.github/workflows/tmp-q12-nursing-patch.yml').unlink()
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Wire nursing apply action into Q12"
+          git push origin HEAD:feat/second-life-apply-from-q12
