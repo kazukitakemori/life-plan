@@ -15,7 +15,6 @@ export function SecondLifeLivingSection({
   state,
   options,
   onChange,
-  onApply,
 }: SecondLifeLivingSectionProps) {
   const currentMonthly =
     options.find((option) => option.level === 'same')?.monthlyMan ?? 0;
@@ -32,7 +31,7 @@ export function SecondLifeLivingSection({
     >
       <div className="second-life-section-toolbar">
         <p className="second-life-apply-note">
-          生活水準の変更は、ページ上部のセカンドライフ開始 {state.startAge}歳から反映します。
+          生活水準の変更は、ページ上部のセカンドライフ開始 {state.startAge}歳から計算上だけ優先します。
         </p>
       </div>
 
@@ -117,20 +116,13 @@ export function SecondLifeLivingSection({
         })}
       </div>
 
-      {!placeholder && onApply ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            選択した生活水準で、負担者（世帯主）の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。
-          </p>
-          <button
-            type="button"
-            className="second-life-apply-btn"
-            onClick={onApply}
-          >
-            この内容を生活費に反映する
-          </button>
-        </div>
-      ) : null}
+      <div className="second-life-section-actions">
+        <p className="second-life-apply-note">
+          {placeholder
+            ? 'Q4「生活費」の現在の入力をそのまま計算に使用します。'
+            : 'Q4「生活費」の入力自体は変更せず、セカンドライフ開始年齢以降のキャッシュフロー計算だけこの生活水準を優先します。'}
+        </p>
+      </div>
     </section>
   );
 }

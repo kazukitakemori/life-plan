@@ -30,7 +30,6 @@ const HOUSING_SCENARIOS: {
 export function SecondLifeHousingSection({
   state,
   onChange,
-  onApply,
 }: SecondLifeHousingSectionProps) {
   const total = estimateSecondLifeHousingTotalMan(state);
   const placeholder = state.housingSkip;
@@ -306,20 +305,13 @@ export function SecondLifeHousingSection({
         })}
       </div>
 
-      {!placeholder && onApply ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            現在の住まい設定との重なりを確認してから反映します。今の住まいを継続する計画なら終了時期は変更せず、転居する計画なら切替時期を確認できます。
-          </p>
-          <button
-            type="button"
-            className="second-life-apply-btn"
-            onClick={onApply}
-          >
-            住まい計画を確認して反映する
-          </button>
-        </div>
-      ) : null}
+      <div className="second-life-section-actions">
+        <p className="second-life-apply-note">
+          {placeholder
+            ? 'Q5「住まい」の現在の入力をそのまま計算に使用します。'
+            : 'Q5「住まい」の入力自体は変更せず、該当年齢以降のキャッシュフロー計算だけこの設計を優先します。'}
+        </p>
+      </div>
     </section>
   );
 }

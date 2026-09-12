@@ -57,151 +57,95 @@ function toOwnedItem(item: OwnedProperty): HousingItem {
 
 function collectHousingItems(housingState: HousingState): HousingItem[] {
   const byId = new Map<string, HousingItem>();
-
   for (const data of Object.values(housingState.byTarget)) {
-    for (const rental of data.rentals) {
-      byId.set(rental.id, toRentalItem(rental));
-    }
+    for (const rental of data.rentals) byId.set(rental.id, toRentalItem(rental));
     for (const property of data.owned) {
-      // 土地だけの登録は「住んでいる住まい」として扱わない。
-      if (property.type === 'land') continue;
-      byId.set(property.id, toOwnedItem(property));
+      if (property.type !== 'land') byId.set(property.id, toOwnedItem(property));
     }
   }
-
   return [...byId.values()];
 }
 
-function isActiveAtSecondLifeStart(item: HousingItem, startAge: number): boolean {
-  if (item.startAge > startAge) return false;
-  if (item.startAge === startAge && item.startMonth > 1) return false;
-
+function isActiveAtAge(item: HousingItem, age: number): boolean {
+  if (item.startAge > age) return false;
+  if (item.startAge === age && item.startMonth > 1) return false;
   if (item.endMode === 'lifetime') return true;
-  if (item.endAge > startAge) return true;
-  if (item.endAge < startAge) return false;
+  if (item.endAge > age) return true;
+  if (item.endAge < age) return false;
   return item.endMonth >= 1;
 }
 
 function formatHousingPeriod(item: HousingItem): string {
   const kind = item.kind === 'rental' ? '賃貸' : '所有';
-  const end =
-    item.endMode === 'lifetime'
-      ? '一生涯'
-      : `${item.endAge}歳${item.endMonth}月まで`;
+  const end = item.endMode === 'lifetime' ? '一生涯' : `${item.endAge}歳${item.endMonth}月まで`;
   return `${item.name}（${kind}・${end}）`;
 }
 
-function joinHousingNames(items: HousingItem[]): string {
-  return items.map((item) => `「${item.name}」`).join('・');
-}
-
-function previousMonthLabel(startAge: number): string {
-  return `${Math.max(0, startAge - 1)}歳12月`;
-}
-
-/**
- * セカンドライフの「暮らし方」と、Q5 住まいに登録済みの時系列が矛盾しないかを判定する。
- *
- * セカンドライフ開始 = 転居ではない。
- * - stay + renovate: 既存住宅が開始年齢まで続いていれば整合
- * - hometown / new_area: 開始年齢以降も続く既存住宅があれば、反映時に終了させるため要確認
- * - stay + purchase_rebuild: 既存住宅を自動終了しない現仕様なので、重複する場合は要確認
- */
 export function buildSecondLifeHousingConsistency(input: {
   housingState: HousingState;
   secondLifeState: SecondLifeState;
 }): SecondLifeHousingConsistency {
   const { housingState, secondLifeState } = input;
-  const startAge =
-    secondLifeState.housingScenario === 'stay' &&
-    secondLifeState.stayOption === 'continue'
-      ? secondLifeState.startAge
-      : secondLifeState.housingActionAge;
 
   if (secondLifeState.housingSkip) {
     return {
       status: 'skipped',
-      title: '住まいはまだ具体化しません',
-      summary: '現在の住まい入力をそのまま使います。',
+      title: 'Q5の住まい入力をそのまま使用します',
+      summary: 'Q12による住まいの上書きは無効です。Q5の入力内容は変更されません。',
       detailLines: [],
     };
   }
 
+  const actionAge =
+    secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'continue'
+      ? secondLifeState.startAge
+      : secondLifeState.housingActionAge;
   const activeHousing = collectHousingItems(housingState).filter((item) =>
-    isActiveAtSecondLifeStart(item, startAge),
+    isActiveAtAge(item, actionAge),
   );
 
-  if (secondLifeState.housingScenario === 'stay') {
-    if (secondLifeState.stayOption === 'continue') {
-      if (activeHousing.length === 0) {
-        return {
-          status: 'missing',
-          title: `${secondLifeState.startAge}歳時点の住まいが未設定です`,
-          summary: '今の住まいをそのまま継続する計画ですが、セカンドライフ開始時点の住まいが見つかりません。',
-          detailLines: [],
-        };
-      }
-      return {
-        status: 'aligned',
-        title: '現在の住まいをそのまま継続できます',
-        summary: `${secondLifeState.startAge}歳からセカンドライフを始めても、住まいの変更は発生しません。`,
-        detailLines: activeHousing.map(formatHousingPeriod),
-      };
-    }
-
-    if (secondLifeState.stayOption === 'purchase_rebuild') {
-      if (activeHousing.length === 0) {
-        return {
-          status: 'aligned',
-          title: `${startAge}歳から新しい住宅を計画できます`,
-          summary: '開始年齢時点で重なる既存住宅はありません。',
-          detailLines: [],
-        };
-      }
-
-      return {
-        status: 'attention',
-        title: '現在の住まいと新しい住宅が重なる可能性があります',
-        summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。購入・建て替えとの切替時期を確認してください。`,
-        detailLines: activeHousing.map(formatHousingPeriod),
-      };
-    }
-
+  if (secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'continue') {
     if (activeHousing.length === 0) {
       return {
         status: 'missing',
-        title: `${startAge}歳時点の住まいが未設定です`,
-        summary: '「今の場所に住み続ける」計画ですが、開始年齢まで続く住まいが見つかりません。',
+        title: `${secondLifeState.startAge}歳時点の住まいがQ5にありません`,
+        summary: '今の住まいを継続する設計なので、Q5で現在の住まいを入力してください。',
         detailLines: [],
       };
     }
-
     return {
       status: 'aligned',
-      title: '現在の住まいにリフォーム費を反映できます',
-      summary: `${startAge}歳に現在の持ち家をリフォームする計画です。住み替えは発生しません。`,
+      title: 'Q5の現在の住まいをそのまま継続します',
+      summary: 'セカンドライフ開始後もQ5の住まい入力をそのまま計算に使用します。',
       detailLines: activeHousing.map(formatHousingPeriod),
     };
   }
 
-  if (activeHousing.length === 0) {
+  if (secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'renovate') {
+    const owned = activeHousing.filter((item) => item.kind === 'owned');
+    if (owned.length === 0) {
+      return {
+        status: 'missing',
+        title: `${actionAge}歳時点の持ち家がQ5にありません`,
+        summary: '現在の住宅をリフォームする設計なので、Q5で対象となる持ち家を入力してください。',
+        detailLines: activeHousing.map(formatHousingPeriod),
+      };
+    }
     return {
       status: 'aligned',
-      title: `${startAge}歳から新しい住まいへ切り替える計画です`,
-      summary: '開始年齢時点で終了処理が必要な既存住宅はありません。',
-      detailLines: [],
+      title: `${actionAge}歳のリフォーム費を計算上追加します`,
+      summary: 'Q5の持ち家データは変更せず、キャッシュフロー上の住まい支出としてQ12のリフォーム費を重ねます。',
+      detailLines: owned.map(formatHousingPeriod),
     };
   }
 
-  const destination =
-    secondLifeState.housingScenario === 'hometown'
-      ? '地元の住まい'
-      : '新しい土地の住まい';
-
   return {
-    status: 'attention',
-    title: '現在の住まいから切り替える必要があります',
-    summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。住まい計画を優先すると、現在の住まいを${previousMonthLabel(startAge)}で終了し、${destination}へ切り替えます。`,
+    status: 'aligned',
+    title: `${actionAge}歳からQ12の住まい設計を優先します`,
+    summary:
+      activeHousing.length > 0
+        ? 'Q5の住まいがその後も続く入力でも、Q5自体は変更せず、計算上だけQ12の住まいへ切り替えます。'
+        : 'Q5の入力自体は変更せず、計算上だけQ12の住まいを使用します。',
     detailLines: activeHousing.map(formatHousingPeriod),
   };
 }
@@ -211,12 +155,12 @@ export function getSecondLifeHousingConsistencyStatusLabel(
 ): string {
   switch (status) {
     case 'aligned':
-      return '整合';
+      return '計算OK';
     case 'attention':
       return '要確認';
     case 'missing':
-      return '未設定';
+      return '要入力';
     case 'skipped':
-      return '未具体化';
+      return 'Q5を使用';
   }
 }

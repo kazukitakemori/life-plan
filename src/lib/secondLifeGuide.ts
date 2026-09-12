@@ -381,20 +381,56 @@ export function buildSecondLifeGuide(input: {
 }): SecondLifeGuide {
   const startAge = input.startAge;
   const headId = input.familyMembers.find((m) => m.role === 'head')?.id;
-  return {
-    startAge,
-    items: [
-      buildHousingChecklistItem(input.housingState, startAge, headId),
-      buildLivingChecklistItem({
+  const design = input.secondLifeState;
+
+  const housingItem: SecondLifeChecklistItem = design
+    ? {
+        id: 'housing',
+        stepId: 'housing',
+        stepLabel: '5',
+        title: '住まい',
+        status: 'done',
+        summary: design.housingSkip
+          ? 'Q5「住まい」の現在入力をそのまま計算に使用します'
+          : design.housingScenario === 'stay' && design.stayOption === 'continue'
+            ? 'Q5の現在の住まいをそのまま継続します'
+            : `${design.housingActionAge}歳からQ12の住まい設計を計算時に優先します`,
+        detailLines: design.housingSkip
+          ? ['Q12による住まいの上書きは無効です。']
+          : ['Q5の住まい入力自体は変更しません。'],
+      }
+    : buildHousingChecklistItem(input.housingState, startAge, headId);
+
+  const livingItem: SecondLifeChecklistItem = design
+    ? {
+        id: 'living',
+        stepId: 'living',
+        stepLabel: '4',
+        title: '生活水準',
+        status: 'done',
+        summary: design.livingSkip
+          ? 'Q4「生活費」の現在入力をそのまま計算に使用します'
+          : `${design.startAge}歳からQ12の生活水準を計算時に優先します`,
+        detailLines: design.livingSkip
+          ? ['Q12による生活費の上書きは無効です。']
+          : ['Q4の生活費入力自体は変更しません。'],
+      }
+    : buildLivingChecklistItem({
         livingState: input.livingState,
         familyMembers: input.familyMembers,
         referenceDate: input.referenceDate,
         startAge,
-      }),
+      });
+
+  return {
+    startAge,
+    items: [
+      housingItem,
+      livingItem,
       buildNursingChecklistItem(
         input.lifeEventState,
         input.familyMembers,
-        input.secondLifeState,
+        design,
       ),
     ],
   };
@@ -405,7 +441,7 @@ export function getSecondLifeChecklistStatusLabel(
 ): string {
   switch (status) {
     case 'done':
-      return '入力済み';
+      return '設定済み';
     case 'partial':
       return '要確認';
     default:
