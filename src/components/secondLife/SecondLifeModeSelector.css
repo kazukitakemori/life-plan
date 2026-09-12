@@ -1,0 +1,31 @@
+.second-life-mode-selector {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.second-life-mode-selector-title {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334;
+}
+
+.second-life-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.second-life-mode-description {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #667;
+}
+
+@media (max-width: 960px) {
+  .second-life-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
