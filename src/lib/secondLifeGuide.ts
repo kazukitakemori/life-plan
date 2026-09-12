@@ -307,8 +307,18 @@ function buildNursingChecklistItem(
 
   for (const { key, member } of targets) {
     const design = secondLifeState.nursingByTarget[key];
+    const projection = findNursingProjection(
+      lifeEventState.byMember[member.id] ?? [],
+    );
     if (design.skip) {
-      detailLines.push(`${getMemberTabLabel(member)}：介護費を見込まない`);
+      if (projection) {
+        needsRefresh += 1;
+        detailLines.push(
+          `${getMemberTabLabel(member)}：介護費を見込まない / 既存の連動データ削除の反映が必要`,
+        );
+      } else {
+        detailLines.push(`${getMemberTabLabel(member)}：介護費を見込まない`);
+      }
       continue;
     }
 
@@ -317,9 +327,6 @@ function buildNursingChecklistItem(
       design.annualCostMan > 0
         ? design.annualCostMan
         : getDefaultNursingAnnualCostMan(design.scenario);
-    const projection = findNursingProjection(
-      lifeEventState.byMember[member.id] ?? [],
-    );
     const isApplied =
       projection != null &&
       projection.startAge === design.startAge &&
@@ -339,9 +346,10 @@ function buildNursingChecklistItem(
   }
 
   const allSkipped = activeDesigns === 0;
-  const allApplied = activeDesigns > 0 && applied === activeDesigns;
+  const allApplied =
+    activeDesigns > 0 && applied === activeDesigns && needsRefresh === 0;
   const status: SecondLifeChecklistStatus =
-    allSkipped || allApplied ? 'done' : 'partial';
+    (allSkipped && needsRefresh === 0) || allApplied ? 'done' : 'partial';
 
   return {
     id: 'nursing',
@@ -350,12 +358,14 @@ function buildNursingChecklistItem(
     title: '介護',
     status,
     summary: allSkipped
-      ? '介護費は見込まない設定です'
+      ? needsRefresh > 0
+        ? '介護費を見込まない設定へ変更したため、既存の連動データ削除の反映が必要です'
+        : '介護費は見込まない設定です'
       : allApplied
         ? `介護設計 ${applied}/${activeDesigns}人 反映済み`
         : needsRefresh > 0
-          ? '介護設計を変更したため、ライフイベントへの再反映が必要です'
-          : '介護設計はありますが、ライフイベントへ未反映です',
+          ? '介護設計を変更したため、最新内容の再反映が必要です'
+          : '介護設計はありますが、まだ反映されていません',
     detailLines,
   };
 }

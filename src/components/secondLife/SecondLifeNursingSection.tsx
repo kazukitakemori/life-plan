@@ -17,17 +17,23 @@ const NURSING_SCENARIOS: {
   { id: 'facility', label: '施設介護' },
 ];
 
+type NursingApplyStatus = 'missing' | 'partial' | 'done';
+
 interface SecondLifeNursingSectionProps {
   members: FamilyMember[];
   state: SecondLifeState;
+  applyStatus: NursingApplyStatus;
   onChange: (state: SecondLifeState) => void;
+  onApply: () => void;
   onOpenLifeEvent?: () => void;
 }
 
 export function SecondLifeNursingSection({
   members,
   state,
+  applyStatus,
   onChange,
+  onApply,
   onOpenLifeEvent,
 }: SecondLifeNursingSectionProps) {
   const targets = ([
@@ -63,6 +69,13 @@ export function SecondLifeNursingSection({
     });
   };
 
+  const applyMessage =
+    applyStatus === 'done'
+      ? '現在の介護設計はキャッシュフローへ反映済みです。'
+      : applyStatus === 'partial'
+        ? '介護設計と現在の連動データに差分があります。下のボタンで最新の設計を反映してください。'
+        : '介護設計をキャッシュフローへ反映してください。';
+
   return (
     <section className="second-life-section" aria-labelledby="second-life-nursing-title">
       <div className="second-life-section-toolbar">
@@ -73,7 +86,7 @@ export function SecondLifeNursingSection({
       </div>
 
       <p className="second-life-apply-note">
-        介護の設計はこのセカンドライフ画面を本体にします。ライフイベントには計算用の連動データとして反映します。
+        介護の設計はこのセカンドライフ画面を本体にします。ライフイベントには計算用の連動データとして自動反映します。
       </p>
 
       <div className="second-life-guide-grid">
@@ -188,20 +201,28 @@ export function SecondLifeNursingSection({
         })}
       </div>
 
-      {onOpenLifeEvent ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            設計後、ライフイベントへ反映するとキャッシュフロー計算に使われます。反映後の行は「セカンドライフ連動」として保護されます。
-          </p>
+      <div className="second-life-section-actions">
+        <p className="second-life-apply-note">{applyMessage}</p>
+        <button
+          type="button"
+          className="second-life-apply-btn"
+          onClick={onApply}
+          disabled={applyStatus === 'done'}
+        >
+          {applyStatus === 'done'
+            ? '介護設計は反映済み'
+            : 'この介護設計を反映する'}
+        </button>
+        {onOpenLifeEvent ? (
           <button
             type="button"
-            className="second-life-apply-btn"
+            className="second-life-guide-nav-btn"
             onClick={onOpenLifeEvent}
           >
-            ライフイベントで反映を確認する
+            反映先のライフイベントを確認する →
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </section>
   );
 }
