@@ -66,6 +66,32 @@ function isSecondLifeHousingItem(name: string): boolean {
   );
 }
 
+
+function restoreSecondLifeManagedEnds<
+  T extends {
+    endMode: 'lifetime' | 'until';
+    endAge: number;
+    endMonth: number;
+    secondLifeEndOverride?: {
+      endMode: 'lifetime' | 'until';
+      endAge: number;
+      endMonth: number;
+    };
+  },
+>(items: T[]): T[] {
+  return items.map((item) => {
+    const original = item.secondLifeEndOverride;
+    if (!original) return item;
+    return {
+      ...item,
+      endMode: original.endMode,
+      endAge: original.endAge,
+      endMonth: original.endMonth,
+      secondLifeEndOverride: undefined,
+    };
+  });
+}
+
 function endExistingHousingBeforeStartAge<
   T extends {
     id: string;
@@ -74,6 +100,11 @@ function endExistingHousingBeforeStartAge<
     endMode: 'lifetime' | 'until';
     endAge: number;
     endMonth: number;
+    secondLifeEndOverride?: {
+      endMode: 'lifetime' | 'until';
+      endAge: number;
+      endMonth: number;
+    };
   },
 >(
   items: T[],
@@ -96,6 +127,11 @@ function endExistingHousingBeforeStartAge<
     });
     return {
       ...item,
+      secondLifeEndOverride: item.secondLifeEndOverride ?? {
+        endMode: item.endMode,
+        endAge: item.endAge,
+        endMonth: item.endMonth,
+      },
       endMode: 'until' as const,
       endAge: end.age,
       endMonth: end.month,
@@ -189,8 +225,11 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
 
   const changes: SecondLifeHousingApplyChange[] = [...stripped.cleared];
 
-  let rentals = stripped.rentals;
-  let owned = stripped.owned;
+  // 前回の Q12 反映で終了時期を動かしていた場合は、まず元の条件へ戻す。
+  // そのうえで今回の最新シナリオを適用することで、転居→住み続ける等の変更でも
+  // Q5 に古い終了境界を残さない。
+  let rentals = restoreSecondLifeManagedEnds(stripped.rentals);
+  let owned = restoreSecondLifeManagedEnds(stripped.owned);
 
   if (relocating) {
     const endedRentals = endExistingHousingBeforeStartAge(

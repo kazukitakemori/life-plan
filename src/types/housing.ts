@@ -4,6 +4,16 @@ export type OwnedPropertyType = 'condominium' | 'detached_house' | 'land';
 
 export type RentalEndMode = 'lifetime' | 'until';
 
+/**
+ * Q12 セカンドライフが転居のために終了時期を一時上書きしたときの退避値。
+ * シナリオ変更時に元へ戻すため、住まいデータ側に保持する。
+ */
+export interface SecondLifeEndOverride {
+  endMode: RentalEndMode;
+  endAge: number;
+  endMonth: number;
+}
+
 /** 居住中 = 初期費用は試算に含めない / これから入居 = 入居月に初期費用を計上 */
 export type RentalOccupancy = 'current' | 'upcoming';
 
@@ -19,6 +29,8 @@ export interface RentalProperty {
   endMode: RentalEndMode;
   endAge: number;
   endMonth: number;
+  /** Q12 の転居反映前に設定されていた終了条件 */
+  secondLifeEndOverride?: SecondLifeEndOverride;
   /** 家賃負担者。未設定時は格納タブから推定 */
   payerMode?: RentalPayerMode;
   /** 世帯主負担の月額家賃（万円）。単独負担時は本人分、両方負担時は世帯主分 */
@@ -241,6 +253,8 @@ export interface OwnedProperty {
   endMode: RentalEndMode;
   endAge: number;
   endMonth: number;
+  /** Q12 の転居反映前に設定されていた終了条件 */
+  secondLifeEndOverride?: SecondLifeEndOverride;
   buildingMan: number;
   landMan: number;
   brokerageFeeMan: number;
