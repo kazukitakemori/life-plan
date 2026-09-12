@@ -77,7 +77,10 @@ function isActiveAtAge(item: HousingItem, age: number): boolean {
 
 function formatHousingPeriod(item: HousingItem): string {
   const kind = item.kind === 'rental' ? '賃貸' : '所有';
-  const end = item.endMode === 'lifetime' ? '一生涯' : `${item.endAge}歳${item.endMonth}月まで`;
+  const end =
+    item.endMode === 'lifetime'
+      ? '一生涯'
+      : `${item.endAge}歳${item.endMonth}月まで`;
   return `${item.name}（${kind}・${end}）`;
 }
 
@@ -90,51 +93,64 @@ export function buildSecondLifeHousingConsistency(input: {
   if (secondLifeState.housingSkip) {
     return {
       status: 'skipped',
-      title: 'Q5の住まい入力をそのまま使用します',
-      summary: 'Q12による住まいの上書きは無効です。Q5の入力内容は変更されません。',
+      title: 'Q5の現在の計画をそのまま使います',
+      summary:
+        'Q12では住まいを見直さず、Q5「住まい」の入力をそのままキャッシュフロー計算に使用します。',
       detailLines: [],
     };
   }
 
   const actionAge =
-    secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'continue'
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'continue'
       ? secondLifeState.startAge
       : secondLifeState.housingActionAge;
   const activeHousing = collectHousingItems(housingState).filter((item) =>
     isActiveAtAge(item, actionAge),
   );
 
-  if (secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'continue') {
+  // 旧データ互換。現行UIでは「そのまま使う」は housingSkip で表現する。
+  if (
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'continue'
+  ) {
     if (activeHousing.length === 0) {
       return {
         status: 'missing',
         title: `${secondLifeState.startAge}歳時点の住まいがQ5にありません`,
-        summary: '今の住まいを継続する設計なので、Q5で現在の住まいを入力してください。',
+        summary:
+          'Q5の現在計画を使うため、Q5で現在の住まいを入力してください。',
         detailLines: [],
       };
     }
     return {
       status: 'aligned',
       title: 'Q5の現在の住まいをそのまま継続します',
-      summary: 'セカンドライフ開始後もQ5の住まい入力をそのまま計算に使用します。',
+      summary:
+        'セカンドライフ開始後もQ5の住まい入力をそのまま計算に使用します。',
       detailLines: activeHousing.map(formatHousingPeriod),
     };
   }
 
-  if (secondLifeState.housingScenario === 'stay' && secondLifeState.stayOption === 'renovate') {
+  if (
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'renovate'
+  ) {
     const owned = activeHousing.filter((item) => item.kind === 'owned');
     if (owned.length === 0) {
       return {
         status: 'missing',
         title: `${actionAge}歳時点の持ち家がQ5にありません`,
-        summary: '現在の住宅をリフォームする設計なので、Q5で対象となる持ち家を入力してください。',
+        summary:
+          '現在の住宅をリフォームする設計なので、Q5で対象となる持ち家を入力してください。',
         detailLines: activeHousing.map(formatHousingPeriod),
       };
     }
     return {
       status: 'aligned',
       title: `${actionAge}歳のリフォーム費を計算上追加します`,
-      summary: 'Q5の持ち家データは変更せず、キャッシュフロー上の住まい支出としてQ12のリフォーム費を重ねます。',
+      summary:
+        'Q5の持ち家データは変更せず、キャッシュフロー上の住まい支出としてQ12のリフォーム費を重ねます。',
       detailLines: owned.map(formatHousingPeriod),
     };
   }
