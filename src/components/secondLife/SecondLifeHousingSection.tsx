@@ -282,7 +282,7 @@ export function SecondLifeHousingSection({
                   ) : null}
 
                   <p className="second-life-choice-total">
-                    総額{' '}
+                    目安額{' '}
                     <strong>{active ? formatSecondLifeMan(total) : '—'}</strong>{' '}
                     万円
                   </p>

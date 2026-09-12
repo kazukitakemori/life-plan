@@ -170,7 +170,9 @@ export function applySecondLifeLiving(
     ...input,
     startAge: secondLifeState.startAge,
   });
-  const selected = options.find((o) => o.level === secondLifeState.livingLevel);
+  const selected =
+    options.find((o) => o.level === secondLifeState.livingLevel) ??
+    options.find((o) => o.level === 'same');
   if (!selected) return livingState;
 
   const referenceMonth = input.referenceDate.getMonth() + 1;

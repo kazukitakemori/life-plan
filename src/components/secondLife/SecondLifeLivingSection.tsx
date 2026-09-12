@@ -19,6 +19,11 @@ export function SecondLifeLivingSection({
   const currentMonthly =
     options.find((option) => option.level === 'same')?.monthlyMan ?? 0;
   const useCurrentPlan = state.livingSkip;
+  const effectiveLivingLevel = options.some(
+    (option) => option.level === state.livingLevel,
+  )
+    ? state.livingLevel
+    : 'same';
 
   return (
     <section className="second-life-section">
@@ -58,7 +63,7 @@ export function SecondLifeLivingSection({
             aria-label="セカンドライフの生活水準"
           >
             {options.map((option) => {
-              const active = state.livingLevel === option.level;
+              const active = effectiveLivingLevel === option.level;
               return (
                 <SecondLifeChoiceCard
                   key={option.level}

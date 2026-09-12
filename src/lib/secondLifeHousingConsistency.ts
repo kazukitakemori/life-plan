@@ -117,7 +117,7 @@ export function buildSecondLifeHousingConsistency(input: {
     if (activeHousing.length === 0) {
       return {
         status: 'missing',
-        title: `${secondLifeState.startAge}歳時点の住まいがQ5にありません`,
+        title: `${secondLifeState.startAge}歳時点の住まいが入力されていません`,
         summary:
           '今の住まい計画を使うため、先に「住まい」で現在の住まいを入力してください。',
         detailLines: [],
@@ -140,7 +140,7 @@ export function buildSecondLifeHousingConsistency(input: {
     if (owned.length === 0) {
       return {
         status: 'missing',
-        title: `${actionAge}歳時点の持ち家がQ5にありません`,
+        title: `${actionAge}歳時点の持ち家が入力されていません`,
         summary:
           '現在の住宅をリフォームするため、先に「住まい」で対象となる持ち家を入力してください。',
         detailLines: activeHousing.map(formatHousingPeriod),
@@ -148,7 +148,7 @@ export function buildSecondLifeHousingConsistency(input: {
     }
     return {
       status: 'aligned',
-      title: `${actionAge}歳のリフォーム費を計算上追加します`,
+      title: `${actionAge}歳にリフォーム費を追加して計算します`,
       summary:
         '元の持ち家設定は残したまま、この年齢にリフォーム費を追加して試算します。',
       detailLines: owned.map(formatHousingPeriod),
