@@ -95,8 +95,8 @@
   /*
    * Shared member tabs are used by several Q screens.
    * The strip itself owns horizontal scrolling; parent toolbars must not change
-   * that behavior. A stronger selector prevents screen-specific flex rules
-   * (for example education-toolbar .member-tabs) from cancelling it.
+   * that behavior. Tabs may be a little wider on phones so atomic metadata such
+   * as a birth date never breaks in the middle; horizontal swipe is intentional.
    */
   .member-tabs-block {
     width: 100%;
@@ -145,8 +145,8 @@
 
   .member-tab {
     flex: 0 0 auto;
-    min-width: min(176px, 68vw);
-    max-width: 220px;
+    min-width: min(204px, 82vw);
+    max-width: 240px;
     overflow: hidden;
     border: 1px solid var(--ui-card-border);
     border-radius: var(--ui-control-radius);
@@ -175,7 +175,7 @@
   }
 
   button.member-tab--add {
-    min-width: min(164px, 64vw);
+    min-width: min(184px, 74vw);
     padding: 7px 10px;
   }
 
@@ -189,6 +189,14 @@
   .member-tab-name,
   .member-tab-birth {
     min-width: 0;
+  }
+
+  .member-tab-name,
+  .member-tab-birth,
+  .member-tab-badge {
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
   }
 
   /* Shared toolbar patterns: tabs/copy controls should not fight for one row. */
@@ -338,7 +346,7 @@
   }
 
   .member-tab {
-    min-width: min(164px, 72vw);
+    min-width: min(204px, 82vw);
   }
 }
 

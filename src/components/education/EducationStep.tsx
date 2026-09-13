@@ -15,15 +15,10 @@ import type { EducationByMember } from '../../types/education';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { TaxSocialState } from '../../types/taxSocial';
-import { CopySettingsBar, SegmentedControl, StepHeading } from '../ui';
+import { CopySettingsBar, StepHeading } from '../ui';
 import { EducationExpenseChart } from './EducationExpenseChart';
 import { EducationExpenseTable } from './EducationExpenseTable';
 import { MemberEducationTabs } from './MemberEducationTabs';
-
-const EDUCATION_VIEW_OPTIONS = [
-  { value: 'individual', label: '個人別' },
-  { value: 'aggregate', label: '全員まとめて' },
-] as const;
 
 interface EducationStepProps {
   members: FamilyMember[];
@@ -165,6 +160,16 @@ export function EducationStep({
     persistEntries(resolvedActiveId, cloned);
   };
 
+  const handleSelectMember = (memberId: string) => {
+    setShowAllMembers(false);
+    setActiveMemberId(memberId);
+  };
+
+  const handleAddEducationMember = (memberId: string) => {
+    setShowAllMembers(false);
+    handleAddMemberTab(memberId);
+  };
+
   if (!headMember) {
     return (
       <div className="step-page">
@@ -185,48 +190,44 @@ export function EducationStep({
         </p>
       ) : null}
 
-      <SegmentedControl
-        className="step-view-control"
-        label="表示方法"
-        ariaLabel="教育費の表示方法"
-        value={showAllMembers ? 'aggregate' : 'individual'}
-        options={EDUCATION_VIEW_OPTIONS}
-        onChange={(value) => setShowAllMembers(value === 'aggregate')}
-      />
+      <div className="education-toolbar">
+        <MemberEducationTabs
+          members={visibleMembers}
+          activeMemberId={resolvedActiveId}
+          entryCounts={entryCounts}
+          referenceDate={referenceDate}
+          onSelect={handleSelectMember}
+          addableMembers={addableMembers}
+          onAddMemberTab={handleAddEducationMember}
+          removableMemberIds={removableMemberIds}
+          onRemoveMemberTab={handleRemoveMemberTab}
+          summaryAction={{
+            active: showAllMembers,
+            onToggle: () => setShowAllMembers((prev) => !prev),
+            showLabel: '全員まとめて表示',
+            hideLabel: '個人ごとに表示',
+            ariaLabel: '教育費の表示を切り替え',
+          }}
+        />
 
-      {!showAllMembers ? (
-        <div className="education-toolbar">
-          <MemberEducationTabs
-            members={visibleMembers}
-            activeMemberId={resolvedActiveId}
-            entryCounts={entryCounts}
-            referenceDate={referenceDate}
-            onSelect={setActiveMemberId}
-            addableMembers={addableMembers}
-            onAddMemberTab={handleAddMemberTab}
-            removableMemberIds={removableMemberIds}
-            onRemoveMemberTab={handleRemoveMemberTab}
+        {!showAllMembers && activeMember ? (
+          <CopySettingsBar
+            value={copySourceId}
+            options={copySourceOptions}
+            onChange={setCopySourceId}
+            onCopy={copySettingsFrom}
+            disabled={
+              copySourceId === resolvedActiveId ||
+              (educationByMember[copySourceId]?.length ?? 0) === 0
+            }
           />
-
-          {activeMember && (
-            <CopySettingsBar
-              value={copySourceId}
-              options={copySourceOptions}
-              onChange={setCopySourceId}
-              onCopy={copySettingsFrom}
-              disabled={
-                copySourceId === resolvedActiveId ||
-                (educationByMember[copySourceId]?.length ?? 0) === 0
-              }
-            />
-          )}
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {showAllMembers ? (
         <>
           <p className="education-aggregate-note">
-            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは「個人別」を選んでください。
+            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは人物タブ、または「個人ごとに表示」を選んでください。
           </p>
           <EducationExpenseChart
             mode="aggregate"

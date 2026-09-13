@@ -4,6 +4,14 @@ import {
   MemberTabAddInBar,
 } from './MemberTabExtrasControls';
 
+export interface MemberTabsSummaryAction {
+  active: boolean;
+  onToggle: () => void;
+  showLabel?: string;
+  hideLabel?: string;
+  ariaLabel?: string;
+}
+
 export interface MemberTabsProps {
   members: FamilyMember[];
   activeMemberId: string;
@@ -14,6 +22,7 @@ export interface MemberTabsProps {
   onAddMemberTab?: (memberId: string) => void;
   removableMemberIds?: string[];
   onRemoveMemberTab?: (memberId: string) => void;
+  summaryAction?: MemberTabsSummaryAction;
 }
 
 export function MemberTabs({
@@ -26,11 +35,29 @@ export function MemberTabs({
   onAddMemberTab,
   removableMemberIds = [],
   onRemoveMemberTab,
+  summaryAction,
 }: MemberTabsProps) {
   const removable = new Set(removableMemberIds);
+  const summaryLabel = summaryAction?.active
+    ? (summaryAction.hideLabel ?? '個人ごとに表示')
+    : (summaryAction?.showLabel ?? '全員まとめて表示');
 
   return (
     <div className="member-tabs-block">
+      {summaryAction ? (
+        <div className="member-tabs-actions">
+          <button
+            type="button"
+            className={`member-tabs-summary-toggle${summaryAction.active ? ' active' : ''}`}
+            aria-pressed={summaryAction.active}
+            aria-label={summaryAction.ariaLabel ?? summaryLabel}
+            onClick={summaryAction.onToggle}
+          >
+            {summaryLabel}
+          </button>
+        </div>
+      ) : null}
+
       <div className="member-tabs-row">
         <div className="member-tabs">
           {members.map((member) => (
