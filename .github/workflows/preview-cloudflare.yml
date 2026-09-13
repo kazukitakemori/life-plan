@@ -27,6 +27,7 @@ jobs:
         run: npm run build
         env:
           VITE_LICENSE_PREVIEW_UNLOCK: '1'
+          VITE_PREVIEW_SEED_DATA: '1'
 
       - name: Upload preview version to Cloudflare Workers
         id: preview

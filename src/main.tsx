@@ -6,17 +6,26 @@ import {
   isLicenseKeyAdminRoute,
   LicenseKeyAdminPage,
 } from './components/license/LicenseKeyAdminPage';
+import { seedPreviewDataIfNeeded } from './lib/previewSeed';
 import './index.css';
 import './secondLifeConsistency.css';
 import './mobile.css';
 import './mobileCompact.css';
 
-const root = createRoot(document.getElementById('root')!);
+async function bootstrap(): Promise<void> {
+  if (!isLicenseKeyAdminRoute()) {
+    await seedPreviewDataIfNeeded();
+  }
 
-root.render(
-  <StrictMode>
-    <ErrorBoundary>
-      {isLicenseKeyAdminRoute() ? <LicenseKeyAdminPage /> : <App />}
-    </ErrorBoundary>
-  </StrictMode>,
-);
+  const root = createRoot(document.getElementById('root')!);
+
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        {isLicenseKeyAdminRoute() ? <LicenseKeyAdminPage /> : <App />}
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+}
+
+void bootstrap();
