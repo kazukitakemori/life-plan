@@ -13,6 +13,7 @@ import './ui-system.css';
 import './mobile.css';
 import './mobileCompact.css';
 import './mobileSteps.css';
+import './mobileEducation.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
