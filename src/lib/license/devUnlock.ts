@@ -1,4 +1,7 @@
-import { isCloudflarePreviewHost } from '../previewEnvironment';
+import {
+  isCloudflarePreviewHost,
+  isProductionHost,
+} from '../previewEnvironment';
 
 /**
  * ローカル開発時、またはPR / branch / commit Preview時だけライセンス確認をスキップする。
@@ -7,6 +10,7 @@ import { isCloudflarePreviewHost } from '../previewEnvironment';
  * Previewはビルド時フラグ、またはCloudflareのPreviewホスト名で判定する。
  */
 export function isLicenseDevUnlock(): boolean {
+  if (isProductionHost()) return false;
   if (import.meta.env.VITE_LICENSE_PREVIEW_UNLOCK === '1') return true;
   if (isCloudflarePreviewHost()) return true;
   if (!import.meta.env.DEV) return false;
