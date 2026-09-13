@@ -14,7 +14,7 @@ async function readGzipText(response: Response): Promise<string> {
 }
 
 /**
- * PR Preview 専用の初期データ投入。
+ * PR確認版専用の初期データ投入。
  * 既に1件でもプランがある場合は何もせず、ユーザーの編集内容を保持する。
  */
 export async function seedPreviewDataIfNeeded(): Promise<void> {
