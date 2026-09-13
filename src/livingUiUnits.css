@@ -1,0 +1,16 @@
+/*
+ * Q4 living-expense UI unit adapter.
+ * Stored/calculated values remain in 万円 for backward compatibility;
+ * LivingStep converts the editable UI values to 1千円 units.
+ */
+
+.living-step .amount-unit {
+  font-size: 0;
+  white-space: nowrap;
+}
+
+.living-step .amount-unit::after {
+  content: '千円';
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
