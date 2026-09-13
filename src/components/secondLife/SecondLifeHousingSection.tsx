@@ -40,7 +40,8 @@ export function SecondLifeHousingSection({
   onChange,
 }: SecondLifeHousingSectionProps) {
   const total = estimateSecondLifeHousingTotalMan(state);
-  const useCurrentPlan = state.housingSkip;
+  const configured = state.housingConfigured !== false;
+  const useCurrentPlan = configured && state.housingSkip;
   const housingKind = getSecondLifeHousingTemplateKind(state);
   const hasHousingAction = housingKind !== 'stay' && housingKind !== 'skip';
   const isRent = housingKind === 'rent';
@@ -59,7 +60,10 @@ export function SecondLifeHousingSection({
   };
 
   const startHousingReview = () => {
-    const patch: Partial<SecondLifeState> = { housingSkip: false };
+    const patch: Partial<SecondLifeState> = {
+      housingConfigured: true,
+      housingSkip: false,
+    };
     if (state.housingScenario === 'stay') {
       patch.includeMovingCost = false;
       if (state.stayOption === 'continue') {
@@ -128,17 +132,20 @@ export function SecondLifeHousingSection({
     <section className="second-life-section">
       <SecondLifeModeSelector
         title="これからの住まいはどうしますか？"
+        configured={configured}
         useCurrent={useCurrentPlan}
         currentLabel="今の住まい計画を使う"
         reviewLabel="老後の住まいを見直す"
         currentDescription="現在の住まい計画をそのまま使います。"
         reviewDescription="リフォーム・建て替え・転居などを設定します。"
         name="second-life-housing-mode"
-        onUseCurrent={() => onChange({ housingSkip: true })}
+        onUseCurrent={() =>
+          onChange({ housingConfigured: true, housingSkip: true })
+        }
         onReview={startHousingReview}
       />
 
-      {useCurrentPlan ? null : (
+      {!configured || useCurrentPlan ? null : (
         <>
           <div className="second-life-section-toolbar">
             <p className="second-life-apply-note">

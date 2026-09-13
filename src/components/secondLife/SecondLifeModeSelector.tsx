@@ -3,6 +3,8 @@ import './SecondLifeModeSelector.css';
 
 interface SecondLifeModeSelectorProps {
   title?: string;
+  /** false のときはどちらの選択肢も選択済みに見せない */
+  configured?: boolean;
   useCurrent: boolean;
   currentLabel: string;
   reviewLabel: string;
@@ -15,6 +17,7 @@ interface SecondLifeModeSelectorProps {
 
 export function SecondLifeModeSelector({
   title,
+  configured = true,
   useCurrent,
   currentLabel,
   reviewLabel,
@@ -33,7 +36,7 @@ export function SecondLifeModeSelector({
         aria-label="セカンドライフでの扱い"
       >
         <SecondLifeChoiceCard
-          active={useCurrent}
+          active={configured && useCurrent}
           label={currentLabel}
           name={name}
           onSelect={onUseCurrent}
@@ -41,7 +44,7 @@ export function SecondLifeModeSelector({
           <p className="second-life-mode-description">{currentDescription}</p>
         </SecondLifeChoiceCard>
         <SecondLifeChoiceCard
-          active={!useCurrent}
+          active={configured && !useCurrent}
           label={reviewLabel}
           name={name}
           onSelect={onReview}

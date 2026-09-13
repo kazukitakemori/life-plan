@@ -40,6 +40,8 @@ export type SecondLifeNursingDurationMode = 'lifetime' | 'years';
 export type SecondLifeNursingTarget = 'head' | 'spouse';
 
 export interface SecondLifeNursingDesign {
+  /** false はまだ介護の想定を確定していない状態 */
+  configured?: boolean;
   skip: boolean;
   scenario: SecondLifeNursingScenario;
   startAge: number;
@@ -108,6 +110,10 @@ export interface SecondLifeDesignSnapshot {
 }
 
 export interface SecondLifeState extends SecondLifeDesignSnapshot {
+  /** false は老後の住まい方をまだ選んでいない状態 */
+  housingConfigured?: boolean;
+  /** false は老後の生活費の扱いをまだ選んでいない状態 */
+  livingConfigured?: boolean;
   /** 最後に Q3 へ反映した設計（未設定＝一度も反映していない） */
   lastAppliedQ3Snapshot?: SecondLifeQ3ApplySnapshot | null;
 }

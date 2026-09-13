@@ -59,23 +59,31 @@ export function SecondLifeNursingSection({
         ...state.nursingByTarget,
         [target]: {
           ...state.nursingByTarget[target],
+          configured: true,
           ...patch,
         },
       },
     });
   };
 
+  const allConfigured =
+    targets.length > 0 &&
+    targets.every(({ key }) => state.nursingByTarget[key].configured !== false);
+
   const hasUnpricedDesign = targets.some(({ key }) => {
     const design = state.nursingByTarget[key];
     return (
+      design.configured !== false &&
       !design.skip &&
       design.initialCostMan <= 0 &&
       design.monthlyCostMan <= 0
     );
   });
 
-  const applyMessage = hasUnpricedDesign
-    ? '介護費を見込む人は、開始時費用または月額追加費用を入力してください。金額が0のままでは反映しません。'
+  const applyMessage = !allConfigured
+    ? '介護の想定が未設定です。本人・配偶者それぞれについて、介護費を見込むかどうかを選んでください。'
+    : hasUnpricedDesign
+      ? '介護費を見込む人は、開始時費用または月額追加費用を入力してください。金額が0のままでは反映しません。'
     : applyStatus === 'done'
       ? '現在のサードライフ設計はキャッシュフローへ反映済みです。'
       : applyStatus === 'partial'
@@ -126,6 +134,7 @@ export function SecondLifeNursingSection({
       <div className="second-life-guide-grid third-life-person-grid">
         {targets.map(({ key, member }) => {
           const design = state.nursingByTarget[key];
+          const configured = design.configured !== false;
           const scenarioInfo = getThirdLifeCareScenarioInfo(design.scenario);
           const hasCost = design.initialCostMan > 0 || design.monthlyCostMan > 0;
           const effectiveStartAge = getThirdLifeCareStartAge(
@@ -141,9 +150,11 @@ export function SecondLifeNursingSection({
             <article
               key={key}
               className={
-                design.skip
+                !configured
                   ? 'second-life-guide-card second-life-guide-card--missing'
-                  : hasCost
+                  : design.skip
+                    ? 'second-life-guide-card second-life-guide-card--done'
+                    : hasCost
                     ? 'second-life-guide-card second-life-guide-card--done'
                     : 'second-life-guide-card second-life-guide-card--partial'
               }
@@ -154,8 +165,10 @@ export function SecondLifeNursingSection({
                     {getMemberTabLabel(member)}
                   </p>
                   <p className="second-life-guide-card-summary">
-                    {design.skip
-                      ? '今回は介護費を見込まない'
+                    {!configured
+                      ? '未設定'
+                      : design.skip
+                        ? '今回は介護費を見込まない'
                       : hasCost
                         ? `${effectiveStartAge}歳〜 ${scenarioInfo.label}・月${design.monthlyCostMan}万円＋開始時${design.initialCostMan}万円（${formatThirdLifeCareDuration(design)}）`
                         : `${effectiveStartAge}歳〜 ${scenarioInfo.label}（費用未入力）`}
@@ -166,7 +179,7 @@ export function SecondLifeNursingSection({
               <label className="second-life-skip">
                 <input
                   type="checkbox"
-                  checked={design.skip}
+                  checked={configured && design.skip}
                   onChange={(event) =>
                     updateTarget(key, { skip: event.target.checked })
                   }
@@ -347,11 +360,13 @@ export function SecondLifeNursingSection({
           type="button"
           className="second-life-apply-btn"
           onClick={onApply}
-          disabled={applyStatus === 'done' || hasUnpricedDesign}
+          disabled={!allConfigured || applyStatus === 'done' || hasUnpricedDesign}
         >
-          {applyStatus === 'done'
-            ? 'サードライフ設計は反映済み'
-            : 'このサードライフ設計を反映する'}
+          {!allConfigured
+            ? '介護の想定を設定してください'
+            : applyStatus === 'done'
+              ? 'サードライフ設計は反映済み'
+              : 'このサードライフ設計を反映する'}
         </button>
         {onOpenLifeEvent ? (
           <button

@@ -4,6 +4,7 @@ import type { IncomeByMember } from '../types/income';
 import type { LivingExpenseState } from '../types/living';
 import type { PensionByMember } from '../types/pension';
 import type { SecondLifeState } from '../types/secondLife';
+import { getPreSecondLifeMonthlyLivingMan } from './secondLifeEstimates';
 import {
   applySecondLifeHousingToHousingStateWithChanges,
   applySecondLifeLivingDesign,
@@ -33,7 +34,9 @@ export function buildSecondLifeCalculationStates(input: {
   const head = input.familyMembers.find((member) => member.role === 'head');
 
   const housingState =
-    input.secondLifeState.housingSkip || !head
+    input.secondLifeState.housingConfigured === false ||
+    input.secondLifeState.housingSkip ||
+    !head
       ? input.housingState
       : applySecondLifeHousingToHousingStateWithChanges({
           housingState: input.housingState,
@@ -43,16 +46,26 @@ export function buildSecondLifeCalculationStates(input: {
           targetId: head.id,
         }).housingState;
 
-  const livingState = input.secondLifeState.livingSkip
-    ? input.livingState
-    : applySecondLifeLivingDesign({
+  const livingBaseMonthly = getPreSecondLifeMonthlyLivingMan({
+    livingState: input.livingState,
+    familyMembers: input.familyMembers,
+    referenceDate: input.referenceDate,
+    startAge: input.secondLifeState.startAge,
+  });
+
+  const livingState =
+    input.secondLifeState.livingConfigured === false ||
+    input.secondLifeState.livingSkip ||
+    livingBaseMonthly <= 0
+      ? input.livingState
+      : applySecondLifeLivingDesign({
         livingState: input.livingState,
         secondLifeState: input.secondLifeState,
         familyMembers: input.familyMembers,
         incomeByMember: input.incomeByMember,
         pensionByMember: input.pensionByMember,
-        referenceDate: input.referenceDate,
-      });
+          referenceDate: input.referenceDate,
+        });
 
   return { housingState, livingState };
 }

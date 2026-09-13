@@ -9,6 +9,7 @@ import {
 import './index.css';
 import './secondLifeConsistency.css';
 import './mobile.css';
+import './mobileCompact.css';
 
 const root = createRoot(document.getElementById('root')!);
 

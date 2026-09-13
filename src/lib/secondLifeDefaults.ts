@@ -29,6 +29,7 @@ export function createDefaultSecondLifeNursingDesign(
   overrides: Partial<SecondLifeNursingDesign> = {},
 ): SecondLifeNursingDesign {
   return {
+    configured: false,
     skip: false,
     scenario: 'home',
     startAge: SECOND_LIFE_DEFAULT_NURSING_START_AGE,
@@ -45,7 +46,9 @@ export function createDefaultSecondLifeState(): SecondLifeState {
     priority: 'must',
     startAge: SECOND_LIFE_DEFAULT_START_AGE,
     housingActionAge: SECOND_LIFE_DEFAULT_START_AGE,
-    // 新規プランでは Q5 の原本を優先。ユーザーが「見直す」を選んだ時だけ Q12 を重ねる。
+    // 新規プランでは選択済みに見せず、明示的に選ぶまで未設定扱い。
+    housingConfigured: false,
+    // 未設定の間は計算上 Q5 の原本をそのまま使う。
     housingSkip: true,
     housingScenario: 'stay',
     stayOption: 'renovate',
@@ -63,7 +66,8 @@ export function createDefaultSecondLifeState(): SecondLifeState {
     housingLoanDownPaymentMan: 0,
     housingLoanInterestRatePct: null,
     housingLoanYears: null,
-    // 生活費も同様に、明示的に見直すまでは Q4 の原本を使う。
+    livingConfigured: false,
+    // 未設定の間は計算上 Q4 の原本をそのまま使う。
     livingSkip: true,
     livingLevel: 'same',
     nursingByTarget: {
@@ -108,6 +112,7 @@ function migrateLegacyNursingFields(
       : 0;
 
   const head = createDefaultSecondLifeNursingDesign({
+    configured: true,
     skip:
       typeof legacy.nursingSkip === 'boolean'
         ? legacy.nursingSkip
@@ -122,7 +127,8 @@ function migrateLegacyNursingFields(
 
   return {
     head,
-    spouse: defaults.nursingByTarget.spouse,
+    // 旧データは従来の状態を壊さないため設定済みとして扱う。
+    spouse: createDefaultSecondLifeNursingDesign({ configured: true }),
   };
 }
 
@@ -148,6 +154,8 @@ function migrateNursingDesign(
         : fallback.monthlyCostMan;
 
   return createDefaultSecondLifeNursingDesign({
+    // フラグがない旧データは、既存設定を維持するため設定済みとみなす。
+    configured: typeof value.configured === 'boolean' ? value.configured : true,
     skip: typeof value.skip === 'boolean' ? value.skip : fallback.skip,
     scenario: normalizeNursingScenario(legacy.scenario),
     startAge:
@@ -207,6 +215,11 @@ export function migrateSecondLifeState(
     typeof value.housingActionAge === 'number' && value.housingActionAge >= startAge
       ? value.housingActionAge
       : startAge;
+
+  const housingConfigured =
+    typeof value.housingConfigured === 'boolean' ? value.housingConfigured : true;
+  const livingConfigured =
+    typeof value.livingConfigured === 'boolean' ? value.livingConfigured : true;
 
   const housingSkip =
     typeof value.housingSkip === 'boolean'
@@ -287,6 +300,8 @@ export function migrateSecondLifeState(
     ...rest,
     startAge,
     housingActionAge,
+    housingConfigured,
+    livingConfigured,
     housingSkip,
     housingScenario,
     hometownOption,

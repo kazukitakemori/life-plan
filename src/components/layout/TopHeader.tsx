@@ -90,6 +90,8 @@ export function TopHeader({
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [assetMenuOpen, setAssetMenuOpen] = useState(false);
   const [coverageMenuOpen, setCoverageMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileExpandedTab, setMobileExpandedTab] = useState<HeaderTabId | null>(null);
   const adminMenuRef = useRef<HTMLDivElement>(null);
   const assetMenuRef = useRef<HTMLDivElement>(null);
   const coverageMenuRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,10 @@ export function TopHeader({
     analysisUnlocked && onAssetBuildingTabChange != null;
   const showCoverageMenu =
     coverageUnlocked && onRequiredCoverageRiskKindChange != null;
+  const adminTabs = isLicensed
+    ? ADMIN_TABS
+    : ADMIN_TABS.filter((item) => item.id === 'license');
+  const activeTabLabel = HEADER_TABS.find((tab) => tab.id === activeTab)?.label ?? '';
 
   const anyMenuOpen = adminMenuOpen || assetMenuOpen || coverageMenuOpen;
 
@@ -109,6 +115,11 @@ export function TopHeader({
     setAdminMenuOpen(false);
     setAssetMenuOpen(false);
     setCoverageMenuOpen(false);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+    setMobileExpandedTab(null);
   };
 
   useEffect(() => {
@@ -153,6 +164,17 @@ export function TopHeader({
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [coverageMenuOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMobileMenu();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
+
   const handleAdminClick = () => {
     if (!showAdminMenu) {
       onTabChange('admin');
@@ -191,6 +213,101 @@ export function TopHeader({
     setCoverageMenuOpen(false);
   };
 
+  const openMobileMenu = () => {
+    setMobileMenuOpen(true);
+    if (
+      activeTab === 'admin' ||
+      activeTab === 'asset-building' ||
+      activeTab === 'required-coverage'
+    ) {
+      setMobileExpandedTab(activeTab);
+    } else {
+      setMobileExpandedTab(null);
+    }
+  };
+
+  const handleMobileTabClick = (tabId: HeaderTabId) => {
+    const enabled = isHeaderTabEnabled(
+      tabId,
+      analysisUnlocked,
+      requiredCoverageUnlocked,
+      hasOpenPlan,
+    );
+    if (!enabled) return;
+
+    if (tabId === 'admin' && adminTabs.length === 1) {
+      onAdminTabChange?.(adminTabs[0].id);
+    }
+    onTabChange(tabId);
+    closeMobileMenu();
+  };
+
+  const renderMobileSubmenu = (tabId: HeaderTabId) => {
+    if (mobileExpandedTab !== tabId) return null;
+
+    if (tabId === 'admin' && showAdminMenu && adminTabs.length > 1) {
+      return (
+        <div className="top-header-mobile-submenu">
+          {adminTabs.map((sub) => (
+            <button
+              key={sub.id}
+              type="button"
+              className={`top-header-mobile-subitem${adminTab === sub.id && activeTab === 'admin' ? ' active' : ''}`}
+              onClick={() => {
+                handleAdminSubClick(sub.id);
+                closeMobileMenu();
+              }}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    if (tabId === 'asset-building' && showAssetMenu) {
+      return (
+        <div className="top-header-mobile-submenu">
+          {ASSET_BUILDING_TABS.map((sub) => (
+            <button
+              key={sub.id}
+              type="button"
+              className={`top-header-mobile-subitem${assetBuildingTab === sub.id && activeTab === 'asset-building' ? ' active' : ''}`}
+              onClick={() => {
+                handleAssetSubClick(sub.id);
+                closeMobileMenu();
+              }}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    if (tabId === 'required-coverage' && showCoverageMenu && coverageKinds.length > 0) {
+      return (
+        <div className="top-header-mobile-submenu">
+          {coverageKinds.map((sub) => (
+            <button
+              key={sub.id}
+              type="button"
+              className={`top-header-mobile-subitem${requiredCoverageRiskKind === sub.id && activeTab === 'required-coverage' ? ' active' : ''}`}
+              onClick={() => {
+                handleCoverageSubClick(sub.id);
+                closeMobileMenu();
+              }}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <header className={`top-header${anyMenuOpen ? ' has-menu-open' : ''}`}>
       {anyMenuOpen ? (
@@ -201,6 +318,101 @@ export function TopHeader({
           onClick={closeAllMenus}
         />
       ) : null}
+
+      <div className="top-header-mobile-bar">
+        <span className="top-header-mobile-brand">LIFE PLAN</span>
+        <span className="top-header-mobile-current" aria-current="page">
+          {activeTabLabel}
+        </span>
+        <button
+          type="button"
+          className="top-header-mobile-menu-btn"
+          aria-label="メインメニューを開く"
+          aria-expanded={mobileMenuOpen}
+          onClick={openMobileMenu}
+        >
+          <span aria-hidden="true">☰</span>
+        </button>
+      </div>
+
+      {mobileMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="top-header-mobile-scrim"
+            aria-label="メインメニューを閉じる"
+            onClick={closeMobileMenu}
+          />
+          <div className="top-header-mobile-menu" role="dialog" aria-modal="true" aria-label="メインメニュー">
+            <div className="top-header-mobile-menu-head">
+              <div>
+                <span className="top-header-mobile-menu-kicker">LIFE PLAN</span>
+                <strong>メニュー</strong>
+              </div>
+              <button
+                type="button"
+                className="top-header-mobile-close"
+                aria-label="メインメニューを閉じる"
+                onClick={closeMobileMenu}
+              >
+                ×
+              </button>
+            </div>
+            <nav className="top-header-mobile-nav" aria-label="モバイルメインナビゲーション">
+              {HEADER_TABS.map((tab) => {
+                const enabled = isHeaderTabEnabled(
+                  tab.id,
+                  analysisUnlocked,
+                  requiredCoverageUnlocked,
+                  hasOpenPlan,
+                );
+                const isActive = activeTab === tab.id;
+                const hasSubmenu =
+                  (tab.id === 'admin' && showAdminMenu && adminTabs.length > 1) ||
+                  (tab.id === 'asset-building' && showAssetMenu) ||
+                  (tab.id === 'required-coverage' && showCoverageMenu && coverageKinds.length > 0);
+                const expanded = mobileExpandedTab === tab.id;
+
+                return (
+                  <div key={tab.id} className="top-header-mobile-group">
+                    <div className="top-header-mobile-row">
+                      <button
+                        type="button"
+                        className={`top-header-mobile-item${isActive ? ' active' : ''}`}
+                        disabled={!enabled}
+                        aria-disabled={!enabled}
+                        aria-current={isActive ? 'page' : undefined}
+                        onClick={() => handleMobileTabClick(tab.id)}
+                      >
+                        <span>{tab.label}</span>
+                        {!enabled ? <small>未開放</small> : null}
+                      </button>
+                      {hasSubmenu ? (
+                        <button
+                          type="button"
+                          className={`top-header-mobile-expand${expanded ? ' is-open' : ''}`}
+                          disabled={!enabled}
+                          aria-label={`${tab.label}のサブメニューを${expanded ? '閉じる' : '開く'}`}
+                          aria-expanded={expanded}
+                          onClick={() =>
+                            setMobileExpandedTab((current) =>
+                              current === tab.id ? null : tab.id,
+                            )
+                          }
+                        >
+                          <span aria-hidden="true">⌄</span>
+                        </button>
+                      ) : null}
+                    </div>
+                    {renderMobileSubmenu(tab.id)}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+        </>
+      ) : null}
+
       <div className="top-header-primary">
         <div className="top-header-brand">
           <h1 className="top-header-title">LIFE PLAN</h1>
@@ -230,173 +442,170 @@ export function TopHeader({
         </div>
         <div className="top-header-primary-right">
           <nav className="top-header-nav" aria-label="メインナビゲーション">
-          {HEADER_TABS.map((tab) => {
-            const enabled = isHeaderTabEnabled(
-              tab.id,
-              analysisUnlocked,
-              requiredCoverageUnlocked,
-              hasOpenPlan,
-            );
-            const inputLockedHint =
-              tab.id === 'input' && !hasOpenPlan
-                ? isLicensed
-                  ? '管理からプランを開くと入力できます'
-                  : 'ライセンスから体験をはじめると入力できます'
-                : undefined;
-            const isActive = activeTab === tab.id;
-            const adminTabs = isLicensed
-              ? ADMIN_TABS
-              : ADMIN_TABS.filter((item) => item.id === 'license');
+            {HEADER_TABS.map((tab) => {
+              const enabled = isHeaderTabEnabled(
+                tab.id,
+                analysisUnlocked,
+                requiredCoverageUnlocked,
+                hasOpenPlan,
+              );
+              const inputLockedHint =
+                tab.id === 'input' && !hasOpenPlan
+                  ? isLicensed
+                    ? '管理からプランを開くと入力できます'
+                    : 'ライセンスから体験をはじめると入力できます'
+                  : undefined;
+              const isActive = activeTab === tab.id;
 
-            if (tab.id === 'admin' && showAdminMenu) {
-              if (adminTabs.length === 1) {
+              if (tab.id === 'admin' && showAdminMenu) {
+                if (adminTabs.length === 1) {
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`top-header-nav-item${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => {
+                        onAdminTabChange?.(adminTabs[0].id);
+                        onTabChange('admin');
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                }
+
                 return (
-                  <button
+                  <div
                     key={tab.id}
-                    type="button"
-                    className={`top-header-nav-item${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => {
-                      onAdminTabChange?.(adminTabs[0].id);
-                      onTabChange('admin');
-                    }}
+                    ref={adminMenuRef}
+                    className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${adminMenuOpen ? ' is-open' : ''}`}
+                    onMouseEnter={() => setAdminMenuOpen(true)}
+                    onMouseLeave={() => setAdminMenuOpen(false)}
                   >
-                    {tab.label}
-                  </button>
+                    <button
+                      type="button"
+                      className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-expanded={adminMenuOpen}
+                      aria-haspopup="true"
+                      onClick={handleAdminClick}
+                    >
+                      {tab.label}
+                      <span className="top-header-nav-chevron" aria-hidden />
+                    </button>
+                    <div className="top-header-dropdown" role="menu">
+                      {adminTabs.map((sub) => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          role="menuitem"
+                          className={`top-header-dropdown-item${adminTab === sub.id && isActive ? ' active' : ''}`}
+                          onClick={() => handleAdminSubClick(sub.id)}
+                        >
+                          <span className="top-header-dropdown-dot" aria-hidden />
+                          <span className="top-header-dropdown-label">{sub.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (tab.id === 'asset-building' && showAssetMenu) {
+                return (
+                  <div
+                    key={tab.id}
+                    ref={assetMenuRef}
+                    className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${assetMenuOpen ? ' is-open' : ''}`}
+                    onMouseEnter={() => setAssetMenuOpen(true)}
+                    onMouseLeave={() => setAssetMenuOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-expanded={assetMenuOpen}
+                      aria-haspopup="menu"
+                      aria-label={`${tab.label}のメニューを開く`}
+                      onClick={handleAssetClick}
+                    >
+                      {tab.label}
+                      <span className="top-header-nav-chevron" aria-hidden />
+                    </button>
+                    <div className="top-header-dropdown" role="menu">
+                      {ASSET_BUILDING_TABS.map((sub) => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          role="menuitem"
+                          className={`top-header-dropdown-item${assetBuildingTab === sub.id && isActive ? ' active' : ''}`}
+                          onClick={() => handleAssetSubClick(sub.id)}
+                        >
+                          <span className="top-header-dropdown-dot" aria-hidden />
+                          <span className="top-header-dropdown-label">{sub.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (tab.id === 'required-coverage' && showCoverageMenu) {
+                return (
+                  <div
+                    key={tab.id}
+                    ref={coverageMenuRef}
+                    className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${coverageMenuOpen ? ' is-open' : ''}`}
+                    onMouseEnter={() => setCoverageMenuOpen(true)}
+                    onMouseLeave={() => setCoverageMenuOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-expanded={coverageMenuOpen}
+                      aria-haspopup="menu"
+                      aria-label={`${tab.label}のメニューを開く`}
+                      onClick={handleCoverageClick}
+                    >
+                      {tab.label}
+                      <span className="top-header-nav-chevron" aria-hidden />
+                    </button>
+                    <div className="top-header-dropdown" role="menu">
+                      {coverageKinds.map((sub) => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          role="menuitem"
+                          className={`top-header-dropdown-item${requiredCoverageRiskKind === sub.id && isActive ? ' active' : ''}`}
+                          onClick={() => handleCoverageSubClick(sub.id)}
+                        >
+                          <span className="top-header-dropdown-dot" aria-hidden />
+                          <span className="top-header-dropdown-label">{sub.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 );
               }
 
               return (
-                <div
+                <button
                   key={tab.id}
-                  ref={adminMenuRef}
-                  className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${adminMenuOpen ? ' is-open' : ''}`}
-                  onMouseEnter={() => setAdminMenuOpen(true)}
-                  onMouseLeave={() => setAdminMenuOpen(false)}
+                  type="button"
+                  className={`top-header-nav-item${isActive ? ' active' : ''}`}
+                  disabled={!enabled}
+                  aria-disabled={!enabled}
+                  aria-current={isActive ? 'page' : undefined}
+                  title={inputLockedHint}
+                  onClick={() => enabled && onTabChange(tab.id)}
                 >
-                  <button
-                    type="button"
-                    className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    aria-expanded={adminMenuOpen}
-                    aria-haspopup="true"
-                    onClick={handleAdminClick}
-                  >
-                    {tab.label}
-                    <span className="top-header-nav-chevron" aria-hidden />
-                  </button>
-                  <div className="top-header-dropdown" role="menu">
-                    {adminTabs.map((sub) => (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        role="menuitem"
-                        className={`top-header-dropdown-item${adminTab === sub.id && isActive ? ' active' : ''}`}
-                        onClick={() => handleAdminSubClick(sub.id)}
-                      >
-                        <span className="top-header-dropdown-dot" aria-hidden />
-                        <span className="top-header-dropdown-label">{sub.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  {tab.label}
+                </button>
               );
-            }
-
-            if (tab.id === 'asset-building' && showAssetMenu) {
-              return (
-                <div
-                  key={tab.id}
-                  ref={assetMenuRef}
-                  className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${assetMenuOpen ? ' is-open' : ''}`}
-                  onMouseEnter={() => setAssetMenuOpen(true)}
-                  onMouseLeave={() => setAssetMenuOpen(false)}
-                >
-                  <button
-                    type="button"
-                    className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    aria-expanded={assetMenuOpen}
-                    aria-haspopup="menu"
-                    aria-label={`${tab.label}のメニューを開く`}
-                    onClick={handleAssetClick}
-                  >
-                    {tab.label}
-                    <span className="top-header-nav-chevron" aria-hidden />
-                  </button>
-                  <div className="top-header-dropdown" role="menu">
-                    {ASSET_BUILDING_TABS.map((sub) => (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        role="menuitem"
-                        className={`top-header-dropdown-item${assetBuildingTab === sub.id && isActive ? ' active' : ''}`}
-                        onClick={() => handleAssetSubClick(sub.id)}
-                      >
-                        <span className="top-header-dropdown-dot" aria-hidden />
-                        <span className="top-header-dropdown-label">{sub.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            }
-
-            if (tab.id === 'required-coverage' && showCoverageMenu) {
-              return (
-                <div
-                  key={tab.id}
-                  ref={coverageMenuRef}
-                  className={`top-header-nav-item-wrap${isActive ? ' active' : ''}${coverageMenuOpen ? ' is-open' : ''}`}
-                  onMouseEnter={() => setCoverageMenuOpen(true)}
-                  onMouseLeave={() => setCoverageMenuOpen(false)}
-                >
-                  <button
-                    type="button"
-                    className={`top-header-nav-item has-submenu${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    aria-expanded={coverageMenuOpen}
-                    aria-haspopup="menu"
-                    aria-label={`${tab.label}のメニューを開く`}
-                    onClick={handleCoverageClick}
-                  >
-                    {tab.label}
-                    <span className="top-header-nav-chevron" aria-hidden />
-                  </button>
-                  <div className="top-header-dropdown" role="menu">
-                    {coverageKinds.map((sub) => (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        role="menuitem"
-                        className={`top-header-dropdown-item${requiredCoverageRiskKind === sub.id && isActive ? ' active' : ''}`}
-                        onClick={() => handleCoverageSubClick(sub.id)}
-                      >
-                        <span className="top-header-dropdown-dot" aria-hidden />
-                        <span className="top-header-dropdown-label">{sub.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                className={`top-header-nav-item${isActive ? ' active' : ''}`}
-                disabled={!enabled}
-                aria-disabled={!enabled}
-                aria-current={isActive ? 'page' : undefined}
-                title={inputLockedHint}
-                onClick={() => enabled && onTabChange(tab.id)}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
+            })}
+          </nav>
           <button
             type="button"
             className={

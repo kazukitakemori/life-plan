@@ -65,6 +65,7 @@ export function getSecondLifeHousingOptionLabel(
 export function getSecondLifeHousingDesignSummary(
   state: Pick<
     SecondLifeState,
+    | 'housingConfigured'
     | 'housingSkip'
     | 'housingScenario'
     | 'stayOption'
@@ -73,6 +74,7 @@ export function getSecondLifeHousingDesignSummary(
     | 'renovationScope'
   >,
 ): string {
+  if (state.housingConfigured === false) return '未設定';
   if (state.housingSkip) {
     return '住まいの変更なし（現在の入力を継続）';
   }
@@ -87,8 +89,9 @@ export function getSecondLifeHousingDesignSummary(
 }
 
 export function getSecondLifeLivingDesignSummary(
-  state: Pick<SecondLifeState, 'livingSkip' | 'livingLevel'>,
+  state: Pick<SecondLifeState, 'livingConfigured' | 'livingSkip' | 'livingLevel'>,
 ): string {
+  if (state.livingConfigured === false) return '未設定';
   if (state.livingSkip) {
     return '生活費の変更なし（現在の入力を継続）';
   }
