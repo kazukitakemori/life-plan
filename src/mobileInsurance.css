@@ -1,0 +1,151 @@
+/* Q10 保険: 保険固有のカード/詳細構造のみをスマホ向けに整える。 */
+
+@media (max-width: 768px) {
+  .insurance-step .insurance-section,
+  .insurance-step .insurance-entry-list,
+  .insurance-step .insurance-entry-list-item,
+  .insurance-step .insurance-entry-card-wrap,
+  .insurance-step .insurance-entry-detail {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .insurance-step .insurance-entry-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .insurance-step .insurance-entry-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .insurance-step .insurance-entry-drag-handle {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .insurance-step .insurance-entry-name-input,
+  .insurance-step .insurance-entry-name-label {
+    grid-column: 2 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .insurance-step .insurance-entry-sector-badge,
+  .insurance-step .insurance-entry-category-badge {
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .insurance-step .insurance-entry-sector-badge {
+    grid-column: 1 / span 2;
+  }
+
+  .insurance-step .insurance-entry-category-badge {
+    grid-column: 2 / -1;
+  }
+
+  .insurance-step .insurance-entry-summary {
+    grid-column: 1 / span 2;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .insurance-step .insurance-entry-open-btn {
+    grid-column: 3;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .insurance-step .insurance-entry-card > .housing-row-remove {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    margin: 2px 0 0;
+  }
+
+  .insurance-step .insurance-entry-detail {
+    padding: 14px 12px 16px;
+  }
+
+  .insurance-step .loan-settings-table-card,
+  .insurance-step .loan-settings-form-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .insurance-step .loan-settings-form-table {
+    display: grid;
+    gap: 10px;
+  }
+
+  .insurance-step .loan-settings-form-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+    padding: 10px 0;
+  }
+
+  .insurance-step .loan-settings-form-label,
+  .insurance-step .loan-settings-form-value {
+    width: auto;
+    min-width: 0;
+  }
+
+  .insurance-step .loan-settings-form-label {
+    font-weight: 700;
+  }
+
+  .insurance-step .insurance-premium-fields,
+  .insurance-step .insurance-period-fields,
+  .insurance-step .insurance-benefit-fields,
+  .insurance-step .insurance-beneficiary-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .insurance-step .insurance-premium-mode-select,
+  .insurance-step .loan-entry-note-input,
+  .insurance-step .life-event-amount-field,
+  .insurance-step .select-input {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .insurance-step .insurance-add-section,
+  .insurance-step .insurance-add-group {
+    min-width: 0;
+  }
+
+  .insurance-step .insurance-add-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .insurance-step .insurance-add-card {
+    width: 100%;
+    min-height: 76px;
+    text-align: left;
+  }
+
+  .insurance-step .insurance-add-card-title,
+  .insurance-step .insurance-add-card-desc,
+  .insurance-step .insurance-add-group-desc {
+    white-space: normal;
+    line-height: 1.5;
+  }
+}
