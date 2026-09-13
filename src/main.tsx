@@ -20,6 +20,7 @@ import './mobileLiving.css';
 import './mobileHousing.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
+import './mobileLoan.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
