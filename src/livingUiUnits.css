@@ -1,15 +1,17 @@
 /*
  * Q4 living-expense UI unit adapter.
  * Stored/calculated values remain in 万円 for backward compatibility;
- * LivingStep converts the editable UI values to 1千円 units.
+ * LivingStep converts the editable schedule UI values to 1千円 units.
+ * Keep this scoped to the main living-schedule cards so second-life inputs
+ * and other amount controls retain their own units.
  */
 
-.living-step .amount-unit {
+.living-step .living-schedule-card .amount-unit {
   font-size: 0;
   white-space: nowrap;
 }
 
-.living-step .amount-unit::after {
+.living-step .living-schedule-card .amount-unit::after {
   content: '千円';
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
