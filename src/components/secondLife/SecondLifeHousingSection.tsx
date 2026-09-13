@@ -31,7 +31,8 @@ export function SecondLifeHousingSection({
   onApply,
 }: SecondLifeHousingSectionProps) {
   const total = estimateSecondLifeHousingTotalMan(state);
-  const placeholder = state.housingSkip;
+  const configured = state.housingConfigured !== false;
+  const placeholder = configured && state.housingSkip;
 
   return (
     <section
@@ -48,6 +49,12 @@ export function SecondLifeHousingSection({
         />
       </div>
 
+      {!configured ? (
+        <p className="second-life-apply-note">
+          まだ設定されていません。老後の住まい方を選ぶと、住宅費の目安を表示します。
+        </p>
+      ) : null}
+
       <label
         className={
           placeholder ? 'second-life-skip is-checked' : 'second-life-skip'
@@ -55,8 +62,13 @@ export function SecondLifeHousingSection({
       >
         <input
           type="checkbox"
-          checked={state.housingSkip}
-          onChange={(event) => onChange({ housingSkip: event.target.checked })}
+          checked={placeholder}
+          onChange={(event) =>
+            onChange({
+              housingConfigured: true,
+              housingSkip: event.target.checked,
+            })
+          }
         />
         {SECOND_LIFE_SKIP_LABEL}
       </label>
@@ -72,7 +84,8 @@ export function SecondLifeHousingSection({
         aria-disabled={placeholder || undefined}
       >
         {HOUSING_SCENARIOS.map((scenario) => {
-          const active = !placeholder && state.housingScenario === scenario.id;
+          const active =
+            configured && !placeholder && state.housingScenario === scenario.id;
           return (
             <SecondLifeChoiceCard
               key={scenario.id}
@@ -80,7 +93,12 @@ export function SecondLifeHousingSection({
               label={scenario.label}
               name="second-life-housing-scenario"
               placeholder={placeholder}
-              onSelect={() => onChange({ housingScenario: scenario.id })}
+              onSelect={() =>
+                onChange({
+                  housingConfigured: true,
+                  housingScenario: scenario.id,
+                })
+              }
             >
               {placeholder ? (
                 <SecondLifePlaceholderBody totalLabel="総額" lines={3} />
@@ -92,9 +110,10 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-stay"
-                          checked={state.stayOption === 'renovate'}
+                          checked={active && state.stayOption === 'renovate'}
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'stay',
                               stayOption: 'renovate',
                             })
@@ -106,9 +125,12 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-stay"
-                          checked={state.stayOption === 'purchase_rebuild'}
+                          checked={
+                            active && state.stayOption === 'purchase_rebuild'
+                          }
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'stay',
                               stayOption: 'purchase_rebuild',
                             })
@@ -116,13 +138,14 @@ export function SecondLifeHousingSection({
                         />
                         新たに住宅購入・建て替え（増改築含む）
                       </label>
-                      {state.stayOption === 'purchase_rebuild' ? (
+                      {active && state.stayOption === 'purchase_rebuild' ? (
                         <label className="second-life-inline-option">
                           <input
                             type="checkbox"
                             checked={state.includePostPurchaseRenovation}
                             onChange={(event) =>
                               onChange({
+                                housingConfigured: true,
                                 includePostPurchaseRenovation:
                                   event.target.checked,
                               })
@@ -140,9 +163,12 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-hometown"
-                          checked={state.hometownOption === 'renovate_parents'}
+                          checked={
+                            active && state.hometownOption === 'renovate_parents'
+                          }
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'hometown',
                               hometownOption: 'renovate_parents',
                             })
@@ -154,9 +180,12 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-hometown"
-                          checked={state.hometownOption === 'purchase_rebuild'}
+                          checked={
+                            active && state.hometownOption === 'purchase_rebuild'
+                          }
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'hometown',
                               hometownOption: 'purchase_rebuild',
                             })
@@ -164,23 +193,29 @@ export function SecondLifeHousingSection({
                         />
                         新たに住宅購入・建て替え（増改築含む）
                       </label>
-                      <label className="second-life-inline-option">
-                        <input
-                          type="checkbox"
-                          checked={state.includeMovingCost}
-                          onChange={(event) =>
-                            onChange({ includeMovingCost: event.target.checked })
-                          }
-                        />
-                        引越し
-                      </label>
-                      {state.hometownOption === 'purchase_rebuild' ? (
+                      {active ? (
+                        <label className="second-life-inline-option">
+                          <input
+                            type="checkbox"
+                            checked={state.includeMovingCost}
+                            onChange={(event) =>
+                              onChange({
+                                housingConfigured: true,
+                                includeMovingCost: event.target.checked,
+                              })
+                            }
+                          />
+                          引越し
+                        </label>
+                      ) : null}
+                      {active && state.hometownOption === 'purchase_rebuild' ? (
                         <label className="second-life-inline-option">
                           <input
                             type="checkbox"
                             checked={state.includePostPurchaseRenovation}
                             onChange={(event) =>
                               onChange({
+                                housingConfigured: true,
                                 includePostPurchaseRenovation:
                                   event.target.checked,
                               })
@@ -198,9 +233,10 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-new-area"
-                          checked={state.newAreaOption === 'rent'}
+                          checked={active && state.newAreaOption === 'rent'}
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'new_area',
                               newAreaOption: 'rent',
                             })
@@ -212,9 +248,10 @@ export function SecondLifeHousingSection({
                         <input
                           type="radio"
                           name="second-life-new-area"
-                          checked={state.newAreaOption === 'purchase'}
+                          checked={active && state.newAreaOption === 'purchase'}
                           onChange={() =>
                             onChange({
+                              housingConfigured: true,
                               housingScenario: 'new_area',
                               newAreaOption: 'purchase',
                             })
@@ -222,23 +259,29 @@ export function SecondLifeHousingSection({
                         />
                         新たに住宅購入・建て替え（増改築含む）
                       </label>
-                      <label className="second-life-inline-option">
-                        <input
-                          type="checkbox"
-                          checked={state.includeMovingCost}
-                          onChange={(event) =>
-                            onChange({ includeMovingCost: event.target.checked })
-                          }
-                        />
-                        引越し
-                      </label>
-                      {state.newAreaOption === 'purchase' ? (
+                      {active ? (
+                        <label className="second-life-inline-option">
+                          <input
+                            type="checkbox"
+                            checked={state.includeMovingCost}
+                            onChange={(event) =>
+                              onChange({
+                                housingConfigured: true,
+                                includeMovingCost: event.target.checked,
+                              })
+                            }
+                          />
+                          引越し
+                        </label>
+                      ) : null}
+                      {active && state.newAreaOption === 'purchase' ? (
                         <label className="second-life-inline-option">
                           <input
                             type="checkbox"
                             checked={state.includePostPurchaseRenovation}
                             onChange={(event) =>
                               onChange({
+                                housingConfigured: true,
                                 includePostPurchaseRenovation:
                                   event.target.checked,
                               })
@@ -251,9 +294,11 @@ export function SecondLifeHousingSection({
                   ) : null}
 
                   <p className="second-life-choice-total">
-                    総額{' '}
-                    <strong>{active ? formatSecondLifeMan(total) : '—'}</strong>{' '}
-                    万円
+                    住宅費の目安{' '}
+                    <strong>
+                      {active && total != null ? formatSecondLifeMan(total) : '未設定'}
+                    </strong>{' '}
+                    {active && total != null ? '万円' : ''}
                   </p>
                 </>
               )}
@@ -262,7 +307,7 @@ export function SecondLifeHousingSection({
         })}
       </div>
 
-      {!placeholder && onApply ? (
+      {configured && !placeholder && onApply ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
             現在の住まい設定との重なりを確認してから反映します。今の住まいを継続する計画なら終了時期は変更せず、転居する計画なら切替時期を確認できます。
