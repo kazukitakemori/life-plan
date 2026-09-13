@@ -21,7 +21,16 @@ export function SecondLifeLivingSection({
   const currentMonthly =
     options.find((option) => option.level === 'same')?.monthlyMan ?? 0;
   const skipLabelMonthly = currentMonthly > 0 ? currentMonthly : null;
-  const placeholder = state.livingSkip;
+  const configured = state.livingConfigured !== false;
+  const placeholder = configured && state.livingSkip;
+  const selectedOption = options.find(
+    (option) => option.level === state.livingLevel,
+  );
+  const canApply =
+    configured &&
+    !placeholder &&
+    selectedOption != null &&
+    selectedOption.monthlyMan > 0;
 
   return (
     <section
@@ -38,6 +47,12 @@ export function SecondLifeLivingSection({
         />
       </div>
 
+      {!configured ? (
+        <p className="second-life-apply-note">
+          まだ設定されていません。生活水準を選ぶと、現在の入力内容から老後の生活費を計算します。
+        </p>
+      ) : null}
+
       <label
         className={
           placeholder ? 'second-life-skip is-checked' : 'second-life-skip'
@@ -45,8 +60,13 @@ export function SecondLifeLivingSection({
       >
         <input
           type="checkbox"
-          checked={state.livingSkip}
-          onChange={(event) => onChange({ livingSkip: event.target.checked })}
+          checked={placeholder}
+          onChange={(event) =>
+            onChange({
+              livingConfigured: true,
+              livingSkip: event.target.checked,
+            })
+          }
         />
         {SECOND_LIFE_SKIP_LABEL}
         {skipLabelMonthly != null ? (
@@ -67,7 +87,9 @@ export function SecondLifeLivingSection({
         aria-disabled={placeholder || undefined}
       >
         {options.map((option) => {
-          const active = !placeholder && state.livingLevel === option.level;
+          const active =
+            configured && !placeholder && state.livingLevel === option.level;
+          const hasEstimate = option.monthlyMan > 0;
           return (
             <SecondLifeChoiceCard
               key={option.level}
@@ -75,7 +97,12 @@ export function SecondLifeLivingSection({
               label={option.label}
               name="second-life-living-level"
               placeholder={placeholder}
-              onSelect={() => onChange({ livingLevel: option.level })}
+              onSelect={() =>
+                onChange({
+                  livingConfigured: true,
+                  livingLevel: option.level,
+                })
+              }
             >
               {placeholder ? (
                 <div className="second-life-placeholder-body">
@@ -89,10 +116,17 @@ export function SecondLifeLivingSection({
               ) : (
                 <>
                   <p className="second-life-living-monthly">
-                    月々 <strong>{formatSecondLifeMan(option.monthlyMan)}</strong>{' '}
-                    万円
+                    月々{' '}
+                    {hasEstimate ? (
+                      <>
+                        <strong>{formatSecondLifeMan(option.monthlyMan)}</strong>{' '}
+                        万円
+                      </>
+                    ) : (
+                      <strong>未設定</strong>
+                    )}
                   </p>
-                  {option.pensionAnnualMan != null ? (
+                  {option.pensionAnnualMan != null && option.pensionAnnualMan > 0 ? (
                     <p className="second-life-living-ref">
                       （年金収入合計{' '}
                       {formatSecondLifeMan(option.pensionAnnualMan)} 万円）
@@ -109,7 +143,11 @@ export function SecondLifeLivingSection({
                         ))}
                       </ul>
                     ) : (
-                      <p className="second-life-breakdown-empty">内訳なし</p>
+                      <p className="second-life-breakdown-empty">
+                        {hasEstimate
+                          ? '内訳なし'
+                          : '現在の生活費などを入力すると計算されます'}
+                      </p>
                     )}
                   </div>
                 </>
@@ -119,17 +157,22 @@ export function SecondLifeLivingSection({
         })}
       </div>
 
-      {!placeholder && onApply ? (
+      {configured && !placeholder && onApply ? (
         <div className="second-life-section-actions">
           <p className="second-life-apply-note">
-            選択した生活水準で、負担者（世帯主）の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。
+            {canApply
+              ? '選択した生活水準で、負担者（世帯主）の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。'
+              : '生活費の元データがまだありません。現在の生活費などを入力すると、老後の生活費を計算して反映できます。'}
           </p>
           <button
             type="button"
             className="second-life-apply-btn"
             onClick={onApply}
+            disabled={!canApply}
           >
-            この内容を生活費に反映する
+            {canApply
+              ? 'この内容を生活費に反映する'
+              : '元データを入力すると反映できます'}
           </button>
         </div>
       ) : null}
