@@ -152,11 +152,13 @@
   }
 
   .savings-step .savings-entry-detail table {
-    max-width: 100%;
+    max-width: none;
   }
 
   .savings-step .savings-entry-detail:has(table) {
-    overflow-x: clip;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
