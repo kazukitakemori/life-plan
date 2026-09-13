@@ -15,28 +15,11 @@ export function calcMonthlyEquivalentMan(items: LivingExpenseItem[]): number {
   }, 0);
 }
 
-/**
- * 生活費の保存・計算値は既存互換のため万円を維持し、入力UIだけ1千円単位で扱う。
- */
-export function manToThousandYen(valueMan: number): number {
-  return Math.round(valueMan * 10);
+/** 万円表示のまま、1千円 = 0.1万円単位へ丸める。 */
+export function roundManToThousandYen(valueMan: number): number {
+  return Math.round(valueMan * 10) / 10;
 }
 
-export function thousandYenToMan(valueThousandYen: number): number {
-  return Math.round(valueThousandYen) / 10;
-}
-
-export function formatThousandYenFromMan(valueMan: number): string {
-  const valueThousandYen = manToThousandYen(valueMan);
-  return `${valueThousandYen.toLocaleString('ja-JP')}千円`;
-}
-
-/**
- * LivingScheduleCard はQ4表示用アダプターを通した値（千円）を受け取る。
- * 既存関数名は互換のため維持するが、Q4画面では千円表記として使う。
- */
 export function formatManAmount(value: number): string {
-  return `${value.toLocaleString('ja-JP', {
-    maximumFractionDigits: 1,
-  })}千円`;
+  return `${roundManToThousandYen(value).toFixed(1)}万円`;
 }
