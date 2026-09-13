@@ -7,7 +7,10 @@ import type {
   LivingExpenseState,
 } from '../types/living';
 import { HOUSEHOLD_LIVING_KEY } from '../types/living';
-import { calcMonthlyEquivalentMan } from './livingAmount';
+import {
+  calcMonthlyEquivalentMan,
+  roundManToThousandYen,
+} from './livingAmount';
 import { nextPeriodStart } from './incomePeriod';
 import { resolveDefaultStartAgeMonth } from './simulationTiming';
 
@@ -33,6 +36,7 @@ export function migrateLivingExpenseItem(
     ...item,
     cycleInterval: cycleInterval > 0 ? cycleInterval : 1,
     cycleUnit,
+    amountMan: roundManToThousandYen(Math.max(0, Number(item.amountMan) || 0)),
     sameIncreaseRateAsFirst: item.sameIncreaseRateAsFirst ?? false,
   };
 }
@@ -72,7 +76,9 @@ export function migrateLivingExpenseSchedule(
     endAge: schedule.endAge ?? 90,
     endMonth: schedule.endMonth ?? 12,
     inputMode,
-    simpleMonthlyExpenseMan,
+    simpleMonthlyExpenseMan: roundManToThousandYen(
+      Math.max(0, Number(simpleMonthlyExpenseMan) || 0),
+    ),
     simpleIncreaseRate,
     items,
   });
@@ -118,7 +124,7 @@ function createId(): string {
 export function createLivingExpenseItem(
   overrides: Partial<LivingExpenseItem> = {},
 ): LivingExpenseItem {
-  return {
+  const item: LivingExpenseItem = {
     id: createId(),
     label: '生活費',
     cycleInterval: 1,
@@ -127,6 +133,10 @@ export function createLivingExpenseItem(
     increaseRate: null,
     sameIncreaseRateAsFirst: false,
     ...overrides,
+  };
+  return {
+    ...item,
+    amountMan: roundManToThousandYen(Math.max(0, Number(item.amountMan) || 0)),
   };
 }
 
@@ -172,16 +182,30 @@ export function getLivingScheduleBillableItems(
 
 /**
  * 詳細入力かつ項目が複数のとき、先頭「生活費」に下位項目の月額換算合計を反映する。
+ * 生活費の金額は万円表示のまま0.1万円（1,000円）単位へ正規化する。
  * 先頭が生活費でない場合は合計行を先頭に追加する。
  */
 export function syncLivingDetailSummary(
   schedule: LivingExpenseSchedule,
 ): LivingExpenseSchedule {
-  if (schedule.items.length <= 1) {
-    return schedule;
+  const normalizedItems = schedule.items.map((item) => {
+    const amountMan = roundManToThousandYen(
+      Math.max(0, Number(item.amountMan) || 0),
+    );
+    return amountMan === item.amountMan ? item : { ...item, amountMan };
+  });
+  const itemsChanged = normalizedItems.some(
+    (item, index) => item !== schedule.items[index],
+  );
+  const normalizedSchedule = itemsChanged
+    ? { ...schedule, items: normalizedItems }
+    : schedule;
+
+  if (normalizedSchedule.items.length <= 1) {
+    return normalizedSchedule;
   }
 
-  let workingItems = schedule.items;
+  let workingItems = normalizedSchedule.items;
   if (workingItems[0]?.label.trim() !== '生活費') {
     workingItems = [
       createLivingExpenseItem({
@@ -194,20 +218,20 @@ export function syncLivingDetailSummary(
   }
 
   const detailItems = workingItems.slice(1);
-  const monthly = calcMonthlyEquivalentMan(detailItems);
+  const monthly = roundManToThousandYen(calcMonthlyEquivalentMan(detailItems));
   const first = workingItems[0];
   if (
-    schedule.items === workingItems &&
+    normalizedSchedule.items === workingItems &&
     first.label === '生活費' &&
     first.amountMan === monthly &&
     first.cycleInterval === 1 &&
     first.cycleUnit === 'month'
   ) {
-    return schedule;
+    return normalizedSchedule;
   }
 
   return {
-    ...schedule,
+    ...normalizedSchedule,
     inputMode: 'detail',
     items: [
       {
