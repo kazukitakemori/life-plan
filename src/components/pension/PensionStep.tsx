@@ -93,15 +93,7 @@ export function PensionStep({
 
   return (
     <div className="step-page pension-step">
-      <StepHeading
-        number={8}
-        title="年金"
-        actions={
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        }
-      />
+      <StepHeading number={8} title="年金" />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
