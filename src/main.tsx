@@ -12,6 +12,7 @@ import './secondLifeConsistency.css';
 import './ui-system.css';
 import './mobile.css';
 import './mobileCompact.css';
+import './mobileSteps.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
