@@ -121,7 +121,7 @@
   flex-wrap: wrap;
 }
 
-/* Keep legacy standalone copy bar aligned with the new shared control. */
+/* Keep standalone copy bar aligned with the new shared control. */
 .living-step > .ui-copy-bar {
   width: fit-content;
   max-width: 100%;
@@ -162,4 +162,29 @@
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1;
+}
+
+/* PC-first, but avoid making the shared controls unusable when the viewport narrows. */
+@media (max-width: 640px) {
+  .ui-copy-bar {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .ui-copy-bar-label {
+    flex-basis: 100%;
+  }
+
+  .ui-copy-bar-select {
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+
+  .ui-copy-bar-button {
+    flex: 1 1 140px;
+  }
+
+  .living-step > .ui-copy-bar {
+    width: 100%;
+  }
 }
