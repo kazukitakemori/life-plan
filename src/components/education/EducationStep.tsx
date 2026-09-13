@@ -15,7 +15,7 @@ import type { EducationByMember } from '../../types/education';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { TaxSocialState } from '../../types/taxSocial';
-import { StepHeading } from '../ui';
+import { CopySettingsBar, StepHeading } from '../ui';
 import { EducationExpenseChart } from './EducationExpenseChart';
 import { EducationExpenseTable } from './EducationExpenseTable';
 import { MemberEducationTabs } from './MemberEducationTabs';
@@ -216,30 +216,16 @@ export function EducationStep({
           />
 
           {activeMember && (
-            <div className="education-copy-bar">
-              <select
-                className="select-input"
-                value={copySourceId}
-                onChange={(e) => setCopySourceId(e.target.value)}
-              >
-                {copySourceOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="education-copy-btn"
-                onClick={copySettingsFrom}
-                disabled={
-                  copySourceId === resolvedActiveId ||
-                  (educationByMember[copySourceId]?.length ?? 0) === 0
-                }
-              >
-                設定をコピー
-              </button>
-            </div>
+            <CopySettingsBar
+              value={copySourceId}
+              options={copySourceOptions}
+              onChange={setCopySourceId}
+              onCopy={copySettingsFrom}
+              disabled={
+                copySourceId === resolvedActiveId ||
+                (educationByMember[copySourceId]?.length ?? 0) === 0
+              }
+            />
           )}
         </div>
       ) : null}
