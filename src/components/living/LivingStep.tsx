@@ -1,8 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  manToThousandYen,
-  thousandYenToMan,
-} from '../../lib/livingAmount';
+import { roundManToThousandYen } from '../../lib/livingAmount';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   createFollowUpLivingSchedule,
@@ -42,30 +39,18 @@ interface LivingStepProps {
   onApplySecondLifeLiving?: () => void;
 }
 
-/**
- * 保存値は従来どおり万円。Q4の入力UIだけ千円単位へ変換する。
- * 既存データ・計算ロジックの意味を変えないための表示アダプター。
- */
-function toLivingUiSchedule(
+/** 生活費は万円表示を維持し、金額だけ0.1万円（1千円）単位へそろえる。 */
+function normalizeLivingScheduleAmounts(
   schedule: LivingExpenseSchedule,
 ): LivingExpenseSchedule {
   return {
     ...schedule,
+    simpleMonthlyExpenseMan: roundManToThousandYen(
+      schedule.simpleMonthlyExpenseMan,
+    ),
     items: schedule.items.map((item) => ({
       ...item,
-      amountMan: manToThousandYen(item.amountMan),
-    })),
-  };
-}
-
-function fromLivingUiSchedule(
-  schedule: LivingExpenseSchedule,
-): LivingExpenseSchedule {
-  return {
-    ...schedule,
-    items: schedule.items.map((item) => ({
-      ...item,
-      amountMan: thousandYenToMan(item.amountMan),
+      amountMan: roundManToThousandYen(item.amountMan),
     })),
   };
 }
@@ -136,11 +121,7 @@ export function LivingStep({
     : (visibleMembers[0]?.id ?? defaultActiveId);
 
   const contextMember = visibleMembers.find((m) => m.id === resolvedTargetId);
-  const storedSchedules = livingState.byTarget[resolvedTargetId] ?? [];
-  const schedules = useMemo(
-    () => storedSchedules.map(toLivingUiSchedule),
-    [storedSchedules],
-  );
+  const schedules = livingState.byTarget[resolvedTargetId] ?? [];
 
   const scheduleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -168,16 +149,18 @@ export function LivingStep({
   ) => {
     onChange({
       ...livingState,
-      byTarget: { ...livingState.byTarget, [targetId]: updated },
+      byTarget: {
+        ...livingState.byTarget,
+        [targetId]: updated.map(normalizeLivingScheduleAmounts),
+      },
     });
   };
 
   const updateSchedule = (scheduleId: string, updated: LivingExpenseSchedule) => {
-    const storedUpdated = fromLivingUiSchedule(updated);
     persistSchedules(
       resolvedTargetId,
-      storedSchedules.map((schedule) =>
-        schedule.id === scheduleId ? storedUpdated : schedule,
+      schedules.map((schedule) =>
+        schedule.id === scheduleId ? updated : schedule,
       ),
     );
   };
@@ -185,14 +168,14 @@ export function LivingStep({
   const removeSchedule = (scheduleId: string) => {
     persistSchedules(
       resolvedTargetId,
-      storedSchedules.filter((schedule) => schedule.id !== scheduleId),
+      schedules.filter((schedule) => schedule.id !== scheduleId),
     );
   };
 
   const addSchedule = () => {
     if (!contextMember) return;
     const refMonth = referenceDate.getMonth() + 1;
-    const last = storedSchedules[storedSchedules.length - 1];
+    const last = schedules[schedules.length - 1];
     const newSchedule =
       last != null
         ? createFollowUpLivingSchedule(
@@ -202,12 +185,12 @@ export function LivingStep({
             contextMember.expectedLifespan,
           )
         : createLivingExpenseSchedule(contextMember.age, refMonth);
-    persistSchedules(resolvedTargetId, [...storedSchedules, newSchedule]);
+    persistSchedules(resolvedTargetId, [...schedules, newSchedule]);
   };
 
   const copyPreviousSchedule = () => {
-    if (storedSchedules.length === 0) return;
-    const last = storedSchedules[storedSchedules.length - 1];
+    if (schedules.length === 0) return;
+    const last = schedules[schedules.length - 1];
     const cloned: LivingExpenseSchedule = {
       ...last,
       id: crypto.randomUUID(),
@@ -216,7 +199,7 @@ export function LivingStep({
         id: crypto.randomUUID(),
       })),
     };
-    persistSchedules(resolvedTargetId, [...storedSchedules, cloned]);
+    persistSchedules(resolvedTargetId, [...schedules, cloned]);
   };
 
   const copySettingsFrom = () => {
@@ -305,7 +288,7 @@ export function LivingStep({
               schedule={schedule}
               member={contextMember}
               referenceDate={referenceDate}
-              canRemoveSchedule={storedSchedules.length >= 1}
+              canRemoveSchedule={schedules.length >= 1}
               onChange={(updated) => updateSchedule(schedule.id, updated)}
               onRemoveSchedule={() => removeSchedule(schedule.id)}
             />
@@ -321,7 +304,7 @@ export function LivingStep({
           type="button"
           className="footer-action-btn"
           onClick={copyPreviousSchedule}
-          disabled={storedSchedules.length === 0}
+          disabled={schedules.length === 0}
         >
           前のスケジュールをコピー
         </button>
