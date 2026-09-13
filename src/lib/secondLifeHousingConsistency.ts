@@ -57,28 +57,21 @@ function toOwnedItem(item: OwnedProperty): HousingItem {
 
 function collectHousingItems(housingState: HousingState): HousingItem[] {
   const byId = new Map<string, HousingItem>();
-
   for (const data of Object.values(housingState.byTarget)) {
-    for (const rental of data.rentals) {
-      byId.set(rental.id, toRentalItem(rental));
-    }
+    for (const rental of data.rentals) byId.set(rental.id, toRentalItem(rental));
     for (const property of data.owned) {
-      // 土地だけの登録は「住んでいる住まい」として扱わない。
-      if (property.type === 'land') continue;
-      byId.set(property.id, toOwnedItem(property));
+      if (property.type !== 'land') byId.set(property.id, toOwnedItem(property));
     }
   }
-
   return [...byId.values()];
 }
 
-function isActiveAtSecondLifeStart(item: HousingItem, startAge: number): boolean {
-  if (item.startAge > startAge) return false;
-  if (item.startAge === startAge && item.startMonth > 1) return false;
-
+function isActiveAtAge(item: HousingItem, age: number): boolean {
+  if (item.startAge > age) return false;
+  if (item.startAge === age && item.startMonth > 1) return false;
   if (item.endMode === 'lifetime') return true;
-  if (item.endAge > startAge) return true;
-  if (item.endAge < startAge) return false;
+  if (item.endAge > age) return true;
+  if (item.endAge < age) return false;
   return item.endMonth >= 1;
 }
 
@@ -91,96 +84,84 @@ function formatHousingPeriod(item: HousingItem): string {
   return `${item.name}（${kind}・${end}）`;
 }
 
-function joinHousingNames(items: HousingItem[]): string {
-  return items.map((item) => `「${item.name}」`).join('・');
-}
-
-function previousMonthLabel(startAge: number): string {
-  return `${Math.max(0, startAge - 1)}歳12月`;
-}
-
-/**
- * セカンドライフの「暮らし方」と、Q5 住まいに登録済みの時系列が矛盾しないかを判定する。
- *
- * セカンドライフ開始 = 転居ではない。
- * - stay + renovate: 既存住宅が開始年齢まで続いていれば整合
- * - hometown / new_area: 開始年齢以降も続く既存住宅があれば、反映時に終了させるため要確認
- * - stay + purchase_rebuild: 既存住宅を自動終了しない現仕様なので、重複する場合は要確認
- */
 export function buildSecondLifeHousingConsistency(input: {
   housingState: HousingState;
   secondLifeState: SecondLifeState;
 }): SecondLifeHousingConsistency {
   const { housingState, secondLifeState } = input;
-  const startAge = secondLifeState.startAge;
 
   if (secondLifeState.housingSkip) {
     return {
       status: 'skipped',
-      title: '住まいはまだ具体化しません',
-      summary: '現在の住まい入力をそのまま使います。',
+      title: '今の住まい計画で計算します',
+      summary:
+        '「住まい」で入力した内容をそのまま使います。元の入力は変更しません。',
       detailLines: [],
     };
   }
 
+  const actionAge =
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'continue'
+      ? secondLifeState.startAge
+      : secondLifeState.housingActionAge;
   const activeHousing = collectHousingItems(housingState).filter((item) =>
-    isActiveAtSecondLifeStart(item, startAge),
+    isActiveAtAge(item, actionAge),
   );
 
-  if (secondLifeState.housingScenario === 'stay') {
-    if (secondLifeState.stayOption === 'purchase_rebuild') {
-      if (activeHousing.length === 0) {
-        return {
-          status: 'aligned',
-          title: `${startAge}歳から新しい住宅を計画できます`,
-          summary: '開始年齢時点で重なる既存住宅はありません。',
-          detailLines: [],
-        };
-      }
-
-      return {
-        status: 'attention',
-        title: '現在の住まいと新しい住宅が重なる可能性があります',
-        summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。購入・建て替えとの切替時期を確認してください。`,
-        detailLines: activeHousing.map(formatHousingPeriod),
-      };
-    }
-
+  // 旧データ互換。現行UIでは「そのまま使う」は housingSkip で表現する。
+  if (
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'continue'
+  ) {
     if (activeHousing.length === 0) {
       return {
         status: 'missing',
-        title: `${startAge}歳時点の住まいが未設定です`,
-        summary: '「今の場所に住み続ける」計画ですが、開始年齢まで続く住まいが見つかりません。',
+        title: `${secondLifeState.startAge}歳時点の住まいが入力されていません`,
+        summary:
+          '今の住まい計画を使うため、先に「住まい」で現在の住まいを入力してください。',
         detailLines: [],
       };
     }
-
     return {
       status: 'aligned',
-      title: '現在の住まいをそのまま継続できます',
-      summary: `${startAge}歳からセカンドライフを始めても、住み替えは発生しません。`,
+      title: '今の住まいをそのまま継続して計算します',
+      summary:
+        '現在入力している住まいの期間・費用をそのまま使います。',
       detailLines: activeHousing.map(formatHousingPeriod),
     };
   }
 
-  if (activeHousing.length === 0) {
+  if (
+    secondLifeState.housingScenario === 'stay' &&
+    secondLifeState.stayOption === 'renovate'
+  ) {
+    const owned = activeHousing.filter((item) => item.kind === 'owned');
+    if (owned.length === 0) {
+      return {
+        status: 'missing',
+        title: `${actionAge}歳時点の持ち家が入力されていません`,
+        summary:
+          '現在の住宅をリフォームするため、先に「住まい」で対象となる持ち家を入力してください。',
+        detailLines: activeHousing.map(formatHousingPeriod),
+      };
+    }
     return {
       status: 'aligned',
-      title: `${startAge}歳から新しい住まいへ切り替える計画です`,
-      summary: '開始年齢時点で終了処理が必要な既存住宅はありません。',
-      detailLines: [],
+      title: `${actionAge}歳にリフォーム費を追加して計算します`,
+      summary:
+        '元の持ち家設定は残したまま、この年齢にリフォーム費を追加して試算します。',
+      detailLines: owned.map(formatHousingPeriod),
     };
   }
 
-  const destination =
-    secondLifeState.housingScenario === 'hometown'
-      ? '地元の住まい'
-      : '新しい土地の住まい';
-
   return {
-    status: 'attention',
-    title: '現在の住まいから切り替える必要があります',
-    summary: `${joinHousingNames(activeHousing)}が${startAge}歳以降も続く設定です。セカンドライフ計画を優先すると、現在の住まいを${previousMonthLabel(startAge)}で終了し、${destination}へ切り替えます。`,
+    status: 'aligned',
+    title: `${actionAge}歳から、選んだ住まい方に切り替えて計算します`,
+    summary:
+      activeHousing.length > 0
+        ? '元の住まい設定は残したまま、この年齢から上で選んだ住まい方へ切り替えて試算します。'
+        : '元の入力は変更せず、この年齢から上で選んだ住まい方で試算します。',
     detailLines: activeHousing.map(formatHousingPeriod),
   };
 }
@@ -190,12 +171,12 @@ export function getSecondLifeHousingConsistencyStatusLabel(
 ): string {
   switch (status) {
     case 'aligned':
-      return '整合';
+      return '設定済み';
     case 'attention':
       return '要確認';
     case 'missing':
-      return '未設定';
+      return '要入力';
     case 'skipped':
-      return '未具体化';
+      return '変更なし';
   }
 }

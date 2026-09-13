@@ -396,6 +396,15 @@ export function migrateOwnedProperty(
     endAge:
       property.endAge ?? Math.max(startAge + 1, member?.expectedLifespan ?? 90),
     endMonth: property.endMonth ?? referenceMonth,
+    ...(property.secondLifeEndOverride
+      ? { secondLifeEndOverride: property.secondLifeEndOverride }
+      : {}),
+    ...(property.secondLifeFinancePlan
+      ? { secondLifeFinancePlan: property.secondLifeFinancePlan }
+      : {}),
+    ...(typeof property.secondLifeInitialCashCostMan === 'number'
+      ? { secondLifeInitialCashCostMan: property.secondLifeInitialCashCostMan }
+      : {}),
     buildingMan: property.buildingMan ?? 0,
     landMan: property.landMan ?? 0,
     brokerageFeeMan: property.brokerageFeeMan ?? 0,

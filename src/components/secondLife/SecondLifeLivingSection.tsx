@@ -1,9 +1,8 @@
 import type { SecondLifeLivingOption } from '../../lib/secondLifeEstimates';
 import { formatSecondLifeMan } from '../../lib/secondLifeEstimates';
-import { SECOND_LIFE_SKIP_LABEL } from '../../lib/secondLifeLabels';
 import type { SecondLifeState } from '../../types/secondLife';
 import { SecondLifeChoiceCard } from './SecondLifeChoiceCard';
-import { SecondLifeStartAgeField } from './SecondLifeStartAgeField';
+import { SecondLifeModeSelector } from './SecondLifeModeSelector';
 
 interface SecondLifeLivingSectionProps {
   state: SecondLifeState;
@@ -16,81 +15,76 @@ export function SecondLifeLivingSection({
   state,
   options,
   onChange,
-  onApply,
 }: SecondLifeLivingSectionProps) {
   const currentMonthly =
     options.find((option) => option.level === 'same')?.monthlyMan ?? 0;
-  const skipLabelMonthly = currentMonthly > 0 ? currentMonthly : null;
-  const placeholder = state.livingSkip;
+  const configured = state.livingConfigured !== false;
+  const useCurrentPlan = configured && state.livingSkip;
+  const hasLivingBase = currentMonthly > 0;
+  const effectiveLivingLevel = options.some(
+    (option) => option.level === state.livingLevel,
+  )
+    ? state.livingLevel
+    : 'same';
 
   return (
-    <section
-      className={
-        placeholder
-          ? 'second-life-section second-life-section--skipped'
-          : 'second-life-section'
-      }
-    >
-      <div className="second-life-section-toolbar">
-        <SecondLifeStartAgeField
-          value={state.startAge}
-          onChange={(startAge) => onChange({ startAge })}
-        />
-      </div>
-
-      <label
-        className={
-          placeholder ? 'second-life-skip is-checked' : 'second-life-skip'
+    <section className="second-life-section">
+      <SecondLifeModeSelector
+        title={`${state.startAge}歳以降の生活費はどうしますか？`}
+        configured={configured}
+        useCurrent={useCurrentPlan}
+        currentLabel="今の生活費計画を使う"
+        reviewLabel={`${state.startAge}歳以降の生活費を設定する`}
+        currentDescription={
+          currentMonthly > 0
+            ? `現在の目安：月${formatSecondLifeMan(currentMonthly)}万円`
+            : '現在の生活費計画を使います。'
         }
-      >
-        <input
-          type="checkbox"
-          checked={state.livingSkip}
-          onChange={(event) => onChange({ livingSkip: event.target.checked })}
-        />
-        {SECOND_LIFE_SKIP_LABEL}
-        {skipLabelMonthly != null ? (
-          <span className="second-life-skip-hint">
-            （現在の生活費 {formatSecondLifeMan(skipLabelMonthly)} 万円／月）
-          </span>
-        ) : null}
-      </label>
-
-      <div
-        className={
-          placeholder
-            ? 'second-life-choice-grid is-placeholder'
-            : 'second-life-choice-grid'
+        reviewDescription="100%・80%・70%・年金収入を目安に比較します。"
+        name="second-life-living-mode"
+        onUseCurrent={() =>
+          onChange({ livingConfigured: true, livingSkip: true })
         }
-        role={placeholder ? undefined : 'radiogroup'}
-        aria-label="生活水準の選択"
-        aria-disabled={placeholder || undefined}
-      >
-        {options.map((option) => {
-          const active = !placeholder && state.livingLevel === option.level;
-          return (
-            <SecondLifeChoiceCard
-              key={option.level}
-              active={active}
-              label={option.label}
-              name="second-life-living-level"
-              placeholder={placeholder}
-              onSelect={() => onChange({ livingLevel: option.level })}
-            >
-              {placeholder ? (
-                <div className="second-life-placeholder-body">
+        onReview={() =>
+          onChange({ livingConfigured: true, livingSkip: false })
+        }
+      />
+
+      {!configured || useCurrentPlan ? null : (
+        <>
+          <div className="second-life-section-toolbar">
+            <p className="second-life-apply-note">
+              {hasLivingBase
+                ? `基準となる現在の生活費：月${formatSecondLifeMan(currentMonthly)}万円。${state.startAge}歳以降の生活費を下から選んでください。`
+                : '現在の生活費が未入力です。Q4「生活費」を入力すると、老後の生活費を試算できます。'}
+            </p>
+          </div>
+
+          <div
+            className="second-life-choice-grid second-life-choice-grid--living"
+            role="radiogroup"
+            aria-label="セカンドライフの生活水準"
+          >
+            {options.map((option) => {
+              const active = effectiveLivingLevel === option.level;
+              return (
+                <SecondLifeChoiceCard
+                  key={option.level}
+                  active={active}
+                  label={option.label}
+                  name="second-life-living-level"
+                  onSelect={() => onChange({ livingLevel: option.level })}
+                >
                   <p className="second-life-living-monthly">
-                    月々 <strong>—</strong> 万円
-                  </p>
-                  <div className="second-life-breakdown">
-                    <p className="second-life-breakdown-empty">—</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="second-life-living-monthly">
-                    月々 <strong>{formatSecondLifeMan(option.monthlyMan)}</strong>{' '}
-                    万円
+                    月々{' '}
+                    {option.monthlyMan > 0 ? (
+                      <>
+                        <strong>{formatSecondLifeMan(option.monthlyMan)}</strong>{' '}
+                        万円
+                      </>
+                    ) : (
+                      <strong>未設定</strong>
+                    )}
                   </p>
                   {option.pensionAnnualMan != null ? (
                     <p className="second-life-living-ref">
@@ -109,30 +103,30 @@ export function SecondLifeLivingSection({
                         ))}
                       </ul>
                     ) : (
-                      <p className="second-life-breakdown-empty">内訳なし</p>
+                      <p className="second-life-breakdown-empty">
+                        {option.monthlyMan > 0
+                          ? '内訳なし'
+                          : '現在の生活費を入力すると計算されます'}
+                      </p>
                     )}
                   </div>
-                </>
-              )}
-            </SecondLifeChoiceCard>
-          );
-        })}
-      </div>
+                </SecondLifeChoiceCard>
+              );
+            })}
+          </div>
 
-      {!placeholder && onApply ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            選択した生活水準で、負担者（世帯主）の生活費スケジュールを開始年齢以降に組み直します（既存の開始前スケジュールは残ります）。
-          </p>
-          <button
-            type="button"
-            className="second-life-apply-btn"
-            onClick={onApply}
-          >
-            この内容を生活費に反映する
-          </button>
-        </div>
-      ) : null}
+          <div className="second-life-section-actions">
+            <p className="second-life-apply-note">
+              80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。
+            </p>
+          </div>
+          {!options.some((option) => option.level === 'pension_based') ? (
+            <p className="second-life-apply-note">
+              年金額がまだ入力されていないため、「年金収入を目安にする」は表示していません。
+            </p>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

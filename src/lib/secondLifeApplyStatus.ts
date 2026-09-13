@@ -10,6 +10,7 @@ export function captureSecondLifeQ3ApplySnapshot(
 ): SecondLifeQ3ApplySnapshot {
   return {
     startAge: state.startAge,
+    housingActionAge: state.housingActionAge,
     housingSkip: state.housingSkip,
     housingScenario: state.housingScenario,
     stayOption: state.stayOption,

@@ -5,7 +5,8 @@ import {
 import {
   getSecondLifeManagedLifeEventSource,
   SECOND_LIFE_HOUSING_EVENT_LABEL,
-  SECOND_LIFE_NURSING_EVENT_LABEL,
+  THIRD_LIFE_NURSING_INITIAL_EVENT_LABEL,
+  THIRD_LIFE_NURSING_RECURRING_EVENT_LABEL,
 } from './lifeEventSource';
 import {
   createLivingExpenseItem,
@@ -16,8 +17,6 @@ import {
 } from './livingDefaults';
 import {
   buildSecondLifeLivingOptions,
-  estimateSecondLifeHousingTotalMan,
-  getDefaultNursingAnnualCostMan,
   getMemberAgeWhenHeadReachesAge,
 } from './secondLifeEstimates';
 import {
@@ -33,6 +32,11 @@ import {
   type LivingExpenseState,
 } from '../types/living';
 import type { PensionByMember } from '../types/pension';
+import {
+  getThirdLifeAnnualAdditionalCostMan,
+  getThirdLifeCareEndAge,
+  getThirdLifeCareStartAge,
+} from './thirdLifeCare';
 import type {
   SecondLifeNursingDesign,
   SecondLifeNursingTarget,
@@ -171,7 +175,9 @@ export function applySecondLifeLiving(
     ...input,
     startAge: secondLifeState.startAge,
   });
-  const selected = options.find((o) => o.level === secondLifeState.livingLevel);
+  const selected =
+    options.find((o) => o.level === secondLifeState.livingLevel) ??
+    options.find((o) => o.level === 'same');
   if (!selected) return livingState;
 
   const referenceMonth = input.referenceDate.getMonth() + 1;
@@ -291,23 +297,22 @@ function upsertOneTimeLifeEvent(
 
 export function applySecondLifeHousing(
   lifeEventState: LifeEventState,
-  secondLifeState: SecondLifeState,
+  _secondLifeState: SecondLifeState,
   head: FamilyMember | undefined,
   referenceMonth: number,
 ): LifeEventState {
-  if (!head || secondLifeState.housingSkip) {
-    return lifeEventState;
-  }
+  if (!head) return lifeEventState;
 
-  const total = estimateSecondLifeHousingTotalMan(secondLifeState);
+  // 住まい関連費用は Q5 / housingState を唯一の計算元にする。
+  // 旧バージョンで作成した「セカンドライフ住まい」ライフイベントだけを削除する。
   return upsertOneTimeLifeEvent(
     lifeEventState,
     head,
     referenceMonth,
     SECOND_LIFE_HOUSING_EVENT_LABEL,
     'second_life_housing',
-    secondLifeState.startAge,
-    total ?? 0,
+    0,
+    0,
   );
 }
 
@@ -341,41 +346,56 @@ function upsertSecondLifeNursingEvent(
     member,
   ).byMember[member.id] ?? [];
 
-  const annualCost =
-    design.annualCostMan > 0
-      ? design.annualCostMan
-      : getDefaultNursingAnnualCostMan(design.scenario);
+  const annualCost = getThirdLifeAnnualAdditionalCostMan(design);
+  const initialCost = Math.max(0, design.initialCostMan);
+  const startAge = getThirdLifeCareStartAge(design, member.expectedLifespan);
+  const generated = [] as (typeof without);
 
-  if (annualCost <= 0) {
-    return {
-      ...lifeEventState,
-      byMember: { ...lifeEventState.byMember, [member.id]: without },
-    };
+  if (annualCost > 0) {
+    const recurring = createLifeEventEntryFromPreset(
+      'nursing',
+      member,
+      referenceMonth,
+    );
+    const endAge = getThirdLifeCareEndAge(design, member.expectedLifespan);
+    generated.push({
+      ...recurring,
+      label: THIRD_LIFE_NURSING_RECURRING_EVENT_LABEL,
+      type: 'nursing',
+      startAge,
+      startMonth: 1,
+      endMode: design.durationMode === 'years' ? 'until' : 'lifetime',
+      endAge,
+      endMonth: 12,
+      amountMan: annualCost,
+      source: 'second_life_nursing',
+    });
   }
 
-  const entry = createLifeEventEntryFromPreset(
-    'nursing',
-    member,
-    referenceMonth,
-  );
+  if (initialCost > 0) {
+    generated.push(
+      createLifeEventEntry(member, referenceMonth, {
+        label: THIRD_LIFE_NURSING_INITIAL_EVENT_LABEL,
+        type: 'nursing',
+        startAge,
+        startMonth: 1,
+        endMode: 'once',
+        endAge: startAge,
+        endMonth: 1,
+        cycleInterval: 1,
+        cycleUnit: 'year',
+        amountMan: initialCost,
+        increaseRate: null,
+        source: 'second_life_nursing',
+      }),
+    );
+  }
 
   return {
     ...lifeEventState,
     byMember: {
       ...lifeEventState.byMember,
-      [member.id]: [
-        ...without,
-        {
-          ...entry,
-          label: SECOND_LIFE_NURSING_EVENT_LABEL,
-          type: 'nursing',
-          startAge: design.startAge,
-          startMonth: 1,
-          endMode: 'lifetime',
-          amountMan: annualCost,
-          source: 'second_life_nursing',
-        },
-      ],
+      [member.id]: [...without, ...generated],
     },
   };
 }

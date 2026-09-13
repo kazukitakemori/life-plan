@@ -131,11 +131,8 @@ import { getDefaultCreateStatus } from './types/plan';
 import type { SavingsState } from './types/savings';
 import type { StepId } from './types/steps';
 import type { SecondLifeState } from './types/secondLife';
-import {
-  addSecondLifeNursingTemplates,
-  applySecondLifeHousingDesign,
-  applySecondLifeLivingDesign,
-} from './lib/secondLifeTemplates';
+import { addSecondLifeNursingTemplates } from './lib/secondLifeTemplates';
+import { buildSecondLifeCalculationStates } from './lib/secondLifeCalculationOverlay';
 import type { TaxSocialState } from './types/taxSocial';
 import type { VehicleEntry, VehicleState } from './types/vehicle';
 
@@ -536,13 +533,35 @@ export default function App() {
     };
   }, []);
 
+  const secondLifeCalculationStates = useMemo(
+    () =>
+      buildSecondLifeCalculationStates({
+        housingState,
+        livingState,
+        secondLifeState,
+        familyMembers,
+        incomeByMember,
+        pensionByMember,
+        referenceDate,
+      }),
+    [
+      housingState,
+      livingState,
+      secondLifeState,
+      familyMembers,
+      incomeByMember,
+      pensionByMember,
+      referenceDate,
+    ],
+  );
+
   const cashFlowInput = useMemo<CashFlowInput>(
     () => ({
       familyMembers,
       incomeByMember,
       priorYearIncomeByMember,
-      livingState,
-      housingState,
+      livingState: secondLifeCalculationStates.livingState,
+      housingState: secondLifeCalculationStates.housingState,
       vehicleState,
       loanState,
       insuranceState,
@@ -557,8 +576,7 @@ export default function App() {
       familyMembers,
       incomeByMember,
       priorYearIncomeByMember,
-      livingState,
-      housingState,
+      secondLifeCalculationStates,
       vehicleState,
       loanState,
       insuranceState,
@@ -1419,9 +1437,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            secondLifeState={secondLifeState}
-            incomeByMember={incomeByMember}
-            pensionByMember={pensionByMember}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1429,23 +1444,6 @@ export default function App() {
                 : undefined
             }
             onChange={handleLivingChange}
-            onSecondLifeChange={(state) => {
-              markPlanInputsChanged();
-              setSecondLifeState(state);
-            }}
-            onApplySecondLifeLiving={() => {
-              markPlanInputsChanged();
-              setLivingState(
-                applySecondLifeLivingDesign({
-                  livingState,
-                  secondLifeState,
-                  familyMembers,
-                  incomeByMember,
-                  pensionByMember,
-                  referenceDate,
-                }),
-              );
-            }}
           />
         );
       }
@@ -1461,7 +1459,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            secondLifeState={secondLifeState}
             purposeNote={
               hasPlanPurpose(planPurposes, 'death_coverage') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1470,41 +1467,6 @@ export default function App() {
             }
             onChange={handleHousingChange}
             onHousingBundleChange={handleHousingBundleChange}
-            onSecondLifeChange={(state) => {
-              markPlanInputsChanged();
-              setSecondLifeState(state);
-            }}
-            onApplySecondLifeHousing={() => {
-              const head = familyMembers.find((member) => member.role === 'head');
-              if (!head) return;
-              markPlanInputsChanged();
-              const applied = applySecondLifeHousingDesign({
-                housingState,
-                lifeEventState,
-                secondLifeState,
-                member: head,
-                familyMembers,
-                referenceDate,
-                targetId: head.id,
-              });
-              setHousingState(applied.housingState);
-              setLifeEventState(applied.lifeEventState);
-              return applied;
-            }}
-            onPreviewSecondLifeHousing={() => {
-              const head = familyMembers.find((member) => member.role === 'head');
-              if (!head) return;
-              return applySecondLifeHousingDesign({
-                housingState,
-                lifeEventState,
-                secondLifeState,
-                member: head,
-                familyMembers,
-                referenceDate,
-                targetId: head.id,
-              });
-            }}
-            onNavigateToStep={setActiveStep}
             onAddHousingLoan={handleAddHousingLoan}
             onRemoveHousingLoan={handleRemoveHousingLoan}
             onUpdateLoan={handleUpdateLoan}
@@ -1670,6 +1632,8 @@ export default function App() {
             housingState={housingState}
             livingState={livingState}
             lifeEventState={lifeEventState}
+            incomeByMember={incomeByMember}
+            pensionByMember={pensionByMember}
             referenceDate={referenceDate}
             secondLifeState={secondLifeState}
             onSecondLifeChange={(state) => {

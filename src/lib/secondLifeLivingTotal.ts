@@ -111,6 +111,7 @@ function getTargetLivingSchedulesForBaseline(
   calendarYear: number,
   calendarMonth: number,
   secondLifeStartAge?: number,
+  allowFallback = true,
 ): LivingExpenseSchedule[] {
   const active = getTargetLivingSchedulesAtMonth(
     schedules,
@@ -123,6 +124,9 @@ function getTargetLivingSchedulesForBaseline(
   );
   if (active.length > 0) {
     return active;
+  }
+  if (!allowFallback) {
+    return [];
   }
 
   const entered = schedules.find(
@@ -310,11 +314,28 @@ export function buildQ4LivingBreakdown(input: {
   secondLifeStartAge?: number;
 }): SecondLifeLivingBreakdownItem[] {
   const byLabel = new Map<string, number>();
-
-  for (const targetId of collectLivingTargetIds(
+  const targetIds = collectLivingTargetIds(
     input.familyMembers,
     input.livingState,
-  )) {
+  );
+  const hasAnyActiveBaseline = targetIds.some((targetId) => {
+    const schedules = input.livingState.byTarget[targetId] ?? [];
+    const member = resolveLivingTargetMember(targetId, input.familyMembers);
+    if (!member) return false;
+    return getTargetLivingSchedulesAtMonth(
+      schedules,
+      member,
+      input.referenceDate,
+      input.calendarYear,
+      input.calendarMonth,
+    ).some(
+      (schedule) =>
+        isPreSecondLifeLivingSchedule(schedule, input.secondLifeStartAge) &&
+        getLivingScheduleMonthlyMan(schedule) > 0,
+    );
+  });
+
+  for (const targetId of targetIds) {
     const schedules = input.livingState.byTarget[targetId] ?? [];
     if (schedules.length === 0) continue;
 
@@ -328,6 +349,7 @@ export function buildQ4LivingBreakdown(input: {
       input.calendarYear,
       input.calendarMonth,
       input.secondLifeStartAge,
+      !hasAnyActiveBaseline,
     )) {
       for (const item of getLivingScheduleBillableItems(schedule)) {
         const label = item.label.trim() || '（無題）';

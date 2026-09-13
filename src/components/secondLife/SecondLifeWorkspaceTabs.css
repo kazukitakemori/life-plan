@@ -1,0 +1,230 @@
+.second-life-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.second-life-workspace-tab {
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.second-life-workspace-tab:last-child {
+  border-right: 0;
+}
+
+.second-life-workspace-tab:hover {
+  background: var(--color-soft);
+}
+
+.second-life-workspace-tab.is-active {
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  box-shadow: inset 0 -3px 0 var(--color-brand);
+}
+
+.second-life-workspace-tab:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -3px;
+}
+
+.second-life-workspace-panel {
+  margin-top: 14px;
+}
+
+.second-life-workspace-panel--summary {
+  padding-top: 4px;
+}
+
+.second-life-renovation-scope {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.second-life-renovation-scope-title {
+  margin: 0 0 10px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.second-life-renovation-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.second-life-renovation-scope-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.second-life-renovation-scope-option:has(input:checked) {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+}
+
+.second-life-renovation-scope-option input {
+  margin-top: 3px;
+}
+
+.second-life-reference-details {
+  margin-top: 10px;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.second-life-reference-details summary {
+  display: inline-block;
+  cursor: pointer;
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+.second-life-reference-body {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--color-brand-soft);
+  background: #fafafa;
+  line-height: 1.65;
+}
+
+.second-life-reference-body p {
+  margin: 0 0 6px;
+}
+
+.second-life-reference-body p:last-of-type {
+  margin-bottom: 8px;
+}
+
+.second-life-reference-body a {
+  color: var(--color-brand);
+}
+
+@media (max-width: 960px) {
+  .second-life-workspace-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .second-life-workspace-tab:nth-child(2) {
+    border-right: 0;
+  }
+
+  .second-life-workspace-tab:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .second-life-renovation-scope-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.third-life-reference-details {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.third-life-reference-details > summary,
+.third-life-selected-description > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.third-life-reference-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.third-life-reference-item {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.third-life-reference-item h4 {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+}
+
+.third-life-reference-item p,
+.third-life-cost-note p,
+.third-life-selected-description p {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--color-muted);
+}
+
+.third-life-reference-item a,
+.third-life-selected-description a {
+  font-size: var(--text-sm);
+  color: var(--color-brand);
+}
+
+.third-life-person-grid {
+  margin-top: 14px;
+}
+
+.third-life-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.third-life-field-row {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.third-life-field-row > span:first-child {
+  font-weight: 600;
+}
+
+.third-life-selected-description {
+  margin: 2px 0 6px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-brand-soft);
+  background: #fafafa;
+}
+
+.third-life-selected-description[open] > summary {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 960px) {
+  .third-life-reference-list {
+    grid-template-columns: 1fr;
+  }
+
+  .third-life-field-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

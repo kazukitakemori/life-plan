@@ -69,6 +69,8 @@ function formatApplyChangeLines(
               : '';
           return `「${change.name}」を追加${done}${amounts}`;
         }
+      case 'improvement':
+        return `「${change.propertyName}」の住まい一時費用${change.amountMan}万円を${change.year}年${change.month}月に追加${done}`;
       case 'life_event':
         return `ライフイベント「${change.label}」に${change.amountMan}万円を反映${done}（${change.startAge}歳）`;
       default: {
@@ -107,7 +109,7 @@ export function getSecondLifeHousingApplyPlanLines(
   const lines: string[] = [];
 
   if (isRelocatingHousing(state)) {
-    lines.push('転居のため、既存の住まいを開始年齢の直前で終了します');
+    lines.push('転居のため、既存の住まいを住まい変更年齢の直前で終了します');
   }
 
   switch (kind) {
@@ -115,6 +117,9 @@ export function getSecondLifeHousingApplyPlanLines(
       lines.push(
         '住まいの変更はせず、前回追加したセカンドライフ物件があれば削除します',
       );
+      break;
+    case 'stay':
+      lines.push('現在の住まいをそのまま継続します');
       break;
     case 'rent':
       lines.push('セカンドライフ賃貸を住まい入力に追加します');
@@ -129,7 +134,9 @@ export function getSecondLifeHousingApplyPlanLines(
       break;
     case 'renovate':
       lines.push(
-        '現在の住まいを継続し、リフォーム等の一時費用を計画へ反映します',
+        state.housingScenario === 'hometown'
+          ? 'セカンドライフ実家を住まいに追加し、リフォーム等の一時費用を物件へ反映します'
+          : '現在の持ち家にリフォーム等の一時費用を反映します',
       );
       break;
     default: {
@@ -155,6 +162,7 @@ export function getSecondLifeHousingApplyWarnings(input: {
     | 'hometownOption'
     | 'newAreaOption'
     | 'startAge'
+    | 'housingActionAge'
   >;
   existingHousingCount: number;
   changes?: SecondLifeHousingApplyChange[];
@@ -171,7 +179,7 @@ export function getSecondLifeHousingApplyWarnings(input: {
     const names = ended.map((change) => `「${change.name}」`).join('・');
     const end = ended[0];
     warnings.push(
-      `${names}はセカンドライフ開始後も続く住まい設定です。今回の転居計画を優先すると、${formatAgeMonth(end.endAge, end.endMonth)}で終了します。`,
+      `${names}は住まい変更年齢以降も続く設定です。今回の転居計画を優先すると、${formatAgeMonth(end.endAge, end.endMonth)}で終了します。`,
     );
   }
 
@@ -182,6 +190,19 @@ export function getSecondLifeHousingApplyWarnings(input: {
   ) {
     warnings.push(
       '今の場所での購入・建て替えでは、既存の住まいは自動終了しません。期間が重なる場合は、既存物件の終了時期を確認してください。',
+    );
+  }
+
+  const improvementApplied = (input.changes ?? []).some(
+    (change) => change.type === 'improvement',
+  );
+  if (
+    kind === 'renovate' &&
+    input.secondLifeState.housingScenario === 'stay' &&
+    !improvementApplied
+  ) {
+    warnings.push(
+      'リフォーム費を反映できる持ち家が見つかりません。Q5「住まい」で現在の持ち家を登録・確認してから、もう一度反映してください。リフォーム費はライフイベントには自動登録しません。',
     );
   }
 

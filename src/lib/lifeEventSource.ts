@@ -1,7 +1,9 @@
 import type { LifeEventEntry, LifeEventSource } from '../types/lifeEvent';
 
 export const SECOND_LIFE_HOUSING_EVENT_LABEL = 'セカンドライフ住まい';
-export const SECOND_LIFE_NURSING_EVENT_LABEL = 'セカンドライフ介護';
+export const SECOND_LIFE_NURSING_EVENT_LABEL = 'セカンドライフ介護'; // 旧データ互換
+export const THIRD_LIFE_NURSING_RECURRING_EVENT_LABEL = 'サードライフ介護（月額費用）';
+export const THIRD_LIFE_NURSING_INITIAL_EVENT_LABEL = 'サードライフ介護（開始時費用）';
 
 export type SecondLifeManagedLifeEventSource = Extract<
   LifeEventSource,
@@ -25,7 +27,11 @@ export function getSecondLifeManagedLifeEventSource(
   if (entry.label === SECOND_LIFE_HOUSING_EVENT_LABEL) {
     return 'second_life_housing';
   }
-  if (entry.label === SECOND_LIFE_NURSING_EVENT_LABEL) {
+  if (
+    entry.label === SECOND_LIFE_NURSING_EVENT_LABEL ||
+    entry.label === THIRD_LIFE_NURSING_RECURRING_EVENT_LABEL ||
+    entry.label === THIRD_LIFE_NURSING_INITIAL_EVENT_LABEL
+  ) {
     return 'second_life_nursing';
   }
   return null;

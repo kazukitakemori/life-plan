@@ -11,22 +11,12 @@ import type { IncomeByMember } from '../types/income';
 import type { LivingExpenseState } from '../types/living';
 import type { PensionByMember } from '../types/pension';
 import type {
-  SecondLifeHousingScenario,
-  SecondLifeHometownOption,
   SecondLifeLivingBreakdownItem,
   SecondLifeLivingLevel,
-  SecondLifeNewAreaOption,
   SecondLifeNursingScenario,
   SecondLifeState,
-  SecondLifeStayOption,
 } from '../types/secondLife';
 import { getMemberAgeAtYearEnd } from './memberYearIncome';
-
-const MOVING_COST_MAN = 50;
-const POST_PURCHASE_RENOVATION_MAN = 300;
-const RENOVATE_CURRENT_HOME_MAN = 500;
-const PURCHASE_REBUILD_MAN = 2_500;
-const RENOVATE_PARENTS_HOME_MAN = 400;
 
 const PENSION_LIVING_CATEGORY_WEIGHTS: {
   label: string;
@@ -41,11 +31,6 @@ const PENSION_LIVING_CATEGORY_WEIGHTS: {
   { label: 'その他', weight: 0 },
 ];
 
-const NURSING_DEFAULT_ANNUAL_MAN: Record<SecondLifeNursingScenario, number> = {
-  home: 30,
-  day_service: 50,
-  facility: 120,
-};
 
 export function getCalendarYearAtHeadAge(
   head: FamilyMember,
@@ -110,7 +95,7 @@ export function getSecondLifePeriodMonthlyLivingMan(input: {
 }
 
 /**
- * 「現在と同水準」「7割」の基準となる生活費（月額・万円）。
+ * 「現在と同水準」「8割」「7割」の基準となる生活費（月額・万円）。
  * Q4 のご家族＋各メンバー入力を合算（詳細内訳を含む）。
  * セカンドライフ開始以降のスケジュールは含めない。
  */
@@ -134,9 +119,11 @@ export function getPreSecondLifeMonthlyLivingMan(input: {
     livingState: input.livingState,
     secondLifeStartAge: input.startAge,
   });
-  const baseline = Math.max(atReference, enteredTotal);
-  if (baseline > 0) {
-    return baseline;
+  if (atReference > 0) {
+    return atReference;
+  }
+  if (enteredTotal > 0) {
+    return enteredTotal;
   }
 
   const head = input.familyMembers.find((member) => member.role === 'head');
@@ -229,6 +216,7 @@ export function buildSecondLifeLivingOptions(input: {
     referenceDate: input.referenceDate,
     startAge: input.startAge,
   });
+  const eightyMonthly = roundMan(currentMonthly * 0.8);
   const seventyMonthly = roundMan(currentMonthly * 0.7);
   const calendarYear = getCalendarYearAtHeadAge(
     head,
@@ -254,51 +242,46 @@ export function buildSecondLifeLivingOptions(input: {
     secondLifeStartAge: input.startAge,
   });
 
-  return [
+  const options: SecondLifeLivingOption[] = [
     {
       level: 'same',
-      label: '現在と同水準の生活費',
+      label: '現在と同じ生活費（100%）',
       monthlyMan: roundMan(currentMonthly),
       breakdown: q4Breakdown,
       breakdownNote:
-        q4Breakdown.length > 0 ? 'Q4 生活費の内訳' : undefined,
+        q4Breakdown.length > 0 ? '現在の生活費の内訳' : undefined,
+    },
+    {
+      level: 'eighty_percent',
+      label: '現在の80%の生活費',
+      monthlyMan: eightyMonthly,
+      breakdown: scaleLivingBreakdown(q4Breakdown, 0.8),
+      breakdownNote:
+        q4Breakdown.length > 0 ? '現在の生活費の内訳（80%）' : undefined,
     },
     {
       level: 'seventy_percent',
-      label: '現在の7割の生活費',
+      label: '現在の70%の生活費',
       monthlyMan: seventyMonthly,
       breakdown: scaleLivingBreakdown(q4Breakdown, 0.7),
       breakdownNote:
-        q4Breakdown.length > 0 ? 'Q4 生活費の内訳（7割）' : undefined,
-    },
-    {
-      level: 'pension_based',
-      label: '年金収入に応じた生活費',
-      monthlyMan: pensionMonthly,
-      breakdown: buildPensionLivingBreakdown(pensionMonthly),
-      breakdownNote: '年金からの目安配分',
-      pensionAnnualMan: roundMan(pensionAnnual),
+        q4Breakdown.length > 0 ? '現在の生活費の内訳（70%）' : undefined,
     },
   ];
-}
 
-function estimateBaseHousingCostMan(
-  scenario: SecondLifeHousingScenario,
-  stayOption: SecondLifeStayOption,
-  hometownOption: SecondLifeHometownOption,
-  newAreaOption: SecondLifeNewAreaOption,
-): number {
-  if (scenario === 'stay') {
-    return stayOption === 'renovate'
-      ? RENOVATE_CURRENT_HOME_MAN
-      : PURCHASE_REBUILD_MAN;
+  // 年金額が未入力のときに「0万円で暮らす」選択肢を出さない。
+  if (pensionAnnual > 0) {
+    options.push({
+      level: 'pension_based',
+      label: '年金収入を目安にする',
+      monthlyMan: pensionMonthly,
+      breakdown: buildPensionLivingBreakdown(pensionMonthly),
+      breakdownNote: '年金月額と同額を生活費の目安として配分',
+      pensionAnnualMan: roundMan(pensionAnnual),
+    });
   }
-  if (scenario === 'hometown') {
-    return hometownOption === 'renovate_parents'
-      ? RENOVATE_PARENTS_HOME_MAN
-      : PURCHASE_REBUILD_MAN;
-  }
-  return newAreaOption === 'rent' ? 0 : PURCHASE_REBUILD_MAN;
+
+  return options;
 }
 
 export function estimateSecondLifeHousingTotalMan(
@@ -309,22 +292,17 @@ export function estimateSecondLifeHousingTotalMan(
     | 'hometownOption'
     | 'newAreaOption'
     | 'includeMovingCost'
+    | 'movingCostMan'
     | 'includePostPurchaseRenovation'
+    | 'postPurchaseRenovationCostMan'
+    | 'housingBaseCostMan'
   >,
 ): number | null {
-  let total = estimateBaseHousingCostMan(
-    state.housingScenario,
-    state.stayOption,
-    state.hometownOption,
-    state.newAreaOption,
-  );
+  let total = Math.max(0, state.housingBaseCostMan);
 
-  const needsMoving =
-    state.housingScenario === 'hometown' ||
-    state.housingScenario === 'new_area' ||
-    state.includeMovingCost;
+  const needsMoving = state.includeMovingCost;
   if (needsMoving) {
-    total += MOVING_COST_MAN;
+    total += Math.max(0, state.movingCostMan);
   }
 
   const purchaseSelected =
@@ -336,16 +314,17 @@ export function estimateSecondLifeHousingTotalMan(
       state.newAreaOption === 'purchase');
 
   if (purchaseSelected && state.includePostPurchaseRenovation) {
-    total += POST_PURCHASE_RENOVATION_MAN;
+    total += Math.max(0, state.postPurchaseRenovationCostMan);
   }
 
   return total > 0 ? total : null;
 }
 
 export function getDefaultNursingAnnualCostMan(
-  scenario: SecondLifeNursingScenario,
+  _scenario: SecondLifeNursingScenario,
 ): number {
-  return NURSING_DEFAULT_ANNUAL_MAN[scenario];
+  // 介護費は施設・利用条件による差が大きいため、Q12では自動設定しない。
+  return 0;
 }
 
 export function formatSecondLifeMan(value: number | null | undefined): string {
