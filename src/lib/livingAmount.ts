@@ -33,6 +33,12 @@ export function formatThousandYenFromMan(valueMan: number): string {
   })}千円`;
 }
 
+/**
+ * LivingScheduleCard はQ4表示用アダプターを通した値（千円）を受け取る。
+ * 既存関数名は互換のため維持するが、Q4画面では千円表記として使う。
+ */
 export function formatManAmount(value: number): string {
-  return `${value.toFixed(1)}万円`;
+  return `${value.toLocaleString('ja-JP', {
+    maximumFractionDigits: 1,
+  })}千円`;
 }
