@@ -63,14 +63,20 @@ export function SecondLifeNursingSection({
         ...state.nursingByTarget,
         [target]: {
           ...state.nursingByTarget[target],
+          configured: true,
           ...patch,
         },
       },
     });
   };
 
-  const applyMessage =
-    applyStatus === 'done'
+  const allConfigured =
+    targets.length > 0 &&
+    targets.every(({ key }) => state.nursingByTarget[key].configured !== false);
+
+  const applyMessage = !allConfigured
+    ? '初期値は参考値です。内容を変更するか「この参考値を使う」を押して、介護の想定を確定してください。'
+    : applyStatus === 'done'
       ? '現在の介護設計はキャッシュフローへ反映済みです。'
       : applyStatus === 'partial'
         ? '介護設計と現在の連動データに差分があります。下のボタンで最新の設計を反映してください。'
@@ -86,19 +92,20 @@ export function SecondLifeNursingSection({
       </div>
 
       <p className="second-life-apply-note">
-        介護の設計はこのセカンドライフ画面を本体にします。ライフイベントには計算用の連動データとして自動反映します。
+        介護の設計はこのセカンドライフ画面を本体にします。ライフイベントには計算用の連動データとして自動反映します。初期表示の金額と開始年齢は参考値で、確定するまでは未設定として扱います。
       </p>
 
       <div className="second-life-guide-grid">
         {targets.map(({ key, member }) => {
           const design = state.nursingByTarget[key];
+          const configured = design.configured !== false;
           return (
             <article
               key={key}
               className={
-                design.skip
-                  ? 'second-life-guide-card second-life-guide-card--missing'
-                  : 'second-life-guide-card second-life-guide-card--done'
+                configured
+                  ? 'second-life-guide-card second-life-guide-card--done'
+                  : 'second-life-guide-card second-life-guide-card--missing'
               }
             >
               <div className="second-life-guide-card-head">
@@ -107,9 +114,11 @@ export function SecondLifeNursingSection({
                     {getMemberTabLabel(member)}
                   </p>
                   <p className="second-life-guide-card-summary">
-                    {design.skip
-                      ? '介護費を見込まない'
-                      : `${design.startAge}歳〜 年${design.annualCostMan}万円`}
+                    {!configured
+                      ? `未設定（参考値：${design.startAge}歳〜 年${design.annualCostMan}万円）`
+                      : design.skip
+                        ? '介護費を見込まない'
+                        : `${design.startAge}歳〜 年${design.annualCostMan}万円`}
                   </p>
                 </div>
               </div>
@@ -117,7 +126,7 @@ export function SecondLifeNursingSection({
               <label className="second-life-skip">
                 <input
                   type="checkbox"
-                  checked={design.skip}
+                  checked={configured && design.skip}
                   onChange={(event) =>
                     updateTarget(key, { skip: event.target.checked })
                   }
@@ -196,6 +205,16 @@ export function SecondLifeNursingSection({
                   </label>
                 </div>
               ) : null}
+
+              {!configured ? (
+                <button
+                  type="button"
+                  className="second-life-guide-nav-btn"
+                  onClick={() => updateTarget(key, { configured: true })}
+                >
+                  この参考値を使う
+                </button>
+              ) : null}
             </article>
           );
         })}
@@ -207,11 +226,13 @@ export function SecondLifeNursingSection({
           type="button"
           className="second-life-apply-btn"
           onClick={onApply}
-          disabled={applyStatus === 'done'}
+          disabled={!allConfigured || applyStatus === 'done'}
         >
-          {applyStatus === 'done'
-            ? '介護設計は反映済み'
-            : 'この介護設計を反映する'}
+          {!allConfigured
+            ? '介護の想定を設定してください'
+            : applyStatus === 'done'
+              ? '介護設計は反映済み'
+              : 'この介護設計を反映する'}
         </button>
         {onOpenLifeEvent ? (
           <button
