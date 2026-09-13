@@ -12,7 +12,7 @@ import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/lo
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
-import { StepHeading } from '../ui';
+import { CopySettingsBar, StepHeading } from '../ui';
 import { AddVehicleCards } from './AddVehicleCards';
 import { VehicleTable } from './VehicleTable';
 
@@ -202,31 +202,16 @@ export function VehicleStep({
           onRemoveMemberTab={handleRemoveMemberTab}
         />
 
-        <div className="life-event-copy-bar">
-          <select
-            className="select-input"
-            value={copySourceId}
-            onChange={(e) => setCopySourceId(e.target.value)}
-          >
-            {copySourceOptions.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <span className="life-event-copy-from">から</span>
-          <button
-            type="button"
-            className="life-event-copy-btn"
-            onClick={copySettingsFrom}
-            disabled={
-              copySourceId === resolvedActiveId ||
-              (vehicleState.byMember[copySourceId]?.length ?? 0) === 0
-            }
-          >
-            設定をコピー
-          </button>
-        </div>
+        <CopySettingsBar
+          value={copySourceId}
+          options={copySourceOptions}
+          onChange={setCopySourceId}
+          onCopy={copySettingsFrom}
+          disabled={
+            copySourceId === resolvedActiveId ||
+            (vehicleState.byMember[copySourceId]?.length ?? 0) === 0
+          }
+        />
       </div>
 
       <VehicleTable
