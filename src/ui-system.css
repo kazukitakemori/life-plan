@@ -4,10 +4,19 @@
   --step-width-standard: 920px;
   --step-width-wide: 1100px;
 
-  /* Interaction / readability */
+  /* Shared interaction / design foundation. */
   --ui-control-min-height: 40px;
+  --ui-control-radius: var(--radius-sm);
+  --ui-card-radius: var(--radius-md);
+  --ui-control-border: #c5d0c9;
+  --ui-control-border-hover: #97a49d;
+  --ui-card-border: var(--color-line);
+  --ui-surface-hover: #f6f9f7;
+  --ui-surface-selected: var(--color-brand-soft);
+  --ui-shadow-card: 0 1px 2px rgb(31 42 36 / 4%);
   --ui-focus-outline: 2px solid var(--color-brand);
   --ui-focus-offset: 2px;
+  --ui-transition-fast: 140ms ease;
 }
 
 /*
@@ -55,6 +64,51 @@
   line-height: var(--leading-relaxed);
 }
 
+/*
+ * Common form controls.
+ * Q1/Q7 are the current visual reference: white surface, calm green brand,
+ * subtle borders and rounded controls. Individual screens should inherit this
+ * instead of introducing another control treatment.
+ */
+:is(.ui-input, .ui-select, .ui-copy-bar-select) {
+  border-color: var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}
+
+:is(.ui-input, .ui-select, .ui-copy-bar-select):hover:not(:disabled) {
+  border-color: var(--ui-control-border-hover);
+}
+
+:is(.ui-input, .ui-select, .ui-copy-bar-select):disabled {
+  background: #f4f6f5;
+  color: var(--color-faint);
+}
+
+/* Q1 family cards and Q7 income cards define the current card language. */
+:is(.family-member-card, .income-entry) {
+  border-color: var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--ui-shadow-card);
+}
+
+/* Shared button geometry and motion. Variants keep their semantic colors. */
+:is(.ui-btn, .ui-copy-bar-button, .show-all-btn, .footer-action-btn) {
+  min-height: var(--ui-control-min-height);
+  border-radius: var(--ui-control-radius);
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
 /* Shared copy-from-member control. */
 .ui-copy-bar {
   display: flex;
@@ -62,9 +116,10 @@
   gap: var(--space-2);
   min-height: 48px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-control-radius);
   background: var(--color-surface);
+  box-shadow: var(--ui-shadow-card);
 }
 
 .ui-copy-bar-label {
@@ -79,23 +134,14 @@
   min-width: 136px;
   height: var(--ui-control-min-height);
   padding: 0 34px 0 12px;
-  border: 1px solid #c8d0cb;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-ink);
+  border: 1px solid var(--ui-control-border);
   font-size: var(--text-md);
   line-height: var(--leading-normal);
 }
 
-.ui-copy-bar-select:hover:not(:disabled) {
-  border-color: #97a49d;
-}
-
 .ui-copy-bar-button {
-  min-height: var(--ui-control-min-height);
   padding: 0 var(--space-4);
   border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-brand);
   font-size: var(--text-md);
@@ -110,6 +156,78 @@
 .ui-copy-bar-button:disabled,
 .ui-copy-bar-select:disabled {
   opacity: 0.5;
+}
+
+/*
+ * Shared person tabs.
+ * Keep the existing flat-tab structure on desktop, but remove the old blue
+ * selection language so every screen speaks the same green brand language.
+ */
+.member-tab,
+button.member-tab {
+  color: var(--color-ink);
+  transition:
+    background var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+.member-tab:hover,
+button.member-tab:hover {
+  background: var(--ui-surface-hover);
+}
+
+.member-tab.active,
+button.member-tab.active {
+  border-bottom-color: transparent;
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  box-shadow: inset 0 -3px 0 var(--color-brand);
+}
+
+button.member-tab--add {
+  color: var(--color-brand);
+}
+
+.member-tab-add-plus {
+  color: var(--color-brand);
+}
+
+/* Header / view actions use the same neutral-to-brand state pattern. */
+.show-all-btn {
+  padding: 0 var(--space-4);
+  border: 1px solid var(--ui-control-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.show-all-btn:not(:disabled):hover {
+  border-color: var(--ui-control-border-hover);
+  background: var(--ui-surface-hover);
+}
+
+.show-all-btn.active {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+}
+
+/* Repeated add actions should no longer introduce a separate blue style. */
+.footer-action-btn {
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-brand);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.footer-action-btn:hover:not(:disabled) {
+  background: var(--color-brand-soft);
 }
 
 /* Repeated toolbars should share the same rhythm. */
@@ -144,7 +262,7 @@
 :is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) {
   padding: var(--space-5);
   border: 1px dashed #cbd3ce;
-  border-radius: var(--radius-md);
+  border-radius: var(--ui-card-radius);
   background: #fafbfa;
   color: var(--color-muted);
   font-size: var(--text-md);
@@ -153,15 +271,6 @@
 
 :is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) p {
   margin: 0;
-}
-
-/* Header actions are controls too; keep them large enough to target comfortably. */
-.show-all-btn {
-  min-height: var(--ui-control-min-height);
-  padding: 0 var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1;
 }
 
 /* PC-first, but avoid making the shared controls unusable when the viewport narrows. */
