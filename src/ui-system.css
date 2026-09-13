@@ -14,6 +14,7 @@
   --ui-surface-hover: #f6f9f7;
   --ui-surface-selected: var(--color-brand-soft);
   --ui-shadow-card: 0 1px 2px rgb(31 42 36 / 4%);
+  --ui-shadow-menu: 0 10px 28px rgb(31 42 36 / 12%);
   --ui-focus-outline: 2px solid var(--color-brand);
   --ui-focus-offset: 2px;
   --ui-transition-fast: 140ms ease;
@@ -186,12 +187,111 @@ button.member-tab.active {
   box-shadow: inset 0 -3px 0 var(--color-brand);
 }
 
-button.member-tab--add {
+.member-tab-name {
+  color: inherit;
+}
+
+.member-tab-birth,
+.member-tab-badge {
+  color: var(--color-muted);
+}
+
+.member-tab.active .member-tab-name {
   color: var(--color-brand);
 }
 
+button.member-tab--add,
 .member-tab-add-plus {
   color: var(--color-brand);
+}
+
+/* The person picker is part of the same control family as the member tabs. */
+.member-tab-add-menu {
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--ui-shadow-menu);
+}
+
+.member-tab-add-menu-item {
+  border-radius: var(--ui-control-radius);
+  color: var(--color-ink);
+  transition:
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+.member-tab-add-menu-item:hover,
+.member-tab-add-menu-item:focus-visible {
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  outline: none;
+}
+
+.member-tab-add-menu-name {
+  color: inherit;
+}
+
+.member-tab-add-menu-meta {
+  color: var(--color-muted);
+}
+
+/*
+ * Q1 "家族を追加" and Q7 "収入を追加" are the same interaction pattern.
+ * Treat them as one visual primitive even though their business choices differ.
+ */
+:is(.add-family-title, .add-income-title) {
+  margin: 0 0 var(--space-3);
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+:is(.add-family-grid, .add-income-grid) {
+  gap: var(--space-3);
+}
+
+:is(.add-family-card, .add-income-card) {
+  min-height: 88px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--ui-shadow-card);
+  text-align: left;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+:is(.add-family-card, .add-income-card):hover:not(:disabled) {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+}
+
+:is(.add-family-card, .add-income-card):disabled,
+.add-income-card--disabled {
+  cursor: not-allowed;
+  border-color: var(--ui-card-border);
+  background: #f7f8f7;
+  box-shadow: none;
+  opacity: 0.48;
+}
+
+:is(.add-family-label, .add-income-label) {
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+:is(.add-family-desc, .add-income-desc) {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
 }
 
 /* Header / view actions use the same neutral-to-brand state pattern. */
