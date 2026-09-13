@@ -1,0 +1,97 @@
+name: Temporary Q12 density cleanup
+
+on:
+  push:
+    branches:
+      - feat/second-life-housing-living-q12
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/second-life-housing-living-q12
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Simplify Q12 explanatory copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'pattern not found: {path}: {old[:80]!r}')
+              p.write_text(text.replace(old, new))
+
+          # Q12全体で原本/試算の説明は1回だけにする
+          replace(
+              'src/components/secondLife/SecondLifeGuideStep.tsx',
+              '元気に暮らす時期を「セカンドライフ」、介護が必要になった後をこのソフトでは「サードライフ」と呼び、同じ「老後の暮らし」の中で分けて設計します。元の入力は消えません。',
+              '元気に暮らす時期を「セカンドライフ」、介護が必要になった後をこのソフトでは「サードライフ」と呼びます。Q4・Q5の入力はそのままに、ここで選んだ内容を試算に反映します。',
+          )
+
+          # 住まい：選択肢の説明を短くし、選択後の重複説明を削る
+          replace(
+              'src/components/secondLife/SecondLifeHousingSection.tsx',
+              'currentLabel="今の住まい計画をそのまま使う"\n        reviewLabel="これからの住まいを見直す"\n        currentDescription="「住まい」で入力している期間・費用のまま計算します。"\n        reviewDescription="リフォーム・建て替え・転居など、今の計画から変える内容を設定します。"',
+              'currentLabel="今の住まい計画を使う"\n        reviewLabel="老後の住まいを見直す"\n        currentDescription="現在の住まい計画をそのまま使います。"\n        reviewDescription="リフォーム・建て替え・転居などを設定します。"',
+          )
+          replace(
+              'src/components/secondLife/SecondLifeHousingSection.tsx',
+              '''{useCurrentPlan ? (\n        <div className="second-life-section-actions">\n          <p className="second-life-apply-note">\n            「住まい」で入力した内容のまま計算します。元の入力は変更しません。\n          </p>\n        </div>\n      ) : (''',
+              '''{useCurrentPlan ? null : (''',
+          )
+
+          # 生活費：同様に原本説明を繰り返さない
+          replace(
+              'src/components/secondLife/SecondLifeLivingSection.tsx',
+              'currentLabel="今の生活費計画をそのまま使う"',
+              'currentLabel="今の生活費計画を使う"',
+          )
+          replace(
+              'src/components/secondLife/SecondLifeLivingSection.tsx',
+              '''currentDescription={\n          currentMonthly > 0\n            ? `「生活費」で入力している現在の目安（月${formatSecondLifeMan(currentMonthly)}万円）を、そのまま使います。`\n            : '「生活費」で入力している計画を、そのまま使います。'\n        }\n        reviewDescription="現在の生活費を基準に、100%・80%・70%で比較できます。年金額が入力済みなら、年金収入を目安にした試算も選べます。"''',
+              '''currentDescription={\n          currentMonthly > 0\n            ? `現在の目安：月${formatSecondLifeMan(currentMonthly)}万円`\n            : '現在の生活費計画を使います。'\n        }\n        reviewDescription="100%・80%・70%・年金収入を目安に比較します。"''',
+          )
+          replace(
+              'src/components/secondLife/SecondLifeLivingSection.tsx',
+              '''{useCurrentPlan ? (\n        <div className="second-life-section-actions">\n          <p className="second-life-apply-note">\n            「生活費」で入力した内容のまま計算します。元の入力は変更しません。\n          </p>\n        </div>\n      ) : (''',
+              '''{useCurrentPlan ? null : (''',
+          )
+          replace(
+              'src/components/secondLife/SecondLifeLivingSection.tsx',
+              '''80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。元の「生活費」の入力は残したまま、{state.startAge}歳以降だけ選んだ金額で試算します。''',
+              '''80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。''',
+          )
+
+          # 正常/変更なしでは確認ブロックを見せず、本当に要確認・要入力の時だけ表示
+          css = Path('src/secondLifeConsistency.css')
+          text = css.read_text()
+          marker = '.second-life-consistency--aligned {'
+          addition = '''.second-life-consistency--aligned,\n.second-life-consistency--skipped {\n  display: none;\n}\n\n'''
+          if addition not in text:
+              if marker not in text:
+                  raise SystemExit('consistency css marker not found')
+              text = text.replace(marker, addition + marker, 1)
+              css.write_text(text)
+          PY
+      - run: npm ci
+      - run: npm run build
+      - name: Remove temporary workflow and commit verified changes
+        run: |
+          rm -f .github/workflows/tmp-q12-density-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Reduce repeated Q12 guidance"
+          git push origin HEAD:feat/second-life-housing-living-q12
