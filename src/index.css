@@ -12473,7 +12473,16 @@ button.member-tab.active {
 }
 
 .second-life-apply-note {
-  color: #c62828;
+  color: var(--color-muted);
+}
+
+.second-life-apply-note--warning {
+  color: #92400e;
+}
+
+.second-life-summary-note {
+  color: var(--color-ink);
+  font-weight: 600;
 }
 
 .second-life-living-monthly {

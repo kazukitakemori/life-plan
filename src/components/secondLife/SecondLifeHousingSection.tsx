@@ -541,7 +541,7 @@ export function SecondLifeHousingSection({
                     />
                     <span>年</span>
                   </label>
-                  <p className="second-life-apply-note">
+                  <p className="second-life-apply-note second-life-summary-note">
                     借入予定額：{formatSecondLifeMan(loanPrincipalMan)}万円
                     {loanMonthlyMan != null
                       ? ` ／ 月々の返済目安：約${formatSecondLifeMan(loanMonthlyMan)}万円`
@@ -549,17 +549,27 @@ export function SecondLifeHousingSection({
                   </p>
                   {!loanConfigured ? (
                     <p className="second-life-apply-note">
-                      金利と返済期間がそろうまでは、ローンを勝手に作らず、住まい本体の目安額を一括支出として仮計算します。
+                      金利・返済期間を入力すると月々の返済額を試算します。未入力の間は一括支出として仮計算します。
                     </p>
                   ) : null}
                   {estimatedLoanEndAge != null && estimatedLoanEndAge > 80 ? (
-                    <p className="second-life-apply-note">
-                      返済終了は世帯主{estimatedLoanEndAge}歳ごろの設定です。実際に借りられる期間・金利・審査条件は金融機関や商品で異なるため、実際の条件を確認してください。
+                    <p className="second-life-apply-note second-life-apply-note--warning">
+                      返済終了は世帯主{estimatedLoanEndAge}歳ごろです。借入可能な期間は金融機関・商品によって異なります。
                     </p>
                   ) : null}
-                  <p className="second-life-apply-note">
-                    ローン返済は固定金利・元利均等・ボーナス返済なしの簡易試算です。実際の借入条件を保証するものではありません。
-                  </p>
+                  <details className="second-life-reference-details">
+                    <summary>ローン試算の前提を見る</summary>
+                    <div className="second-life-reference-body">
+                      <p>
+                        固定金利・元利均等・ボーナス返済なしの簡易試算です。実際の借入条件を保証するものではありません。
+                      </p>
+                      {state.includeMovingCost || state.includePostPurchaseRenovation ? (
+                        <p>
+                          引越し費・購入後リフォーム費はローンに含めず、一括支出として試算します。
+                        </p>
+                      ) : null}
+                    </div>
+                  </details>
                 </>
               ) : state.housingPaymentMethod === 'undecided' ? (
                 <p className="second-life-apply-note">
@@ -571,25 +581,15 @@ export function SecondLifeHousingSection({
                 </p>
               )}
 
-              <p className="second-life-apply-note">
+              <p className="second-life-apply-note second-life-summary-note">
                 試算する住まい関連費の合計：{formatSecondLifeMan(total)}万円
                 {state.includeMovingCost || state.includePostPurchaseRenovation
                   ? '（住まい本体＋選択した追加費用）'
                   : ''}
               </p>
-              {state.includeMovingCost || state.includePostPurchaseRenovation ? (
-                <p className="second-life-apply-note">
-                  引越し費・購入後リフォーム費は、現時点ではローンに含めず一括支出として試算します。
-                </p>
-              ) : null}
             </div>
           ) : null}
 
-          <div className="second-life-section-actions">
-            <p className="second-life-apply-note">
-              元の「住まい」の入力は残ります。計算では、{state.housingActionAge}歳から上で選んだ住まい方に切り替わります。
-            </p>
-          </div>
         </>
       )}
     </section>
