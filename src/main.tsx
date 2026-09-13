@@ -17,6 +17,7 @@ import './mobileSteps.css';
 import './mobileEducation.css';
 import './mobileLifeEvent.css';
 import './mobileLiving.css';
+import './mobileHousing.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
