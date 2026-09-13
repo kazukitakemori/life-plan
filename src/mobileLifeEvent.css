@@ -66,7 +66,6 @@
     font-size: var(--text-xs);
     font-weight: 700;
     line-height: var(--leading-tight);
-    word-break: keep-all;
   }
 
   .life-event-step .life-event-col-summary::before {
@@ -198,12 +197,7 @@
     width: 100%;
   }
 
-  .life-event-step :where(.amount-unit, .rate-unit, .period-until-suffix) {
-    white-space: nowrap;
-    word-break: keep-all;
-  }
-
-  .life-event-step .life-event-row-remove {
+  .life-event-step .life-event-col-action .life-event-row-remove {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -217,14 +211,136 @@
     font-weight: 600;
   }
 
-  .life-event-step .life-event-row-remove::after {
+  .life-event-step .life-event-col-action .life-event-row-remove::after {
     content: '削除';
     font-size: var(--text-sm);
     white-space: nowrap;
   }
 
-  .life-event-step .life-event-row-remove:hover:not(:disabled) {
+  .life-event-step .life-event-col-action .life-event-row-remove:hover:not(:disabled) {
     background: var(--color-danger-soft);
+  }
+
+  /* Celebration gift is a separate card, not a normal table row action. */
+  .life-event-step .celebration-gift-block {
+    overflow: hidden;
+    border-color: var(--ui-card-border);
+    border-radius: var(--ui-card-radius);
+    background: var(--color-surface);
+    box-shadow: var(--ui-shadow-card);
+  }
+
+  .life-event-step .celebration-gift-block-header {
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--color-surface);
+  }
+
+  .life-event-step .celebration-gift-block-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--color-ink);
+    font-size: var(--text-md);
+    line-height: var(--leading-tight);
+  }
+
+  .life-event-step .celebration-gift-block-header .life-event-row-remove {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 56px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid #e0b4b4;
+    border-radius: var(--ui-control-radius);
+    background: var(--color-surface);
+    color: var(--color-danger);
+    font-size: 0;
+    font-weight: 600;
+  }
+
+  .life-event-step .celebration-gift-block-header .life-event-row-remove::after {
+    content: '削除';
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  .life-event-step .celebration-gift-table {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .life-event-step .celebration-gift-table-header {
+    display: none;
+  }
+
+  .life-event-step .celebration-gift-table-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .life-event-step .celebration-gift-table-row,
+  .life-event-step .celebration-gift-table-row:nth-child(odd),
+  .life-event-step .celebration-gift-table-row:nth-child(even) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--ui-card-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--color-surface);
+  }
+
+  .life-event-step .celebration-gift-table-cell {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .life-event-step .celebration-gift-table-cell::before {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+  }
+
+  .life-event-step .celebration-gift-col-name {
+    grid-column: 1 / -1;
+  }
+
+  .life-event-step .celebration-gift-col-name::before {
+    content: '名前';
+  }
+
+  .life-event-step .celebration-gift-col-age::before {
+    content: '適齢期';
+  }
+
+  .life-event-step .celebration-gift-col-amount::before {
+    content: '援助金';
+  }
+
+  .life-event-step :where(.celebration-gift-select, .celebration-gift-amount-input) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    border-color: var(--ui-control-border);
+    border-radius: var(--ui-control-radius);
+  }
+
+  .life-event-step .celebration-gift-amount-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
   }
 
   .life-event-step .life-event-table-empty {
@@ -252,5 +368,13 @@
     margin: 0;
     transform: rotate(90deg);
     justify-self: center;
+  }
+
+  .life-event-step .celebration-gift-table-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .life-event-step .celebration-gift-col-name {
+    grid-column: auto;
   }
 }
