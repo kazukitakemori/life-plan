@@ -1,0 +1,525 @@
+/* Q5 housing: phone-specific composition only.
+ * Shared member tabs / buttons / text-integrity rules remain in common UI layers.
+ */
+
+@media (max-width: 768px) {
+  .housing-step :where(
+      .housing-section,
+      .housing-owned-list,
+      .housing-rental-schedules,
+      .housing-owned-card-wrap,
+      .housing-owned-card,
+      .housing-owned-detail,
+      .housing-owned-detail-section,
+      .housing-rental-card,
+      .housing-rental-table,
+      .housing-rental-table-body,
+      .housing-rental-table-row
+    ) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .housing-step .housing-section {
+    overflow: visible;
+  }
+
+  .housing-step .housing-section-header {
+    display: block;
+  }
+
+  .housing-step .housing-section-title,
+  .housing-step .housing-owned-detail-title {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 所有物件の一覧カード */
+  .housing-step .housing-owned-card-wrap {
+    overflow: hidden;
+    border: 1px solid var(--ui-card-border);
+    border-radius: var(--ui-card-radius);
+    background: var(--color-surface);
+    box-shadow: var(--ui-shadow-card);
+  }
+
+  .housing-step .housing-owned-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px 8px;
+    align-items: center;
+    padding: 14px;
+    border: 0;
+    border-top: 3px solid var(--color-brand);
+    border-radius: 0;
+  }
+
+  .housing-step .housing-owned-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .housing-step .housing-owned-type {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .housing-step .housing-owned-linked-badge {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .housing-step .housing-owned-name-input {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .housing-step .housing-owned-usage-select {
+    grid-column: 1 / 3;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .housing-step .housing-owned-open-btn {
+    grid-column: 3;
+    min-width: 72px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .housing-step .housing-owned-card > .housing-row-remove {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #e0b4b4;
+    border-radius: var(--ui-control-radius);
+    background: var(--color-surface);
+    color: var(--color-danger);
+    font-size: 0;
+  }
+
+  .housing-step .housing-owned-card > .housing-row-remove::after {
+    content: '削除';
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .housing-step .housing-owned-card > .housing-row-remove:hover:not(:disabled) {
+    background: var(--color-danger-soft);
+  }
+
+  /* 所有物件の詳細 */
+  .housing-step .housing-owned-detail {
+    padding: 0 14px 14px;
+  }
+
+  .housing-step .housing-owned-detail-section {
+    min-width: 0;
+  }
+
+  .housing-step :where(
+      .housing-owned-expense-mode,
+      .housing-owned-payment-options,
+      .housing-owned-usage-radios,
+      .housing-owned-loan-contractor-options
+    ) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step :where(
+      .housing-owned-expense-mode-option,
+      .housing-owned-payment-option,
+      .housing-owned-usage-radios label,
+      .housing-owned-loan-contractor-btn,
+      .housing-owned-loan-contractor-cancel
+    ) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .housing-step .housing-owned-period .living-schedule-inputs,
+  .housing-step .housing-rental-table-row .living-schedule-inputs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step .living-schedule-side,
+  .housing-step .living-schedule-fields {
+    min-width: 0;
+  }
+
+  .housing-step .living-schedule-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .housing-step .living-schedule-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+    margin: 0;
+  }
+
+  .housing-step .housing-owned-acquisition-total {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px 10px;
+    align-items: center;
+  }
+
+  .housing-step .housing-owned-acquisition-note {
+    grid-column: 1 / -1;
+  }
+
+  .housing-step :where(
+      .housing-owned-loan-links,
+      .housing-owned-insurance-links,
+      .housing-insurance-group
+    ) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step :where(
+      .housing-owned-loan-add-btn,
+      .housing-insurance-action,
+      .housing-rental-add-actions .footer-action-btn
+    ) {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* PCの横長テーブルはスマホではカードとして読む */
+  .housing-step .housing-rental-card {
+    overflow: hidden;
+    border: 1px solid var(--ui-card-border);
+    border-top: 3px solid var(--color-brand);
+    border-radius: var(--ui-card-radius);
+    background: var(--color-surface);
+    box-shadow: var(--ui-shadow-card);
+  }
+
+  .housing-step .housing-rental-table {
+    overflow: visible;
+  }
+
+  .housing-step .housing-rental-table-header {
+    display: none;
+  }
+
+  .housing-step .housing-rental-table-body,
+  .housing-step .housing-rental-table-row {
+    display: block;
+  }
+
+  .housing-step .housing-table-cell {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 13px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--ui-card-border);
+    background: var(--color-surface);
+    box-sizing: border-box;
+  }
+
+  .housing-step .housing-table-cell:last-child {
+    border-bottom: 0;
+  }
+
+  .housing-step .housing-table-cell::before {
+    display: block;
+    margin: 0 0 8px;
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 賃貸物件 */
+  .housing-step .housing-rental-table:not(.housing-rental-table--owned-acquisition)
+    .housing-rental-table-row
+    > .housing-col-name::before {
+    content: '物件名';
+  }
+
+  .housing-step .housing-rental-table:not(.housing-rental-table--owned-acquisition)
+    .housing-rental-table-row
+    > .housing-col-period::before {
+    content: '契約期間';
+  }
+
+  .housing-step .housing-rental-table:not(.housing-rental-table--owned-acquisition)
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(3)::before {
+    content: '賃料 / 月';
+  }
+
+  .housing-step .housing-rental-table--upcoming
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(4)::before {
+    content: '敷金';
+  }
+
+  .housing-step .housing-rental-table--upcoming
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(5)::before {
+    content: '礼金／一時金';
+  }
+
+  .housing-step .housing-rental-table--upcoming
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(6)::before {
+    content: '仲介手数料';
+  }
+
+  .housing-step .housing-rental-table--upcoming
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(7)::before {
+    content: '引越し費用';
+  }
+
+  .housing-step .housing-rental-table--until
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(4)::before {
+    content: '退去・引越し費用';
+  }
+
+  .housing-step .housing-rental-table--until
+    .housing-rental-table-row
+    > .housing-col-amount:nth-child(5)::before {
+    content: '敷金（返金）';
+  }
+
+  .housing-step .housing-rental-table:not(.housing-rental-table--owned-acquisition)
+    .housing-col-renewal::before {
+    content: '更新';
+  }
+
+  .housing-step .housing-rental-table:not(.housing-rental-table--owned-acquisition)
+    .housing-col-action::before {
+    display: none;
+  }
+
+  .housing-step :where(
+      .housing-text-input,
+      .housing-occupancy-select,
+      .housing-rental-payer-select,
+      .housing-owned-name-input,
+      .housing-owned-usage-select
+    ) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  .housing-step .housing-col-name {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .housing-step .housing-man-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step .housing-man-input .amount-input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  .housing-step .housing-fetch-field,
+  .housing-step .housing-table-cell--stacked {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step .education-fetch-btn {
+    min-width: 88px;
+    min-height: 44px;
+  }
+
+  .housing-step .housing-col-action .remove-member-btn,
+  .housing-step .housing-row-remove {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #e0b4b4;
+    border-radius: var(--ui-control-radius);
+    background: var(--color-surface);
+    color: var(--color-danger);
+    font-size: 0;
+  }
+
+  .housing-step .housing-col-action .remove-member-btn::after,
+  .housing-step .housing-rental-table-row > .housing-col-action .housing-row-remove::after {
+    content: '削除';
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .housing-step .housing-rental-payer-bar {
+    padding: 12px 14px;
+  }
+
+  .housing-step .housing-rental-payer-label {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    width: 100%;
+  }
+
+  /* 所有物件の取得価格 */
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(1)::before {
+    content: '建物';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(2)::before {
+    content: '土地';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(3)::before {
+    content: '費用取得';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(4)::before {
+    content: '仲介手数料';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(5)::before {
+    content: '登記手数料';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(6)::before {
+    content: '不動産取得税';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition-land
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(1)::before {
+    content: '土地';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition-land
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(2)::before {
+    content: '費用取得';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition-land
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(3)::before {
+    content: '仲介手数料';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition-land
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(4)::before {
+    content: '登記手数料';
+  }
+
+  .housing-step .housing-rental-table--owned-acquisition-land
+    .housing-rental-table-row
+    > .housing-table-cell:nth-child(5)::before {
+    content: '不動産取得税';
+  }
+
+  /* ローン・保険の補助UI */
+  .housing-step :where(
+      .housing-owned-loan-card-wrap,
+      .housing-owned-insurance-card-wrap,
+      .housing-insurance-item,
+      .housing-loan-item
+    ) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .housing-step :where(
+      .housing-insurance-header,
+      .housing-owned-loan-contractor-picker
+    ) {
+    min-width: 0;
+  }
+
+  .housing-step .housing-rental-add-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .housing-step .housing-rental-add-actions .footer-action-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .housing-step .housing-owned-card,
+  .housing-step .housing-table-cell {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .housing-step .housing-owned-detail {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .housing-step .housing-owned-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .housing-step .housing-owned-open-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .housing-step .housing-owned-usage-select {
+    grid-column: 1 / -1;
+  }
+}
