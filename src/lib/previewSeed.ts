@@ -1,6 +1,7 @@
 import { setLastOpenedPlanId } from './lastOpenedPlan';
 import { getLocalPlanRepository } from './localPlanRepository';
 import { parsePlanBackupJson } from './planBackup';
+import { isPreviewEnvironment } from './previewEnvironment';
 
 const PREVIEW_SEED_URL = '/preview-data/TOP_base.json.gz';
 
@@ -18,7 +19,7 @@ async function readGzipText(response: Response): Promise<string> {
  * 既に1件でもプランがある場合は何もせず、ユーザーの編集内容を保持する。
  */
 export async function seedPreviewDataIfNeeded(): Promise<void> {
-  if (import.meta.env.VITE_PREVIEW_SEED_DATA !== '1') return;
+  if (!isPreviewEnvironment()) return;
 
   try {
     const repository = getLocalPlanRepository();
