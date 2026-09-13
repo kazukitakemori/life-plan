@@ -1,4 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
+import {
+  manToThousandYen,
+  thousandYenToMan,
+} from '../../lib/livingAmount';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   createFollowUpLivingSchedule,
@@ -36,6 +40,34 @@ interface LivingStepProps {
   onChange: (state: LivingExpenseState) => void;
   onSecondLifeChange?: (state: SecondLifeState) => void;
   onApplySecondLifeLiving?: () => void;
+}
+
+/**
+ * 保存値は従来どおり万円。Q4の入力UIだけ千円単位へ変換する。
+ * 既存データ・計算ロジックの意味を変えないための表示アダプター。
+ */
+function toLivingUiSchedule(
+  schedule: LivingExpenseSchedule,
+): LivingExpenseSchedule {
+  return {
+    ...schedule,
+    items: schedule.items.map((item) => ({
+      ...item,
+      amountMan: manToThousandYen(item.amountMan),
+    })),
+  };
+}
+
+function fromLivingUiSchedule(
+  schedule: LivingExpenseSchedule,
+): LivingExpenseSchedule {
+  return {
+    ...schedule,
+    items: schedule.items.map((item) => ({
+      ...item,
+      amountMan: thousandYenToMan(item.amountMan),
+    })),
+  };
 }
 
 export function LivingStep({
@@ -104,7 +136,11 @@ export function LivingStep({
     : (visibleMembers[0]?.id ?? defaultActiveId);
 
   const contextMember = visibleMembers.find((m) => m.id === resolvedTargetId);
-  const schedules = livingState.byTarget[resolvedTargetId] ?? [];
+  const storedSchedules = livingState.byTarget[resolvedTargetId] ?? [];
+  const schedules = useMemo(
+    () => storedSchedules.map(toLivingUiSchedule),
+    [storedSchedules],
+  );
 
   const scheduleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -137,23 +173,26 @@ export function LivingStep({
   };
 
   const updateSchedule = (scheduleId: string, updated: LivingExpenseSchedule) => {
+    const storedUpdated = fromLivingUiSchedule(updated);
     persistSchedules(
       resolvedTargetId,
-      schedules.map((s) => (s.id === scheduleId ? updated : s)),
+      storedSchedules.map((schedule) =>
+        schedule.id === scheduleId ? storedUpdated : schedule,
+      ),
     );
   };
 
   const removeSchedule = (scheduleId: string) => {
     persistSchedules(
       resolvedTargetId,
-      schedules.filter((s) => s.id !== scheduleId),
+      storedSchedules.filter((schedule) => schedule.id !== scheduleId),
     );
   };
 
   const addSchedule = () => {
     if (!contextMember) return;
     const refMonth = referenceDate.getMonth() + 1;
-    const last = schedules[schedules.length - 1];
+    const last = storedSchedules[storedSchedules.length - 1];
     const newSchedule =
       last != null
         ? createFollowUpLivingSchedule(
@@ -163,12 +202,12 @@ export function LivingStep({
             contextMember.expectedLifespan,
           )
         : createLivingExpenseSchedule(contextMember.age, refMonth);
-    persistSchedules(resolvedTargetId, [...schedules, newSchedule]);
+    persistSchedules(resolvedTargetId, [...storedSchedules, newSchedule]);
   };
 
   const copyPreviousSchedule = () => {
-    if (schedules.length === 0) return;
-    const last = schedules[schedules.length - 1];
+    if (storedSchedules.length === 0) return;
+    const last = storedSchedules[storedSchedules.length - 1];
     const cloned: LivingExpenseSchedule = {
       ...last,
       id: crypto.randomUUID(),
@@ -177,7 +216,7 @@ export function LivingStep({
         id: crypto.randomUUID(),
       })),
     };
-    persistSchedules(resolvedTargetId, [...schedules, cloned]);
+    persistSchedules(resolvedTargetId, [...storedSchedules, cloned]);
   };
 
   const copySettingsFrom = () => {
@@ -266,7 +305,7 @@ export function LivingStep({
               schedule={schedule}
               member={contextMember}
               referenceDate={referenceDate}
-              canRemoveSchedule={schedules.length >= 1}
+              canRemoveSchedule={storedSchedules.length >= 1}
               onChange={(updated) => updateSchedule(schedule.id, updated)}
               onRemoveSchedule={() => removeSchedule(schedule.id)}
             />
@@ -282,7 +321,7 @@ export function LivingStep({
           type="button"
           className="footer-action-btn"
           onClick={copyPreviousSchedule}
-          disabled={schedules.length === 0}
+          disabled={storedSchedules.length === 0}
         >
           前のスケジュールをコピー
         </button>
