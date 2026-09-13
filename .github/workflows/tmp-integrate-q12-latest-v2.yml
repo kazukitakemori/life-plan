@@ -1,0 +1,61 @@
+name: Temporary integrate Q12 current plus latest v2
+
+on:
+  push:
+    branches:
+      - integrate/q12-current-plus-latest
+    paths:
+      - scripts/tmp_integrate_q12_guide_v2.py
+      - .github/workflows/tmp-integrate-q12-latest-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  integrate-build-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integrate/q12-current-plus-latest
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Bring in latest mobile work from PR 8
+        run: |
+          git fetch origin fix/mobile-header-readability
+          git checkout origin/fix/mobile-header-readability -- \
+            src/components/layout/TopHeader.tsx \
+            src/main.tsx \
+            src/mobile.css \
+            src/mobileCompact.css
+      - name: Port PR 7 main unset-state behavior onto current Q12
+        run: |
+          set +e
+          python scripts/tmp_integrate_q12_latest.py
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "Main patch stopped at the known guide-structure marker; continuing with the current-structure guide patch."
+          fi
+      - name: Patch current Q12 guide structure
+        run: python scripts/tmp_integrate_q12_guide_v2.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Remove temporary integration files
+        run: |
+          rm -f scripts/tmp_integrate_q12_latest.py \
+            scripts/tmp_integrate_q12_guide_v2.py \
+            .github/workflows/tmp-integrate-q12-latest.yml \
+            .github/workflows/tmp-integrate-q12-latest-v2.yml
+      - name: Commit verified integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Integrate Q12 workspace with latest follow-up edits"
+          git push origin HEAD:integrate/q12-current-plus-latest
