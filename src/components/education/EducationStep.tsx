@@ -161,20 +161,8 @@ export function EducationStep({
   };
 
   const handleSelectMember = (memberId: string) => {
-    setShowAllMembers(false);
     setActiveMemberId(memberId);
   };
-
-  const toggleAllMembersButton = (
-    <button
-      type="button"
-      className={`show-all-btn${showAllMembers ? ' active' : ''}`}
-      onClick={() => setShowAllMembers((prev) => !prev)}
-      aria-pressed={showAllMembers}
-    >
-      {showAllMembers ? '個人ごとに表示' : '全員まとめて表示'}
-    </button>
-  );
 
   if (!headMember) {
     return (
@@ -188,17 +176,35 @@ export function EducationStep({
 
   return (
     <div className="step-page education-step">
-      <StepHeading
-        number={2}
-        title="教育費"
-        actions={toggleAllMembersButton}
-      />
+      <StepHeading number={2} title="教育費" />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
           {purposeNote}
         </p>
       ) : null}
+
+      <div className="education-view-mode" aria-label="教育費の表示方法">
+        <span className="education-view-mode-label">表示</span>
+        <div className="education-view-mode-options" role="group">
+          <button
+            type="button"
+            className={`education-view-mode-button${!showAllMembers ? ' active' : ''}`}
+            onClick={() => setShowAllMembers(false)}
+            aria-pressed={!showAllMembers}
+          >
+            個人別
+          </button>
+          <button
+            type="button"
+            className={`education-view-mode-button${showAllMembers ? ' active' : ''}`}
+            onClick={() => setShowAllMembers(true)}
+            aria-pressed={showAllMembers}
+          >
+            全員まとめて
+          </button>
+        </div>
+      </div>
 
       {!showAllMembers ? (
         <div className="education-toolbar">
@@ -209,10 +215,7 @@ export function EducationStep({
             referenceDate={referenceDate}
             onSelect={handleSelectMember}
             addableMembers={addableMembers}
-            onAddMemberTab={(memberId) => {
-              setShowAllMembers(false);
-              handleAddMemberTab(memberId);
-            }}
+            onAddMemberTab={handleAddMemberTab}
             removableMemberIds={removableMemberIds}
             onRemoveMemberTab={handleRemoveMemberTab}
           />
@@ -235,7 +238,7 @@ export function EducationStep({
       {showAllMembers ? (
         <>
           <p className="education-aggregate-note">
-            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは「個人ごとに表示」を押してください。
+            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは「個人別」を選んでください。
           </p>
           <EducationExpenseChart
             mode="aggregate"

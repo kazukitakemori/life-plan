@@ -87,13 +87,19 @@
     width: 100%;
   }
 
-  .step-page :where(.ui-btn, .show-all-btn, .ui-copy-bar-button) {
+  .step-page :where(.ui-btn, .show-all-btn, .ui-copy-bar-button, .footer-action-btn) {
     min-height: var(--mobile-touch-target);
     touch-action: manipulation;
   }
 
-  /* Shared member tabs are used by several Q screens. Keep them touchable and scrollable. */
+  /*
+   * Shared member tabs are used by several Q screens.
+   * The strip itself owns horizontal scrolling; parent toolbars must not change
+   * that behavior. A stronger selector prevents screen-specific flex rules
+   * (for example education-toolbar .member-tabs) from cancelling it.
+   */
   .member-tabs-block {
+    width: 100%;
     min-width: 0;
     overflow: hidden;
   }
@@ -104,13 +110,16 @@
     gap: 8px;
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     padding-bottom: 8px;
     overflow-x: auto;
     overflow-y: hidden;
     border-bottom: 0;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
 
   .member-tabs-row::-webkit-scrollbar,
@@ -118,11 +127,13 @@
     display: none;
   }
 
-  .member-tabs {
+  .step-page .member-tabs-row > .member-tabs {
     display: flex;
-    flex: 0 0 auto;
+    flex: 0 0 max-content;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
     gap: 8px;
-    min-width: 0;
     margin: 0;
     overflow: visible;
     border-bottom: 0;
@@ -138,16 +149,16 @@
     max-width: 220px;
     overflow: hidden;
     border: 1px solid var(--ui-card-border);
-    border-radius: var(--ui-card-radius);
+    border-radius: var(--ui-control-radius);
     background: var(--color-surface);
-    box-shadow: var(--ui-shadow-card) !important;
+    box-shadow: none !important;
     scroll-snap-align: start;
   }
 
   .member-tab.active {
     border-color: var(--color-brand);
     background: var(--color-brand-soft);
-    box-shadow: var(--ui-shadow-card) !important;
+    box-shadow: none !important;
   }
 
   .member-tab-select,
@@ -257,14 +268,13 @@
     gap: 6px;
   }
 
-  /* Q1/Q7 share the same add-card grammar on phones as well. */
-  :is(.add-family-grid, .add-income-grid) {
+  .add-family-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
-  :is(.add-family-card, .add-income-card) {
-    min-height: 88px;
+  .add-family-grid button {
+    min-height: var(--mobile-touch-target);
   }
 
   /* Repeated cards / wide data surfaces should stay inside the viewport. */
