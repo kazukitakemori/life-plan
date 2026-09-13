@@ -112,10 +112,6 @@ export function SecondLifeNursingSection({
               <h4>{scenario.label}</h4>
               <p>{scenario.description}</p>
               {scenario.note ? <p>{scenario.note}</p> : null}
-              <p>
-                参考目安：開始時 {scenario.referenceInitialCostMan}万円 ／ 月{' '}
-                {scenario.referenceMonthlyCostMan}万円
-              </p>
               <a href={scenario.referenceUrl} target="_blank" rel="noreferrer">
                 {scenario.referenceLabel}
               </a>
@@ -241,7 +237,6 @@ export function SecondLifeNursingSection({
                           参考目安：開始時 {scenarioInfo.referenceInitialCostMan}万円 ／ 月{' '}
                           {scenarioInfo.referenceMonthlyCostMan}万円
                         </p>
-                        <p>{scenarioInfo.referenceCostNote}</p>
                         <button
                           type="button"
                           className="second-life-guide-nav-btn"
@@ -249,6 +244,24 @@ export function SecondLifeNursingSection({
                         >
                           参考目安を反映
                         </button>
+                        <details className="third-life-selected-description">
+                          <summary>参考額の根拠を見る</summary>
+                          <p>
+                            <strong>
+                              {scenarioInfo.referenceCostBasis === 'survey'
+                                ? '調査平均を基準'
+                                : '公開資料をもとにしたソフト内試算'}
+                            </strong>
+                          </p>
+                          <p>{scenarioInfo.referenceCostNote}</p>
+                          <a
+                            href={scenarioInfo.costReferenceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            出典：{scenarioInfo.costReferenceLabel}
+                          </a>
+                        </details>
                       </div>
 
                       <details className="third-life-selected-description">
@@ -405,6 +418,44 @@ export function SecondLifeNursingSection({
           );
         })}
       </div>
+
+      <details className="third-life-reference-details">
+        <summary>参考額の算定根拠・出典一覧</summary>
+        <div className="third-life-cost-note">
+          <p>
+            「調査平均を基準」は公表された平均値を主に使用しています。「公開資料をもとにしたソフト内試算」は、公的な利用料や制度情報を参考に、このソフトで生活費・住まいとの二重計上を避けるよう調整した目安です。
+          </p>
+          <p>
+            実際の介護費は要介護度、自己負担割合、地域、利用回数、施設や居室の種類などで変わります。候補施設やケアプランが決まった場合は実額へ修正してください。
+          </p>
+        </div>
+        <div className="third-life-reference-list">
+          {THIRD_LIFE_CARE_SCENARIOS.map((scenario) => (
+            <section key={scenario.id} className="third-life-reference-item">
+              <h4>{scenario.label}</h4>
+              <p>
+                参考目安：開始時 {scenario.referenceInitialCostMan}万円 ／ 月{' '}
+                {scenario.referenceMonthlyCostMan}万円
+              </p>
+              <p>
+                <strong>
+                  {scenario.referenceCostBasis === 'survey'
+                    ? '調査平均を基準'
+                    : '公開資料をもとにしたソフト内試算'}
+                </strong>
+              </p>
+              <p>{scenario.referenceCostNote}</p>
+              <a
+                href={scenario.costReferenceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                出典：{scenario.costReferenceLabel}
+              </a>
+            </section>
+          ))}
+        </div>
+      </details>
 
       <div className="second-life-section-actions">
         <p className="second-life-apply-note">{applyMessage}</p>
