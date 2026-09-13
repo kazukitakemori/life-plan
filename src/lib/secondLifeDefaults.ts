@@ -8,6 +8,8 @@ import { captureSecondLifeQ3ApplySnapshot } from './secondLifeApplyStatus';
 import {
   getDefaultSecondLifeHousingBaseCostMan,
   SECOND_LIFE_DEFAULT_RENT_MAN,
+  SECOND_LIFE_MOVING_COST_MAN,
+  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
   SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
 } from './secondLifeHousingFinance';
 
@@ -50,7 +52,9 @@ export function createDefaultSecondLifeState(): SecondLifeState {
     hometownOption: 'renovate_parents',
     newAreaOption: 'rent',
     includeMovingCost: false,
+    movingCostMan: SECOND_LIFE_MOVING_COST_MAN,
     includePostPurchaseRenovation: false,
+    postPurchaseRenovationCostMan: SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
     renovationScope: 'repair_equipment',
     housingBaseCostMan: SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
     housingRentMonthlyMan: SECOND_LIFE_DEFAULT_RENT_MAN,
@@ -231,6 +235,16 @@ export function migrateSecondLifeState(
       ? value.renovationScope
       : defaults.renovationScope;
 
+  const movingCostMan =
+    typeof value.movingCostMan === 'number' && value.movingCostMan >= 0
+      ? value.movingCostMan
+      : defaults.movingCostMan;
+  const postPurchaseRenovationCostMan =
+    typeof value.postPurchaseRenovationCostMan === 'number' &&
+    value.postPurchaseRenovationCostMan >= 0
+      ? value.postPurchaseRenovationCostMan
+      : defaults.postPurchaseRenovationCostMan;
+
   const housingBaseCostMan =
     typeof value.housingBaseCostMan === 'number' && value.housingBaseCostMan >= 0
       ? value.housingBaseCostMan
@@ -239,6 +253,7 @@ export function migrateSecondLifeState(
           stayOption,
           hometownOption,
           newAreaOption,
+          renovationScope,
         });
   const housingRentMonthlyMan =
     typeof value.housingRentMonthlyMan === 'number' && value.housingRentMonthlyMan >= 0
@@ -279,6 +294,8 @@ export function migrateSecondLifeState(
     livingSkip,
     stayOption,
     renovationScope,
+    movingCostMan,
+    postPurchaseRenovationCostMan,
     housingBaseCostMan,
     housingRentMonthlyMan,
     housingPaymentMethod,

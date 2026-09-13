@@ -17,8 +17,6 @@ import { estimateSecondLifeHousingTotalMan } from './secondLifeEstimates';
 import {
   buildSecondLifeHousingFinancePlan,
   getSecondLifeHousingCashPaymentMan,
-  SECOND_LIFE_MOVING_COST_MAN,
-  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
 } from './secondLifeHousingFinance';
 import { formatSecondLifeHousingApplyChangeLines } from './secondLifeHousingApplySummary';
 import type { FamilyMember } from '../types/family';
@@ -263,7 +261,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
     const amountMan =
       getSecondLifeHousingCashPaymentMan(input.secondLifeState) +
       (input.secondLifeState.includeMovingCost
-        ? SECOND_LIFE_MOVING_COST_MAN
+        ? Math.max(0, input.secondLifeState.movingCostMan)
         : 0);
     const birthYear = calcBirthYear(
       input.member.age,
@@ -403,7 +401,9 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
         startAge,
         startMonth: 1,
         monthlyRentMan,
-        movingCostMan: includeMoving ? SECOND_LIFE_MOVING_COST_MAN : 0,
+        movingCostMan: includeMoving
+          ? Math.max(0, input.secondLifeState.movingCostMan)
+          : 0,
         securityDepositMan: monthlyRentMan,
         keyMoneyMan: monthlyRentMan,
         brokerageFeeMan: Math.round(monthlyRentMan * 0.5 * 10) / 10,
@@ -444,7 +444,7 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
           startAge,
         ),
         secondLifeInitialCashCostMan: includeMoving
-          ? SECOND_LIFE_MOVING_COST_MAN
+          ? Math.max(0, input.secondLifeState.movingCostMan)
           : 0,
       },
       { rentals, owned },
@@ -469,7 +469,10 @@ export function applySecondLifeHousingToHousingStateWithChanges(input: {
             ...property.maintenance.improvements,
             createOwnedImprovementEntry(improvementYear, 1, {
               id: SECOND_LIFE_POST_PURCHASE_IMPROVEMENT_ID,
-              amountMan: SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
+              amountMan: Math.max(
+                0,
+                input.secondLifeState.postPurchaseRenovationCostMan,
+              ),
             }),
           ],
         },

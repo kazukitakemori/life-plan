@@ -84,8 +84,12 @@ export interface SecondLifeDesignSnapshot {
   hometownOption: SecondLifeHometownOption;
   newAreaOption: SecondLifeNewAreaOption;
   includeMovingCost: boolean;
+  /** 引越し費の試算額（万円） */
+  movingCostMan: number;
   includePostPurchaseRenovation: boolean;
-  /** リフォームを選んだ場合の工事内容。金額とは連動させない */
+  /** 購入・建て替え後に追加するリフォーム費（万円） */
+  postPurchaseRenovationCostMan: number;
+  /** リフォームを選んだ場合の工事内容 */
   renovationScope: SecondLifeRenovationScope;
   /** リフォーム・購入など住まい本体の試算用目安額（万円） */
   housingBaseCostMan: number;

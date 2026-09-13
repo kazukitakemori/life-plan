@@ -11,10 +11,9 @@ import {
   estimateSecondLifeHousingLoanMonthlyMan,
   getDefaultSecondLifeHousingBaseCostMan,
   getSecondLifeHousingBaseCostLabel,
+  getSecondLifeRenovationReferenceCostMan,
   getSecondLifeHousingLoanPrincipalMan,
   isSecondLifeHousingLoanConfigured,
-  SECOND_LIFE_MOVING_COST_MAN,
-  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
   SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN,
   SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN,
 } from '../../lib/secondLifeHousingFinance';
@@ -95,6 +94,29 @@ export function SecondLifeHousingSection({
         Math.max(0, state.housingLoanDownPaymentMan),
       ),
     });
+  };
+
+  const selectRenovationScope = (scope: SecondLifeState['renovationScope']) => {
+    const currentReference = getSecondLifeRenovationReferenceCostMan(
+      state.renovationScope,
+    );
+    const nextReference = getSecondLifeRenovationReferenceCostMan(scope);
+    const shouldUpdateReference =
+      state.housingBaseCostMan === 0 ||
+      state.housingBaseCostMan === currentReference ||
+      state.housingBaseCostMan === SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN;
+    if (shouldUpdateReference) {
+      onChange({
+        renovationScope: scope,
+        housingBaseCostMan: nextReference,
+        housingLoanDownPaymentMan: Math.min(
+          nextReference,
+          Math.max(0, state.housingLoanDownPaymentMan),
+        ),
+      });
+      return;
+    }
+    onChange({ renovationScope: scope });
   };
 
   const estimatedLoanEndAge =
@@ -204,8 +226,15 @@ export function SecondLifeHousingSection({
                               })
                             }
                           />
-                          購入・建て替え後のリフォーム（仮に
-                          {SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN}万円）
+                          購入・建て替え後のリフォームを見込む
+                        </label>
+                      ) : null}
+                      {state.stayOption === 'purchase_rebuild' &&
+                      state.includePostPurchaseRenovation ? (
+                        <label className="second-life-inline-cost">
+                          <span>追加リフォーム費</span>
+                          <input type="number" min={0} step={10} value={state.postPurchaseRenovationCostMan} onChange={(event) => onChange({ postPurchaseRenovationCostMan: Math.max(0, Number(event.target.value) || 0) })} />
+                          <span>万円</span>
                         </label>
                       ) : null}
                     </>
@@ -249,8 +278,28 @@ export function SecondLifeHousingSection({
                             onChange({ includeMovingCost: event.target.checked })
                           }
                         />
-                        引越し費を見込む（仮に{SECOND_LIFE_MOVING_COST_MAN}万円）
+                        引越し費を見込む
                       </label>
+                      {state.includeMovingCost ? (
+                        <label className="second-life-inline-cost">
+                          <span>引越し費</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={10}
+                            value={state.movingCostMan}
+                            onChange={(event) =>
+                              onChange({
+                                movingCostMan: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              })
+                            }
+                          />
+                          <span>万円</span>
+                        </label>
+                      ) : null}
                       {state.hometownOption === 'purchase_rebuild' ? (
                         <label className="second-life-inline-option">
                           <input
@@ -263,8 +312,15 @@ export function SecondLifeHousingSection({
                               })
                             }
                           />
-                          購入・建て替え後のリフォーム（仮に
-                          {SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN}万円）
+                          購入・建て替え後のリフォームを見込む
+                        </label>
+                      ) : null}
+                      {state.hometownOption === 'purchase_rebuild' &&
+                      state.includePostPurchaseRenovation ? (
+                        <label className="second-life-inline-cost">
+                          <span>追加リフォーム費</span>
+                          <input type="number" min={0} step={10} value={state.postPurchaseRenovationCostMan} onChange={(event) => onChange({ postPurchaseRenovationCostMan: Math.max(0, Number(event.target.value) || 0) })} />
+                          <span>万円</span>
                         </label>
                       ) : null}
                     </>
@@ -308,8 +364,28 @@ export function SecondLifeHousingSection({
                             onChange({ includeMovingCost: event.target.checked })
                           }
                         />
-                        引越し費を見込む（仮に{SECOND_LIFE_MOVING_COST_MAN}万円）
+                        引越し費を見込む
                       </label>
+                      {state.includeMovingCost ? (
+                        <label className="second-life-inline-cost">
+                          <span>引越し費</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={10}
+                            value={state.movingCostMan}
+                            onChange={(event) =>
+                              onChange({
+                                movingCostMan: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              })
+                            }
+                          />
+                          <span>万円</span>
+                        </label>
+                      ) : null}
                       {state.newAreaOption === 'purchase' ? (
                         <label className="second-life-inline-option">
                           <input
@@ -322,8 +398,15 @@ export function SecondLifeHousingSection({
                               })
                             }
                           />
-                          購入・建て替え後のリフォーム（仮に
-                          {SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN}万円）
+                          購入・建て替え後のリフォームを見込む
+                        </label>
+                      ) : null}
+                      {state.newAreaOption === 'purchase' &&
+                      state.includePostPurchaseRenovation ? (
+                        <label className="second-life-inline-cost">
+                          <span>追加リフォーム費</span>
+                          <input type="number" min={0} step={10} value={state.postPurchaseRenovationCostMan} onChange={(event) => onChange({ postPurchaseRenovationCostMan: Math.max(0, Number(event.target.value) || 0) })} />
+                          <span>万円</span>
                         </label>
                       ) : null}
                     </>
@@ -360,7 +443,7 @@ export function SecondLifeHousingSection({
               <p className="second-life-apply-note">
                 初期費用の仮試算：{formatSecondLifeMan(
                   state.housingRentMonthlyMan * 2.5 +
-                    (state.includeMovingCost ? SECOND_LIFE_MOVING_COST_MAN : 0),
+                    (state.includeMovingCost ? state.movingCostMan : 0),
                 )}万円
               </p>
             </div>
@@ -384,10 +467,9 @@ export function SecondLifeHousingSection({
                         name="second-life-renovation-scope"
                         checked={state.renovationScope === scope}
                         onChange={() =>
-                          onChange({
-                            renovationScope:
-                              scope as SecondLifeState['renovationScope'],
-                          })
+                          selectRenovationScope(
+                            scope as SecondLifeState['renovationScope'],
+                          )
                         }
                       />
                       <span>{label}</span>
@@ -396,7 +478,7 @@ export function SecondLifeHousingSection({
                 )}
               </div>
               <p className="second-life-apply-note">
-                工事内容は計画を整理するための分類です。選択を変えても費用は自動では変わりません。
+                工事内容を変えると参考初期値も切り替わります。見積額などを手入力済みの場合は、その金額を保持します。
               </p>
             </div>
           ) : null}
@@ -417,9 +499,27 @@ export function SecondLifeHousingSection({
               </label>
               <p className="second-life-apply-note">
                 {isRenovation
-                  ? `参考初期値は${SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN}万円です。見積額や希望額が分かる場合は、その金額を優先してください。`
+                  ? `この工事内容の参考初期値は${getSecondLifeRenovationReferenceCostMan(state.renovationScope)}万円です。見積額や希望額が分かる場合は、その金額を優先してください。`
                   : '住宅購入・建て替えは地域や物件条件による差が大きいため、全国一律の金額は自動入力していません。見積額や希望額を入力してください。'}
               </p>
+              {isRenovation &&
+              state.housingBaseCostMan !==
+                getSecondLifeRenovationReferenceCostMan(state.renovationScope) ? (
+                <button
+                  type="button"
+                  className="second-life-reference-apply-btn"
+                  onClick={() =>
+                    setBaseCost(
+                      getSecondLifeRenovationReferenceCostMan(
+                        state.renovationScope,
+                      ),
+                    )
+                  }
+                >
+                  参考額
+                  {getSecondLifeRenovationReferenceCostMan(state.renovationScope)}万円を反映
+                </button>
+              ) : null}
               {isRenovation ? (
                 <details className="second-life-reference-details">
                   <summary>参考値の根拠を見る</summary>
@@ -430,7 +530,7 @@ export function SecondLifeHousingSection({
                       {SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN}万円でした。
                     </p>
                     <p>
-                      これは工事内容別の相場ではありません。そのため、このソフトでは工事内容を選んでも金額を自動変更しません。
+                      これは工事内容別の全国相場ではありません。工事規模に合わせた参考初期値を置いていますが、実際の住宅条件・地域・仕様で大きく変わるため、見積額がある場合はそちらを優先してください。
                     </p>
                     <a
                       href="https://j-reform.com/publish/pdf/jitsurei-R7-c.pdf"

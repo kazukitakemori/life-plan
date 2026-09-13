@@ -1,18 +1,37 @@
-import type { SecondLifeState } from '../types/secondLife';
+import type { SecondLifeRenovationScope, SecondLifeState } from '../types/secondLife';
 import type { SecondLifeHousingFinancePlan } from '../types/housing';
 import { getSecondLifeHousingTemplateKind } from './secondLifeLabels';
 
 export const SECOND_LIFE_MOVING_COST_MAN = 50;
 export const SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN = 300;
 
-// 住宅リフォーム推進協議会 2025年度調査（50代以上・実施費用）。
-// 工事内容別の相場ではないため、リフォーム内容を変えても金額は自動変更しない。
+// 住宅リフォーム推進協議会 2025年度調査では、50代以上の実施費用は
+// 中央値220万円・平均358.4万円。工事内容別相場ではないため、以下は
+// 最新の消費者調査と住まいるダイヤル2026見積事例を踏まえた「試算開始用の参考額」。
+// 実際の見積額が分かる場合は必ずユーザー入力を優先する。
 export const SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN = 220;
 export const SECOND_LIFE_RENOVATION_REFERENCE_AVERAGE_50PLUS_MAN = 358.4;
+
+export const SECOND_LIFE_RENOVATION_REFERENCE_BY_SCOPE_MAN: Record<
+  SecondLifeRenovationScope,
+  number
+> = {
+  repair_equipment: 220,
+  partial_room: 300,
+  performance: 300,
+  full: 1000,
+};
+
+export function getSecondLifeRenovationReferenceCostMan(
+  scope: SecondLifeRenovationScope,
+): number {
+  return SECOND_LIFE_RENOVATION_REFERENCE_BY_SCOPE_MAN[scope];
+}
+
 export const SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN =
-  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN;
+  SECOND_LIFE_RENOVATION_REFERENCE_BY_SCOPE_MAN.repair_equipment;
 export const SECOND_LIFE_RENOVATE_PARENTS_HOME_MAN =
-  SECOND_LIFE_RENOVATION_REFERENCE_MEDIAN_50PLUS_MAN;
+  SECOND_LIFE_RENOVATION_REFERENCE_BY_SCOPE_MAN.repair_equipment;
 
 // 購入・建て替え、家賃は地域・物件差が大きいため全国一律額を自動入力しない。
 export const SECOND_LIFE_PURCHASE_REBUILD_MAN = 0;
@@ -21,18 +40,22 @@ export const SECOND_LIFE_DEFAULT_RENT_MAN = 0;
 export function getDefaultSecondLifeHousingBaseCostMan(
   state: Pick<
     SecondLifeState,
-    'housingScenario' | 'stayOption' | 'hometownOption' | 'newAreaOption'
+    | 'housingScenario'
+    | 'stayOption'
+    | 'hometownOption'
+    | 'newAreaOption'
+    | 'renovationScope'
   >,
 ): number {
   if (state.housingScenario === 'stay') {
     if (state.stayOption === 'continue') return 0;
     return state.stayOption === 'renovate'
-      ? SECOND_LIFE_RENOVATE_CURRENT_HOME_MAN
+      ? getSecondLifeRenovationReferenceCostMan(state.renovationScope)
       : SECOND_LIFE_PURCHASE_REBUILD_MAN;
   }
   if (state.housingScenario === 'hometown') {
     return state.hometownOption === 'renovate_parents'
-      ? SECOND_LIFE_RENOVATE_PARENTS_HOME_MAN
+      ? getSecondLifeRenovationReferenceCostMan(state.renovationScope)
       : SECOND_LIFE_PURCHASE_REBUILD_MAN;
   }
   return state.newAreaOption === 'rent' ? 0 : SECOND_LIFE_PURCHASE_REBUILD_MAN;

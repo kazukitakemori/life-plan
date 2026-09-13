@@ -17,10 +17,6 @@ import type {
   SecondLifeState,
 } from '../types/secondLife';
 import { getMemberAgeAtYearEnd } from './memberYearIncome';
-import {
-  SECOND_LIFE_MOVING_COST_MAN,
-  SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN,
-} from './secondLifeHousingFinance';
 
 const PENSION_LIVING_CATEGORY_WEIGHTS: {
   label: string;
@@ -296,7 +292,9 @@ export function estimateSecondLifeHousingTotalMan(
     | 'hometownOption'
     | 'newAreaOption'
     | 'includeMovingCost'
+    | 'movingCostMan'
     | 'includePostPurchaseRenovation'
+    | 'postPurchaseRenovationCostMan'
     | 'housingBaseCostMan'
   >,
 ): number | null {
@@ -304,7 +302,7 @@ export function estimateSecondLifeHousingTotalMan(
 
   const needsMoving = state.includeMovingCost;
   if (needsMoving) {
-    total += SECOND_LIFE_MOVING_COST_MAN;
+    total += Math.max(0, state.movingCostMan);
   }
 
   const purchaseSelected =
@@ -316,7 +314,7 @@ export function estimateSecondLifeHousingTotalMan(
       state.newAreaOption === 'purchase');
 
   if (purchaseSelected && state.includePostPurchaseRenovation) {
-    total += SECOND_LIFE_POST_PURCHASE_RENOVATION_MAN;
+    total += Math.max(0, state.postPurchaseRenovationCostMan);
   }
 
   return total > 0 ? total : null;
