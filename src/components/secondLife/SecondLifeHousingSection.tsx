@@ -107,22 +107,16 @@ export function SecondLifeHousingSection({
       <SecondLifeModeSelector
         title="これからの住まいはどうしますか？"
         useCurrent={useCurrentPlan}
-        currentLabel="今の住まい計画をそのまま使う"
-        reviewLabel="これからの住まいを見直す"
-        currentDescription="「住まい」で入力している期間・費用のまま計算します。"
-        reviewDescription="リフォーム・建て替え・転居など、今の計画から変える内容を設定します。"
+        currentLabel="今の住まい計画を使う"
+        reviewLabel="老後の住まいを見直す"
+        currentDescription="現在の住まい計画をそのまま使います。"
+        reviewDescription="リフォーム・建て替え・転居などを設定します。"
         name="second-life-housing-mode"
         onUseCurrent={() => onChange({ housingSkip: true })}
         onReview={startHousingReview}
       />
 
-      {useCurrentPlan ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            「住まい」で入力した内容のまま計算します。元の入力は変更しません。
-          </p>
-        </div>
-      ) : (
+      {useCurrentPlan ? null : (
         <>
           <div className="second-life-section-toolbar">
             <p className="second-life-apply-note">

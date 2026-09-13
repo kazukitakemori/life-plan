@@ -30,26 +30,20 @@ export function SecondLifeLivingSection({
       <SecondLifeModeSelector
         title={`${state.startAge}歳以降の生活費はどうしますか？`}
         useCurrent={useCurrentPlan}
-        currentLabel="今の生活費計画をそのまま使う"
+        currentLabel="今の生活費計画を使う"
         reviewLabel={`${state.startAge}歳以降の生活費を設定する`}
         currentDescription={
           currentMonthly > 0
-            ? `「生活費」で入力している現在の目安（月${formatSecondLifeMan(currentMonthly)}万円）を、そのまま使います。`
-            : '「生活費」で入力している計画を、そのまま使います。'
+            ? `現在の目安：月${formatSecondLifeMan(currentMonthly)}万円`
+            : '現在の生活費計画を使います。'
         }
-        reviewDescription="現在の生活費を基準に、100%・80%・70%で比較できます。年金額が入力済みなら、年金収入を目安にした試算も選べます。"
+        reviewDescription="100%・80%・70%・年金収入を目安に比較します。"
         name="second-life-living-mode"
         onUseCurrent={() => onChange({ livingSkip: true })}
         onReview={() => onChange({ livingSkip: false })}
       />
 
-      {useCurrentPlan ? (
-        <div className="second-life-section-actions">
-          <p className="second-life-apply-note">
-            「生活費」で入力した内容のまま計算します。元の入力は変更しません。
-          </p>
-        </div>
-      ) : (
+      {useCurrentPlan ? null : (
         <>
           <div className="second-life-section-toolbar">
             <p className="second-life-apply-note">
@@ -103,7 +97,7 @@ export function SecondLifeLivingSection({
 
           <div className="second-life-section-actions">
             <p className="second-life-apply-note">
-              80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。元の「生活費」の入力は残したまま、{state.startAge}歳以降だけ選んだ金額で試算します。
+              80%・70%は比較用の目安です。生活費が自動的にその割合まで下がるという意味ではありません。
             </p>
           </div>
           {!options.some((option) => option.level === 'pension_based') ? (

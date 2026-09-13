@@ -184,7 +184,7 @@ export function SecondLifeGuideStep({
       />
 
       <p className="second-life-guide-intro">
-        元気に暮らす時期を「セカンドライフ」、介護が必要になった後をこのソフトでは「サードライフ」と呼び、同じ「老後の暮らし」の中で分けて設計します。元の入力は消えません。
+        元気に暮らす時期を「セカンドライフ」、介護が必要になった後をこのソフトでは「サードライフ」と呼びます。Q4・Q5の入力はそのままに、ここで選んだ内容を試算に反映します。
       </p>
 
       <div className="second-life-guide-start-age">
