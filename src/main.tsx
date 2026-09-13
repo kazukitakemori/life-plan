@@ -9,6 +9,7 @@ import {
 import { seedPreviewDataIfNeeded } from './lib/previewSeed';
 import './index.css';
 import './secondLifeConsistency.css';
+import './ui-system.css';
 import './mobile.css';
 import './mobileCompact.css';
 

@@ -1,0 +1,190 @@
+:root {
+  /* Step content widths: choose by information density, not by screen history. */
+  --step-width-compact: 880px;
+  --step-width-standard: 920px;
+  --step-width-wide: 1100px;
+
+  /* Interaction / readability */
+  --ui-control-min-height: 40px;
+  --ui-focus-outline: 2px solid var(--color-brand);
+  --ui-focus-offset: 2px;
+}
+
+/*
+ * Step layout system
+ * compact  : short forms / family setup
+ * standard : normal input screens
+ * wide     : tables, charts and multi-column workspaces
+ */
+.step-page {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.family-step {
+  max-width: var(--step-width-compact);
+}
+
+:is(
+    .life-event-step,
+    .living-step,
+    .vehicle-step,
+    .income-step,
+    .pension-step,
+    .loan-step,
+    .insurance-step,
+    .savings-step
+  ) {
+  max-width: var(--step-width-standard);
+}
+
+:is(.education-step, .housing-step, .second-life-step) {
+  max-width: var(--step-width-wide);
+}
+
+/* Keep focus visible without relying on browser-specific default rings. */
+:is(button, input, select, textarea):focus-visible {
+  outline: var(--ui-focus-outline);
+  outline-offset: var(--ui-focus-offset);
+}
+
+/* Page-level explanatory copy should stay readable even on wide steps. */
+.step-lead,
+.purpose-input-note {
+  max-width: 72ch;
+  line-height: var(--leading-relaxed);
+}
+
+/* Shared copy-from-member control. */
+.ui-copy-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.ui-copy-bar-label {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.ui-copy-bar-select {
+  min-width: 136px;
+  height: var(--ui-control-min-height);
+  padding: 0 34px 0 12px;
+  border: 1px solid #c8d0cb;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}
+
+.ui-copy-bar-select:hover:not(:disabled) {
+  border-color: #97a49d;
+}
+
+.ui-copy-bar-button {
+  min-height: var(--ui-control-min-height);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-size: var(--text-md);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ui-copy-bar-button:hover:not(:disabled) {
+  background: var(--color-brand-soft);
+}
+
+.ui-copy-bar-button:disabled,
+.ui-copy-bar-select:disabled {
+  opacity: 0.5;
+}
+
+/* Repeated toolbars should share the same rhythm. */
+:is(.education-toolbar, .life-event-toolbar, .vehicle-toolbar) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* Keep standalone copy bar aligned with the new shared control. */
+.living-step > .ui-copy-bar {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: var(--space-3);
+}
+
+/* Shared visual hierarchy for list sections that already use parallel markup. */
+:is(.loan-section, .insurance-section, .savings-section) {
+  margin-top: var(--space-6);
+}
+
+:is(.loan-section-title, .insurance-section-title, .savings-section-title) {
+  margin: 0 0 var(--space-3);
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+:is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) {
+  padding: var(--space-5);
+  border: 1px dashed #cbd3ce;
+  border-radius: var(--radius-md);
+  background: #fafbfa;
+  color: var(--color-muted);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+}
+
+:is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) p {
+  margin: 0;
+}
+
+/* Header actions are controls too; keep them large enough to target comfortably. */
+.show-all-btn {
+  min-height: var(--ui-control-min-height);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* PC-first, but avoid making the shared controls unusable when the viewport narrows. */
+@media (max-width: 640px) {
+  .ui-copy-bar {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .ui-copy-bar-label {
+    flex-basis: 100%;
+  }
+
+  .ui-copy-bar-select {
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+
+  .ui-copy-bar-button {
+    flex: 1 1 140px;
+  }
+
+  .living-step > .ui-copy-bar {
+    width: 100%;
+  }
+}
