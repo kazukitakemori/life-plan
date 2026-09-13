@@ -1,94 +1,9 @@
-/* Q2 education: phone-specific composition. Desktop table stays unchanged. */
-
-.education-view-toggle-mobile {
-  display: none;
-}
+/* Q2 education: phone-specific input-card composition only.
+ * Shared member tabs / add-member controls / heading actions remain governed
+ * by the common mobile UI layer so Q2 does not diverge from other steps.
+ */
 
 @media (max-width: 768px) {
-  .education-step .step-header {
-    padding-bottom: 8px;
-  }
-
-  .education-step .education-view-toggle-desktop {
-    display: none;
-  }
-
-  .education-view-toggle-mobile {
-    display: flex;
-    width: 100%;
-    margin: 0 0 12px;
-  }
-
-  .education-view-toggle-mobile .show-all-btn {
-    width: 100%;
-    max-width: none;
-    min-height: 44px;
-    padding: 9px 14px;
-    border-radius: 10px;
-  }
-
-  .education-step .education-toolbar {
-    gap: 12px;
-  }
-
-  /* Person tabs scroll by themselves. The add-person control gets its own row. */
-  .education-step .member-tabs-block,
-  .education-step .member-tabs-row {
-    width: 100%;
-    min-width: 0;
-    overflow: visible;
-  }
-
-  .education-step .member-tabs-row {
-    display: block;
-    padding: 0;
-  }
-
-  .education-step .member-tabs {
-    display: flex;
-    width: 100%;
-    max-width: 100%;
-    padding: 0 0 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .education-step .member-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .education-step .member-tab {
-    min-width: min(270px, 78vw);
-    max-width: min(310px, 84vw);
-  }
-
-  .education-step .member-tab-add-wrap {
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .education-step button.member-tab--add {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    min-height: 48px;
-    border-style: dashed;
-    border-color: #b9c7bf;
-    background: #fff;
-  }
-
-  .education-step button.member-tab--add.active {
-    border-color: var(--color-brand);
-    background: var(--color-brand-soft);
-  }
-
-  .education-step .ui-copy-bar {
-    margin-top: 0;
-  }
-
-  /* The desktop table becomes a vertical list of school-stage cards. */
   .education-step .education-table-card {
     width: 100%;
     max-width: 100%;
@@ -226,7 +141,6 @@
     white-space: nowrap;
   }
 
-  /* Start/end periods remain comparable, but no control may overflow. */
   .education-step .education-period-block {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -296,7 +210,6 @@
     min-height: 44px;
   }
 
-  /* Other-expense rows are also stacked into touch-friendly controls. */
   .education-step .education-other-item {
     width: 100%;
     min-width: 0;
@@ -373,10 +286,6 @@
 }
 
 @media (max-width: 430px) {
-  .education-step .member-tab {
-    min-width: min(250px, 80vw);
-  }
-
   .education-step .education-table-cell {
     padding-right: 12px;
     padding-left: 12px;
