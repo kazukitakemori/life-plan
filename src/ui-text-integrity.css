@@ -6,7 +6,25 @@
 
 .step-page :where(button, [role='button']) {
   word-break: keep-all;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Short headings / labels should keep semantic phrases together whenever possible. */
+.step-page :where(
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    label,
+    legend,
+    .ui-field-label,
+    .ui-segmented-label,
+    .living-summary-label,
+    .celebration-gift-block-title
+  ) {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 /* Short atomic labels are always one semantic unit. */
@@ -20,11 +38,22 @@
     .ui-copy-bar-label,
     .ui-copy-bar-button,
     .ui-amount-unit,
-    .education-yen-unit
+    .education-yen-unit,
+    .amount-unit,
+    .rate-unit,
+    .period-until-suffix,
+    .living-summary-auto,
+    .celebration-gift-block-title
   ) {
   white-space: nowrap;
   word-break: keep-all;
   overflow-wrap: normal;
+}
+
+/* Generated compact labels use the same phrase-preserving rule. */
+.step-page :where(.life-event-table-cell, .living-table-cell)::before {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 /* Legacy placeholder actions should not occupy space when the feature is unavailable. */
