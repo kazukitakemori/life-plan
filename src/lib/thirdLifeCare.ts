@@ -3,6 +3,8 @@ import type {
   SecondLifeNursingScenario,
 } from '../types/secondLife';
 
+export type ThirdLifeCareReferenceBasis = 'survey' | 'model';
+
 export interface ThirdLifeCareScenarioInfo {
   id: SecondLifeNursingScenario;
   label: string;
@@ -14,8 +16,13 @@ export interface ThirdLifeCareScenarioInfo {
   referenceInitialCostMan: number;
   /** Q4生活費・Q5住まいとは別に見込む月額の参考追加費用（万円） */
   referenceMonthlyCostMan: number;
+  /** 参考額が調査値ベースか、公開資料をもとにしたソフト内試算か */
+  referenceCostBasis: ThirdLifeCareReferenceBasis;
   /** 自動入力する参考額の考え方 */
   referenceCostNote: string;
+  /** 参考額そのものの根拠として表示する出典 */
+  costReferenceLabel: string;
+  costReferenceUrl: string;
 }
 
 export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
@@ -28,8 +35,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/',
     referenceInitialCostMan: 47.2,
     referenceMonthlyCostMan: 5.3,
+    referenceCostBasis: 'survey',
     referenceCostNote:
-      '2024年度の介護費用調査を基準に、在宅介護の月額平均と介護全体の一時費用平均を参考値として使います。住宅改修などをQ12住まい側で別計上している場合は重複分を調整してください。',
+      '生命保険文化センターの2024年度調査で、介護の一時費用は平均47.2万円、在宅介護の月額費用は平均5.3万円です。この2つを参考目安として使います。住宅改修などをQ12住まい側で別計上している場合は重複分を調整してください。',
+    costReferenceLabel: '生命保険文化センター：介護にはどれくらいの費用・期間がかかる？',
+    costReferenceUrl: 'https://jili.or.jp/lifeplan/lifesecurity/1116.html',
   },
   {
     id: 'day_service',
@@ -41,8 +51,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/publish/group7.html',
     referenceInitialCostMan: 47.2,
     referenceMonthlyCostMan: 6.5,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      '在宅介護の月額平均5.3万円を土台に、通所利用が増えるケースを少し厚めに見た試算値です。利用回数・食費・自己負担割合に応じて調整してください。',
+      '在宅介護の月額平均5.3万円を土台に、デイサービス利用による追加負担を見込んで月6.5万円としたソフト内の試算値です。利用回数・食費・自己負担割合に応じて調整してください。',
+    costReferenceLabel: '生命保険文化センター：2024年度介護費用調査',
+    costReferenceUrl: 'https://jili.or.jp/lifeplan/lifesecurity/1116.html',
   },
   {
     id: 'special_nursing_home',
@@ -54,8 +67,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/commentary/fee.html',
     referenceInitialCostMan: 0,
     referenceMonthlyCostMan: 4,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      '厚生労働省の要介護5・1割負担の例では施設サービス費が月約2.6〜2.9万円です。ここでは日常生活上の追加分も少し見込み、住居費・食費を除く追加額として月4万円を置きます。',
+      '厚生労働省の要介護5・1割負担の例では、特養の施設サービス費は月約2.6〜2.9万円です。ここでは日常生活上の追加分も少し見込み、住居費・食費を除く追加額として月4万円を置いています。',
+    costReferenceLabel: '厚生労働省：介護サービスの利用料',
+    costReferenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/commentary/fee.html',
   },
   {
     id: 'paid_care',
@@ -67,8 +83,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.mhlw.go.jp/content/12300000/001447747.pdf',
     referenceInitialCostMan: 0,
     referenceMonthlyCostMan: 5,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      '住居費・食費・入居一時金はQ4/Q5との重複を避けるため自動計上せず、介護保険自己負担や介護に伴う追加支出の参考枠として月5万円を置きます。',
+      '厚生労働省の特定施設入居者生活介護の自己負担額を参考にしつつ、住居費・食費・入居一時金はQ4/Q5との重複を避けて除外し、介護に伴う追加支出の参考枠として月5万円を置いています。',
+    costReferenceLabel: '厚生労働省：特定施設入居者生活介護',
+    costReferenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/publish/group17.html',
   },
   {
     id: 'paid_residential',
@@ -80,8 +99,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.mhlw.go.jp/content/12300000/001447747.pdf',
     referenceInitialCostMan: 0,
     referenceMonthlyCostMan: 6,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      '外付けの訪問介護等を使う前提で、住居費・食費とは別の介護追加分を月6万円で仮置きします。利用量が多い場合は実際のケアプランに合わせて増額してください。',
+      '外部の訪問介護などを利用する前提で、住居費・食費とは別の介護追加分を月6万円で仮置きしたソフト内の試算値です。利用量が多い場合は実際のケアプランに合わせて増額してください。',
+    costReferenceLabel: '厚生労働省：高齢者向け住まいの違い',
+    costReferenceUrl: 'https://www.mhlw.go.jp/content/12300000/001447747.pdf',
   },
   {
     id: 'serviced_elderly',
@@ -93,8 +115,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.mlit.go.jp/jutakukentiku/house/jutakukentiku_house_tk3_000005.html',
     referenceInitialCostMan: 0,
     referenceMonthlyCostMan: 6,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      'サ高住の住居関連費とは分けて、外部介護サービス等の追加分として月6万円を仮置きします。特定施設指定の有無や要介護度で大きく変わるため、候補住宅が決まれば修正してください。',
+      'サ高住の住居関連費とは分け、外部介護サービスなどの追加分として月6万円を仮置きしたソフト内の試算値です。特定施設指定の有無や要介護度で大きく変わるため、候補住宅が決まれば修正してください。',
+    costReferenceLabel: '国土交通省：サービス付き高齢者向け住宅',
+    costReferenceUrl: 'https://www.mlit.go.jp/jutakukentiku/house/jutakukentiku_house_tk3_000005.html',
   },
   {
     id: 'group_home',
@@ -106,8 +131,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/publish/group18.html',
     referenceInitialCostMan: 0,
     referenceMonthlyCostMan: 4,
+    referenceCostBasis: 'model',
     referenceCostNote:
-      '厚生労働省の1割負担額は要介護度に応じて1日あたりおおむね700〜800円台です。住居費・食費を除き、日常生活上の追加分も含めた参考額として月4万円を置きます。',
+      '厚生労働省の1割負担額は要介護度に応じて1日あたりおおむね700〜800円台です。住居費・食費を除き、日常生活上の追加分も含めた参考額として月4万円を置いています。',
+    costReferenceLabel: '厚生労働省：認知症グループホーム',
+    costReferenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/publish/group18.html',
   },
   {
     id: 'other',
@@ -118,8 +146,11 @@ export const THIRD_LIFE_CARE_SCENARIOS: ThirdLifeCareScenarioInfo[] = [
     referenceUrl: 'https://www.kaigokensaku.mhlw.go.jp/',
     referenceInitialCostMan: 47.2,
     referenceMonthlyCostMan: 9,
+    referenceCostBasis: 'survey',
     referenceCostNote:
-      '介護方法がまだ決まっていないため、2024年度の介護費用調査の全体平均（一時47.2万円・月9.0万円）を仮置きします。方針が決まったら該当する介護方法へ変更してください。',
+      '介護方法がまだ決まっていないため、生命保険文化センターの2024年度調査の全体平均（一時47.2万円・月9.0万円）を仮置きします。方針が決まったら該当する介護方法へ変更してください。',
+    costReferenceLabel: '生命保険文化センター：介護にはどれくらいの費用・期間がかかる？',
+    costReferenceUrl: 'https://jili.or.jp/lifeplan/lifesecurity/1116.html',
   },
 ];
 
