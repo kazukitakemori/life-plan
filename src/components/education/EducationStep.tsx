@@ -165,6 +165,17 @@ export function EducationStep({
     setActiveMemberId(memberId);
   };
 
+  const toggleAllMembersButton = (
+    <button
+      type="button"
+      className={`show-all-btn${showAllMembers ? ' active' : ''}`}
+      onClick={() => setShowAllMembers((prev) => !prev)}
+      aria-pressed={showAllMembers}
+    >
+      {showAllMembers ? '個人ごとに表示' : '全員まとめて表示'}
+    </button>
+  );
+
   if (!headMember) {
     return (
       <div className="step-page">
@@ -181,14 +192,9 @@ export function EducationStep({
         number={2}
         title="教育費"
         actions={
-          <button
-            type="button"
-            className={`show-all-btn${showAllMembers ? ' active' : ''}`}
-            onClick={() => setShowAllMembers((prev) => !prev)}
-            aria-pressed={showAllMembers}
-          >
-            {showAllMembers ? '個人ごとに表示' : '全員まとめて表示'}
-          </button>
+          <div className="education-view-toggle-desktop">
+            {toggleAllMembersButton}
+          </div>
         }
       />
 
@@ -197,6 +203,10 @@ export function EducationStep({
           {purposeNote}
         </p>
       ) : null}
+
+      <div className="education-view-toggle-mobile">
+        {toggleAllMembersButton}
+      </div>
 
       {!showAllMembers ? (
         <div className="education-toolbar">
