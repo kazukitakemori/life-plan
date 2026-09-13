@@ -1,0 +1,33 @@
+/*
+ * Shared text-integrity rules for compact UI labels.
+ * Japanese action labels and short metadata should not split character-by-character
+ * just because a grid/flex column becomes narrow on phones.
+ */
+
+.step-page :where(button, [role='button']) {
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+/* Short atomic labels are always one semantic unit. */
+.step-page :where(
+    .member-tab-name,
+    .member-tab-birth,
+    .member-tab-badge,
+    .member-tab-add-menu-name,
+    .member-tab-add-menu-meta,
+    .member-tabs-summary-toggle,
+    .ui-copy-bar-label,
+    .ui-copy-bar-button,
+    .ui-amount-unit,
+    .education-yen-unit
+  ) {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+/* Legacy placeholder actions should not occupy space when the feature is unavailable. */
+.show-all-btn:disabled {
+  display: none;
+}
