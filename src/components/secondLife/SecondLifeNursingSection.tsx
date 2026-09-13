@@ -1,6 +1,7 @@
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   formatThirdLifeCareDuration,
+  getThirdLifeCareReferenceCost,
   getThirdLifeCareScenarioInfo,
   getThirdLifeCareStartAge,
   THIRD_LIFE_CARE_SCENARIOS,
@@ -84,11 +85,11 @@ export function SecondLifeNursingSection({
     ? '介護の想定が未設定です。本人・配偶者それぞれについて、介護費を見込むかどうかを選んでください。'
     : hasUnpricedDesign
       ? '介護費を見込む人は、開始時費用または月額追加費用を入力してください。金額が0のままでは反映しません。'
-    : applyStatus === 'done'
-      ? '現在のサードライフ設計はキャッシュフローへ反映済みです。'
-      : applyStatus === 'partial'
-        ? 'サードライフ設計と現在の連動データに差分があります。下のボタンで最新内容を反映してください。'
-        : 'サードライフ設計をキャッシュフローへ反映してください。';
+      : applyStatus === 'done'
+        ? '現在のサードライフ設計はキャッシュフローへ反映済みです。'
+        : applyStatus === 'partial'
+          ? 'サードライフ設計と現在の連動データに差分があります。下のボタンで最新内容を反映してください。'
+          : 'サードライフ設計をキャッシュフローへ反映してください。';
 
   return (
     <section className="second-life-section" aria-labelledby="second-life-nursing-title">
@@ -123,10 +124,13 @@ export function SecondLifeNursingSection({
         <summary>費用の入力方法を見る</summary>
         <div className="third-life-cost-note">
           <p>
+            介護の想定を選ぶと、参考目安額を自動で入力します。入力後の金額は、そのまま自由に修正できます。
+          </p>
+          <p>
             ここで入力する費用は、「生活費」「住まい」で既に計上している金額とは別に、介護によって追加で家計から出る金額です。
           </p>
           <p>
-            施設の公表月額には食費・居住費などが含まれる場合があります。その総額をそのまま追加すると二重計上になることがあるため、自動では入力しません。実際の見積や現在の生活費との差額が分かる場合は、その追加分を入力してください。
+            施設系の参考額は、家賃・居住費・食費などをそのまま上乗せすると二重計上になりやすいため、それらを除いた介護サービス自己負担や介護に伴う追加支出を中心に置いています。実際の候補施設やケアプランが決まったら、見積に合わせて修正してください。
           </p>
         </div>
       </details>
@@ -136,6 +140,7 @@ export function SecondLifeNursingSection({
           const design = state.nursingByTarget[key];
           const configured = design.configured !== false;
           const scenarioInfo = getThirdLifeCareScenarioInfo(design.scenario);
+          const referenceCost = getThirdLifeCareReferenceCost(design.scenario);
           const hasCost = design.initialCostMan > 0 || design.monthlyCostMan > 0;
           const effectiveStartAge = getThirdLifeCareStartAge(
             design,
@@ -146,6 +151,7 @@ export function SecondLifeNursingSection({
             1,
             member.expectedLifespan - effectiveStartAge + 1,
           );
+
           return (
             <article
               key={key}
@@ -155,8 +161,8 @@ export function SecondLifeNursingSection({
                   : design.skip
                     ? 'second-life-guide-card second-life-guide-card--done'
                     : hasCost
-                    ? 'second-life-guide-card second-life-guide-card--done'
-                    : 'second-life-guide-card second-life-guide-card--partial'
+                      ? 'second-life-guide-card second-life-guide-card--done'
+                      : 'second-life-guide-card second-life-guide-card--partial'
               }
             >
               <div className="second-life-guide-card-head">
@@ -169,9 +175,9 @@ export function SecondLifeNursingSection({
                       ? '未設定'
                       : design.skip
                         ? '今回は介護費を見込まない'
-                      : hasCost
-                        ? `${effectiveStartAge}歳〜 ${scenarioInfo.label}・月${design.monthlyCostMan}万円＋開始時${design.initialCostMan}万円（${formatThirdLifeCareDuration(design)}）`
-                        : `${effectiveStartAge}歳〜 ${scenarioInfo.label}（費用未入力）`}
+                        : hasCost
+                          ? `${effectiveStartAge}歳〜 ${scenarioInfo.label}・月${design.monthlyCostMan}万円＋開始時${design.initialCostMan}万円（${formatThirdLifeCareDuration(design)}）`
+                          : `${effectiveStartAge}歳〜 ${scenarioInfo.label}（費用未入力）`}
                   </p>
                 </div>
               </div>
@@ -180,9 +186,17 @@ export function SecondLifeNursingSection({
                 <input
                   type="checkbox"
                   checked={configured && design.skip}
-                  onChange={(event) =>
-                    updateTarget(key, { skip: event.target.checked })
-                  }
+                  onChange={(event) => {
+                    const skip = event.target.checked;
+                    if (!skip && design.initialCostMan <= 0 && design.monthlyCostMan <= 0) {
+                      updateTarget(key, {
+                        skip: false,
+                        ...getThirdLifeCareReferenceCost(design.scenario),
+                      });
+                      return;
+                    }
+                    updateTarget(key, { skip });
+                  }}
                 />
                 今回は介護費を見込まない
               </label>
@@ -193,13 +207,21 @@ export function SecondLifeNursingSection({
                     <span>介護の想定</span>
                     <select
                       className="select-input"
-                      value={design.scenario}
-                      onChange={(event) =>
+                      value={configured ? design.scenario : ''}
+                      onChange={(event) => {
+                        const scenario = event.target.value as SecondLifeNursingScenario;
                         updateTarget(key, {
-                          scenario: event.target.value as SecondLifeNursingScenario,
-                        })
-                      }
+                          scenario,
+                          skip: false,
+                          ...getThirdLifeCareReferenceCost(scenario),
+                        });
+                      }}
                     >
+                      {!configured ? (
+                        <option value="" disabled>
+                          選択してください
+                        </option>
+                      ) : null}
                       {THIRD_LIFE_CARE_SCENARIOS.map((scenario) => (
                         <option key={scenario.id} value={scenario.id}>
                           {scenario.label}
@@ -208,151 +230,232 @@ export function SecondLifeNursingSection({
                     </select>
                   </label>
 
-                  <details className="third-life-selected-description">
-                    <summary>この選択肢について</summary>
-                    <p>{scenarioInfo.description}</p>
-                    {scenarioInfo.note ? <p>{scenarioInfo.note}</p> : null}
-                    <a
-                      href={scenarioInfo.referenceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {scenarioInfo.referenceLabel}
-                    </a>
-                  </details>
+                  {configured ? (
+                    <>
+                      <div className="third-life-cost-note">
+                        <p>
+                          参考目安：開始時 {scenarioInfo.referenceInitialCostMan}万円 ／ 月{' '}
+                          {scenarioInfo.referenceMonthlyCostMan}万円
+                        </p>
+                        <button
+                          type="button"
+                          className="second-life-guide-nav-btn"
+                          onClick={() => updateTarget(key, referenceCost)}
+                        >
+                          参考目安を反映
+                        </button>
+                        <details className="third-life-selected-description">
+                          <summary>参考額の根拠を見る</summary>
+                          <p>
+                            <strong>
+                              {scenarioInfo.referenceCostBasis === 'survey'
+                                ? '調査平均を基準'
+                                : '公開資料をもとにしたソフト内試算'}
+                            </strong>
+                          </p>
+                          <p>{scenarioInfo.referenceCostNote}</p>
+                          <a
+                            href={scenarioInfo.costReferenceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            出典：{scenarioInfo.costReferenceLabel}
+                          </a>
+                        </details>
+                      </div>
 
-                  <label className="second-life-inline-option third-life-field-row">
-                    <span>開始年齢</span>
-                    <span>
-                      <input
-                        type="number"
-                        className="second-life-age-input"
-                        min={60}
-                        max={maxStartAge}
-                        value={effectiveStartAge}
-                        onChange={(event) => {
-                          const startAge = Math.min(
-                            maxStartAge,
-                            Math.max(60, Number(event.target.value) || 60),
-                          );
-                          const remainingYears = Math.max(
-                            1,
-                            member.expectedLifespan - startAge + 1,
-                          );
-                          updateTarget(key, {
-                            startAge,
-                            durationYears:
-                              design.durationMode === 'years'
-                                ? Math.min(
-                                    remainingYears,
-                                    design.durationYears ?? 5,
-                                  )
-                                : null,
-                          });
-                        }}
-                      />
-                      歳〜
-                    </span>
-                  </label>
+                      <details className="third-life-selected-description">
+                        <summary>この選択肢について</summary>
+                        <p>{scenarioInfo.description}</p>
+                        {scenarioInfo.note ? <p>{scenarioInfo.note}</p> : null}
+                        <a
+                          href={scenarioInfo.referenceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {scenarioInfo.referenceLabel}
+                        </a>
+                      </details>
 
-                  <label className="second-life-inline-option third-life-field-row">
-                    <span>開始時に追加でかかる費用</span>
-                    <span>
-                      <input
-                        type="number"
-                        className="amount-input"
-                        min={0}
-                        step={1}
-                        value={design.initialCostMan}
-                        onChange={(event) =>
-                          updateTarget(key, {
-                            initialCostMan: Math.max(
-                              0,
-                              Number(event.target.value) || 0,
-                            ),
-                          })
-                        }
-                      />
-                      万円
-                    </span>
-                  </label>
+                      <label className="second-life-inline-option third-life-field-row">
+                        <span>開始年齢</span>
+                        <span>
+                          <input
+                            type="number"
+                            className="second-life-age-input"
+                            min={60}
+                            max={maxStartAge}
+                            value={effectiveStartAge}
+                            onChange={(event) => {
+                              const startAge = Math.min(
+                                maxStartAge,
+                                Math.max(60, Number(event.target.value) || 60),
+                              );
+                              const remainingYears = Math.max(
+                                1,
+                                member.expectedLifespan - startAge + 1,
+                              );
+                              updateTarget(key, {
+                                startAge,
+                                durationYears:
+                                  design.durationMode === 'years'
+                                    ? Math.min(
+                                        remainingYears,
+                                        design.durationYears ?? 5,
+                                      )
+                                    : null,
+                              });
+                            }}
+                          />
+                          歳〜
+                        </span>
+                      </label>
 
-                  <label className="second-life-inline-option third-life-field-row">
-                    <span>毎月追加でかかる費用</span>
-                    <span>
-                      <input
-                        type="number"
-                        className="amount-input"
-                        min={0}
-                        step={0.1}
-                        value={design.monthlyCostMan}
-                        onChange={(event) =>
-                          updateTarget(key, {
-                            monthlyCostMan: Math.max(
-                              0,
-                              Number(event.target.value) || 0,
-                            ),
-                          })
-                        }
-                      />
-                      万円／月
-                    </span>
-                  </label>
+                      <label className="second-life-inline-option third-life-field-row">
+                        <span>開始時に追加でかかる費用</span>
+                        <span>
+                          <input
+                            type="number"
+                            className="amount-input"
+                            min={0}
+                            step={0.1}
+                            value={design.initialCostMan}
+                            onChange={(event) =>
+                              updateTarget(key, {
+                                initialCostMan: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              })
+                            }
+                          />
+                          万円
+                        </span>
+                      </label>
 
-                  <label className="second-life-inline-option third-life-field-row">
-                    <span>想定期間</span>
-                    <select
-                      className="select-input"
-                      value={design.durationMode}
-                      onChange={(event) => {
-                        const durationMode =
-                          event.target.value === 'years' ? 'years' : 'lifetime';
-                        updateTarget(key, {
-                          durationMode,
-                          durationYears:
-                            durationMode === 'years'
-                              ? Math.min(maxDurationYears, design.durationYears ?? 5)
-                              : null,
-                        });
-                      }}
-                    >
-                      <option value="lifetime">一生涯</option>
-                      <option value="years">年数を指定</option>
-                    </select>
-                  </label>
+                      <label className="second-life-inline-option third-life-field-row">
+                        <span>毎月追加でかかる費用</span>
+                        <span>
+                          <input
+                            type="number"
+                            className="amount-input"
+                            min={0}
+                            step={0.1}
+                            value={design.monthlyCostMan}
+                            onChange={(event) =>
+                              updateTarget(key, {
+                                monthlyCostMan: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              })
+                            }
+                          />
+                          万円／月
+                        </span>
+                      </label>
 
-                  {design.durationMode === 'years' ? (
-                    <label className="second-life-inline-option third-life-field-row">
-                      <span>介護を見込む年数</span>
-                      <span>
-                        <input
-                          type="number"
-                          className="second-life-age-input"
-                          min={1}
-                          max={maxDurationYears}
-                          value={Math.min(
-                            maxDurationYears,
-                            design.durationYears ?? Math.min(5, maxDurationYears),
-                          )}
-                          onChange={(event) =>
+                      <label className="second-life-inline-option third-life-field-row">
+                        <span>想定期間</span>
+                        <select
+                          className="select-input"
+                          value={design.durationMode}
+                          onChange={(event) => {
+                            const durationMode =
+                              event.target.value === 'years' ? 'years' : 'lifetime';
                             updateTarget(key, {
-                              durationYears: Math.min(
+                              durationMode,
+                              durationYears:
+                                durationMode === 'years'
+                                  ? Math.min(
+                                      maxDurationYears,
+                                      design.durationYears ?? 5,
+                                    )
+                                  : null,
+                            });
+                          }}
+                        >
+                          <option value="lifetime">一生涯</option>
+                          <option value="years">年数を指定</option>
+                        </select>
+                      </label>
+
+                      {design.durationMode === 'years' ? (
+                        <label className="second-life-inline-option third-life-field-row">
+                          <span>介護を見込む年数</span>
+                          <span>
+                            <input
+                              type="number"
+                              className="second-life-age-input"
+                              min={1}
+                              max={maxDurationYears}
+                              value={Math.min(
                                 maxDurationYears,
-                                Math.max(1, Number(event.target.value) || 1),
-                              ),
-                            })
-                          }
-                        />
-                        年間
-                      </span>
-                    </label>
-                  ) : null}
+                                design.durationYears ?? Math.min(5, maxDurationYears),
+                              )}
+                              onChange={(event) =>
+                                updateTarget(key, {
+                                  durationYears: Math.min(
+                                    maxDurationYears,
+                                    Math.max(1, Number(event.target.value) || 1),
+                                  ),
+                                })
+                              }
+                            />
+                            年間
+                          </span>
+                        </label>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="second-life-apply-note">
+                      介護の想定を選ぶと、参考目安額を自動で入力します。
+                    </p>
+                  )}
                 </div>
               ) : null}
             </article>
           );
         })}
       </div>
+
+      <details className="third-life-reference-details">
+        <summary>参考額の算定根拠・出典一覧</summary>
+        <div className="third-life-cost-note">
+          <p>
+            「調査平均を基準」は公表された平均値を主に使用しています。「公開資料をもとにしたソフト内試算」は、公的な利用料や制度情報を参考に、このソフトで生活費・住まいとの二重計上を避けるよう調整した目安です。
+          </p>
+          <p>
+            実際の介護費は要介護度、自己負担割合、地域、利用回数、施設や居室の種類などで変わります。候補施設やケアプランが決まった場合は実額へ修正してください。
+          </p>
+        </div>
+        <div className="third-life-reference-list">
+          {THIRD_LIFE_CARE_SCENARIOS.map((scenario) => (
+            <section key={scenario.id} className="third-life-reference-item">
+              <h4>{scenario.label}</h4>
+              <p>
+                参考目安：開始時 {scenario.referenceInitialCostMan}万円 ／ 月{' '}
+                {scenario.referenceMonthlyCostMan}万円
+              </p>
+              <p>
+                <strong>
+                  {scenario.referenceCostBasis === 'survey'
+                    ? '調査平均を基準'
+                    : '公開資料をもとにしたソフト内試算'}
+                </strong>
+              </p>
+              <p>{scenario.referenceCostNote}</p>
+              <a
+                href={scenario.costReferenceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                出典：{scenario.costReferenceLabel}
+              </a>
+            </section>
+          ))}
+        </div>
+      </details>
 
       <div className="second-life-section-actions">
         <p className="second-life-apply-note">{applyMessage}</p>
