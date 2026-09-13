@@ -301,22 +301,7 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Q12 workspace: retain the existing 2x2 structure, but tighten it for phones. */
-  .second-life-workspace-tabs {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .second-life-workspace-tab {
-    min-width: 0;
-    min-height: 48px;
-    padding: 9px 7px;
-    font-size: 0.8125rem;
-    line-height: 1.35;
-    white-space: normal;
-    touch-action: manipulation;
-  }
-
+  /* Shared Q12 containers only; tab behavior itself is owned by mobileSecondLife.css. */
   .second-life-workspace-panel,
   .second-life-renovation-scope,
   .third-life-reference-details {
@@ -343,10 +328,6 @@
   .ui-copy-bar-select,
   .ui-copy-bar-button {
     min-height: var(--mobile-touch-target);
-  }
-
-  .member-tab {
-    min-width: min(204px, 82vw);
   }
 }
 
@@ -381,11 +362,5 @@
   .family-birth-controls .ui-select {
     padding-right: 18px;
     padding-left: 6px;
-  }
-
-  .second-life-workspace-tab {
-    padding-right: 5px;
-    padding-left: 5px;
-    font-size: 0.78125rem;
   }
 }
