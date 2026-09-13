@@ -17,6 +17,8 @@ export type SecondLifeNursingScenario = 'home' | 'day_service' | 'facility';
 export type SecondLifeNursingTarget = 'head' | 'spouse';
 
 export interface SecondLifeNursingDesign {
+  /** false は初期参考値のままで、ユーザーがまだ設定していない状態 */
+  configured?: boolean;
   skip: boolean;
   scenario: SecondLifeNursingScenario;
   startAge: number;
@@ -57,6 +59,10 @@ export interface SecondLifeDesignSnapshot {
 }
 
 export interface SecondLifeState extends SecondLifeDesignSnapshot {
+  /** false は新規作成直後など、住まい方をまだ選んでいない状態 */
+  housingConfigured?: boolean;
+  /** false は新規作成直後など、生活水準をまだ選んでいない状態 */
+  livingConfigured?: boolean;
   /** 最後に Q3 へ反映した設計（未設定＝一度も反映していない） */
   lastAppliedQ3Snapshot?: SecondLifeQ3ApplySnapshot | null;
 }
