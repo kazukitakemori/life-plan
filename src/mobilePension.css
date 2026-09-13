@@ -1,0 +1,333 @@
+/* Q8 年金: 年金固有の情報構造だけをスマホ向けに再構成する。
+   人物タブ・追加操作・共通フォーム外観は共通UI層に委ねる。 */
+
+@media (max-width: 768px) {
+  .pension-step .pension-section,
+  .pension-step .pension-estimate-panel {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pension-step .pension-section {
+    padding: 16px 14px 18px;
+    border-radius: var(--radius-md);
+  }
+
+  .pension-step .pension-section-title {
+    margin-bottom: 16px;
+  }
+
+  .pension-step .pension-subsection {
+    min-width: 0;
+  }
+
+  .pension-step .pension-subsection-title,
+  .pension-step .benefit-settings-block-title,
+  .pension-step .teikibin-block-title {
+    line-height: 1.5;
+    overflow-wrap: normal;
+    word-break: keep-all;
+  }
+
+  /* 年齢軸は情報量を落とさず、カード内だけ横スクロールできるようにする。 */
+  .pension-step .pension-timeline {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 46px;
+    padding-bottom: 4px;
+  }
+
+  .pension-step .pension-timeline-axis,
+  .pension-step .pension-timeline-bars,
+  .pension-step > .pension-section .pension-timeline-bar--full {
+    min-width: 620px;
+  }
+
+  .pension-step .pension-enrollment-panel {
+    min-width: 0;
+  }
+
+  .pension-step .pension-enrollment-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .pension-step .pension-enrollment-label {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .pension-step .pension-enrollment-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pension-step .pension-help-icon {
+    flex: 0 0 auto;
+  }
+
+  .pension-step .pension-info-box {
+    margin-top: 12px;
+    padding: 12px;
+    line-height: 1.65;
+  }
+
+  /* ねんきん定期便は左右2列を縦積みにする。密な原票形式の表は
+     意味を壊さず、各ブロック内だけ横スクロールさせる。 */
+  .pension-step .teikibin-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .pension-step .teikibin-form-left,
+  .pension-step .teikibin-form-right,
+  .pension-step .teikibin-block {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pension-step .teikibin-block {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .pension-step .teikibin-period-table,
+  .pension-step .teikibin-amount-table,
+  .pension-step .teikibin-recent-table,
+  .pension-step .teikibin-recent-table-over50,
+  .pension-step .teikibin-amount-table-over50 {
+    min-width: 700px;
+  }
+
+  .pension-step .pension-field-input,
+  .pension-step .pension-field-select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* 老齢年金の横長表は、スマホでは年金種別ごとのカードにする。 */
+  .pension-step .benefit-settings-table,
+  .pension-step .benefit-settings-table tbody,
+  .pension-step .benefit-settings-table tr,
+  .pension-step .benefit-settings-table th,
+  .pension-step .benefit-settings-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .pension-step .benefit-settings-table {
+    border: 0;
+    background: transparent;
+  }
+
+  .pension-step .benefit-settings-table thead {
+    display: none;
+  }
+
+  .pension-step .benefit-settings-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .pension-step .benefit-settings-table tr {
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .pension-step .benefit-settings-table .benefit-row-label {
+    padding: 11px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-soft);
+    text-align: left;
+    font-weight: 700;
+  }
+
+  .pension-step .benefit-settings-table td {
+    padding: 12px;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .pension-step .benefit-settings-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .pension-step .benefit-start-age-cell::before,
+  .pension-step .benefit-amount-cell::before,
+  .pension-step .benefit-survivor-cell::before {
+    display: block;
+    margin-bottom: 8px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-muted);
+  }
+
+  .pension-step .benefit-start-age-cell::before {
+    content: '受取開始年齢';
+  }
+
+  .pension-step .benefit-amount-cell::before {
+    content: '基本金額';
+  }
+
+  .pension-step .benefit-survivor-cell::before {
+    content: '遺族年金';
+  }
+
+  .pension-step .benefit-start-age-inner,
+  .pension-step .benefit-amount-options,
+  .pension-step .benefit-amount-option,
+  .pension-step .benefit-amount-option-manual {
+    min-width: 0;
+  }
+
+  .pension-step .benefit-start-age-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .pension-step .benefit-amount-options {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pension-step .benefit-amount-option {
+    width: 100%;
+  }
+
+  .pension-step .benefit-amount-option-label,
+  .pension-step .benefit-amount-option-manual {
+    line-height: 1.5;
+  }
+
+  .pension-step .benefit-amount-option-manual {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .pension-step .pension-field-input--benefit,
+  .pension-step .pension-field-input--benefit-wide {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 遺族年金の死亡年月・受給額も縦方向で読めるようにする。 */
+  .pension-step .benefit-death-date {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+    margin-top: 10px;
+    white-space: normal;
+  }
+
+  .pension-step .benefit-survivor-table,
+  .pension-step .benefit-survivor-table tbody,
+  .pension-step .benefit-survivor-table tr,
+  .pension-step .benefit-survivor-table th,
+  .pension-step .benefit-survivor-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .pension-step .benefit-survivor-table {
+    border: 0;
+  }
+
+  .pension-step .benefit-survivor-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .pension-step .benefit-survivor-table tr {
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .pension-step .benefit-survivor-table .benefit-row-label {
+    padding: 11px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-soft);
+    text-align: left;
+  }
+
+  .pension-step .benefit-survivor-input-cell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+    border: 0;
+  }
+
+  .pension-step .benefit-survivor-suffix,
+  .pension-step .benefit-receiving-label {
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  /* 試算グラフはグラフ→凡例の順で縦積み。 */
+  .pension-step .pension-estimate-panel .lifetime-chart-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pension-step .pension-estimate-panel .lifetime-simulation-align {
+    display: block;
+    min-width: 0;
+  }
+
+  .pension-step .pension-estimate-panel .sim-align-label,
+  .pension-step .pension-estimate-panel .sim-align-gap {
+    display: none;
+  }
+
+  .pension-step .pension-estimate-panel .sim-align-plot,
+  .pension-step .pension-estimate-panel .sim-align-sidebar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pension-step .pension-estimate-panel .sim-align-sidebar {
+    margin-top: 12px;
+  }
+
+  .pension-step .pension-estimate-panel .lifetime-chart-legend-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .pension-step .pension-section {
+    padding-inline: 12px;
+  }
+
+  .pension-step .benefit-start-age-inner,
+  .pension-step .benefit-death-date {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pension-step .benefit-amount-option-manual {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pension-step .benefit-amount-option-manual .pension-help-icon {
+    grid-column: 2;
+  }
+}
