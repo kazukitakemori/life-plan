@@ -146,12 +146,13 @@ export function SecondLifeNursingSection({
                         const previousDefault = getDefaultNursingAnnualCostMan(
                           design.scenario,
                         );
+                        const shouldUseScenarioDefault =
+                          !configured || design.annualCostMan === previousDefault;
                         updateTarget(key, {
                           scenario,
-                          annualCostMan:
-                            design.annualCostMan === previousDefault
-                              ? getDefaultNursingAnnualCostMan(scenario)
-                              : design.annualCostMan,
+                          annualCostMan: shouldUseScenarioDefault
+                            ? getDefaultNursingAnnualCostMan(scenario)
+                            : design.annualCostMan,
                         });
                       }}
                     >
