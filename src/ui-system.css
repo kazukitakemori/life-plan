@@ -110,6 +110,14 @@
     box-shadow var(--ui-transition-fast);
 }
 
+.ui-btn--compact {
+  width: auto;
+  height: auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+}
+
 /* Shared copy-from-member control. */
 .ui-copy-bar {
   display: flex;
@@ -157,6 +165,62 @@
 .ui-copy-bar-button:disabled,
 .ui-copy-bar-select:disabled {
   opacity: 0.5;
+}
+
+/* Shared view-mode switch. Keep it near the content it changes. */
+.ui-segmented {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ui-segmented-label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-normal);
+}
+
+.ui-segmented-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: #f4f6f5;
+}
+
+.ui-segmented-button {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--ui-control-radius) - 2px);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition:
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+.ui-segmented-button:hover:not(.active) {
+  background: var(--ui-surface-hover);
+  color: var(--color-ink);
+}
+
+.ui-segmented-button.active {
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  box-shadow: inset 0 0 0 1px rgb(47 111 78 / 10%);
+}
+
+.step-view-control {
+  justify-content: flex-start;
+  margin: 0 0 var(--space-4);
 }
 
 /*
@@ -371,6 +435,27 @@ button.member-tab--add,
 
 :is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) p {
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .step-view-control {
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .step-view-control .ui-segmented-label {
+    flex-basis: 100%;
+  }
+
+  .step-view-control .ui-segmented-options {
+    width: 100%;
+  }
+
+  .step-view-control .ui-segmented-button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+  }
 }
 
 /* PC-first, but avoid making the shared controls unusable when the viewport narrows. */

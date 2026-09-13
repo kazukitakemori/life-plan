@@ -1,82 +1,17 @@
 /* Q2 education: phone-specific input-card composition only.
- * Shared member tabs / add-member controls remain governed by the common
- * mobile UI layer so Q2 does not diverge from other steps.
+ * Shared member tabs, view switching, form controls and buttons are governed by
+ * the common UI layers so Q2 does not develop its own design language.
  */
 
-.education-view-mode {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
+.education-remove-label {
+  display: none;
 }
 
-.education-view-mode-label {
-  color: var(--color-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-}
-
-.education-view-mode-options {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--ui-control-border);
-  border-radius: var(--ui-control-radius);
-  background: #f4f6f5;
-}
-
-.education-view-mode-button {
-  min-height: 34px;
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: calc(var(--ui-control-radius) - 2px);
-  background: transparent;
-  color: var(--color-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  transition:
-    background var(--ui-transition-fast),
-    color var(--ui-transition-fast),
-    box-shadow var(--ui-transition-fast);
-}
-
-.education-view-mode-button:hover:not(.active) {
-  background: var(--ui-surface-hover);
-  color: var(--color-ink);
-}
-
-.education-view-mode-button.active {
-  background: var(--color-surface);
-  color: var(--color-brand);
-  box-shadow: var(--ui-shadow-card);
+.education-remove-icon {
+  display: inline;
 }
 
 @media (max-width: 768px) {
-  .education-view-mode {
-    justify-content: stretch;
-    gap: 8px;
-    width: 100%;
-    margin-bottom: 12px;
-  }
-
-  .education-view-mode-label {
-    flex: 0 0 auto;
-  }
-
-  .education-view-mode-options {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .education-view-mode-button {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 42px;
-    padding: 0 8px;
-  }
-
   .education-step .education-table-card {
     width: 100%;
     max-width: 100%;
@@ -203,32 +138,6 @@
       .education-yen-field
     ) {
     min-height: 44px;
-    border: 1px solid var(--ui-control-border);
-    border-radius: var(--ui-control-radius);
-    background: var(--color-surface);
-    color: var(--color-ink);
-    transition:
-      border-color var(--ui-transition-fast),
-      box-shadow var(--ui-transition-fast),
-      background var(--ui-transition-fast);
-  }
-
-  .education-step :where(
-      .education-select,
-      .education-text-input,
-      .education-yen-field
-    ):hover:not(:disabled) {
-    border-color: var(--ui-control-border-hover);
-  }
-
-  .education-step :where(
-      .education-select,
-      .education-text-input,
-      .education-yen-field
-    ):focus {
-    outline: none;
-    border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px var(--color-focus-ring);
   }
 
   .education-step .education-yen-input {
@@ -311,23 +220,6 @@
   .education-step .education-fetch-detail-link,
   .education-step .education-add-other-btn {
     min-height: 44px;
-    border: 1px solid var(--color-brand);
-    border-radius: var(--ui-control-radius);
-    background: var(--color-surface);
-    color: var(--color-brand);
-    font-weight: 600;
-  }
-
-  .education-step .education-fetch-btn:hover:not(:disabled),
-  .education-step .education-fetch-detail-link:hover:not(:disabled),
-  .education-step .education-add-other-btn:hover:not(:disabled) {
-    background: var(--color-brand-soft);
-  }
-
-  .education-step .education-fetch-btn:disabled {
-    border-color: var(--ui-card-border);
-    background: #f4f6f5;
-    color: var(--color-faint);
   }
 
   .education-step .education-add-other-btn {
@@ -366,22 +258,7 @@
     grid-row: 3;
     width: 100%;
     min-width: 0;
-    min-height: 40px;
-    border: 1px solid #e0b4b4;
-    border-radius: var(--ui-control-radius);
-    background: var(--color-surface);
-    color: var(--color-danger);
-    font-size: 0;
-    font-weight: 600;
-  }
-
-  .education-step .education-other-remove::after {
-    content: '削除';
-    font-size: var(--text-sm);
-  }
-
-  .education-step .education-other-remove:hover {
-    background: var(--color-danger-soft);
+    min-height: 44px;
   }
 
   .education-step .education-other-label-input {
@@ -398,32 +275,16 @@
   }
 
   .education-step .education-row-remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 100%;
     min-height: 44px;
-    border: 1px solid #e0b4b4;
-    border-radius: var(--ui-control-radius);
-    background: var(--color-surface);
-    color: var(--color-danger);
-    font-size: 0;
-    font-weight: 600;
   }
 
-  .education-step .education-row-remove::after {
-    content: '削除';
-    font-size: var(--text-sm);
+  .education-step .education-remove-icon {
+    display: none;
   }
 
-  .education-step .education-row-remove:hover:not(:disabled) {
-    background: var(--color-danger-soft);
-  }
-
-  .education-step .education-row-remove:disabled {
-    border-color: var(--ui-card-border);
-    background: #f4f6f5;
-    color: var(--color-faint);
+  .education-step .education-remove-label {
+    display: inline;
   }
 
   .education-step .education-empty {

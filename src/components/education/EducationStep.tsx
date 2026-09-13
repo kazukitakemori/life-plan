@@ -15,10 +15,15 @@ import type { EducationByMember } from '../../types/education';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { TaxSocialState } from '../../types/taxSocial';
-import { CopySettingsBar, StepHeading } from '../ui';
+import { CopySettingsBar, SegmentedControl, StepHeading } from '../ui';
 import { EducationExpenseChart } from './EducationExpenseChart';
 import { EducationExpenseTable } from './EducationExpenseTable';
 import { MemberEducationTabs } from './MemberEducationTabs';
+
+const EDUCATION_VIEW_OPTIONS = [
+  { value: 'individual', label: '個人別' },
+  { value: 'aggregate', label: '全員まとめて' },
+] as const;
 
 interface EducationStepProps {
   members: FamilyMember[];
@@ -160,10 +165,6 @@ export function EducationStep({
     persistEntries(resolvedActiveId, cloned);
   };
 
-  const handleSelectMember = (memberId: string) => {
-    setActiveMemberId(memberId);
-  };
-
   if (!headMember) {
     return (
       <div className="step-page">
@@ -184,27 +185,14 @@ export function EducationStep({
         </p>
       ) : null}
 
-      <div className="education-view-mode" aria-label="教育費の表示方法">
-        <span className="education-view-mode-label">表示</span>
-        <div className="education-view-mode-options" role="group">
-          <button
-            type="button"
-            className={`education-view-mode-button${!showAllMembers ? ' active' : ''}`}
-            onClick={() => setShowAllMembers(false)}
-            aria-pressed={!showAllMembers}
-          >
-            個人別
-          </button>
-          <button
-            type="button"
-            className={`education-view-mode-button${showAllMembers ? ' active' : ''}`}
-            onClick={() => setShowAllMembers(true)}
-            aria-pressed={showAllMembers}
-          >
-            全員まとめて
-          </button>
-        </div>
-      </div>
+      <SegmentedControl
+        className="step-view-control"
+        label="表示方法"
+        ariaLabel="教育費の表示方法"
+        value={showAllMembers ? 'aggregate' : 'individual'}
+        options={EDUCATION_VIEW_OPTIONS}
+        onChange={(value) => setShowAllMembers(value === 'aggregate')}
+      />
 
       {!showAllMembers ? (
         <div className="education-toolbar">
@@ -213,7 +201,7 @@ export function EducationStep({
             activeMemberId={resolvedActiveId}
             entryCounts={entryCounts}
             referenceDate={referenceDate}
-            onSelect={handleSelectMember}
+            onSelect={setActiveMemberId}
             addableMembers={addableMembers}
             onAddMemberTab={handleAddMemberTab}
             removableMemberIds={removableMemberIds}
@@ -267,7 +255,7 @@ export function EducationStep({
             <div className="education-footer-actions">
               <button
                 type="button"
-                className="footer-action-btn"
+                className="ui-btn ui-btn--ghost footer-action-btn"
                 onClick={addEntry}
               >
                 ＋ 教育費を追加

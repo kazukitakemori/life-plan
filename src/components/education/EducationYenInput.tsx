@@ -18,7 +18,7 @@ export function EducationYenInput({
     <div className="education-yen-input">
       <input
         type="text"
-        className={`education-yen-field${compact ? ' education-yen-field--compact' : ''}`}
+        className={`ui-input education-yen-field${compact ? ' education-yen-field--compact' : ''}`}
         value={formatNumericDisplay(value)}
         onChange={(e) => onChange(parseNumericInput(e.target.value) ?? 0)}
       />
