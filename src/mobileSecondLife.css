@@ -1,0 +1,165 @@
+/* Q12 老後の暮らし: ワークスペース固有の構造だけをスマホ向けに整える。 */
+
+@media (max-width: 768px) {
+  .second-life-step,
+  .second-life-step .second-life-workspace-panel,
+  .second-life-step .second-life-section,
+  .second-life-step .second-life-guide-card,
+  .second-life-step .second-life-consistency {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .second-life-step .second-life-guide-intro {
+    line-height: 1.7;
+  }
+
+  .second-life-step .second-life-guide-start-age {
+    margin-top: 14px;
+  }
+
+  .second-life-step .second-life-guide-start-age .second-life-timing,
+  .second-life-step .second-life-section-toolbar .second-life-timing {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .second-life-step .second-life-age-input {
+    min-width: 72px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* 長い「介護・サードライフ」を不自然に改行しない。横スワイプで選べる。 */
+  .second-life-step .second-life-workspace-tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    border-radius: var(--radius-md);
+  }
+
+  .second-life-step .second-life-workspace-tab,
+  .second-life-step .second-life-workspace-tab:nth-child(2),
+  .second-life-step .second-life-workspace-tab:nth-child(-n + 2) {
+    flex: 0 0 auto;
+    min-width: 118px;
+    min-height: 48px;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 0;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .second-life-step .second-life-workspace-tab:nth-child(3) {
+    min-width: 168px;
+  }
+
+  .second-life-step .second-life-workspace-tab:last-child {
+    border-right: 0;
+  }
+
+  .second-life-step .second-life-section-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .second-life-step .second-life-apply-note {
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .second-life-step .second-life-choice-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .second-life-step .second-life-choice-card {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .second-life-step .second-life-inline-option {
+    align-items: flex-start;
+    line-height: 1.55;
+  }
+
+  .second-life-step .second-life-inline-cost {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(92px, 0.7fr) auto;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .second-life-step .second-life-inline-cost input,
+  .second-life-step .second-life-inline-cost select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .second-life-step .second-life-renovation-scope-grid,
+  .second-life-step .third-life-reference-list,
+  .second-life-step .third-life-person-grid,
+  .second-life-step .second-life-guide-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .second-life-step .second-life-guide-card-head,
+  .second-life-step .second-life-consistency-head,
+  .second-life-step .second-life-consistency-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+
+  .second-life-step .second-life-guide-status,
+  .second-life-step .second-life-consistency-status {
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .second-life-step .second-life-guide-nav-btn {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    line-height: 1.45;
+  }
+
+  .second-life-step .third-life-field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .second-life-step .third-life-field-row input,
+  .second-life-step .third-life-field-row select,
+  .second-life-step .second-life-section input,
+  .second-life-step .second-life-section select {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .second-life-step .second-life-guide-start-age .second-life-timing,
+  .second-life-step .second-life-section-toolbar .second-life-timing,
+  .second-life-step .second-life-inline-cost {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .second-life-step .second-life-age-input {
+    width: 100%;
+  }
+}
