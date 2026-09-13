@@ -6,13 +6,13 @@ import {
 
 interface MemberAvatarProps {
   role: FamilyMemberRole;
-  gender?: Gender;
+  gender?: Gender | null;
   age?: number | null;
 }
 
 export function MemberAvatar({
   role,
-  gender = 'male',
+  gender,
   age = null,
 }: MemberAvatarProps) {
   const src = resolveMemberAvatarSrc(role, gender, age);
