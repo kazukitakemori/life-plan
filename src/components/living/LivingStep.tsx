@@ -20,7 +20,7 @@ import type { SecondLifeState } from '../../types/secondLife';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { SecondLifeLivingSection } from '../secondLife/SecondLifeLivingSection';
 import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
-import { StepHeading } from '../ui';
+import { CopySettingsBar, StepHeading } from '../ui';
 import { LivingScheduleCard } from './LivingScheduleCard';
 
 interface LivingStepProps {
@@ -204,6 +204,12 @@ export function LivingStep({
     );
   }
 
+  const resolvedCopySourceId = copySourceOptions.some(
+    (option) => option.id === copySourceId,
+  )
+    ? copySourceId
+    : (copySourceOptions[0]?.id ?? '');
+
   return (
     <div className="step-page living-step">
       <StepHeading
@@ -235,35 +241,16 @@ export function LivingStep({
         onRemoveMemberTab={handleRemoveMemberTab}
       />
 
-      <div className="living-copy-bar">
-        <select
-          className="select-input"
-          value={
-            copySourceOptions.some((opt) => opt.id === copySourceId)
-              ? copySourceId
-              : (copySourceOptions[0]?.id ?? '')
-          }
-          onChange={(e) => setCopySourceId(e.target.value)}
-        >
-          {copySourceOptions.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <span className="living-copy-from">から</span>
-        <button
-          type="button"
-          className="living-copy-btn"
-          onClick={copySettingsFrom}
-          disabled={
-            copySourceId === resolvedTargetId ||
-            (livingState.byTarget[copySourceId]?.length ?? 0) === 0
-          }
-        >
-          設定をコピー
-        </button>
-      </div>
+      <CopySettingsBar
+        value={resolvedCopySourceId}
+        options={copySourceOptions}
+        onChange={setCopySourceId}
+        onCopy={copySettingsFrom}
+        disabled={
+          resolvedCopySourceId === resolvedTargetId ||
+          (livingState.byTarget[resolvedCopySourceId]?.length ?? 0) === 0
+        }
+      />
 
       <div className="living-schedules">
         {schedules.length === 0 ? (
