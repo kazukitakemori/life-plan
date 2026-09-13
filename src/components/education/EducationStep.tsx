@@ -191,11 +191,7 @@ export function EducationStep({
       <StepHeading
         number={2}
         title="教育費"
-        actions={
-          <div className="education-view-toggle-desktop">
-            {toggleAllMembersButton}
-          </div>
-        }
+        actions={toggleAllMembersButton}
       />
 
       {purposeNote ? (
@@ -203,10 +199,6 @@ export function EducationStep({
           {purposeNote}
         </p>
       ) : null}
-
-      <div className="education-view-toggle-mobile">
-        {toggleAllMembersButton}
-      </div>
 
       {!showAllMembers ? (
         <div className="education-toolbar">
