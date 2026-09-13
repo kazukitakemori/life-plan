@@ -11,7 +11,6 @@ import './index.css';
 import './secondLifeConsistency.css';
 import './ui-system.css';
 import './ui-text-integrity.css';
-import './livingUiUnits.css';
 import './mobile.css';
 import './mobileCompact.css';
 import './mobileSteps.css';
