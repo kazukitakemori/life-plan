@@ -262,15 +262,7 @@ export function LoanStep({
 
   return (
     <div className="step-page loan-step">
-      <StepHeading
-        number={9}
-        title="ローン"
-        actions={
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        }
-      />
+      <StepHeading number={9} title="ローン" />
 
       <MemberIncomeTabs
         members={visibleMembers}
