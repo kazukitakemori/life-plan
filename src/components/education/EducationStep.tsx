@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  createEducationExpenseEntry,
-  createStandardChildEducationPath,
-} from '../../lib/educationDefaults';
+import { createEducationExpenseEntry } from '../../lib/educationDefaults';
+import { SCHOOL_CATEGORY_OPTIONS } from '../../lib/educationLabels';
 import {
   getEducationDefaultActiveMemberId,
   getIncomeEligibleMembers,
@@ -11,7 +9,11 @@ import {
 import { memberHasEducationData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
-import type { EducationByMember } from '../../types/education';
+import type {
+  EducationByMember,
+  EducationExpenseEntry,
+  SchoolCategory,
+} from '../../types/education';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
 import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { TaxSocialState } from '../../types/taxSocial';
@@ -61,6 +63,8 @@ export function EducationStep({
   const [copySourceId, setCopySourceId] = useState(
     headMember?.id ?? eligibleMembers[0]?.id ?? '',
   );
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [autoExpandEntryId, setAutoExpandEntryId] = useState<string | null>(null);
 
   const memberHasData = useCallback(
     (memberId: string) => memberHasEducationData(educationByMember, memberId),
@@ -118,31 +122,34 @@ export function EducationStep({
     [visibleMembers],
   );
 
-  const persistEntries = (memberId: string, updated: typeof entries) => {
+  const persistEntries = (
+    memberId: string,
+    updated: EducationExpenseEntry[],
+  ) => {
     onChange({
       ...educationByMember,
       [memberId]: updated,
     });
   };
 
-  const addEntry = () => {
+  const addEntry = (schoolCategory: SchoolCategory) => {
     if (!activeMember) return;
+
     const last = entries[entries.length - 1];
-    const nextEntry = last
-      ? createEducationExpenseEntry({
-          schoolCategory: last.schoolCategory,
-          schoolType: last.schoolType,
-          universityHousingType: last.universityHousingType,
-          graduateProgramType: last.graduateProgramType,
-          startAge: last.endAge,
-          startMonth: last.endMonth === 12 ? 1 : last.endMonth + 1,
-          endAge: Math.min(last.endAge + 3, activeMember.expectedLifespan),
-          endMonth: last.endMonth,
-        })
-      : activeMember.role === 'child'
-        ? createStandardChildEducationPath()[0]
-        : createEducationExpenseEntry();
+    const nextEntry =
+      schoolCategory === 'other' && last
+        ? createEducationExpenseEntry({
+            schoolCategory,
+            startAge: last.endAge,
+            startMonth: last.endMonth === 12 ? 1 : last.endMonth + 1,
+            endAge: Math.min(last.endAge + 1, activeMember.expectedLifespan),
+            endMonth: last.endMonth,
+          })
+        : createEducationExpenseEntry({ schoolCategory });
+
     persistEntries(resolvedActiveId, [...entries, nextEntry]);
+    setAutoExpandEntryId(nextEntry.id);
+    setAddMenuOpen(false);
   };
 
   const copySettingsFrom = () => {
@@ -158,15 +165,20 @@ export function EducationStep({
       })),
     }));
     persistEntries(resolvedActiveId, cloned);
+    setAutoExpandEntryId(null);
   };
 
   const handleSelectMember = (memberId: string) => {
     setShowAllMembers(false);
+    setAddMenuOpen(false);
+    setAutoExpandEntryId(null);
     setActiveMemberId(memberId);
   };
 
   const handleAddEducationMember = (memberId: string) => {
     setShowAllMembers(false);
+    setAddMenuOpen(false);
+    setAutoExpandEntryId(null);
     handleAddMemberTab(memberId);
   };
 
@@ -203,7 +215,10 @@ export function EducationStep({
           onRemoveMemberTab={handleRemoveMemberTab}
           summaryAction={{
             active: showAllMembers,
-            onToggle: () => setShowAllMembers((prev) => !prev),
+            onToggle: () => {
+              setAddMenuOpen(false);
+              setShowAllMembers((prev) => !prev);
+            },
             showLabel: '全員まとめて表示',
             hideLabel: '個人ごとに表示',
             ariaLabel: '教育費の表示を切り替え',
@@ -250,17 +265,43 @@ export function EducationStep({
               priorYearIncomeByMember={priorYearIncomeByMember}
               taxSocialState={taxSocialState}
               referenceDate={referenceDate}
+              autoExpandEntryId={autoExpandEntryId}
               onChange={(updated) => persistEntries(resolvedActiveId, updated)}
             />
 
             <div className="education-footer-actions">
               <button
                 type="button"
-                className="ui-btn ui-btn--ghost"
-                onClick={addEntry}
+                className="ui-btn ui-btn--ghost education-add-entry-toggle"
+                aria-expanded={addMenuOpen}
+                onClick={() => setAddMenuOpen((open) => !open)}
               >
                 ＋ 教育費を追加
               </button>
+
+              {addMenuOpen ? (
+                <div
+                  className="education-add-entry-panel"
+                  role="group"
+                  aria-label="追加する教育段階"
+                >
+                  <p className="education-add-entry-title">
+                    追加する教育段階を選んでください
+                  </p>
+                  <div className="education-add-entry-options">
+                    {SCHOOL_CATEGORY_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className="ui-btn ui-btn--ghost education-add-entry-option"
+                        onClick={() => addEntry(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <EducationExpenseChart
