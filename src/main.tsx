@@ -27,6 +27,7 @@ import './mobileSecondLife.css';
 import './ui-unification.css';
 import './ui-unification-q1-q2.css';
 import './ui-unification-q3-q4.css';
+import './ui-unification-q5-q6.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
