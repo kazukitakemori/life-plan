@@ -496,14 +496,6 @@
     justify-content: flex-start;
   }
 
-  /* 最終年を追加した際に末尾2ラベルが近接するため、狭い端末では1つ前を間引く。 */
-  .education-step .education-chart-container
-    .recharts-xAxis
-    .recharts-cartesian-axis-ticks
-    > .recharts-cartesian-axis-tick:nth-last-child(2) {
-    display: none;
-  }
-
   .education-step .education-chart-tooltip-context {
     grid-template-columns: minmax(0, 1fr);
   }
