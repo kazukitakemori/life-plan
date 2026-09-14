@@ -195,7 +195,7 @@
 /* Shared add cards ------------------------------------------------------ */
 :is(
     .housing-step .housing-owned-add-card,
-    .housing-step .housing-rental-add-card,
+    .housing-step .housing-rental-add-card
   ) {
   border-color: var(--ui-border);
   border-radius: var(--ui-radius-card);
@@ -205,7 +205,7 @@
 
 :is(
     .housing-step .housing-owned-add-card,
-    .housing-step .housing-rental-add-card,
+    .housing-step .housing-rental-add-card
   ):hover:not(:disabled) {
   border-color: var(--ui-brand);
   background: var(--ui-brand-soft);
