@@ -19,7 +19,7 @@ jobs:
           ref: refactor/mobile-responsive-steps
           fetch-depth: 0
 
-      - name: Remove unused legacy CSS blocks
+      - name: Remove final unused legacy CSS blocks
         shell: bash
         run: |
           python - <<'PY'
@@ -31,16 +31,14 @@ jobs:
           css_path = root / 'index.css'
           source = css_path.read_text(encoding='utf-8')
 
-          # These classes have been replaced by the shared ui-* implementation.
           legacy_token = re.compile(
               r'(?<![A-Za-z0-9_-])(?:show-all-btn|footer-action-btn|member-tabs(?:-[A-Za-z0-9_-]+)*|member-tab(?:-[A-Za-z0-9_-]+)*)(?![A-Za-z0-9_-])'
           )
+          # The class may be qualified by an element, e.g. button.member-tab.
           legacy_selector = re.compile(
-              r'(?<![A-Za-z0-9_-])\.(?:show-all-btn|footer-action-btn|member-tabs(?:-[A-Za-z0-9_-]+)*|member-tab(?:-[A-Za-z0-9_-]+)*)(?![A-Za-z0-9_-])'
+              r'\.(?:show-all-btn|footer-action-btn|member-tabs(?:-[A-Za-z0-9_-]+)*|member-tab(?:-[A-Za-z0-9_-]+)*)(?![A-Za-z0-9_-])'
           )
 
-          # Abort if application code still references an old class. Modern ui-member-* names
-          # do not match because the token is preceded by a hyphen.
           references = []
           for path in root.rglob('*'):
               if path.suffix not in {'.ts', '.tsx', '.js', '.jsx'}:
@@ -54,33 +52,6 @@ jobs:
               print('Legacy class references remain in application code:', file=sys.stderr)
               print('\n'.join(references[:100]), file=sys.stderr)
               sys.exit(1)
-
-          # The Q4 household guidance used to inherit layout from member-tabs-meta.
-          # Keep the same spacing under the new common ui-* class before deleting the old rule.
-          ui_path = root / 'ui-system.css'
-          ui_source = ui_path.read_text(encoding='utf-8')
-          if '.ui-member-tabs-meta {' not in ui_source:
-              marker = '''.ui-member-tabs-guidance {
-            margin: 0;
-            color: var(--color-muted);
-            font-size: var(--text-xs);
-            line-height: var(--leading-normal);
-          }
-          '''
-              replacement = marker + '''
-          .ui-member-tabs-meta {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            gap: 12px;
-            margin-top: 12px;
-          }
-          '''
-              if marker not in ui_source:
-                  print('Could not find the shared guidance marker in ui-system.css.', file=sys.stderr)
-                  sys.exit(1)
-              ui_source = ui_source.replace(marker, replacement, 1)
-              ui_path.write_text(ui_source, encoding='utf-8')
 
           def strip_comments(text: str) -> str:
               return re.sub(r'/\*.*?\*/', '', text, flags=re.S)
@@ -156,24 +127,19 @@ jobs:
                   if open_index < 0:
                       out.append(text[pos:])
                       break
-
                   header = text[pos:open_index]
                   close_index = find_close(text, open_index)
                   body = text[open_index + 1:close_index]
                   clean_header = strip_comments(header).strip()
 
                   if clean_header.startswith('@'):
-                      # Nested rule containers such as @media / @supports are processed too.
-                      processed_body = process_rule_list(body)
-                      out.append(header + '{' + processed_body + '}')
+                      out.append(header + '{' + process_rule_list(body) + '}')
                   elif legacy_selector.search(clean_header):
                       removed.append(clean_header)
-                      # Preserve only leading whitespace/comments so neighboring sections remain readable.
                       leading_match = re.match(r'(?s)^(\s*(?:/\*.*?\*/\s*)*)', header)
                       out.append(leading_match.group(1) if leading_match else '')
                   else:
                       out.append(header + '{' + body + '}')
-
                   pos = close_index + 1
               return ''.join(out)
 
@@ -188,7 +154,7 @@ jobs:
               sys.exit(1)
 
           css_path.write_text(cleaned, encoding='utf-8')
-          print(f'Removed {len(removed)} legacy CSS rule blocks.')
+          print(f'Removed {len(removed)} final legacy CSS rule blocks.')
           for selector in removed:
               print(f'  - {selector}')
           PY
@@ -196,12 +162,8 @@ jobs:
       - name: Commit cleanup
         shell: bash
         run: |
-          if git diff --quiet -- src/index.css src/ui-system.css; then
-            echo "No CSS changes to commit."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/index.css src/ui-system.css
-          git commit -m "不要になった旧共通CSSを削除"
+          git add src/index.css
+          git commit -m "旧人物タブCSSの残骸を削除"
           git push origin HEAD:refactor/mobile-responsive-steps
