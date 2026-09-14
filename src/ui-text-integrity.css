@@ -6,7 +6,7 @@
 
 .step-page :where(button, [role='button']) {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Short headings / labels should keep semantic phrases together whenever possible. */
@@ -30,7 +30,7 @@
     .second-life-section-title
   ) {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Short action labels should stay on one line. Long explanatory buttons are excluded. */
@@ -100,7 +100,7 @@
     .housing-table-cell
   )::before {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Give atomic text room before allowing surrounding flex/grid content to collapse it. */
