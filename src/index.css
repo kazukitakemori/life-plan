@@ -656,9 +656,6 @@ button:disabled {
   gap: 12px;
   margin-top: 24px;
   padding: 48px 28px;
-  background: #fff;
-  border: 1px dashed #c5ced9;
-  border-radius: 10px;
 }
 
 .plan-admin-empty-title {
@@ -704,15 +701,11 @@ button:disabled {
 
 .plan-admin-table-wrap {
   overflow-x: auto;
-  background: #fff;
-  border: 1px solid #d5dde7;
-  border-radius: 8px;
 }
 
 .plan-admin-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
   table-layout: auto;
 }
 
@@ -720,7 +713,6 @@ button:disabled {
 .plan-admin-table td {
   padding: 12px 14px;
   text-align: left;
-  border-bottom: 1px solid #e6ebf1;
   vertical-align: middle;
 }
 
@@ -732,7 +724,6 @@ button:disabled {
 }
 
 .plan-admin-table tr.is-current {
-  background: #eef5fc;
 }
 
 .plan-admin-table tbody tr:last-child td {
@@ -831,8 +822,6 @@ button:disabled {
 
 .plan-admin-date {
   white-space: nowrap;
-  color: #6a7685;
-  font-size: 0.8125rem;
 }
 
 .plan-admin-actions-cell {
