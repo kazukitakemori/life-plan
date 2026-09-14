@@ -100,7 +100,7 @@
 }
 
 /* Shared button geometry and motion. Variants keep their semantic colors. */
-:is(.ui-btn, .ui-copy-bar-button, .show-all-btn, .footer-action-btn) {
+:is(.ui-btn, .ui-copy-bar-button, .footer-action-btn) {
   min-height: var(--ui-control-min-height);
   border-radius: var(--ui-control-radius);
   transition:
@@ -413,28 +413,6 @@ button.member-tab--add,
   color: var(--color-muted);
   font-size: var(--text-xs);
   line-height: var(--leading-normal);
-}
-
-/* Header / view actions use the same neutral-to-brand state pattern. */
-.show-all-btn {
-  padding: 0 var(--space-4);
-  border: 1px solid var(--ui-control-border);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1;
-}
-
-.show-all-btn:not(:disabled):hover {
-  border-color: var(--ui-control-border-hover);
-  background: var(--ui-surface-hover);
-}
-
-.show-all-btn.active {
-  border-color: var(--color-brand);
-  background: var(--color-brand-soft);
-  color: var(--color-brand);
 }
 
 /* Repeated add actions should no longer introduce a separate blue style. */
