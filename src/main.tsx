@@ -33,6 +33,7 @@ import './ui-unification-q9-q10.css';
 import './ui-unification-q11-q12.css';
 import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
+import './ui-typography-second-pass.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
