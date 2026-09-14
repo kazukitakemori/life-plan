@@ -1,6 +1,4 @@
 import {
-  OWNED_PROPERTY_TYPE_DESCRIPTIONS,
-  OWNED_PROPERTY_TYPE_ICONS,
   OWNED_PROPERTY_TYPE_LABELS,
 } from '../../lib/housingLabels';
 import type { OwnedTabView } from '../../lib/housingOwnedViews';
@@ -55,6 +53,12 @@ const ADD_OPTIONS: OwnedPropertyType[] = [
   'detached_house',
   'land',
 ];
+
+const ADD_DESCRIPTIONS: Record<OwnedPropertyType, string> = {
+  condominium: '集合住宅',
+  detached_house: '戸建住宅',
+  land: '土地・用地',
+};
 
 export function OwnedPropertySection({
   ownedViews,
@@ -161,22 +165,19 @@ export function OwnedPropertySection({
       <div className="housing-owned-add-panel">
         <p className="housing-owned-add-label">所有物件を追加</p>
 
-        <div className="housing-owned-add-options">
+        <div className="housing-owned-add-options ui-add-card-grid">
           {ADD_OPTIONS.map((type) => (
             <button
               key={type}
               type="button"
-              className="housing-owned-add-option"
+              className="housing-owned-add-option ui-add-card"
               onClick={() => onAddProperty(type)}
             >
-              <span className="housing-owned-add-icon" aria-hidden>
-                {OWNED_PROPERTY_TYPE_ICONS[type]}
-              </span>
-              <span className="housing-owned-add-title">
+              <span className="housing-owned-add-title ui-add-card__title">
                 {OWNED_PROPERTY_TYPE_LABELS[type]}
               </span>
-              <span className="housing-owned-add-desc">
-                {OWNED_PROPERTY_TYPE_DESCRIPTIONS[type]}
+              <span className="housing-owned-add-desc ui-add-card__description">
+                {ADD_DESCRIPTIONS[type]}
               </span>
             </button>
           ))}
