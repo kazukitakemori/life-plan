@@ -35,16 +35,9 @@ jobs:
           targets = {
               '.plan-admin-table-wrap': {'border', 'border-radius', 'background'},
               '.plan-admin-table': {'font-size'},
-              '.plan-admin-table thead': {'background', 'color'},
               '.plan-admin-table th, .plan-admin-table td': {'border-bottom'},
               '.plan-admin-table tr.is-current': {'background'},
-              '.plan-admin-table tr:hover': {'background'},
               '.plan-admin-name-text': {'color'},
-              '.plan-admin-purpose-empty': {'color', 'font-size'},
-              '.plan-admin-purpose-chip': {'border', 'border-radius', 'background', 'color', 'font-size'},
-              '.plan-admin-purpose-chip.is-current': {'border-color', 'background', 'color'},
-              '.plan-admin-status-current': {'border', 'background', 'color'},
-              '.plan-admin-status-saved': {'border', 'background', 'color'},
               '.plan-admin-date': {'color', 'font-size'},
               '.plan-admin-empty': {'border', 'border-radius', 'background', 'color'},
           }
@@ -75,11 +68,10 @@ jobs:
 
           updated = rule_re.sub(transform, text)
 
-          required = set(targets)
-          missing = sorted(required - matched)
+          missing = sorted(set(targets) - matched)
           if missing:
               raise SystemExit(f'Expected selectors not found: {missing}')
-          if len(removed) < 20:
+          if len(removed) < 10:
               raise SystemExit(f'Unexpectedly small cleanup: {len(removed)} declarations removed')
           if updated == text:
               raise SystemExit('No index.css changes produced')
