@@ -98,13 +98,13 @@
    * that behavior. Tabs may be a little wider on phones so atomic metadata such
    * as a birth date never breaks in the middle; horizontal swipe is intentional.
    */
-  .member-tabs-block {
+  .ui-member-tabs-block {
     width: 100%;
     min-width: 0;
     overflow: hidden;
   }
 
-  .member-tabs-row {
+  .ui-member-tabs-row {
     display: flex;
     align-items: stretch;
     gap: 8px;
@@ -122,12 +122,12 @@
     touch-action: pan-x;
   }
 
-  .member-tabs-row::-webkit-scrollbar,
-  .member-tabs::-webkit-scrollbar {
+  .ui-member-tabs-row::-webkit-scrollbar,
+  .ui-member-tabs-list::-webkit-scrollbar {
     display: none;
   }
 
-  .step-page .member-tabs-row > .member-tabs {
+  .step-page .ui-member-tabs-row > .ui-member-tabs-list {
     display: flex;
     flex: 0 0 max-content;
     width: max-content;
@@ -139,7 +139,7 @@
     border-bottom: 0;
   }
 
-  .member-tab-add-wrap {
+  .ui-member-tab-add-wrap {
     flex: 0 0 auto;
   }
 
