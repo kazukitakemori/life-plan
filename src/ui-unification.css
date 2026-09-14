@@ -37,6 +37,22 @@
   --ui-space-control-x: var(--space-3);
   --ui-space-card: var(--space-4);
   --ui-shadow-subtle: 0 1px 2px rgb(31 42 36 / 4%);
+
+  /*
+   * Temporary migration aliases.
+   * Older mobile/screen CSS may still reference these names. They resolve to
+   * the canonical UI tokens so cleanup can proceed file-by-file without visual
+   * regressions. Remove aliases only after the old references are gone.
+   */
+  --ui-control-radius: var(--ui-radius-control);
+  --ui-card-radius: var(--ui-radius-card);
+  --ui-control-border: var(--ui-border);
+  --ui-control-border-hover: var(--ui-border-strong);
+  --ui-card-border: var(--ui-border);
+  --ui-surface-hover: var(--ui-bg-hover);
+  --ui-surface-selected: var(--ui-bg-selected);
+  --ui-shadow-card: var(--ui-shadow-subtle);
+  --ui-danger-border: color-mix(in srgb, var(--ui-danger) 30%, white);
 }
 
 body {
