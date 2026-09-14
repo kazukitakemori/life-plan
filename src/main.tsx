@@ -31,6 +31,7 @@ import './ui-typography-unification.css';
 import './ui-add-cards.css';
 import './education-ui.css';
 import './education-mobile-ui.css';
+import './education-tuition-link.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
