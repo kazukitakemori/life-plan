@@ -121,11 +121,11 @@ export function InsuranceEntryCard({
         </button>
         <button
           type="button"
-          className="housing-row-remove"
+          className="housing-row-remove ui-entry-delete-button"
           onClick={onRemove}
           aria-label="保険を削除"
         >
-          −
+          削除
         </button>
       </div>
 

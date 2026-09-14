@@ -107,7 +107,77 @@ body {
   background: var(--ui-bg-hover);
 }
 
-:is(.ui-btn--danger, .danger-button, .delete-button) {
+:is(.ui-btn--danger, .danger-button, .delete-button, .ui-entry-delete-button) {
+  color: var(--ui-danger);
+}
+
+/* Q9-Q11 list cards share one interaction language. */
+:is(.loan-entry-card-wrap, .insurance-entry-card-wrap, .savings-entry-card-wrap) {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+  overflow: hidden;
+}
+
+:is(.loan-entry-open-btn, .insurance-entry-open-btn, .savings-entry-open-btn) {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+  font-weight: 700;
+}
+
+:is(.loan-entry-open-btn, .insurance-entry-open-btn, .savings-entry-open-btn):hover:not(:disabled) {
+  background: var(--ui-bg-hover);
+}
+
+:is(
+    .loan-entry-open-btn--active,
+    .insurance-entry-open-btn--active,
+    .savings-entry-open-btn--active
+  ) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+:is(
+    .loan-entry-structure-badge,
+    .insurance-entry-sector-badge,
+    .insurance-entry-category-badge,
+    .savings-entry-sector-badge,
+    .savings-entry-category-badge
+  ) {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ui-entry-delete-button,
+:is(.loan-entry-card, .insurance-entry-card, .savings-entry-card) > .ui-entry-delete-button {
+  width: auto;
+  min-width: 64px;
+  height: 40px;
+  min-height: 40px;
+  margin-left: 0;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 32%, white);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-danger);
+  font-size: var(--ui-font-label);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ui-entry-delete-button:hover:not(:disabled) {
+  border-color: var(--ui-danger);
+  background: var(--ui-danger-soft);
   color: var(--ui-danger);
 }
 
@@ -169,4 +239,12 @@ body {
 
 :is(.app-error-boundary-detail, [role='alert']) {
   border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+}
+
+@media (max-width: 768px) {
+  .ui-entry-delete-button,
+  :is(.loan-entry-card, .insurance-entry-card, .savings-entry-card) > .ui-entry-delete-button {
+    height: 44px;
+    min-height: 44px;
+  }
 }

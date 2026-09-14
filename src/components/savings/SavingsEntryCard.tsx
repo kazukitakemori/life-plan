@@ -135,11 +135,11 @@ export function SavingsEntryCard({
         </button>
         <button
           type="button"
-          className="housing-row-remove"
+          className="housing-row-remove ui-entry-delete-button"
           onClick={onRemove}
           aria-label="貯蓄・運用を削除"
         >
-          −
+          削除
         </button>
       </div>
 

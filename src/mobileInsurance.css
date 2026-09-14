@@ -17,9 +17,9 @@
 
   .insurance-step .insurance-entry-card {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 32px max-content minmax(0, 1fr) auto;
     grid-template-rows: auto auto auto;
-    column-gap: 10px;
+    column-gap: 8px;
     row-gap: 10px;
     align-items: center;
     padding: 12px;
@@ -28,8 +28,8 @@
   .insurance-step .insurance-entry-drag-handle {
     grid-column: 1;
     grid-row: 1;
-    width: 36px;
-    min-width: 36px;
+    width: 32px;
+    min-width: 32px;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
@@ -38,7 +38,7 @@
 
   .insurance-step .insurance-entry-name-input,
   .insurance-step .insurance-entry-name-label {
-    grid-column: 2;
+    grid-column: 2 / 4;
     grid-row: 1;
     width: 100%;
     min-width: 0;
@@ -66,7 +66,7 @@
   }
 
   .insurance-step .insurance-entry-summary {
-    grid-column: 2;
+    grid-column: 2 / 4;
     grid-row: 3;
     min-width: 0;
     white-space: normal;
@@ -75,7 +75,7 @@
   }
 
   .insurance-step .insurance-entry-open-btn {
-    grid-column: 3;
+    grid-column: 4;
     grid-row: 3;
     justify-self: end;
     min-width: 84px;
@@ -84,17 +84,11 @@
     white-space: nowrap;
   }
 
-  .insurance-step .insurance-entry-card > .housing-row-remove {
-    grid-column: 3;
+  .insurance-step .insurance-entry-card > .ui-entry-delete-button {
+    grid-column: 4;
     grid-row: 1;
     justify-self: end;
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
     margin: 0;
-    padding: 0;
-    border-radius: 50%;
   }
 
   .insurance-step .insurance-entry-detail {
@@ -175,15 +169,15 @@
 
 @media (max-width: 430px) {
   .insurance-step .insurance-entry-card {
-    grid-template-columns: 32px minmax(0, 1fr) auto;
-    column-gap: 8px;
+    grid-template-columns: 28px max-content minmax(0, 1fr) auto;
+    column-gap: 7px;
     row-gap: 8px;
     padding: 10px;
   }
 
   .insurance-step .insurance-entry-drag-handle {
-    width: 32px;
-    min-width: 32px;
+    width: 28px;
+    min-width: 28px;
   }
 
   .insurance-step .insurance-entry-open-btn {
