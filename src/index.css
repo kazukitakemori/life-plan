@@ -231,14 +231,12 @@ button:disabled {
   align-items: center;
   gap: 10px 12px;
   padding: 10px 20px;
-  background: #eef2f7;
   border-bottom: 1px solid var(--color-border);
 }
 
 .plan-bar-name-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #556;
   white-space: nowrap;
 }
 
@@ -279,17 +277,12 @@ button:disabled {
 .plan-bar-btn {
   padding: 6px 12px;
   border: 1px solid #c5ced9;
-  border-radius: 6px;
-  background: #fff;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #334;
   cursor: pointer;
 }
 
 .plan-bar-btn:hover:not(:disabled) {
-  background: #f3f6fa;
-  border-color: #9aabbd;
 }
 
 .plan-bar-btn:disabled {
@@ -298,14 +291,9 @@ button:disabled {
 }
 
 .plan-bar-btn--primary {
-  background: var(--color-header-bg, #1e3a5f);
-  border-color: var(--color-header-bg, #1e3a5f);
-  color: #fff;
 }
 
 .plan-bar-btn--primary:hover:not(:disabled) {
-  background: #2a4d7a;
-  border-color: #2a4d7a;
   color: #fff;
 }
 
@@ -359,19 +347,14 @@ button:disabled {
   padding: 10px 12px;
   border: 1px solid #d5dde7;
   border-radius: 6px;
-  background: #fff;
   text-align: left;
   cursor: pointer;
 }
 
 .plan-open-item-main:hover {
-  background: #f5f8fc;
-  border-color: #9aabbd;
 }
 
 .plan-open-item-main.is-current {
-  border-color: #4a7ab5;
-  background: #eef5fc;
 }
 
 .plan-open-item-name {
@@ -489,14 +472,11 @@ button:disabled {
   padding: 10px 12px;
   border: 1px solid #c5ced9;
   border-radius: 8px;
-  background: #fff;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .plan-purpose-option:hover:not(.is-locked) {
-  border-color: #8aa4c4;
-  background: #f8fbff;
 }
 
 .plan-purpose-option.is-locked {
@@ -509,8 +489,6 @@ button:disabled {
 }
 
 .plan-purpose-option.is-selected {
-  border-color: #3d6ea8;
-  background: #eef4fb;
 }
 
 .plan-purpose-radio,
@@ -554,8 +532,6 @@ button:disabled {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #345;
-  background: #eef2f7;
   border: 1px solid #d0d9e4;
 }
 
@@ -568,7 +544,6 @@ button:disabled {
   margin: 12px 0 6px;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #445;
 }
 
 .plan-meta-label:first-child {
@@ -717,9 +692,7 @@ button:disabled {
 }
 
 .plan-admin-table th {
-  background: #f3f6fa;
   font-weight: 600;
-  color: #445;
   white-space: nowrap;
 }
 
@@ -749,8 +722,6 @@ button:disabled {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
   font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
@@ -766,8 +737,6 @@ button:disabled {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #eef2f7;
-  color: #445;
   white-space: nowrap;
 }
 
@@ -871,7 +840,6 @@ button:disabled {
   padding: 0 24px;
   /* タイトル＋顧客行（またはヒント）を常に収める */
   min-height: 80px;
-  background: var(--color-header-bg);
 }
 
 .top-header-primary-right {
@@ -1110,7 +1078,6 @@ button:disabled {
   width: max-content;
   max-width: min(340px, calc(100vw - 48px));
   padding: 6px 0;
-  background: var(--color-header-bg);
   border-radius: 0;
   box-shadow:
     0 18px 40px rgba(16, 24, 40, 0.32),
@@ -1185,7 +1152,6 @@ button:disabled {
 }
 
 .top-header-dropdown-item.active::before {
-  background: #93c5fd;
 }
 
 .top-header-dropdown-dot {
@@ -1204,8 +1170,6 @@ button:disabled {
 }
 
 .top-header-dropdown-item.active .top-header-dropdown-dot {
-  background: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.22);
 }
 
 .top-header-dropdown-label {
@@ -1245,7 +1209,6 @@ button:disabled {
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
-  background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-border);
   padding: 12px 0 0;
   z-index: 10;
@@ -1264,7 +1227,6 @@ button:disabled {
   flex-shrink: 0;
   padding: 10px 10px 12px;
   border-top: 1px solid var(--color-border);
-  background: var(--color-sidebar-bg);
 }
 
 .sidebar-action-btn {
@@ -1276,8 +1238,6 @@ button:disabled {
   min-height: var(--control-height);
   padding: 10px 10px;
   border: none;
-  border-radius: 8px;
-  background: var(--color-primary);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1287,11 +1247,9 @@ button:disabled {
 }
 
 .sidebar-action-btn:hover:not(:disabled) {
-  background: #43a047;
 }
 
 .sidebar-action-btn:active:not(:disabled) {
-  background: #388e3c;
 }
 
 .sidebar-action-icon {
@@ -1315,17 +1273,13 @@ button:disabled {
   background: transparent;
   text-align: left;
   font-size: 0.9375rem;
-  color: #555;
   transition: background 0.15s;
 }
 
 .sidebar-item:hover:not(.disabled) {
-  background: #f5f5f5;
 }
 
 .sidebar-item.active {
-  background: var(--color-primary-light);
-  color: #2e7d32;
   font-weight: 600;
   border-right: 3px solid var(--color-primary);
 }
