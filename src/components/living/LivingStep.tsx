@@ -238,11 +238,6 @@ export function LivingStep({
         number={4}
         title="生活費"
         lead="世帯の共有費は負担している人（多くの場合は世帯主）のタブへ。小遣いなど個人分はそれぞれのタブへ入力します。"
-        actions={
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        }
       />
 
       {purposeNote ? (
@@ -297,12 +292,12 @@ export function LivingStep({
       </div>
 
       <div className="living-footer-actions">
-        <button type="button" className="footer-action-btn" onClick={addSchedule}>
+        <button type="button" className="ui-btn ui-btn--ghost" onClick={addSchedule}>
           ＋ 生活費スケジュールを追加
         </button>
         <button
           type="button"
-          className="footer-action-btn"
+          className="ui-btn ui-btn--ghost"
           onClick={copyPreviousSchedule}
           disabled={schedules.length === 0}
         >
