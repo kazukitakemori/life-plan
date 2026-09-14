@@ -143,7 +143,7 @@
     flex: 0 0 auto;
   }
 
-  .member-tab {
+  .ui-member-tab {
     flex: 0 0 auto;
     min-width: min(204px, 82vw);
     max-width: 240px;
@@ -155,39 +155,39 @@
     scroll-snap-align: start;
   }
 
-  .member-tab.active {
+  .ui-member-tab.active {
     border-color: var(--color-brand);
     background: var(--color-brand-soft);
     box-shadow: none !important;
   }
 
-  .member-tab-select,
-  button.member-tab--add {
+  .ui-member-tab-select,
+  button.ui-member-tab--add {
     min-height: 52px;
     touch-action: manipulation;
   }
 
-  .member-tab-select {
+  .ui-member-tab-select {
     width: 100%;
     min-width: 0;
     padding: 7px 9px;
     text-align: left;
   }
 
-  button.member-tab--add {
+  button.ui-member-tab--add {
     min-width: min(184px, 74vw);
     padding: 7px 10px;
   }
 
-  .member-tab-close {
+  .ui-member-tab-close {
     min-width: 40px;
     min-height: 44px;
     touch-action: manipulation;
   }
 
-  .member-tab-info,
-  .member-tab-name,
-  .member-tab-birth {
+  .ui-member-tab-info,
+  .ui-member-tab-name,
+  .ui-member-tab-birth {
     min-width: 0;
   }
 
