@@ -1,0 +1,95 @@
+/* Q2 education tuition linkage.
+ * Annual and monthly tuition are two synchronized views of the same tuition value.
+ * This file changes only the education-specific information structure/visual cue.
+ */
+
+.education-step .education-col-tuition-amount,
+.education-step .education-col-tuition-monthly {
+  position: relative;
+}
+
+.education-step .education-col-tuition-amount {
+  border-top: 1px solid var(--ui-border-strong);
+  border-bottom: 1px solid var(--ui-border-strong);
+  border-left: 1px solid var(--ui-border-strong);
+  border-top-left-radius: var(--ui-radius-control);
+  border-bottom-left-radius: var(--ui-radius-control);
+}
+
+.education-step .education-col-tuition-monthly {
+  border-top: 1px solid var(--ui-border-strong);
+  border-right: 1px solid var(--ui-border-strong);
+  border-bottom: 1px solid var(--ui-border-strong);
+  border-top-right-radius: var(--ui-radius-control);
+  border-bottom-right-radius: var(--ui-radius-control);
+}
+
+.education-step .education-col-tuition-amount::before {
+  content: '授業料（年額）';
+}
+
+.education-step .education-col-tuition-monthly::before {
+  content: '授業料（月額）';
+}
+
+.education-step .education-col-tuition-amount::after {
+  content: '⇄ どちらを変更しても自動換算';
+  display: block;
+  margin-top: 9px;
+  color: var(--ui-brand);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.education-step .education-col-tuition-monthly::after {
+  content: '⇄';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 999px;
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    border-right: 1px solid var(--ui-border-strong);
+    border-left: 1px solid var(--ui-border-strong);
+    border-radius: 0;
+  }
+
+  .education-step .education-col-tuition-amount {
+    border-top-left-radius: var(--ui-radius-control);
+    border-top-right-radius: var(--ui-radius-control);
+    border-bottom: 0;
+  }
+
+  .education-step .education-col-tuition-monthly {
+    border-top: 1px dashed var(--ui-border-strong);
+    border-bottom-left-radius: var(--ui-radius-control);
+    border-bottom-right-radius: var(--ui-radius-control);
+  }
+
+  .education-step .education-col-tuition-amount::after {
+    content: '⇅ どちらを変更しても自動換算';
+    margin-top: 10px;
+    white-space: normal;
+  }
+
+  .education-step .education-col-tuition-monthly::after {
+    content: none;
+  }
+}
