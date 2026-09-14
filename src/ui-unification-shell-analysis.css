@@ -16,11 +16,11 @@
 
 .top-header-dropdown-item.active::before,
 .top-header-dropdown-item.active .top-header-dropdown-dot {
-  background: #b8d8c4;
+  background: #a7d6d3;
 }
 
 .top-header-dropdown-item.active .top-header-dropdown-dot {
-  box-shadow: 0 0 0 3px rgb(184 216 196 / 22%);
+  box-shadow: 0 0 0 3px rgb(167 214 211 / 24%);
 }
 
 .sidebar {

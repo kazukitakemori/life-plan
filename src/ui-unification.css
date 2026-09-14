@@ -7,17 +7,37 @@
  */
 
 :root {
+  /* Product palette — Deep Teal × Slate */
+  --color-brand: #176b68;
+  --color-brand-soft: #e8f3f2;
+  --color-primary: #176b68;
+  --color-header-bg: #176b68;
+  --color-accent: #557a95;
+  --color-focus-ring: rgb(23 107 104 / 18%);
+  --color-ink: #263238;
+  --color-muted: #66727a;
+  --color-faint: #829097;
+  --color-line: #dde3e5;
+  --color-border: #dde3e5;
+  --color-surface: #ffffff;
+  --color-soft: #f1f5f5;
+  --color-page: #f7f9f9;
+  --color-table-header: #e8f3f2;
+  --color-input-highlight: #f5faf9;
+  --color-danger: #c94a4a;
+  --color-danger-soft: #fcf0f0;
+
   /* Semantic palette */
   --ui-text: var(--color-ink);
   --ui-text-muted: var(--color-muted);
   --ui-text-subtle: var(--color-faint);
   --ui-bg-page: var(--color-page);
   --ui-bg-surface: var(--color-surface);
-  --ui-bg-subtle: #f4f6f5;
-  --ui-bg-hover: #f6f9f7;
+  --ui-bg-subtle: #f1f5f5;
+  --ui-bg-hover: #f3f8f7;
   --ui-bg-selected: var(--color-brand-soft);
-  --ui-border: #d7ded9;
-  --ui-border-strong: #bcc7c0;
+  --ui-border: #dde3e5;
+  --ui-border-strong: #bbc8ca;
   --ui-brand: var(--color-brand);
   --ui-brand-soft: var(--color-brand-soft);
   --ui-danger: var(--color-danger);
@@ -29,7 +49,7 @@
   /* Shape */
   --ui-radius-control: var(--radius-sm);
   --ui-radius-card: var(--radius-md);
-  --ui-shadow-subtle: 0 1px 2px rgb(31 42 36 / 4%);
+  --ui-shadow-subtle: 0 1px 2px rgb(38 50 56 / 5%);
 
 }
 
