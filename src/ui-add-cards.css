@@ -1,7 +1,4 @@
-/* Shared add-card presentation.
- * Keep legacy screen rules intact during the UI adoption phase.
- * Once this design is accepted and merged, obsolete legacy rules can be removed in a separate cleanup PR.
- */
+/* Canonical shared add-card presentation. */
 
 .ui-add-card-grid {
   display: grid;
@@ -43,6 +40,17 @@
   background: var(--ui-bg-hover);
 }
 
+.ui-add-card-grid > .ui-add-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+.ui-add-card-grid > .ui-add-card:disabled:hover {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
 .ui-add-card-grid > .ui-add-card:focus-visible {
   outline: none;
   border-color: var(--ui-brand);
@@ -64,7 +72,7 @@
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
-  text-align: left !important;
+  text-align: left;
 }
 
 .ui-add-card .ui-add-card__description {
@@ -79,7 +87,7 @@
   line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
-  text-align: left !important;
+  text-align: left;
 }
 
 @media (max-width: 768px) {

@@ -154,23 +154,8 @@
     min-width: 0;
   }
 
-  .loan-step .loan-add-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
 
-  .loan-step .loan-add-card {
-    width: 100%;
-    min-height: 76px;
-    text-align: left;
-  }
 
-  .loan-step .loan-add-card-title,
-  .loan-step .loan-add-card-desc {
-    white-space: normal;
-    line-height: 1.5;
-  }
 }
 
 @media (max-width: 430px) {

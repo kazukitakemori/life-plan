@@ -258,14 +258,7 @@
     gap: 6px;
   }
 
-  .add-family-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
 
-  .add-family-grid button {
-    min-height: var(--mobile-touch-target);
-  }
 
   /* Wide data surfaces -------------------------------------------------- */
 

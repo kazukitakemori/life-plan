@@ -401,35 +401,10 @@ button.ui-member-tab--add {
   font-weight: 700;
 }
 
-:is(.add-family-grid, .add-income-grid) {
-  gap: var(--space-3);
-}
 
-:is(.add-family-card, .add-income-card) {
-  min-height: 88px;
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-  transition:
-    border-color var(--ui-transition-fast),
-    background var(--ui-transition-fast),
-    box-shadow var(--ui-transition-fast);
-}
 
-:is(.add-family-card, .add-income-card):hover:not(:disabled) {
-  border-color: var(--ui-brand);
-  background: var(--ui-brand-soft);
-}
 
-:is(.add-family-card, .add-income-card):disabled,
-.add-income-card--disabled {
-  cursor: not-allowed;
-  box-shadow: none;
-  opacity: 0.48;
-}
 
-:is(.add-family-label, .add-income-label) {
-  font-weight: 700;
-}
 
 /* Repeated toolbars ----------------------------------------------------- */
 

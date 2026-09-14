@@ -144,24 +144,8 @@
     min-width: 0;
   }
 
-  .savings-step .savings-add-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
 
-  .savings-step .savings-add-card {
-    width: 100%;
-    min-height: 76px;
-    text-align: left;
-  }
 
-  .savings-step .savings-add-card-title,
-  .savings-step .savings-add-card-desc,
-  .savings-step .savings-add-group-desc {
-    white-space: normal;
-    line-height: 1.5;
-  }
 
   .savings-step .savings-entry-detail table {
     max-width: none;

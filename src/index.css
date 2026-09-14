@@ -1963,45 +1963,11 @@ button:disabled {
   font-weight: 700;
 }
 
-.add-family-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-}
 
-.add-family-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-height: 88px;
-  padding: var(--space-4) 18px;
-  border: 1px solid var(--color-line);
-  text-align: left;
-  transition: border-color 0.15s, background 0.15s;
-}
 
-.add-family-card:hover:not(:disabled) {
-  border-color: var(--color-brand);
-  background: var(--color-brand-soft);
-}
 
-.add-family-card:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 
-.add-family-label {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-ink);
-}
 
-.add-family-desc {
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
-  color: var(--color-muted);
-}
 
 /* Income step */
 
@@ -3365,54 +3331,12 @@ button:disabled {
   font-weight: 700;
 }
 
-.add-income-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--space-3);
-}
 
-.add-income-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-height: 88px;
-  padding: var(--space-4) 18px;
-  border: 1px solid var(--color-line);
-  text-align: left;
-  transition: border-color 0.15s, background 0.15s;
-}
 
-.add-income-card:hover:not(:disabled):not(.add-income-card--disabled) {
-  border-color: var(--color-brand);
-  background: var(--color-brand-soft);
-}
 
-.add-income-card--disabled,
-.add-income-card--disabled:hover {
-  cursor: not-allowed;
-  opacity: 0.45;
-  border-color: var(--color-line);
-  background: var(--color-surface);
-  box-shadow: none;
-}
 
-.add-income-card--disabled .add-income-label,
-.add-income-card--disabled .add-income-desc {
-  color: var(--color-faint);
-}
 
-.add-income-label {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-ink);
-}
 
-.add-income-desc {
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
-  color: var(--color-muted);
-}
 
 /* Living expense step */
 
@@ -3854,9 +3778,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .add-family-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 
   .income-table-header,
   .income-table-row,
@@ -3876,15 +3797,6 @@ button:disabled {
     border-bottom: 1px solid #f0f0f0;
   }
 
-  .add-income-grid,
-  .life-event-add-grid,
-  .loan-add-grid,
-  .vehicle-add-grid,
-  .insurance-add-grid,
-  .savings-add-grid,
-  .housing-owned-add-options {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 /* Cash flow table */
@@ -10667,43 +10579,11 @@ button:disabled {
   color: #333;
 }
 
-.life-event-add-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.life-event-add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
 
-.life-event-add-card:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
-}
 
-.life-event-add-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
 
-.life-event-add-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.life-event-add-card-desc {
-  text-align: center;
-}
 
 /* Other step ? tax/social insurance breakdown */
 
@@ -14576,49 +14456,14 @@ button:disabled {
   font-size: 0.875rem;
   font-weight: 600;
 }
-
 .housing-owned-add-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
   margin-top: 12px;
 }
 
-.housing-owned-add-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
 
-.housing-owned-add-option:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
-}
 
-.housing-owned-add-icon {
-  font-size: 1.5rem;
-}
 
-.housing-owned-add-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #333;
-}
 
-.housing-owned-add-desc {
-  font-size: 0.8125rem;
-  color: #999;
-  text-align: center;
-  line-height: 1.4;
-}
 
 .housing-yen-input {
   display: inline-flex;
@@ -15232,51 +15077,12 @@ button:disabled {
   color: #333;
 }
 
-.loan-add-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.loan-add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
 
-.loan-add-card:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
-}
 
-.loan-add-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
 
-.loan-add-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.loan-add-card-desc {
-  font-size: 0.8125rem;
-  text-align: center;
-  line-height: 1.4;
-}
 
-.loan-add-card--active {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgb(25 118 210 / 15%);
-}
 
 .loan-structure-picker {
   margin-top: 16px;
@@ -16334,45 +16140,11 @@ button:disabled {
   color: #888;
 }
 
-.vehicle-add-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.vehicle-add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
 
-.vehicle-add-card:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
-}
 
-.vehicle-add-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
 
-.vehicle-add-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.vehicle-add-card-desc {
-  font-size: 0.8125rem;
-  text-align: center;
-  line-height: 1.4;
-}
 
 /* ?? Q10 ?? ?? */
 .insurance-section {
@@ -16779,51 +16551,12 @@ button:disabled {
   font-size: 0.8125rem;
 }
 
-.insurance-add-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.insurance-add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
 
-.insurance-add-card:hover {
-  border-color: #90caf9;
-  box-shadow: 0 2px 8px rgb(25 118 210 / 10%);
-}
 
-.insurance-add-group:last-child .insurance-add-card:hover {
-  border-color: #81c784;
-  box-shadow: 0 2px 8px rgb(56 142 60 / 12%);
-}
 
-.insurance-add-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
 
-.insurance-add-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.insurance-add-card-desc {
-  font-size: 0.8125rem;
-  text-align: center;
-  line-height: 1.4;
-}
 
 .housing-insurance-links {
   display: flex;
@@ -18031,51 +17764,12 @@ button:disabled {
   font-size: 0.8125rem;
 }
 
-.savings-add-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.savings-add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fff;
-  text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
 
-.savings-add-card:hover {
-  border-color: #ffb74d;
-  box-shadow: 0 2px 8px rgb(239 108 0 / 12%);
-}
 
-.savings-add-group:last-child .savings-add-card:hover {
-  border-color: #4db6ac;
-  box-shadow: 0 2px 8px rgb(0 137 123 / 12%);
-}
 
-.savings-add-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-}
 
-.savings-add-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.savings-add-card-desc {
-  font-size: 0.8125rem;
-  text-align: center;
-  line-height: 1.4;
-}
 
 .license-key-modal,
 .license-device-modal {

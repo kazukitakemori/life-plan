@@ -147,24 +147,8 @@
     min-width: 0;
   }
 
-  .insurance-step .insurance-add-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
 
-  .insurance-step .insurance-add-card {
-    width: 100%;
-    min-height: 76px;
-    text-align: left;
-  }
 
-  .insurance-step .insurance-add-card-title,
-  .insurance-step .insurance-add-card-desc,
-  .insurance-step .insurance-add-group-desc {
-    white-space: normal;
-    line-height: 1.5;
-  }
 }
 
 @media (max-width: 430px) {
