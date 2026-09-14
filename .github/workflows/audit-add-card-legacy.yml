@@ -1,0 +1,48 @@
+name: Audit add-card legacy CSS
+
+on:
+  push:
+    branches:
+      - cleanup/add-card-legacy-css
+    paths:
+      - '.github/workflows/audit-add-card-legacy.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: List legacy add-card CSS rules
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          targets = [
+              'add-family-card',
+              'income-add-card',
+              'life-event-add-card',
+              'housing-owned-add-option',
+              'vehicle-add-card',
+              'insurance-add-card',
+              'loan-add-card',
+              'savings-add-card',
+          ]
+
+          for path in sorted(Path('src').glob('*.css')):
+              text = path.read_text(encoding='utf-8')
+              hits = []
+              for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', text, re.S):
+                  selector = ' '.join(m.group(1).split())
+                  if any(t in selector for t in targets):
+                      body = m.group(2).strip()
+                      line = text.count('\n', 0, m.start()) + 1
+                      hits.append((line, selector, body))
+              if hits:
+                  print(f'\n### {path} ({len(hits)} rules)')
+                  for line, selector, body in hits:
+                      print(f'[{line}] {selector} {{')
+                      print(body)
+                      print('}')
+          PY
