@@ -256,7 +256,7 @@ export function EducationStep({
             <div className="education-footer-actions">
               <button
                 type="button"
-                className="ui-btn ui-btn--ghost footer-action-btn"
+                className="ui-btn ui-btn--ghost"
                 onClick={addEntry}
               >
                 ＋ 教育費を追加
