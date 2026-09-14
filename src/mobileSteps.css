@@ -1,7 +1,7 @@
 /*
  * Responsive step layer for phones.
- * Keep desktop behavior intact; this file is loaded after the existing
- * mobile header styles and only narrows Q1-Q12 / shared input UI.
+ * Desktop behavior stays unchanged. This file owns mobile layout only;
+ * typography and visual states are handled by the shared UI layers.
  */
 
 @media (max-width: 768px) {
@@ -34,7 +34,6 @@
     max-width: 100%;
   }
 
-  /* Page heading: preserve hierarchy while avoiding a wide desktop header row. */
   .step-header {
     flex-direction: column;
     align-items: stretch;
@@ -51,8 +50,6 @@
   .step-title {
     flex-wrap: wrap;
     gap: 6px 8px;
-    font-size: 1.35rem;
-    line-height: 1.3;
   }
 
   .step-subtitle {
@@ -63,15 +60,11 @@
   .step-lead,
   .purpose-input-note {
     max-width: none;
-    font-size: 0.875rem;
-    line-height: 1.7;
   }
 
-  /* iOS zooms focused form controls below 16px. Keep inputs readable and stable. */
   .step-page :where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
     min-width: 0;
     max-width: 100%;
-    font-size: 16px;
   }
 
   .step-page :where(.ui-field, .ui-field-controls, .ui-amount) {
@@ -88,16 +81,11 @@
   }
 
   .step-page :where(.ui-btn, .ui-copy-bar-button) {
-    min-height: var(--mobile-touch-target);
     touch-action: manipulation;
   }
 
-  /*
-   * Shared member tabs are used by several Q screens.
-   * The strip itself owns horizontal scrolling; parent toolbars must not change
-   * that behavior. Tabs may be a little wider on phones so atomic metadata such
-   * as a birth date never breaks in the middle; horizontal swipe is intentional.
-   */
+  /* Shared member tabs -------------------------------------------------- */
+
   .ui-member-tabs-block {
     width: 100%;
     min-width: 0;
@@ -148,16 +136,16 @@
     min-width: min(204px, 82vw);
     max-width: 240px;
     overflow: hidden;
-    border: 1px solid var(--ui-card-border);
-    border-radius: var(--ui-control-radius);
-    background: var(--color-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-bg-surface);
     box-shadow: none !important;
     scroll-snap-align: start;
   }
 
   .ui-member-tab.active {
-    border-color: var(--color-brand);
-    background: var(--color-brand-soft);
+    border-color: var(--ui-brand);
+    background: var(--ui-brand-soft);
     box-shadow: none !important;
   }
 
@@ -191,7 +179,8 @@
     min-width: 0;
   }
 
-  /* Shared toolbar patterns: tabs/copy controls should not fight for one row. */
+  /* Shared toolbar patterns -------------------------------------------- */
+
   :where(
       .education-toolbar,
       .life-event-toolbar,
@@ -213,10 +202,11 @@
     min-width: 0;
   }
 
-  /* Q1 family cards. */
+  /* Q1 family cards ----------------------------------------------------- */
+
   .family-member-card {
     min-width: 0;
-    border-radius: var(--ui-card-radius);
+    border-radius: var(--ui-radius-card);
   }
 
   .family-member-card-head {
@@ -277,7 +267,8 @@
     min-height: var(--mobile-touch-target);
   }
 
-  /* Repeated cards / wide data surfaces should stay inside the viewport. */
+  /* Wide data surfaces -------------------------------------------------- */
+
   :where(
       .income-table-card,
       .education-table-card,
@@ -293,7 +284,6 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Shared Q12 containers only; tab behavior itself is owned by mobileSecondLife.css. */
   .second-life-workspace-panel,
   .second-life-renovation-scope,
   .third-life-reference-details {
@@ -316,11 +306,6 @@
     width: 100%;
     min-width: 0;
   }
-
-  .ui-copy-bar-select,
-  .ui-copy-bar-button {
-    min-height: var(--mobile-touch-target);
-  }
 }
 
 @media (max-width: 430px) {
@@ -331,15 +316,6 @@
   .step-header {
     padding-top: 12px;
     padding-bottom: 14px;
-  }
-
-  .step-title {
-    font-size: 1.25rem;
-  }
-
-  .step-lead,
-  .purpose-input-note {
-    font-size: 0.84375rem;
   }
 
   .family-member-card-head {
