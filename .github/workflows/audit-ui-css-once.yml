@@ -40,181 +40,138 @@ jobs:
           def write(name, text):
               (root / name).write_text(text, encoding='utf-8')
 
-          def replace_once(text, old, new, label):
-              count = text.count(old)
+          def sub_once(text, pattern, repl, label, flags=0):
+              next_text, count = re.subn(pattern, repl, text, count=1, flags=flags)
               if count != 1:
                   print(f'{label}: expected exactly 1 match, found {count}', file=sys.stderr)
                   sys.exit(1)
-              return text.replace(old, new, 1)
+              return next_text
 
-          # 1) Base ui-input/ui-select geometry should use the shared tokens at its source,
-          #    so ui-system.css no longer needs to restate the same visual values.
+          # Base ui-input/ui-select geometry uses shared design tokens at the source.
           index = read('index.css')
-          old_input = '''.ui-input,
-          .ui-select {
-            min-height: var(--control-height);
-            padding: 8px 12px;
-            border: 1px solid #c5d0c9;
-            border-radius: var(--radius-sm);
-            background: var(--color-surface);
-            font-size: var(--text-base);
-            color: var(--color-ink);
-          }'''
-          new_input = '''.ui-input,
-          .ui-select {
-            min-height: var(--control-height);
-            padding: 8px 12px;
-            border: 1px solid var(--ui-control-border);
-            border-radius: var(--ui-control-radius);
-            background: var(--color-surface);
-            font-size: var(--text-base);
-            color: var(--color-ink);
-          }'''
-          index = replace_once(index, old_input, new_input, 'index ui-input/ui-select')
-
-          old_danger = '''.ui-btn--danger {
-            border-color: #e0b4b4;
-            color: var(--color-danger);
-            background: var(--color-surface);
-          }'''
-          new_danger = '''.ui-btn--danger {
-            border-color: var(--ui-danger-border);
-            color: var(--color-danger);
-            background: var(--color-surface);
-          }'''
-          index = replace_once(index, old_danger, new_danger, 'index ui-btn--danger')
+          index = sub_once(
+              index,
+              r'(\.ui-input,\n\.ui-select \{\n\s*min-height: var\(--control-height\);\n\s*padding: 8px 12px;\n\s*border: 1px solid )#c5d0c9;(\n\s*border-radius: )var\(--radius-sm\);',
+              r'\1var(--ui-control-border);\2var(--ui-control-radius);',
+              'index ui-input/ui-select',
+          )
+          index = sub_once(
+              index,
+              r'(\.ui-btn--danger \{\n\s*border-color: )#e0b4b4;',
+              r'\1var(--ui-danger-border);',
+              'index ui-btn--danger',
+          )
           write('index.css', index)
 
           ui = read('ui-system.css')
-          ui = replace_once(
+          if '--ui-danger-border:' not in ui:
+              ui = sub_once(
+                  ui,
+                  r'(\s*--ui-control-border-hover: #97a49d;\n)',
+                  r'\1  --ui-danger-border: #e0b4b4;\n',
+                  'ui danger token',
+              )
+
+          ui = sub_once(
               ui,
-              '  --ui-control-border-hover: #97a49d;\n',
-              '  --ui-control-border-hover: #97a49d;\n  --ui-danger-border: #e0b4b4;\n',
-              'ui danger token',
+              r':is\(\.ui-input, \.ui-select, \.ui-copy-bar-select\) \{\n\s*border-color: var\(--ui-control-border\);\n\s*border-radius: var\(--ui-control-radius\);\n\s*background: var\(--color-surface\);\n\s*color: var\(--color-ink\);\n\s*transition:\n\s*border-color var\(--ui-transition-fast\),\n\s*box-shadow var\(--ui-transition-fast\),\n\s*background var\(--ui-transition-fast\);\n\}',
+              ''':is(.ui-input, .ui-select) {
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}
+
+.ui-copy-bar-select {
+  border-color: var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}''',
+              'ui common controls',
           )
-
-          old_common_controls = ''':is(.ui-input, .ui-select, .ui-copy-bar-select) {
-            border-color: var(--ui-control-border);
-            border-radius: var(--ui-control-radius);
-            background: var(--color-surface);
-            color: var(--color-ink);
-            transition:
-              border-color var(--ui-transition-fast),
-              box-shadow var(--ui-transition-fast),
-              background var(--ui-transition-fast);
-          }'''
-          new_common_controls = ''':is(.ui-input, .ui-select) {
-            transition:
-              border-color var(--ui-transition-fast),
-              box-shadow var(--ui-transition-fast),
-              background var(--ui-transition-fast);
-          }
-
-          .ui-copy-bar-select {
-            border-color: var(--ui-control-border);
-            border-radius: var(--ui-control-radius);
-            background: var(--color-surface);
-            color: var(--color-ink);
-            transition:
-              border-color var(--ui-transition-fast),
-              box-shadow var(--ui-transition-fast),
-              background var(--ui-transition-fast);
-          }'''
-          ui = replace_once(ui, old_common_controls, new_common_controls, 'ui common controls')
           write('ui-system.css', ui)
 
-          # 2) Text integrity belongs to the shared text layer, not Q5-specific CSS.
+          # Text integrity belongs to the shared text layer, not Q5-specific CSS.
           integrity = read('ui-text-integrity.css')
-          integrity = replace_once(
+          integrity = sub_once(
               integrity,
-              '''    .ui-segmented-label,
-              .living-summary-label,
-              .celebration-gift-block-title
-            ) {''',
-              '''    .ui-segmented-label,
-              .living-summary-label,
-              .celebration-gift-block-title,
-              .housing-section-title,
-              .housing-owned-detail-title
-            ) {''',
+              r'(\s*\.ui-segmented-label,\n\s*\.living-summary-label,\n\s*\.celebration-gift-block-title)(\n\s*\) \{)',
+              r'\1,\n    .housing-section-title,\n    .housing-owned-detail-title\2',
               'text-integrity headings',
           )
-          integrity = replace_once(
+          integrity = sub_once(
               integrity,
-              '''.step-page :where(.life-event-table-cell, .living-table-cell)::before {
-            word-break: keep-all;
-            overflow-wrap: anywhere;
-          }''',
+              r'\.step-page :where\(\.life-event-table-cell, \.living-table-cell\)::before \{\n\s*word-break: keep-all;\n\s*overflow-wrap: anywhere;\n\}',
               '''.step-page :where(
-              .education-table-cell,
-              .life-event-table-cell,
-              .living-table-cell,
-              .housing-table-cell
-            )::before {
-            word-break: keep-all;
-            overflow-wrap: anywhere;
-          }''',
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell
+  )::before {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}''',
               'text-integrity generated labels',
           )
           write('ui-text-integrity.css', integrity)
 
           housing = read('mobileHousing.css')
-          housing = replace_once(
+          housing = sub_once(
               housing,
-              '''  .housing-step .housing-section-title,
-            .housing-step .housing-owned-detail-title {
-              word-break: keep-all;
-              overflow-wrap: anywhere;
-            }
-
-          ''',
-              '',
+              r'\n\s*\.housing-step \.housing-section-title,\n\s*\.housing-step \.housing-owned-detail-title \{\n\s*word-break: keep-all;\n\s*overflow-wrap: anywhere;\n\s*\}\n',
+              '\n',
               'housing heading text-integrity duplicate',
           )
-          housing = replace_once(
+          housing = sub_once(
               housing,
-              '''    line-height: var(--leading-tight);
-              word-break: keep-all;
-              overflow-wrap: anywhere;
-            }''',
-              '''    line-height: var(--leading-tight);
-            }''',
+              r'(\.housing-step \.housing-table-cell::before \{.*?line-height: var\(--leading-tight\);)\n\s*word-break: keep-all;\n\s*overflow-wrap: anywhere;',
+              r'\1',
               'housing generated label text-integrity duplicate',
+              flags=re.S,
           )
           write('mobileHousing.css', housing)
 
-          # 3) Same semantic danger border should not be repeated as a raw literal
-          #    across responsive screen files.
+          # Same semantic danger border uses one shared token.
           for name in ['mobileLifeEvent.css', 'mobileLiving.css', 'mobileHousing.css']:
-              text = read(name)
-              text = text.replace('#e0b4b4', 'var(--ui-danger-border)')
+              text = read(name).replace('#e0b4b4', 'var(--ui-danger-border)')
               write(name, text)
 
-          # Audit common ownership leaks introduced by this PR.
-          screen_files = sorted(root.glob('mobile[A-Z]*.css'))
-          forbidden = re.compile(r'(^|\n)\s*(?:\.step-header|\.shell-main|\.ui-member-tabs(?:-|\b)|\.ui-copy-bar(?:-|\b))')
+          # Screen-specific files must not take ownership of common shell/member/copy UI.
+          common_mobile_files = {'mobile.css', 'mobileCompact.css', 'mobileSteps.css'}
+          screen_files = [
+              path for path in sorted(root.glob('mobile*.css'))
+              if path.name not in common_mobile_files
+          ]
+          forbidden = re.compile(
+              r'(^|\n)\s*(?:\.step-header|\.shell-main|\.ui-member-tabs(?:-|\b)|\.ui-copy-bar(?:-|\b))'
+          )
           leaks = []
           for path in screen_files:
-              text = path.read_text(encoding='utf-8')
-              if forbidden.search(text):
+              if forbidden.search(path.read_text(encoding='utf-8')):
                   leaks.append(path.name)
           if leaks:
               print('Common UI ownership leak in screen-specific CSS: ' + ', '.join(leaks), file=sys.stderr)
               sys.exit(1)
 
-          # The Q5-specific word-break rules moved to ui-text-integrity.css.
           housing_text = read('mobileHousing.css')
           for token in ['word-break:', 'overflow-wrap:']:
               if token in housing_text:
                   print(f'mobileHousing.css still contains {token}', file=sys.stderr)
                   sys.exit(1)
 
-          # Shared danger styling should use the token in the files touched above.
-          for name in ['index.css', 'mobileLifeEvent.css', 'mobileLiving.css', 'mobileHousing.css']:
-              text = read(name)
-              if '#e0b4b4' in text:
+          for name in ['mobileLifeEvent.css', 'mobileLiving.css', 'mobileHousing.css']:
+              if '#e0b4b4' in read(name):
                   print(f'{name} still contains raw danger border literal', file=sys.stderr)
                   sys.exit(1)
+
+          if 'border-color: var(--ui-danger-border);' not in read('index.css'):
+              print('ui-btn--danger is not using the shared danger token', file=sys.stderr)
+              sys.exit(1)
 
           print('UI CSS responsibility audit passed.')
           PY
