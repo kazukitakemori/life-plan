@@ -1,0 +1,105 @@
+name: One-off index.css cleanup
+
+on:
+  push:
+    branches:
+      - ui/unify-foundation-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ui/unify-foundation-cleanup
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Remove superseded plan-admin visuals from index.css
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/index.css')
+          text = path.read_text(encoding='utf-8')
+
+          targets = {
+              '.plan-admin-table-wrap': {'border', 'border-radius', 'background'},
+              '.plan-admin-table': {'font-size'},
+              '.plan-admin-table thead': {'background', 'color'},
+              '.plan-admin-table th, .plan-admin-table td': {'border-bottom'},
+              '.plan-admin-table tr.is-current': {'background'},
+              '.plan-admin-table tr:hover': {'background'},
+              '.plan-admin-name-text': {'color'},
+              '.plan-admin-purpose-empty': {'color', 'font-size'},
+              '.plan-admin-purpose-chip': {'border', 'border-radius', 'background', 'color', 'font-size'},
+              '.plan-admin-purpose-chip.is-current': {'border-color', 'background', 'color'},
+              '.plan-admin-status-current': {'border', 'background', 'color'},
+              '.plan-admin-status-saved': {'border', 'background', 'color'},
+              '.plan-admin-date': {'color', 'font-size'},
+              '.plan-admin-empty': {'border', 'border-radius', 'background', 'color'},
+          }
+
+          rule_re = re.compile(r'(?P<selector>[^{}]+)\{(?P<body>[^{}]*)\}')
+          removed = []
+          matched = set()
+
+          def normalize(selector: str) -> str:
+              return ' '.join(selector.split())
+
+          def transform(match: re.Match) -> str:
+              selector = match.group('selector')
+              body = match.group('body')
+              key = normalize(selector)
+              props = targets.get(key)
+              if not props:
+                  return match.group(0)
+              matched.add(key)
+              new_body = body
+              for prop in sorted(props, key=len, reverse=True):
+                  prop_re = re.compile(rf'(?m)^[ \t]*{re.escape(prop)}\s*:[^;{{}}]*;[ \t]*(?:\n|$)')
+                  new_body, count = prop_re.subn('', new_body)
+                  if count:
+                      removed.extend([(key, prop)] * count)
+              return f'{selector}{{{new_body}}}'
+
+          updated = rule_re.sub(transform, text)
+
+          required = set(targets)
+          missing = sorted(required - matched)
+          if missing:
+              raise SystemExit(f'Expected selectors not found: {missing}')
+          if len(removed) < 20:
+              raise SystemExit(f'Unexpectedly small cleanup: {len(removed)} declarations removed')
+          if updated == text:
+              raise SystemExit('No index.css changes produced')
+
+          path.write_text(updated, encoding='utf-8')
+          print(f'Removed {len(removed)} superseded visual declarations from {len(matched)} plan-admin selectors.')
+          for selector, prop in removed:
+              print(f'- {selector}: {prop}')
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Remove one-off workflow and commit cleanup
+        run: |
+          rm .github/workflows/index-css-cleanup-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.css .github/workflows/index-css-cleanup-once.yml
+          git commit -m "index.cssのプラン管理旧見た目指定を整理"
+          git push origin HEAD:ui/unify-foundation-cleanup
