@@ -32,6 +32,7 @@ import './ui-add-cards.css';
 import './education-ui.css';
 import './education-mobile-ui.css';
 import './education-tuition-link.css';
+import './step-guidance.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
