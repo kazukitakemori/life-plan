@@ -2,8 +2,6 @@ import { useState } from 'react';
 
 import {
   LOAN_ADD_CATEGORIES,
-  LOAN_CATEGORY_DESCRIPTIONS,
-  LOAN_CATEGORY_ICONS,
   LOAN_CATEGORY_LABELS,
 } from '../../lib/loanLabels';
 import type { LoanCategory, LoanStructureType } from '../../types/loan';
@@ -13,6 +11,13 @@ interface AddLoanCardsProps {
   hasSpouse: boolean;
   onAdd: (category: LoanCategory, structureType?: LoanStructureType) => void;
 }
+
+const ADD_DESCRIPTIONS: Record<LoanCategory, string> = {
+  housing: '住宅資金',
+  vehicle: '車・バイク',
+  education: '学費・留学',
+  free: 'その他の借入',
+};
 
 export function AddLoanCards({ hasSpouse, onAdd }: AddLoanCardsProps) {
   const [showHousingPicker, setShowHousingPicker] = useState(false);
@@ -33,22 +38,19 @@ export function AddLoanCards({ hasSpouse, onAdd }: AddLoanCardsProps) {
   return (
     <section className="loan-add-section" aria-label="ローンを追加">
       <h3 className="loan-add-title">ローンを追加</h3>
-      <div className="loan-add-grid">
+      <div className="loan-add-grid ui-add-card-grid">
         {LOAN_ADD_CATEGORIES.map((category) => (
           <button
             key={category}
             type="button"
-            className={`loan-add-card${category === 'housing' && showHousingPicker ? ' loan-add-card--active' : ''}`}
+            className={`loan-add-card ui-add-card${category === 'housing' && showHousingPicker ? ' loan-add-card--active ui-add-card--active' : ''}`}
             onClick={() => handleCategoryClick(category)}
           >
-            <span className="loan-add-icon" aria-hidden>
-              {LOAN_CATEGORY_ICONS[category]}
-            </span>
-            <span className="loan-add-card-title">
+            <span className="loan-add-card-title ui-add-card__title">
               {LOAN_CATEGORY_LABELS[category]}
             </span>
-            <span className="loan-add-card-desc">
-              {LOAN_CATEGORY_DESCRIPTIONS[category]}
+            <span className="loan-add-card-desc ui-add-card__description">
+              {ADD_DESCRIPTIONS[category]}
             </span>
           </button>
         ))}
