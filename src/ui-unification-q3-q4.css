@@ -1,0 +1,270 @@
+/*
+ * Q3 / Q4 convergence layer
+ *
+ * Remove legacy blue/yellow form chrome while preserving warning, error and
+ * calculation semantics. Layout remains owned by the existing step styles.
+ */
+
+/* Q3: life events -------------------------------------------------------- */
+
+.life-event-step .life-event-help-icon,
+.celebration-gift-block .life-event-help-icon {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.life-event-step .life-event-copy-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.life-event-step .life-event-copy-btn:hover:not(:disabled) {
+  background: var(--ui-brand-soft);
+}
+
+.life-event-step .life-event-table-card,
+.life-event-step .celebration-gift-block {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.life-event-step .celebration-gift-block-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.life-event-step .celebration-gift-block-title,
+.life-event-step .life-event-add-title {
+  color: var(--ui-text);
+  font-size: var(--ui-font-section);
+}
+
+.life-event-step :is(.life-event-table-header, .celebration-gift-table-header) {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.life-event-step :is(.life-event-header-cell, .celebration-gift-header-cell) {
+  border-right-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-helper);
+  font-weight: 700;
+}
+
+.life-event-step .life-event-table-row:nth-child(odd),
+.life-event-step .life-event-table-row:nth-child(even),
+.life-event-step .celebration-gift-table-row:nth-child(odd),
+.life-event-step .celebration-gift-table-row:nth-child(even) {
+  background: var(--ui-bg-surface);
+}
+
+.life-event-step :is(.life-event-table-cell, .celebration-gift-table-cell) {
+  border-color: var(--ui-border);
+}
+
+.life-event-step :is(
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.life-event-step :is(
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.life-event-step :is(
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.life-event-step :is(
+    .life-event-inflation-label,
+    .life-event-inflation-unit,
+    .life-event-rate-label,
+    .period-until-suffix
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.life-event-step .life-event-add-card {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.life-event-step .life-event-add-card:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 2px 8px rgb(47 111 78 / 10%);
+}
+
+.life-event-step .life-event-add-card-title {
+  color: var(--ui-text);
+}
+
+.life-event-step .life-event-add-card-desc,
+.life-event-step .celebration-gift-empty,
+.life-event-step .life-event-table-empty {
+  color: var(--ui-text-muted);
+}
+
+.life-event-step .life-event-table-empty {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+/* Q4: living expenses ---------------------------------------------------- */
+
+.living-step .living-help-icon {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.living-step .living-copy-bar,
+.living-step .living-schedule-card {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.living-step .living-copy-from {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-label);
+}
+
+.living-step .living-copy-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.living-step .living-copy-btn:hover:not(:disabled) {
+  background: var(--ui-brand-soft);
+}
+
+.living-step .living-table-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.living-step .living-table-header-cell {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-helper);
+  font-weight: 700;
+}
+
+.living-step .living-table-cell,
+.living-step .living-schedule-cell,
+.living-step .living-add-item-row {
+  border-color: var(--ui-border);
+}
+
+.living-step :is(
+    .select-input--schedule,
+    .select-input--cycle,
+    .living-cycle-input,
+    .living-content-input
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.living-step :is(
+    .select-input--schedule,
+    .select-input--cycle,
+    .living-cycle-input,
+    .living-content-input
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.living-step :is(
+    .select-input--schedule,
+    .select-input--cycle,
+    .living-cycle-input,
+    .living-content-input
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.living-step .living-summary-row {
+  border-top-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.living-step .living-summary-label,
+.living-step .living-summary-amount {
+  color: var(--ui-text);
+}
+
+.living-step .living-summary-auto,
+.living-step .living-rate-same,
+.living-step .living-modal-note {
+  color: var(--ui-text-muted);
+}
+
+.living-step .living-empty {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+}
+
+.living-step .living-modal {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.living-step .living-modal-add-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.living-step .living-modal-add-btn:hover:not(:disabled) {
+  background: var(--ui-brand);
+  filter: brightness(0.96);
+}
+
+/* Destructive actions intentionally keep their red semantic color. */
+.life-event-step :is(.life-event-row-remove, .education-row-remove),
+.living-step .living-schedule-remove-btn {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+  color: var(--ui-danger);
+}
