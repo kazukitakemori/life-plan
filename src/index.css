@@ -6733,9 +6733,7 @@ button:disabled {
   display: inline-flex;
   margin-right: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
   overflow: hidden;
-  background: #fff;
 }
 
 .lifetime-chart-scale-btn {
@@ -6744,7 +6742,6 @@ button:disabled {
   border: none;
   border-right: 1px solid var(--color-border);
   background: transparent;
-  color: #555;
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.4;
@@ -6756,7 +6753,6 @@ button:disabled {
 }
 
 .lifetime-chart-scale-btn:hover {
-  background: #f3f6fa;
 }
 
 .lifetime-chart-scale-btn.is-active {
@@ -6896,7 +6892,6 @@ button:disabled {
   gap: 0;
   padding: 12px 14px 16px;
   border-left: 1px solid var(--color-border);
-  background: #f8fafc;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
@@ -6918,7 +6913,6 @@ button:disabled {
   margin: 0;
   font-size: 0.6875rem;
   line-height: 1.4;
-  color: #64748b;
 }
 
 .lifetime-chart-fullscreen-btn {
@@ -7043,7 +7037,6 @@ button:disabled {
 .lifetime-chart-yaxis-auto-hint {
   margin: 0;
   font-size: 0.75rem;
-  color: #64748b;
 }
 
 .lifetime-chart-summary {
@@ -7055,7 +7048,6 @@ button:disabled {
   margin: 0 0 6px;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #333;
 }
 
 .lifetime-chart-summary-list {
@@ -7075,14 +7067,12 @@ button:disabled {
 
 .lifetime-chart-summary-row dt {
   font-size: 0.75rem;
-  color: #777;
 }
 
 .lifetime-chart-summary-row dd {
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #283c58;
 }
 
 .required-coverage-page .lifetime-simulation-align {
@@ -7122,7 +7112,6 @@ button:disabled {
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
-  color: #666;
 }
 
 .coverage-formula-swatch {
@@ -7135,7 +7124,6 @@ button:disabled {
 .coverage-formula-value {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #283c58;
 }
 
 .coverage-formula-value--need {
@@ -7242,7 +7230,6 @@ button:disabled {
 
 .lifetime-chart-legend-label {
   font-size: 0.75rem;
-  color: #555;
   line-height: 1.35;
 }
 
@@ -8112,7 +8099,6 @@ button:disabled {
   padding: 4px 0;
   border: none;
   background: none;
-  color: #1976d2;
   font-size: 0.8125rem;
   text-align: left;
 }
@@ -8138,8 +8124,6 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
   cursor: help;
@@ -8161,9 +8145,7 @@ button:disabled {
   padding: 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #fff;
   font-size: 0.8125rem;
-  color: #444;
 }
 
 .cashflow-table-wrap {
@@ -8506,8 +8488,6 @@ button:disabled {
 }
 
 .cf-value-col--clickable:hover {
-  background: #e3f2fd;
-  color: #1565c0;
 }
 
 .cf-value-col--clickable:focus-visible {
