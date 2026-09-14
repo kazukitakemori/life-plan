@@ -1,0 +1,208 @@
+/* Q2 education UX enhancements.
+ * Uses existing shared buttons/tokens; only education-specific information
+ * structure and responsive composition live here.
+ */
+
+.education-mobile-summary {
+  display: none;
+}
+
+.education-add-entry-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.education-add-entry-title {
+  margin: 0 0 10px;
+  color: var(--ui-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.education-add-entry-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.education-add-entry-option {
+  min-width: 0;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+/* "参考" だけでは操作結果が分かりにくいため、表示文言を明確化する。 */
+.education-step .education-fetch-btn {
+  font-size: 0;
+  white-space: nowrap;
+}
+
+.education-step .education-fetch-btn::after {
+  content: '参考費用を反映';
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .education-step .education-table-body {
+    gap: 14px;
+  }
+
+  .education-step .education-mobile-accordion-item {
+    display: block;
+    min-width: 0;
+  }
+
+  .education-step .education-mobile-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 76px;
+    padding: 13px 14px;
+    border: 1px solid var(--ui-border);
+    border-top: 4px solid var(--ui-brand);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    color: var(--ui-text);
+    text-align: left;
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .education-step .education-mobile-accordion-item.is-expanded .education-mobile-summary {
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    box-shadow: none;
+  }
+
+  .education-step .education-mobile-summary-copy {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .education-step .education-mobile-summary-title {
+    color: var(--ui-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .education-step .education-mobile-summary-school-name {
+    overflow: hidden;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .education-step .education-mobile-summary-meta {
+    color: var(--ui-text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .education-step .education-mobile-summary-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    color: var(--ui-brand);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* 外側の要約ヘッダーで開閉するため、旧カード内トグルは隠す。 */
+  .education-step .education-mobile-toggle {
+    display: none !important;
+  }
+
+  /* 初期表示は要約だけ。 */
+  .education-step
+    .education-mobile-accordion-item:not(.is-expanded)
+    > .education-table-row {
+    display: none !important;
+  }
+
+  /* 展開時は旧ローカル状態に関係なく全入力を表示する。 */
+  .education-step
+    .education-mobile-accordion-item.is-expanded
+    > .education-table-row
+    > :is(
+      .education-col-period,
+      .education-col-fetch,
+      .education-col-entrance,
+      .education-col-tuition-amount,
+      .education-col-tuition-monthly,
+      .education-col-other,
+      .education-col-action
+    ) {
+    display: block;
+  }
+
+  .education-step
+    .education-mobile-accordion-item.is-expanded
+    > .education-table-row {
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .education-step
+    .education-mobile-accordion-item.is-expanded
+    > .education-table-row
+    .education-col-school {
+    border-top: 0;
+  }
+
+  .education-step .education-add-entry-panel {
+    margin-top: 8px;
+    padding: 12px;
+  }
+
+  .education-step .education-add-entry-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .education-step .education-add-entry-option {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 430px) {
+  .education-step .education-mobile-summary {
+    align-items: flex-start;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .education-step .education-mobile-summary-meta {
+    display: block;
+  }
+
+  .education-step .education-mobile-summary-action > span:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .education-step .education-mobile-summary-action > span:last-child {
+    font-size: 18px;
+    line-height: 1;
+  }
+}
