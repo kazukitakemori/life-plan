@@ -1,0 +1,277 @@
+name: Apply add-card legacy cleanup
+
+on:
+  push:
+    branches:
+      - cleanup/add-card-legacy-css
+    paths:
+      - '.github/workflows/apply-add-card-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: cleanup/add-card-legacy-css
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Remove superseded add-card CSS
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def canonical(raw: str) -> str:
+              raw = re.sub(r'/\*.*?\*/', '', raw, flags=re.S)
+              return ' '.join(raw.split()).strip()
+
+          def edit_leaf_rules(path: str, remove: set[str], body_replace: dict[str, str] | None = None):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              body_replace = body_replace or {}
+              matches = list(re.finditer(r'([^{}]+)\{([^{}]*)\}', text, re.S))
+              removed = 0
+              replaced = 0
+              for m in reversed(matches):
+                  sel = canonical(m.group(1))
+                  if sel in remove:
+                      text = text[:m.start()] + '\n' + text[m.end():]
+                      removed += 1
+                  elif sel in body_replace:
+                      indent = ''
+                      new_rule = f'\n{sel} {{\n{body_replace[sel]}\n}}'
+                      text = text[:m.start()] + new_rule + text[m.end():]
+                      replaced += 1
+              p.write_text(text, encoding='utf-8')
+              print(f'{path}: removed={removed}, replaced={replaced}')
+
+          index_remove = {
+              '.add-family-grid',
+              '.add-family-card',
+              '.add-family-card:hover:not(:disabled)',
+              '.add-family-card:disabled',
+              '.add-family-label',
+              '.add-family-desc',
+              '.add-income-grid',
+              '.add-income-card',
+              '.add-income-card:hover:not(:disabled):not(.add-income-card--disabled)',
+              '.add-income-card--disabled, .add-income-card--disabled:hover',
+              '.add-income-card--disabled .add-income-label, .add-income-card--disabled .add-income-desc',
+              '.add-income-label',
+              '.add-income-desc',
+              '.add-income-grid, .life-event-add-grid, .loan-add-grid, .vehicle-add-grid, .insurance-add-grid, .savings-add-grid, .housing-owned-add-options',
+              '.life-event-add-grid',
+              '.life-event-add-card',
+              '.life-event-add-card:hover',
+              '.life-event-add-icon',
+              '.life-event-add-card-title',
+              '.life-event-add-card-desc',
+              '.housing-owned-add-option',
+              '.housing-owned-add-option:hover',
+              '.housing-owned-add-icon',
+              '.housing-owned-add-title',
+              '.housing-owned-add-desc',
+              '.loan-add-grid',
+              '.loan-add-card',
+              '.loan-add-card:hover',
+              '.loan-add-icon',
+              '.loan-add-card-title',
+              '.loan-add-card-desc',
+              '.loan-add-card--active',
+              '.vehicle-add-grid',
+              '.vehicle-add-card',
+              '.vehicle-add-card:hover',
+              '.vehicle-add-icon',
+              '.vehicle-add-card-title',
+              '.vehicle-add-card-desc',
+              '.insurance-add-grid',
+              '.insurance-add-card',
+              '.insurance-add-card:hover',
+              '.insurance-add-group:last-child .insurance-add-card:hover',
+              '.insurance-add-icon',
+              '.insurance-add-card-title',
+              '.insurance-add-card-desc',
+              '.savings-add-grid',
+              '.savings-add-card',
+              '.savings-add-card:hover',
+              '.savings-add-group:last-child .savings-add-card:hover',
+              '.savings-add-icon',
+              '.savings-add-card-title',
+              '.savings-add-card-desc',
+          }
+          edit_leaf_rules(
+              'src/index.css',
+              index_remove,
+              {'.housing-owned-add-options': '  margin-top: 12px;'},
+          )
+
+          edit_leaf_rules('src/mobileSteps.css', {
+              '.add-family-grid',
+              '.add-family-grid button',
+          })
+
+          edit_leaf_rules('src/mobileLoan.css', {
+              '.loan-step .loan-add-grid',
+              '.loan-step .loan-add-card',
+              '.loan-step .loan-add-card-title, .loan-step .loan-add-card-desc',
+          })
+
+          edit_leaf_rules(
+              'src/mobileInsurance.css',
+              {
+                  '.insurance-step .insurance-add-grid',
+                  '.insurance-step .insurance-add-card',
+                  '.insurance-step .insurance-add-card-title, .insurance-step .insurance-add-card-desc, .insurance-step .insurance-add-group-desc',
+              },
+          )
+          p = Path('src/mobileInsurance.css')
+          text = p.read_text(encoding='utf-8')
+          anchor = '.insurance-step .insurance-add-section,\n.insurance-step .insurance-add-group {'
+          if anchor in text and '.insurance-step .insurance-add-group-desc {' not in text:
+              insert_at = text.find(anchor)
+              text = text[:insert_at] + '.insurance-step .insurance-add-group-desc {\n  white-space: normal;\n  line-height: 1.5;\n}\n\n' + text[insert_at:]
+          p.write_text(text, encoding='utf-8')
+
+          edit_leaf_rules(
+              'src/mobileSavings.css',
+              {
+                  '.savings-step .savings-add-grid',
+                  '.savings-step .savings-add-card',
+                  '.savings-step .savings-add-card-title, .savings-step .savings-add-card-desc, .savings-step .savings-add-group-desc',
+              },
+          )
+          p = Path('src/mobileSavings.css')
+          text = p.read_text(encoding='utf-8')
+          anchor = '.savings-step .savings-add-section,\n.savings-step .savings-add-group {'
+          if anchor in text and '.savings-step .savings-add-group-desc {' not in text:
+              insert_at = text.find(anchor)
+              text = text[:insert_at] + '.savings-step .savings-add-group-desc {\n  white-space: normal;\n  line-height: 1.5;\n}\n\n' + text[insert_at:]
+          p.write_text(text, encoding='utf-8')
+
+          edit_leaf_rules(
+              'src/mobileVehicle.css',
+              {
+                  '.vehicle-step .vehicle-add-grid',
+                  '.vehicle-step .vehicle-add-card',
+                  '.vehicle-step :where(.vehicle-add-card-title, .vehicle-add-card-desc)',
+                  '.vehicle-step .vehicle-add-section, .vehicle-step .vehicle-add-grid',
+                  '.vehicle-step .vehicle-duplicate-controls, .vehicle-step .vehicle-add-grid',
+              },
+          )
+          p = Path('src/mobileVehicle.css')
+          text = p.read_text(encoding='utf-8')
+          marker = '.vehicle-step .vehicle-table-group-body'
+          insert = '.vehicle-step .vehicle-add-section {\n  width: 100%;\n  min-width: 0;\n}\n\n.vehicle-step .vehicle-duplicate-controls {\n  grid-template-columns: minmax(0, 1fr);\n}\n\n'
+          if marker in text and '.vehicle-step .vehicle-add-section {' not in text:
+              idx = text.find(marker)
+              text = text[:idx] + insert + text[idx:]
+          p.write_text(text, encoding='utf-8')
+
+          edit_leaf_rules('src/ui-system.css', {
+              ':is(.add-family-grid, .add-income-grid)',
+              ':is(.add-family-card, .add-income-card)',
+              ':is(.add-family-card, .add-income-card):hover:not(:disabled)',
+              ':is(.add-family-card, .add-income-card):disabled, .add-income-card--disabled',
+              ':is(.add-family-label, .add-income-label)',
+          })
+
+          # Remove legacy card members from mixed canonical selector groups while keeping still-used selectors.
+          p = Path('src/ui-unification-screens.css')
+          text = p.read_text(encoding='utf-8')
+          for old in [
+              '    .life-event-step .life-event-add-card,\n',
+              '    .vehicle-step .vehicle-add-card,\n',
+              '    .loan-step .loan-add-card,\n',
+              '    .insurance-step .insurance-add-card,\n',
+              '    .savings-step .savings-add-card\n',
+              '    .life-event-add-card-title,\n',
+              '    .vehicle-add-card-title,\n',
+              '    .loan-add-card-title,\n',
+              '    .insurance-add-card-title,\n',
+              '    .savings-add-card-title,\n',
+              '    .life-event-add-card-desc,\n',
+              '    .vehicle-add-card-desc,\n',
+              '    .loan-add-card-desc,\n',
+              '    .insurance-add-card-desc,\n',
+              '    .savings-add-card-desc,\n',
+              '    .life-event-add-card-desc,\n',
+          ]:
+              text = text.replace(old, '')
+          # Repair trailing commas before closing :is() after selector removal.
+          text = text.replace('    .insurance-add-group-title,\n    .savings-add-group-title\n', '    .insurance-add-group-title,\n    .savings-add-group-title\n')
+          text = text.replace('    .insurance-add-group-desc,\n    .savings-add-group-desc\n', '    .insurance-add-group-desc,\n    .savings-add-group-desc\n')
+          p.write_text(text, encoding='utf-8')
+
+          p = Path('src/ui-unification.css')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('    .ui-member-tab-menu,\n    .add-family-card,\n    .add-income-card\n', '    .ui-member-tab-menu\n')
+          p.write_text(text, encoding='utf-8')
+
+          p = Path('src/ui-typography-unification.css')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('    .life-event-add-card-desc,\n', '')
+          p.write_text(text, encoding='utf-8')
+
+          p = Path('src/ui-add-cards.css')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace(
+              '/* Shared add-card presentation.\n * Keep legacy screen rules intact during the UI adoption phase.\n * Once this design is accepted and merged, obsolete legacy rules can be removed in a separate cleanup PR.\n */',
+              '/* Canonical shared add-card presentation. */',
+          )
+          text = text.replace('  text-align: left !important;\n', '  text-align: left;\n')
+          disabled_rule = '''\n.ui-add-card-grid > .ui-add-card:disabled {\n  cursor: not-allowed;\n  opacity: 0.48;\n  box-shadow: none;\n}\n\n.ui-add-card-grid > .ui-add-card:disabled:hover {\n  border-color: var(--ui-border);\n  background: var(--ui-bg-surface);\n}\n'''
+          anchor = '\n.ui-add-card-grid > .ui-add-card:focus-visible {'
+          if disabled_rule.strip() not in text:
+              text = text.replace(anchor, disabled_rule + anchor)
+          p.write_text(text, encoding='utf-8')
+
+          # Basic safety checks.
+          checks = {
+              'src/index.css': [
+                  '.life-event-add-card {',
+                  '.vehicle-add-card {',
+                  '.loan-add-card {',
+                  '.insurance-add-card {',
+                  '.savings-add-card {',
+                  '.housing-owned-add-option {',
+              ],
+              'src/mobileLoan.css': ['.loan-step .loan-add-card {'],
+              'src/mobileInsurance.css': ['.insurance-step .insurance-add-card {'],
+              'src/mobileSavings.css': ['.savings-step .savings-add-card {'],
+              'src/mobileVehicle.css': ['.vehicle-step .vehicle-add-card {'],
+          }
+          for path, needles in checks.items():
+              value = Path(path).read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle in value:
+                      raise SystemExit(f'legacy rule still present: {path}: {needle}')
+          PY
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Show cleanup diff
+        run: |
+          git diff --stat
+          git diff --check
+
+      - name: Remove temporary audit workflows and commit
+        shell: bash
+        run: |
+          rm -f .github/workflows/audit-add-card-legacy.yml
+          rm -f .github/workflows/apply-add-card-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src .github/workflows
+          git commit -m "追加カード共通化後の旧CSSを整理"
+          git push origin HEAD:cleanup/add-card-legacy-css
