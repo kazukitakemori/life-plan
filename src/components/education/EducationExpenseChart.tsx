@@ -346,14 +346,14 @@ export function EducationExpenseChart(props: EducationExpenseChartProps) {
               domain={[0, chartData.leftAxisMax]}
               tickFormatter={formatAxisMan}
               stroke="#64748b"
-              fontSize={11}
+              fontSize={13}
               width={48}
               label={{
                 value: '万円',
                 angle: -90,
                 position: 'insideLeft',
                 offset: 8,
-                style: { fill: '#64748b', fontSize: 11 },
+                style: { fill: '#64748b', fontSize: 13 },
               }}
             />
             <YAxis
@@ -362,14 +362,14 @@ export function EducationExpenseChart(props: EducationExpenseChartProps) {
               domain={[0, chartData.rightAxisMax]}
               tickFormatter={formatAxisMan}
               stroke="#64748b"
-              fontSize={11}
+              fontSize={13}
               width={52}
               label={{
                 value: '万円',
                 angle: 90,
                 position: 'insideRight',
                 offset: 8,
-                style: { fill: '#64748b', fontSize: 11 },
+                style: { fill: '#64748b', fontSize: 13 },
               }}
             />
             <Tooltip content={<ChartTooltip />} />

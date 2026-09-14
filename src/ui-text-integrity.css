@@ -6,7 +6,7 @@
 
 .step-page :where(button, [role='button']) {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Short headings / labels should keep semantic phrases together whenever possible. */
@@ -23,10 +23,40 @@
     .living-summary-label,
     .celebration-gift-block-title,
     .housing-section-title,
-    .housing-owned-detail-title
+    .housing-owned-detail-title,
+    .loan-detail-subsection-title,
+    .insurance-add-group-title,
+    .savings-add-group-title,
+    .second-life-section-title
   ) {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+/* Short action labels should stay on one line. Long explanatory buttons are excluded. */
+.step-page :where(
+    .ui-btn,
+    .ui-copy-bar-button,
+    .ui-segmented-button,
+    .ui-member-tabs-summary-toggle,
+    .education-copy-btn,
+    .education-fetch-btn,
+    .education-add-other-btn,
+    .life-event-copy-btn,
+    .living-copy-btn,
+    .vehicle-duplicate-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .housing-row-remove,
+    .remove-member-btn,
+    .residence-add-btn,
+    .residence-remove-btn,
+    .plan-bar-btn
+  ) {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 /* Short atomic labels are always one semantic unit. */
@@ -36,16 +66,26 @@
     .ui-member-tab-badge,
     .ui-member-tab-menu-name,
     .ui-member-tab-menu-meta,
-    .ui-member-tabs-summary-toggle,
     .ui-copy-bar-label,
-    .ui-copy-bar-button,
     .ui-amount-unit,
     .education-yen-unit,
     .amount-unit,
     .rate-unit,
+    .pension-field-unit,
+    .life-event-inflation-unit,
     .period-until-suffix,
     .living-summary-auto,
-    .celebration-gift-block-title
+    .living-rate-same,
+    .celebration-gift-block-title,
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .benefit-death-date,
+    .residence-period-from,
+    .residence-data-version,
+    .second-life-guide-status,
+    .second-life-consistency-status,
+    .plan-admin-status,
+    .plan-admin-current-badge
   ) {
   white-space: nowrap;
   word-break: keep-all;
@@ -60,5 +100,34 @@
     .housing-table-cell
   )::before {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+/* Give atomic text room before allowing surrounding flex/grid content to collapse it. */
+.step-page :where(
+    .ui-member-tab,
+    .ui-segmented-button,
+    .ui-copy-bar-button,
+    .pension-field-unit,
+    .education-yen-unit,
+    .amount-unit,
+    .rate-unit,
+    .period-until-suffix,
+    .residence-data-version
+  ) {
+  flex-shrink: 0;
+}
+
+/* Long values may shrink, but should not force a one-character column. */
+.step-page :where(
+    .ui-field,
+    .ui-field-control,
+    .life-event-amount-field,
+    .education-yen-input,
+    .housing-man-input,
+    .vehicle-monthly-item,
+    .loan-settings-form-value,
+    .second-life-inline-cost
+  ) {
+  min-width: 0;
 }

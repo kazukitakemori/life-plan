@@ -195,7 +195,7 @@ button:disabled {
   margin: 0 0 20px;
   padding: 12px 14px;
   overflow: auto;
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: #8a1f1f;
   background: #fff5f5;
   border: 1px solid #f0c0c0;
@@ -231,14 +231,11 @@ button:disabled {
   align-items: center;
   gap: 10px 12px;
   padding: 10px 20px;
-  background: #eef2f7;
   border-bottom: 1px solid var(--color-border);
 }
 
 .plan-bar-name-label {
-  font-size: 0.75rem;
   font-weight: 600;
-  color: #556;
   white-space: nowrap;
 }
 
@@ -249,7 +246,6 @@ button:disabled {
   padding: 6px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   background: #fff;
 }
 
@@ -259,7 +255,6 @@ button:disabled {
 }
 
 .plan-bar-dirty {
-  font-size: 0.75rem;
   color: #6a7685;
   white-space: nowrap;
 }
@@ -279,17 +274,11 @@ button:disabled {
 .plan-bar-btn {
   padding: 6px 12px;
   border: 1px solid #c5ced9;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 0.8125rem;
   font-weight: 500;
-  color: #334;
   cursor: pointer;
 }
 
 .plan-bar-btn:hover:not(:disabled) {
-  background: #f3f6fa;
-  border-color: #9aabbd;
 }
 
 .plan-bar-btn:disabled {
@@ -298,14 +287,9 @@ button:disabled {
 }
 
 .plan-bar-btn--primary {
-  background: var(--color-header-bg, #1e3a5f);
-  border-color: var(--color-header-bg, #1e3a5f);
-  color: #fff;
 }
 
 .plan-bar-btn--primary:hover:not(:disabled) {
-  background: #2a4d7a;
-  border-color: #2a4d7a;
   color: #fff;
 }
 
@@ -322,7 +306,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
 }
 
 .plan-open-list-wrap {
@@ -359,29 +342,22 @@ button:disabled {
   padding: 10px 12px;
   border: 1px solid #d5dde7;
   border-radius: 6px;
-  background: #fff;
   text-align: left;
   cursor: pointer;
 }
 
 .plan-open-item-main:hover {
-  background: #f5f8fc;
-  border-color: #9aabbd;
 }
 
 .plan-open-item-main.is-current {
-  border-color: #4a7ab5;
-  background: #eef5fc;
 }
 
 .plan-open-item-name {
-  font-size: 0.875rem;
   font-weight: 600;
   color: #223;
 }
 
 .plan-open-item-date {
-  font-size: 0.75rem;
   color: #6a7685;
 }
 
@@ -391,7 +367,7 @@ button:disabled {
   border: 1px solid #e0b4b4;
   border-radius: 6px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #a33;
   cursor: pointer;
 }
@@ -407,7 +383,6 @@ button:disabled {
 .plan-save-as-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #445;
 }
@@ -417,7 +392,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
 }
 
@@ -432,7 +406,6 @@ button:disabled {
   min-width: 120px;
   max-width: 280px;
   flex: 1 1 160px;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #223;
   white-space: nowrap;
@@ -471,7 +444,7 @@ button:disabled {
 
 .plan-purpose-hint {
   margin: 0 0 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667;
   line-height: 1.4;
 }
@@ -489,14 +462,11 @@ button:disabled {
   padding: 10px 12px;
   border: 1px solid #c5ced9;
   border-radius: 8px;
-  background: #fff;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .plan-purpose-option:hover:not(.is-locked) {
-  border-color: #8aa4c4;
-  background: #f8fbff;
 }
 
 .plan-purpose-option.is-locked {
@@ -509,8 +479,6 @@ button:disabled {
 }
 
 .plan-purpose-option.is-selected {
-  border-color: #3d6ea8;
-  background: #eef4fb;
 }
 
 .plan-purpose-radio,
@@ -533,7 +501,7 @@ button:disabled {
 }
 
 .plan-purpose-option-desc {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667;
   line-height: 1.4;
 }
@@ -552,10 +520,8 @@ button:disabled {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: #345;
-  background: #eef2f7;
   border: 1px solid #d0d9e4;
 }
 
@@ -566,9 +532,7 @@ button:disabled {
 .plan-meta-label {
   display: block;
   margin: 12px 0 6px;
-  font-size: 0.8125rem;
   font-weight: 600;
-  color: #445;
 }
 
 .plan-meta-label:first-child {
@@ -580,7 +544,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
   background: #fff;
 }
@@ -590,7 +553,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
   resize: vertical;
   min-height: 88px;
@@ -637,14 +599,12 @@ button:disabled {
 
 .plan-admin-title {
   margin: 0 0 6px;
-  font-size: 1.25rem;
   font-weight: 700;
   color: #223;
 }
 
 .plan-admin-desc {
   margin: 0;
-  font-size: 0.875rem;
   color: #667;
 }
 
@@ -656,9 +616,6 @@ button:disabled {
   gap: 12px;
   margin-top: 24px;
   padding: 48px 28px;
-  background: #fff;
-  border: 1px dashed #c5ced9;
-  border-radius: 10px;
 }
 
 .plan-admin-empty-title {
@@ -698,21 +655,16 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   background: #fff;
 }
 
 .plan-admin-table-wrap {
   overflow-x: auto;
-  background: #fff;
-  border: 1px solid #d5dde7;
-  border-radius: 8px;
 }
 
 .plan-admin-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
   table-layout: auto;
 }
 
@@ -720,19 +672,15 @@ button:disabled {
 .plan-admin-table td {
   padding: 12px 14px;
   text-align: left;
-  border-bottom: 1px solid #e6ebf1;
   vertical-align: middle;
 }
 
 .plan-admin-table th {
-  background: #f3f6fa;
   font-weight: 600;
-  color: #445;
   white-space: nowrap;
 }
 
 .plan-admin-table tr.is-current {
-  background: #eef5fc;
 }
 
 .plan-admin-table tbody tr:last-child td {
@@ -758,9 +706,6 @@ button:disabled {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -773,10 +718,7 @@ button:disabled {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
   font-weight: 600;
-  background: #eef2f7;
-  color: #445;
   white-space: nowrap;
 }
 
@@ -806,14 +748,17 @@ button:disabled {
 }
 
 .plan-admin-contact {
+  min-width: 0;
   font-size: 0.8125rem;
   color: #445;
   line-height: 1.45;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-contact-line {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-contact-email {
@@ -826,13 +771,11 @@ button:disabled {
   color: #556;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-date {
   white-space: nowrap;
-  color: #6a7685;
-  font-size: 0.8125rem;
 }
 
 .plan-admin-actions-cell {
@@ -882,7 +825,6 @@ button:disabled {
   padding: 0 24px;
   /* タイトル＋顧客行（またはヒント）を常に収める */
   min-height: 80px;
-  background: var(--color-header-bg);
 }
 
 .top-header-primary-right {
@@ -931,7 +873,6 @@ button:disabled {
 
 .top-header-title {
   margin: 0;
-  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #fff;
@@ -951,7 +892,6 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
 }
@@ -960,7 +900,6 @@ button:disabled {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.8125rem;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
@@ -987,7 +926,6 @@ button:disabled {
 }
 
 .top-header-autosave {
-  font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -1011,7 +949,6 @@ button:disabled {
 .top-header-hint {
   margin: 0;
   min-height: 1.5rem;
-  font-size: 0.875rem;
   line-height: 1.5rem;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -1032,7 +969,6 @@ button:disabled {
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 1rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.78);
   white-space: nowrap;
@@ -1121,7 +1057,6 @@ button:disabled {
   width: max-content;
   max-width: min(340px, calc(100vw - 48px));
   padding: 6px 0;
-  background: var(--color-header-bg);
   border-radius: 0;
   box-shadow:
     0 18px 40px rgba(16, 24, 40, 0.32),
@@ -1196,7 +1131,6 @@ button:disabled {
 }
 
 .top-header-dropdown-item.active::before {
-  background: #93c5fd;
 }
 
 .top-header-dropdown-dot {
@@ -1215,8 +1149,6 @@ button:disabled {
 }
 
 .top-header-dropdown-item.active .top-header-dropdown-dot {
-  background: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.22);
 }
 
 .top-header-dropdown-label {
@@ -1256,7 +1188,6 @@ button:disabled {
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
-  background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-border);
   padding: 12px 0 0;
   z-index: 10;
@@ -1275,7 +1206,6 @@ button:disabled {
   flex-shrink: 0;
   padding: 10px 10px 12px;
   border-top: 1px solid var(--color-border);
-  background: var(--color-sidebar-bg);
 }
 
 .sidebar-action-btn {
@@ -1287,8 +1217,6 @@ button:disabled {
   min-height: var(--control-height);
   padding: 10px 10px;
   border: none;
-  border-radius: 8px;
-  background: var(--color-primary);
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1298,11 +1226,9 @@ button:disabled {
 }
 
 .sidebar-action-btn:hover:not(:disabled) {
-  background: #43a047;
 }
 
 .sidebar-action-btn:active:not(:disabled) {
-  background: #388e3c;
 }
 
 .sidebar-action-icon {
@@ -1325,24 +1251,18 @@ button:disabled {
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 0.9375rem;
-  color: #555;
   transition: background 0.15s;
 }
 
 .sidebar-item:hover:not(.disabled) {
-  background: #f5f5f5;
 }
 
 .sidebar-item.active {
-  background: var(--color-primary-light);
-  color: #2e7d32;
   font-weight: 600;
   border-right: 3px solid var(--color-primary);
 }
 
 .sidebar-q {
-  font-size: 0.8125rem;
   font-weight: 700;
   color: inherit;
   min-width: 1.75rem;
@@ -1384,7 +1304,7 @@ button:disabled {
   margin: 8px 14px 4px;
   padding-top: 8px;
   border-top: 1px solid var(--color-border);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #777;
 }
 
@@ -1441,7 +1361,7 @@ button:disabled {
   border-radius: 0;
   background: transparent;
   color: var(--color-brand);
-  font-size: 0.72em;
+  font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.04em;
@@ -1473,7 +1393,6 @@ button:disabled {
   margin: 10px 0 0;
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
-  color: var(--color-muted);
 }
 
 .step-actions {
@@ -1510,7 +1429,7 @@ button:disabled {
 }
 
 .inline-field-label {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -1623,10 +1542,8 @@ button:disabled {
 }
 
 .ui-field-label {
-  font-size: var(--text-md);
   font-weight: 600;
   color: var(--color-muted);
-  line-height: var(--leading-tight);
 }
 
 .ui-field-controls {
@@ -1639,8 +1556,6 @@ button:disabled {
 .ui-field-hint,
 .ui-note {
   margin: 0;
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
   color: var(--color-faint);
 }
 
@@ -1649,10 +1564,7 @@ button:disabled {
   min-height: var(--control-height);
   padding: 8px 12px;
   border: 1px solid var(--ui-control-border);
-  border-radius: var(--ui-control-radius);
-  background: var(--color-surface);
   font-size: var(--text-base);
-  color: var(--color-ink);
 }
 
 .ui-input {
@@ -1736,7 +1648,6 @@ button:disabled {
   justify-content: center;
   min-height: var(--control-height);
   padding: 8px 14px;
-  border-radius: var(--radius-sm);
   border: 1px solid var(--color-line);
   background: var(--color-surface);
   color: var(--color-ink);
@@ -1759,7 +1670,6 @@ button:disabled {
 
 .ui-btn--danger {
   border-color: var(--ui-danger-border);
-  color: var(--color-danger);
   background: var(--color-surface);
 }
 
@@ -1887,9 +1797,7 @@ button:disabled {
 }
 
 .family-member-card {
-  background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -2058,7 +1966,6 @@ button:disabled {
   margin: 0 0 var(--space-3);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-ink);
 }
 
 .add-family-grid {
@@ -2075,8 +1982,6 @@ button:disabled {
   min-height: 88px;
   padding: var(--space-4) 18px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -2117,7 +2022,6 @@ button:disabled {
   border-radius: 6px;
   border: 1px solid #d0dceb;
   background: #f3f7fc;
-  color: #345;
   font-size: 0.8125rem;
   line-height: 1.5;
 }
@@ -2175,7 +2079,6 @@ button:disabled {
 }
 
 .income-field-label {
-  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-muted);
 }
@@ -2196,7 +2099,6 @@ button:disabled {
 .income-period-year-note {
   margin: 0;
   width: 100%;
-  font-size: var(--text-sm);
   color: var(--color-faint);
 }
 
@@ -2507,14 +2409,12 @@ button:disabled {
 }
 
 .prior-year-income-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #64748b;
 }
 
 .income-entry {
-  background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -2532,9 +2432,7 @@ button:disabled {
 .income-entry-guidance {
   margin: 0;
   padding: 12px 18px;
-  font-size: var(--text-sm);
   color: var(--color-muted);
-  line-height: var(--leading-relaxed);
   background: #fafbfc;
   border-bottom: 1px solid var(--color-line);
 }
@@ -2565,7 +2463,6 @@ button:disabled {
   background: var(--color-brand-soft);
   border: 1px solid #c5d9cc;
   border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-brand);
 }
@@ -2626,7 +2523,7 @@ button:disabled {
 }
 
 .income-period-dependent-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #666;
 }
@@ -2642,7 +2539,7 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #444;
   line-height: 1.35;
   cursor: pointer;
@@ -2676,7 +2573,7 @@ button:disabled {
 }
 
 .income-period-dependent-group-label {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #555;
   letter-spacing: 0.02em;
@@ -2684,7 +2581,7 @@ button:disabled {
 
 .income-period-dependent-auto-status {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.35;
   padding: 2px 0;
@@ -2702,7 +2599,7 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #444;
   line-height: 1.35;
   cursor: pointer;
@@ -2731,7 +2628,7 @@ button:disabled {
 }
 
 .income-period-dependent-alerts li {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #795548;
   line-height: 1.45;
 }
@@ -2743,7 +2640,7 @@ button:disabled {
 }
 
 .income-period-dependent-errors li {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #c62828;
   line-height: 1.45;
 }
@@ -2754,14 +2651,14 @@ button:disabled {
 
 .income-period-dependent-q1-note {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.45;
 }
 
 .income-period-dependent-q1-hint {
   margin-left: 4px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #999;
 }
 
@@ -2893,19 +2790,19 @@ button:disabled {
 .income-header-sub-monthly {
   grid-column: 3;
   grid-row: 2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .income-header-sub-bonus {
   grid-column: 4;
   grid-row: 2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .income-header-sub-annual {
   grid-column: 5;
   grid-row: 2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .income-table--no-bonus .income-header-sub-annual {
@@ -2997,7 +2894,7 @@ button:disabled {
   width: 100%;
   max-width: none;
   padding: 4px 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .income-table .select-input--compact {
@@ -3005,7 +2902,7 @@ button:disabled {
   width: 56px;
   max-width: 64px;
   padding: 4px 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   flex-shrink: 0;
 }
 
@@ -3019,7 +2916,7 @@ button:disabled {
   border: 1px solid #90caf9;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #1976d2;
   align-self: flex-start;
 }
@@ -3047,7 +2944,7 @@ button:disabled {
   border: 1px solid #90caf9;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1976d2;
   cursor: pointer;
@@ -3148,7 +3045,7 @@ button:disabled {
   grid-column: 1 / 3;
   grid-row: 2;
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: #888;
   white-space: nowrap;
@@ -3160,7 +3057,7 @@ button:disabled {
   grid-column: 4 / 6;
   grid-row: 2;
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #888;
   white-space: nowrap;
   justify-self: start;
@@ -3175,14 +3072,15 @@ button:disabled {
 .stream-type-fixed {
   display: block;
   padding: 6px 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #444;
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   line-height: 1.35;
-  word-break: break-all;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .expense-field {
@@ -3229,7 +3127,7 @@ button:disabled {
 .income-col-monthly .amount-unit,
 .income-col-annual .amount-unit {
   flex-shrink: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .amount-input--small {
@@ -3238,7 +3136,7 @@ button:disabled {
 }
 
 .amount-unit {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -3252,7 +3150,7 @@ button:disabled {
 }
 
 .bonus-row .amount-unit {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -3310,7 +3208,7 @@ button:disabled {
 }
 
 .rate-field-label {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #555;
   white-space: nowrap;
@@ -3364,14 +3262,14 @@ button:disabled {
 }
 
 .rate-unit {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .rate-field-controls .amount-unit {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   flex-shrink: 0;
 }
 
@@ -3424,7 +3322,6 @@ button:disabled {
 }
 
 .income-retirement-card-title {
-  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -3438,7 +3335,6 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 
@@ -3483,7 +3379,6 @@ button:disabled {
   margin: 0 0 var(--space-3);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-ink);
 }
 
 .add-income-grid {
@@ -3500,8 +3395,6 @@ button:disabled {
   min-height: 88px;
   padding: var(--space-4) 18px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -3551,8 +3444,6 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
   cursor: help;
@@ -3586,7 +3477,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
 }
 
 .living-copy-btn:hover:not(:disabled) {
@@ -3631,7 +3521,6 @@ button:disabled {
 
 .living-table-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -3674,7 +3563,6 @@ button:disabled {
 }
 
 .living-summary-auto {
-  font-size: 0.75rem;
   color: #667;
   white-space: nowrap;
 }
@@ -3828,7 +3716,7 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #e53935;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .living-footer-actions {
@@ -3864,7 +3752,6 @@ button:disabled {
 }
 
 .living-rate-same {
-  font-size: 0.8125rem;
   color: #888;
   padding-top: 6px;
 }
@@ -3970,7 +3857,7 @@ button:disabled {
 
 .living-modal-note {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #999;
 }
 
@@ -4042,10 +3929,8 @@ button:disabled {
 
 .asset-building-page-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #333;
-  line-height: 1.4;
 }
 
 .asset-building-title-menu {
@@ -4484,7 +4369,7 @@ button:disabled {
 }
 
 .asset-building-charts-panel .lifetime-chart-summary-row dt {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .asset-building-charts-panel .lifetime-chart-summary-row dd {
@@ -4501,11 +4386,11 @@ button:disabled {
 .asset-building-charts-panel .lifetime-chart-reset-btn,
 .asset-building-charts-panel .lifetime-chart-yaxis-mode-btn {
   padding: 3px 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .asset-building-charts-panel .lifetime-chart-yaxis-auto-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .asset-building-charts-panel .lifetime-chart-yaxis-step-btn {
@@ -4782,7 +4667,6 @@ button:disabled {
   border-bottom: 2px solid transparent;
   border-radius: 0;
   background: transparent;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #7a8490;
   cursor: pointer;
@@ -4814,7 +4698,6 @@ button:disabled {
   border-right: 1px solid var(--color-border);
   border-radius: 0;
   background: transparent;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #667;
   cursor: pointer;
@@ -4927,7 +4810,6 @@ button:disabled {
 
 .required-coverage-card-title {
   margin: 0 0 8px;
-  font-size: 1rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
@@ -4989,8 +4871,6 @@ button:disabled {
 
 .required-coverage-card-note {
   margin: 0 0 12px;
-  font-size: 0.8125rem;
-  line-height: 1.55;
   color: #666;
 }
 
@@ -5017,8 +4897,6 @@ button:disabled {
 
 .required-coverage-medical-intro .required-coverage-card-title {
   margin: 0;
-  font-size: 1.125rem;
-  line-height: 1.4;
 }
 
 .required-coverage-medical-intro .required-coverage-card-note {
@@ -5045,15 +4923,12 @@ button:disabled {
 
 .required-coverage-medical-section-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
 
 .required-coverage-medical-section-reflect {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.45;
   color: #667;
 }
 
@@ -5128,7 +5003,7 @@ button:disabled {
   background: #fff;
   border: 1px solid #b8c7d8;
   color: var(--color-header-bg);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -5194,7 +5069,7 @@ button:disabled {
 
 .required-coverage-medical-need-summary-note {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #667;
 }
@@ -5260,8 +5135,6 @@ button:disabled {
 .required-coverage-medical-income-result {
   flex: 1 1 100%;
   margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.55;
   color: #667085;
 }
 
@@ -5306,7 +5179,7 @@ button:disabled {
 
 .required-coverage-medical-bracket-table thead th {
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667085;
   white-space: nowrap;
 }
@@ -5342,27 +5215,27 @@ button:disabled {
 .required-coverage-medical-bracket-current {
   display: block;
   margin-top: 2px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
 
 .required-coverage-medical-bracket-sub {
   display: block;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-header-bg);
   margin-top: 2px;
 }
 
 .required-coverage-medical-bracket-footnote {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667085;
   margin: 8px 0 0;
   padding: 0 2px;
   line-height: 1.5;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 
@@ -5390,7 +5263,7 @@ button:disabled {
 
 .required-coverage-medical-line.is-header {
   background: #f7f9fc;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #667085;
 }
@@ -5473,15 +5346,12 @@ button:disabled {
 }
 
 .required-coverage-medical-line-note {
-  font-size: 0.75rem;
   font-weight: 400;
   color: #98a2b3;
 }
 
 .required-coverage-medical-line-formula {
-  font-size: 0.75rem;
   color: #667085;
-  line-height: 1.4;
   word-break: break-word;
 }
 
@@ -5570,7 +5440,7 @@ button:disabled {
   border: 1px solid #b8c7d8;
   border-radius: 999px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-header-bg);
   white-space: nowrap;
@@ -5628,7 +5498,6 @@ button:disabled {
 }
 
 .required-coverage-medical-field-label {
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #344054;
 }
@@ -5691,7 +5560,6 @@ button:disabled {
 .required-coverage-medical-result-note {
   display: block;
   margin-top: 2px;
-  font-size: 0.75rem;
   font-weight: 400;
   color: #98a2b3;
 }
@@ -5740,7 +5608,7 @@ button:disabled {
 }
 
 .required-coverage-medical-preset-badge {
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 4px;
@@ -5749,7 +5617,7 @@ button:disabled {
 }
 
 .required-coverage-medical-preset-note {
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-sub);
   margin: 4px 0 10px;
 }
@@ -5768,7 +5636,7 @@ button:disabled {
 
 .required-coverage-medical-preset-row .required-coverage-medical-field-label {
   min-width: 90px;
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 500;
 }
 
@@ -5786,7 +5654,7 @@ button:disabled {
 }
 
 .required-coverage-medical-preset-hint {
-  font-size: 11px;
+  font-size: 0.8125rem;
   color: var(--color-text-sub);
   margin: 6px 0 0;
   line-height: 1.5;
@@ -5794,7 +5662,7 @@ button:disabled {
 
 .required-coverage-medical-preset-load {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 0.8125rem;
   padding: 5px 12px;
   border: 1px solid var(--color-header-bg);
   border-radius: 4px;
@@ -5809,7 +5677,7 @@ button:disabled {
 
 .required-coverage-medical-preset-applied {
   margin-left: 12px;
-  font-size: 11px;
+  font-size: 0.8125rem;
   color: var(--color-text-sub);
 }
 
@@ -5844,7 +5712,7 @@ button:disabled {
 }
 
 .required-coverage-medical-sick-leave-desc {
-  font-size: 12px;
+  font-size: 0.8125rem;
   margin: 4px 0;
   line-height: 1.6;
 }
@@ -5861,7 +5729,7 @@ button:disabled {
   padding: 0;
   border: none;
   background: none;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-header-bg);
   text-decoration: underline;
@@ -5874,7 +5742,7 @@ button:disabled {
 }
 
 .required-coverage-medical-sick-leave-note {
-  font-size: 11px;
+  font-size: 0.8125rem;
   color: var(--color-text-sub);
   margin: 0 0 8px;
 }
@@ -5885,7 +5753,7 @@ button:disabled {
 
 .required-coverage-medical-sick-leave-apply {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 0.8125rem;
   padding: 4px 10px;
   border: 1px solid #66bb6a;
   border-radius: 4px;
@@ -5925,7 +5793,6 @@ button:disabled {
 
 .required-coverage-work-member-name {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
@@ -5949,7 +5816,7 @@ button:disabled {
 .required-coverage-work-mode-fixed-desc {
   display: block;
   margin-top: 2px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #667;
 }
@@ -5994,7 +5861,7 @@ button:disabled {
 }
 
 .required-coverage-work-mode-desc {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
   color: #666;
 }
@@ -6051,7 +5918,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
 }
 
@@ -6069,7 +5936,7 @@ button:disabled {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
 }
 
@@ -6118,7 +5985,7 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 650;
   color: #1f2937;
   cursor: pointer;
@@ -6206,7 +6073,7 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -6261,7 +6128,6 @@ button:disabled {
   border-right: 1px solid var(--color-border);
   background: transparent;
   color: #555;
-  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.35;
   text-align: left;
@@ -6289,7 +6155,7 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #888;
   font-variant-numeric: tabular-nums;
@@ -6400,7 +6266,7 @@ button:disabled {
 .required-coverage-rate-slider-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   line-height: 1.2;
   color: #8b94a0;
 }
@@ -6423,12 +6289,12 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #555;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .required-coverage-design-empty {
   margin: 8px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -6449,7 +6315,6 @@ button:disabled {
 }
 
 .required-coverage-design-table thead th {
-  font-size: 0.6875rem;
   font-weight: 600;
   color: #1565c0;
   background: var(--color-table-header);
@@ -6533,8 +6398,6 @@ button:disabled {
 
 .required-coverage-horizon-help {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.5;
   color: #777;
 }
 
@@ -6571,7 +6434,7 @@ button:disabled {
 }
 
 .required-coverage-th-unit {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   opacity: 0.85;
 }
@@ -6610,7 +6473,6 @@ button:disabled {
 .required-coverage-expense-table thead th {
   background: var(--color-table-header);
   color: #1565c0;
-  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -6732,14 +6594,13 @@ button:disabled {
 
 .lifetime-chart-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #283c58;
 }
 
 .required-coverage-chart-zero-note {
   margin: 6px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: #64748b;
 }
@@ -6767,7 +6628,7 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   line-height: 1.3;
@@ -6790,9 +6651,7 @@ button:disabled {
   display: inline-flex;
   margin-right: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
   overflow: hidden;
-  background: #fff;
 }
 
 .lifetime-chart-scale-btn {
@@ -6801,8 +6660,7 @@ button:disabled {
   border: none;
   border-right: 1px solid var(--color-border);
   background: transparent;
-  color: #555;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
@@ -6813,7 +6671,6 @@ button:disabled {
 }
 
 .lifetime-chart-scale-btn:hover {
-  background: #f3f6fa;
 }
 
 .lifetime-chart-scale-btn.is-active {
@@ -6849,7 +6706,7 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #555;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .lifetime-chart-reset-btn:hover:not(:disabled) {
@@ -6921,7 +6778,7 @@ button:disabled {
   left: 0;
   z-index: 1;
   margin: 0;
-  font-size: 11px;
+  font-size: 0.8125rem;
   color: #64748b;
   line-height: 1;
 }
@@ -6953,7 +6810,6 @@ button:disabled {
   gap: 0;
   padding: 12px 14px 16px;
   border-left: 1px solid var(--color-border);
-  background: #f8fafc;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
@@ -6973,9 +6829,6 @@ button:disabled {
 
 .lifetime-chart-layout-hint {
   margin: 0;
-  font-size: 0.6875rem;
-  line-height: 1.4;
-  color: #64748b;
 }
 
 .lifetime-chart-fullscreen-btn {
@@ -6984,7 +6837,7 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   line-height: 1.4;
@@ -7023,7 +6876,7 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   line-height: 1.4;
@@ -7073,7 +6926,7 @@ button:disabled {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #64748b;
   white-space: nowrap;
 }
@@ -7099,8 +6952,6 @@ button:disabled {
 
 .lifetime-chart-yaxis-auto-hint {
   margin: 0;
-  font-size: 0.75rem;
-  color: #64748b;
 }
 
 .lifetime-chart-summary {
@@ -7110,9 +6961,7 @@ button:disabled {
 .lifetime-chart-summary-title,
 .lifetime-chart-legend-title {
   margin: 0 0 6px;
-  font-size: 0.8125rem;
   font-weight: 700;
-  color: #333;
 }
 
 .lifetime-chart-summary-list {
@@ -7131,15 +6980,11 @@ button:disabled {
 }
 
 .lifetime-chart-summary-row dt {
-  font-size: 0.75rem;
-  color: #777;
 }
 
 .lifetime-chart-summary-row dd {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
-  color: #283c58;
 }
 
 .required-coverage-page .lifetime-simulation-align {
@@ -7178,8 +7023,7 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.8125rem;
 }
 
 .coverage-formula-swatch {
@@ -7192,7 +7036,6 @@ button:disabled {
 .coverage-formula-value {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #283c58;
 }
 
 .coverage-formula-value--need {
@@ -7211,7 +7054,7 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   line-height: 1.4;
@@ -7298,9 +7141,6 @@ button:disabled {
 }
 
 .lifetime-chart-legend-label {
-  font-size: 0.75rem;
-  color: #555;
-  line-height: 1.35;
 }
 
 .lifetime-chart-tooltip {
@@ -7313,7 +7153,6 @@ button:disabled {
 
 .lifetime-chart-tooltip-title {
   margin: 0 0 8px;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #333;
 }
@@ -7330,7 +7169,6 @@ button:disabled {
   gap: 8px;
   align-items: center;
   margin: 0;
-  font-size: 0.8125rem;
   color: #444;
 }
 
@@ -7496,7 +7334,7 @@ button:disabled {
 }
 
 .lifetime-summary-table-grid {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .lifetime-summary-table .lifetime-summary-table-grid th,
@@ -7548,7 +7386,7 @@ button:disabled {
 .lifetime-simulation-unified .lifetime-chart-zoom-btn,
 .lifetime-simulation-unified .lifetime-chart-timeline-btn {
   padding: 3px 8px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .lifetime-simulation-unified .lifetime-chart-side-panel {
@@ -7581,12 +7419,12 @@ button:disabled {
 .lifetime-simulation-unified .lifetime-chart-legend-bulk-btn,
 .lifetime-simulation-unified .lifetime-chart-yaxis-mode-btn {
   padding: 3px 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .lifetime-simulation-unified .lifetime-chart-layout-hint,
 .lifetime-simulation-unified .lifetime-chart-yaxis-auto-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .lifetime-simulation-unified .lifetime-chart-yaxis-step-btn {
@@ -7751,7 +7589,7 @@ button:disabled {
   justify-content: flex-end;
   gap: 6px;
   padding: 6px 0 6px 2px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #64748b;
   text-align: right;
@@ -7841,7 +7679,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #999;
 }
 
@@ -8018,7 +7856,7 @@ button:disabled {
 
 .life-event-item-title {
   min-width: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.15;
   color: var(--life-event-label, #334155);
@@ -8098,10 +7936,8 @@ button:disabled {
 
 .life-event-detail-popover-title {
   margin: 0;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #334155;
-  line-height: 1.3;
 }
 
 .life-event-detail-popover-close {
@@ -8139,13 +7975,13 @@ button:disabled {
 
 .life-event-detail-popover-body dt {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #94a3b8;
 }
 
 .life-event-detail-popover-body dd {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #475569;
   line-height: 1.35;
 }
@@ -8169,7 +8005,6 @@ button:disabled {
   padding: 4px 0;
   border: none;
   background: none;
-  color: #1976d2;
   font-size: 0.8125rem;
   text-align: left;
 }
@@ -8180,7 +8015,6 @@ button:disabled {
 
 .cashflow-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #333;
   display: flex;
@@ -8195,9 +8029,7 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   cursor: help;
 }
@@ -8218,9 +8050,7 @@ button:disabled {
   padding: 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #fff;
   font-size: 0.8125rem;
-  color: #444;
 }
 
 .cashflow-table-wrap {
@@ -8282,7 +8112,7 @@ button:disabled {
   z-index: 8;
   background-color: #fff;
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   box-shadow: 0 1px 0 #c8c8c8;
 }
@@ -8366,7 +8196,7 @@ button:disabled {
 
 .cf-row-tax-detail td {
   background: #f7f8f9;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-neutral .cf-sticky-col {
@@ -8445,7 +8275,7 @@ button:disabled {
 .cf-row-age td {
   background: #fff;
   color: #666;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-folder td {
@@ -8464,7 +8294,7 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 2px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1;
   vertical-align: middle;
 }
@@ -8490,7 +8320,7 @@ button:disabled {
 
 .cf-row-income-detail td {
   background: #f5fafd;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-leaf-icon {
@@ -8513,7 +8343,7 @@ button:disabled {
 
 .cf-row-expense-detail td {
   background: #fff5f7;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-savings td {
@@ -8523,7 +8353,7 @@ button:disabled {
 
 .cf-row-savings-detail td {
   background: #faf4fc;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-invest td {
@@ -8533,12 +8363,12 @@ button:disabled {
 
 .cf-row-invest-detail td {
   background: #f3faf4;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-invest-part td {
   background: #f8fcf8;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .cf-row-balance td {
@@ -8553,7 +8383,6 @@ button:disabled {
 
 .cashflow-note {
   margin: 12px 0 0;
-  font-size: 0.75rem;
   color: #888;
 }
 
@@ -8563,8 +8392,6 @@ button:disabled {
 }
 
 .cf-value-col--clickable:hover {
-  background: #e3f2fd;
-  color: #1565c0;
 }
 
 .cf-value-col--clickable:focus-visible {
@@ -8600,7 +8427,6 @@ button:disabled {
 
 .pension-section-title {
   margin: 0 0 20px;
-  font-size: 1rem;
   font-weight: 700;
   color: #1565c0;
 }
@@ -8632,14 +8458,12 @@ button:disabled {
 }
 
 .pension-timeline-age {
-  font-size: 0.75rem;
   font-weight: 600;
   color: #333;
   white-space: nowrap;
 }
 
 .pension-timeline-year {
-  font-size: 0.6875rem;
   color: #888;
   white-space: nowrap;
 }
@@ -8711,9 +8535,7 @@ button:disabled {
   background: #212121;
   border-radius: 4px;
   color: #fff;
-  font-size: 0.6875rem;
   font-weight: 600;
-  line-height: 1.3;
   white-space: nowrap;
 }
 
@@ -8731,11 +8553,9 @@ button:disabled {
 }
 
 .pension-timeline-pivot-date {
-  font-size: 0.6875rem;
 }
 
 .pension-timeline-pivot-months {
-  font-size: 0.75rem;
 }
 
 .pension-enrollment-panel {
@@ -8779,7 +8599,6 @@ button:disabled {
 }
 
 .pension-enrollment-label {
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
 }
@@ -8795,8 +8614,6 @@ button:disabled {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.6875rem;
   font-weight: 700;
   cursor: help;
@@ -8834,7 +8651,6 @@ button:disabled {
 
 .pension-estimate-title {
   margin: 0;
-  font-size: 1rem;
   font-weight: 700;
   color: #223;
 }
@@ -8928,7 +8744,7 @@ button:disabled {
 }
 
 .teikibin-block-title-sub {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: #888;
 }
@@ -8965,7 +8781,7 @@ button:disabled {
   border: 1px solid #ffe082;
   border-radius: 2px;
   background: var(--color-input-highlight);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .pension-field-select--compact {
@@ -8980,13 +8796,11 @@ button:disabled {
 }
 
 .pension-field-unit {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
 
 .pension-field-calc {
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
 }
@@ -9009,7 +8823,7 @@ button:disabled {
 
 .teikibin-period-table-section {
   background: linear-gradient(180deg, #e8f4fc 0%, #d9edf9 100%);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
   padding: 8px 4px;
@@ -9017,7 +8831,7 @@ button:disabled {
 
 .teikibin-period-table-sub {
   background: #f5f9fc;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #555;
   line-height: 1.35;
@@ -9032,7 +8846,7 @@ button:disabled {
 .teikibin-period-table-summary-head {
   width: 88px;
   background: linear-gradient(180deg, #e8f4fc 0%, #d9edf9 100%);
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
   line-height: 1.35;
@@ -9063,7 +8877,7 @@ button:disabled {
 .teikibin-period-table-side {
   width: 72px;
   background: linear-gradient(180deg, #e8f4fc 0%, #d9edf9 100%);
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
   line-height: 1.35;
@@ -9071,7 +8885,7 @@ button:disabled {
 }
 
 .teikibin-period-table-summary-sub {
-  font-size: 0.5625rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: #1565c0;
 }
@@ -9079,7 +8893,7 @@ button:disabled {
 .teikibin-period-table .pension-field-input {
   width: 52px;
   padding: 3px 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .teikibin-period-cell {
@@ -9119,7 +8933,7 @@ button:disabled {
 .teikibin-amount-row-label,
 .teikibin-amount-subheader {
   background: linear-gradient(180deg, #e8f4fc 0%, #d9edf9 100%);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
   padding: 8px 10px;
@@ -9127,7 +8941,7 @@ button:disabled {
 }
 
 .teikibin-amount-col-header {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .teikibin-amount-row-label {
@@ -9144,7 +8958,7 @@ button:disabled {
 .teikibin-amount-subheader {
   padding: 6px 8px;
   border-bottom: 1px solid #cfd8dc;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .teikibin-amount-subheader--solo {
@@ -9180,7 +8994,7 @@ button:disabled {
 
 .teikibin-amount-table--over50 .teikibin-amount-row-label {
   width: 16%;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
 }
 
 .teikibin-amount-empty {
@@ -9202,7 +9016,7 @@ button:disabled {
 }
 
 .teikibin-amount-field-label {
-  font-size: 0.5625rem;
+  font-size: 0.8125rem;
   color: #555;
   line-height: 1.3;
   text-align: center;
@@ -9222,7 +9036,7 @@ button:disabled {
 
 .teikibin-amount-table--over50 .pension-field-input--yen-compact {
   width: 72px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   padding: 2px 4px;
 }
 
@@ -9235,7 +9049,7 @@ button:disabled {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .teikibin-monthly-table th,
@@ -9278,7 +9092,7 @@ button:disabled {
 }
 
 .teikibin-monthly-date-unit {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
 }
 
@@ -9337,14 +9151,14 @@ button:disabled {
   background: #fff8e1;
   border-left: 3px solid #ffb300;
   border-radius: 3px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #7a5c00;
   line-height: 1.5;
 }
 
 .benefit-death-date {
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
 }
 
@@ -9364,7 +9178,7 @@ button:disabled {
   border: 1px solid #cfd8dc;
   padding: 8px 10px;
   vertical-align: middle;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 
@@ -9383,7 +9197,7 @@ button:disabled {
 .benefit-col-header--survivor {
   background: linear-gradient(180deg, #fff3e0 0%, #ffe0b2 100%);
   color: #e65100;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.35;
 }
 
@@ -9451,7 +9265,7 @@ button:disabled {
   padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 3px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #333;
   line-height: 1.35;
 }
@@ -9485,7 +9299,7 @@ button:disabled {
   background: #fff8f0;
   text-align: center;
   color: #555;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
 }
 
 .benefit-survivor-input-cell {
@@ -9494,13 +9308,13 @@ button:disabled {
 
 .benefit-survivor-suffix {
   margin-left: 6px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
 .benefit-receiving-label {
   margin-right: 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #333;
 }
 
@@ -9515,23 +9329,18 @@ button:disabled {
 }
 
 .family-step .residence-card {
-  border-color: var(--color-line);
-  border-radius: var(--radius-md);
 }
 
 .family-step .residence-card-header {
-  background: var(--color-soft);
 }
 
 .family-step .residence-card-title {
-  color: var(--color-ink);
 }
 
 .family-step .residence-add-btn {
   min-height: var(--control-height);
   margin-top: var(--space-3);
   padding: 8px 16px;
-  border-radius: var(--radius-sm);
   font-size: var(--text-base);
   font-weight: 600;
 }
@@ -9558,7 +9367,6 @@ button:disabled {
 
 .residence-card-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -9588,7 +9396,6 @@ button:disabled {
 
 .residence-period-label {
   min-width: 88px;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #333;
 }
@@ -9617,7 +9424,6 @@ button:disabled {
 }
 
 .residence-data-version {
-  font-size: 0.75rem;
   color: #888;
   white-space: nowrap;
 }
@@ -9641,7 +9447,7 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #c62828;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .residence-add-btn {
@@ -9709,7 +9515,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -9753,7 +9558,6 @@ button:disabled {
 
 .education-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -9930,7 +9734,7 @@ button:disabled {
 }
 
 .education-period-alerts li {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #795548;
   line-height: 1.45;
 }
@@ -9945,7 +9749,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
   white-space: nowrap;
   text-align: center;
 }
@@ -9960,7 +9763,7 @@ button:disabled {
   border: none;
   background: none;
   color: #1976d2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -9971,9 +9774,7 @@ button:disabled {
 
 .education-entrance-note {
   margin: 0;
-  font-size: 0.625rem;
   color: #888;
-  line-height: 1.4;
 }
 
 .education-ref-modal-overlay {
@@ -9994,9 +9795,6 @@ button:disabled {
   max-height: min(88vh, 720px);
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
   padding: 24px 28px 20px;
 }
 
@@ -10007,29 +9805,22 @@ button:disabled {
   border: none;
   background: none;
   font-size: 1.25rem;
-  color: #999;
   line-height: 1;
   padding: 4px;
 }
 
 .education-ref-modal-close:hover {
-  color: #666;
 }
 
 .education-ref-modal-title {
   margin: 0 32px 8px 0;
-  font-size: 1rem;
   font-weight: 700;
-  color: #333;
 }
 
 .education-ref-modal-summary {
   margin: 0 0 16px;
   padding: 8px 12px;
-  background: #e3f2fd;
-  border-radius: 4px;
   font-size: 0.8125rem;
-  color: #1565c0;
   line-height: 1.45;
 }
 
@@ -10120,7 +9911,6 @@ button:disabled {
 
 .tax-breakdown-reference-title {
   margin: 0 0 8px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -10148,15 +9938,13 @@ button:disabled {
   margin: 0 0 8px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
   border-left: 3px solid #1976d2;
   padding-left: 8px;
 }
 
 .education-ref-section-desc {
   margin: 0 0 10px;
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -10176,9 +9964,7 @@ button:disabled {
 
 .education-ref-kv-table th {
   width: 38%;
-  background: #f5f9fc;
   font-weight: 600;
-  color: #444;
 }
 
 .education-ref-kv-table td {
@@ -10189,8 +9975,7 @@ button:disabled {
 .education-ref-subline {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.8125rem;
 }
 
 .education-ref-table-wrap {
@@ -10200,7 +9985,7 @@ button:disabled {
 .education-ref-data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .education-ref-data-table th,
@@ -10212,9 +9997,7 @@ button:disabled {
 }
 
 .education-ref-data-table th {
-  background: var(--color-table-header);
   font-weight: 600;
-  color: #333;
 }
 
 .education-ref-data-table td {
@@ -10239,8 +10022,6 @@ button:disabled {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
 }
@@ -10266,7 +10047,6 @@ button:disabled {
 }
 
 .education-yen-unit {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
@@ -10330,7 +10110,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
 }
 
 .education-add-other-btn:hover {
@@ -10363,7 +10142,6 @@ button:disabled {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   color: #64748b;
-  font-size: 0.875rem;
 }
 
 
@@ -10378,8 +10156,6 @@ button:disabled {
 
 .education-chart-title {
   margin: 0 0 8px;
-  color: #c0392b;
-  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -10425,25 +10201,18 @@ button:disabled {
 }
 
 .education-chart-legend-label {
-  font-size: 11px;
-  color: #475569;
-  line-height: 1.3;
 }
 
 .education-chart-tooltip {
   border: 1px solid #cbd5e1;
-  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-  background: #fff;
   min-width: 200px;
 }
 
 .education-chart-tooltip-title {
   margin: 0;
   padding: 6px 10px;
-  background: #4f86c6;
-  color: #fff;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -10458,7 +10227,6 @@ button:disabled {
   gap: 8px;
   margin: 0 0 4px;
   font-size: 0.8125rem;
-  color: #334155;
 }
 
 .education-chart-tooltip-row:last-child {
@@ -10511,8 +10279,6 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
   cursor: help;
@@ -10549,7 +10315,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -10599,7 +10364,6 @@ button:disabled {
 
 .celebration-gift-block-title {
   margin: 0;
-  font-size: 0.875rem;
   font-weight: 700;
   color: #333;
 }
@@ -10630,7 +10394,6 @@ button:disabled {
 
 .celebration-gift-header-cell {
   padding: 8px 12px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -10724,7 +10487,6 @@ button:disabled {
 
 .life-event-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -10854,7 +10616,6 @@ button:disabled {
 }
 
 .life-event-rate-label {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
@@ -10919,7 +10680,6 @@ button:disabled {
 
 .life-event-add-title {
   margin: 0 0 12px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -10956,14 +10716,10 @@ button:disabled {
 .life-event-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .life-event-add-card-desc {
-  font-size: 0.6875rem;
-  color: #999;
   text-align: center;
-  line-height: 1.4;
 }
 
 /* Other step ? tax/social insurance breakdown */
@@ -11075,7 +10831,7 @@ button:disabled {
   border-radius: 999px;
   background: #e3f2fd;
   color: #1565c0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
@@ -11098,14 +10854,13 @@ button:disabled {
 
 .other-breakdown-year-title {
   margin: 0 0 4px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
 
 .other-breakdown-year-desc {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.5;
 }
@@ -11130,14 +10885,13 @@ button:disabled {
 
 .other-breakdown-life-stage-title {
   margin: 0 0 4px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
 
 .other-breakdown-life-stage-desc {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.5;
 }
@@ -11157,7 +10911,7 @@ button:disabled {
 }
 
 .other-breakdown-tab-group-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #888;
   padding: 0 4px;
@@ -11177,7 +10931,6 @@ button:disabled {
   background: transparent;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #666;
   cursor: pointer;
@@ -11316,8 +11069,6 @@ button:disabled {
 .second-life-guide-intro {
   margin: 16px 0 0;
   color: #555;
-  font-size: 0.875rem;
-  line-height: 1.6;
 }
 
 .second-life-guide-start-age {
@@ -11383,21 +11134,18 @@ button:disabled {
 
 .second-life-guide-card-summary {
   margin: 6px 0 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
   color: #333;
 }
 
 .second-life-guide-card-design {
   margin: 6px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: #1565c0;
 }
 
 .second-life-guide-checklist-title {
   margin: 28px 0 0;
-  font-size: 1rem;
   font-weight: 700;
   color: #333;
 }
@@ -11413,7 +11161,7 @@ button:disabled {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -11448,7 +11196,6 @@ button:disabled {
   border-radius: 6px;
   background: #fff;
   color: #1565c0;
-  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -11622,8 +11369,6 @@ button:disabled {
 
 .second-life-template-panel-desc {
   margin: 4px 0 0;
-  font-size: 0.8125rem;
-  line-height: 1.5;
   color: #555;
 }
 
@@ -11634,7 +11379,6 @@ button:disabled {
   border-radius: 6px;
   background: #1565c0;
   color: #fff;
-  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -11726,7 +11470,7 @@ button:disabled {
   border-radius: 6px;
   background: #fff;
   color: #166534;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -11736,7 +11480,7 @@ button:disabled {
 }
 
 .housing-second-life-apply-summary-note {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #3f7a52;
 }
 
@@ -11766,7 +11510,7 @@ button:disabled {
   border-bottom: 1px solid #fde68a;
   background: #fffbeb;
   color: #92400e;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -11916,7 +11660,6 @@ button:disabled {
 
 .second-life-section-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
 }
 
@@ -12086,7 +11829,7 @@ button:disabled {
   border-radius: 4px;
   background: #eee;
   color: #bbb;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   text-align: center;
 }
 
@@ -12109,7 +11852,6 @@ button:disabled {
 
 .second-life-skip-hint {
   color: #888;
-  font-size: 0.75rem;
 }
 
 .second-life-choice-grid {
@@ -12191,7 +11933,6 @@ button:disabled {
 
 .second-life-choice-label {
   flex: 1;
-  line-height: 1.4;
 }
 
 .second-life-choice-badge {
@@ -12199,7 +11940,6 @@ button:disabled {
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
-  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -12217,7 +11957,7 @@ button:disabled {
 .second-life-choice-body {
   flex: 1;
   padding: 12px;
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
 }
 
 .second-life-choice-card:not(.is-active) .second-life-choice-body {
@@ -12252,7 +11992,7 @@ button:disabled {
 .second-life-apply-note {
   margin: 0;
   padding: 10px 16px;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: #888;
   border-top: 1px solid var(--color-border);
 }
@@ -12282,7 +12022,6 @@ button:disabled {
 
 .second-life-living-ref {
   margin: 0 0 8px;
-  font-size: 0.75rem;
   color: #888;
 }
 
@@ -12296,7 +12035,6 @@ button:disabled {
 
 .second-life-breakdown-note {
   margin: 0 0 8px;
-  font-size: 0.7rem;
   color: #888;
 }
 
@@ -12316,18 +12054,16 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   padding: 2px 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .second-life-breakdown-empty {
   margin: 0;
   color: #888;
-  font-size: 0.75rem;
 }
 
 .second-life-nursing-desc {
   margin: 0 0 10px;
-  line-height: 1.5;
   color: #666;
 }
 
@@ -12383,7 +12119,6 @@ button:disabled {
 .second-life-apply-btn {
   padding: 8px 18px;
   border-radius: 20px;
-  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -12478,7 +12213,6 @@ button:disabled {
   flex: 0 0 5.5em;
   margin: 0;
   padding-top: 12px;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #555;
 }
@@ -12508,9 +12242,7 @@ button:disabled {
 
 .calc-breakdown-compound-note {
   margin: 6px 0 0;
-  font-size: 0.6875rem;
   color: #888;
-  line-height: 1.4;
 }
 
 .calc-breakdown-compound-hint {
@@ -12519,9 +12251,7 @@ button:disabled {
   border: 1px dashed #bdbdbd;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.75rem;
   color: #666;
-  line-height: 1.5;
 }
 
 .calc-breakdown--pension .calc-breakdown-box--highlight {
@@ -12577,7 +12307,7 @@ button:disabled {
 
 .calc-breakdown-income-basis-row dt {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #333;
 }
 
@@ -12590,7 +12320,7 @@ button:disabled {
 
 .calc-breakdown-income-basis-explanation {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   line-height: 1.5;
 }
@@ -12678,7 +12408,7 @@ button:disabled {
 }
 
 .calc-breakdown-group-item {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #444;
   line-height: 1.4;
   display: flex;
@@ -12722,7 +12452,7 @@ button:disabled {
   padding: 6px 12px;
   background: #eceff1;
   color: #37474f;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -12737,7 +12467,7 @@ button:disabled {
   gap: 2px;
   padding: 8px 12px;
   border-bottom: 1px solid #f0f0f0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .calc-breakdown-data-item:last-child {
@@ -12754,7 +12484,7 @@ button:disabled {
   padding: 0;
   border: none;
   background: none;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1976d2;
   cursor: pointer;
@@ -12788,7 +12518,7 @@ button:disabled {
 .calc-breakdown-notes-list {
   margin: 0;
   padding-left: 1.2em;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.6;
 }
@@ -12831,7 +12561,7 @@ button:disabled {
 
 .nhi-table-col-ref {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   opacity: 0.95;
 }
@@ -12845,14 +12575,14 @@ button:disabled {
 .nhi-table-col-sub {
   display: block;
   margin-top: 4px;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   line-height: 1.35;
   opacity: 0.92;
 }
 
 .nhi-table-basis {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   white-space: nowrap;
 }
@@ -12860,7 +12590,7 @@ button:disabled {
 .nhi-table-basis-note {
   display: block;
   margin-top: 2px;
-  font-size: 0.65rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -12881,7 +12611,7 @@ button:disabled {
 .nhi-table-cell-note {
   display: block;
   margin-top: 4px;
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -12890,7 +12620,7 @@ button:disabled {
   padding: 10px 12px;
   background: #fafafa;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.55;
 }
@@ -12947,7 +12677,7 @@ button:disabled {
 
 .nhi-column-total-note {
   margin-left: 4px;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -12989,7 +12719,7 @@ button:disabled {
 
 .nhi-summary-item dt {
   margin: 0 0 4px;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #777;
 }
 
@@ -13023,14 +12753,14 @@ button:disabled {
 
 .nhi-details-lead {
   margin: 12px 0 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
 .nhi-details-bases {
   margin: 0 0 12px;
   padding-left: 1.2em;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #444;
 }
 
@@ -13063,7 +12793,7 @@ button:disabled {
 .nhi-member-income-lines {
   margin: 0;
   padding-left: 1.2em;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   line-height: 1.5;
 }
@@ -13119,7 +12849,7 @@ button:disabled {
 }
 
 .nhi-cell-formula {
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #777;
   line-height: 1.35;
 }
@@ -13136,7 +12866,7 @@ button:disabled {
 
 .nhi-table-total-ref {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #e65100;
 }
@@ -13151,7 +12881,7 @@ button:disabled {
 .nhi-table-total-cap {
   display: block;
   margin-top: 2px;
-  font-size: 0.65rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -13184,7 +12914,7 @@ button:disabled {
 
 .nhi-grand-total-note {
   margin: 8px 0 0;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -13198,7 +12928,7 @@ button:disabled {
 
 .nhi-member-share-label {
   margin: 0 0 8px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #ad1457;
 }
@@ -13216,7 +12946,7 @@ button:disabled {
 
 .nhi-member-share-note {
   margin: 6px 0 0;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -13228,7 +12958,7 @@ button:disabled {
 
 .nhi-breakdown-notes-title {
   margin: 0 0 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #555;
 }
@@ -13236,7 +12966,7 @@ button:disabled {
 .nhi-breakdown-notes ul {
   margin: 0;
   padding-left: 1.2em;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.6;
 }
@@ -13313,7 +13043,7 @@ button:disabled {
   padding: 0 5px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.08);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.4;
 }
@@ -13392,7 +13122,7 @@ button:disabled {
 }
 
 .housing-owned-detail-fold-summary {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #778;
 }
@@ -13405,7 +13135,7 @@ button:disabled {
 
 .housing-owned-detail-fold-action {
   flex: 0 0 auto;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-header-bg);
 }
@@ -13438,7 +13168,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 11px;
+  font-size: 0.8125rem;
   color: var(--color-text-muted, #667);
 }
 
@@ -13488,7 +13218,7 @@ button:disabled {
 
 .housing-table-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -13567,7 +13297,7 @@ button:disabled {
 }
 
 .housing-acq-area-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--text-muted, #888);
 }
 
@@ -13647,7 +13377,7 @@ button:disabled {
 
 .housing-table-cell--note {
   align-items: center;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -13750,7 +13480,7 @@ button:disabled {
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   font-weight: 600;
 }
@@ -13823,7 +13553,7 @@ button:disabled {
 }
 
 .housing-renewal-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -13875,7 +13605,7 @@ button:disabled {
 }
 
 .housing-renewal-suffix {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -13932,7 +13662,7 @@ button:disabled {
 }
 
 .housing-insurance-future-note {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -13949,7 +13679,7 @@ button:disabled {
   border-radius: 16px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .housing-insurance-add-btn:disabled {
@@ -13982,7 +13712,7 @@ button:disabled {
   min-width: 0;
   margin-left: 0;
   padding: 3px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .housing-insurance-links .housing-insurance-remove {
@@ -14044,7 +13774,7 @@ button:disabled {
   background: #fff;
   border: 1px solid #90caf9;
   color: #1565c0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -14118,7 +13848,7 @@ button:disabled {
 
 .housing-owned-loan-existing-note {
   margin: 8px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -14189,7 +13919,7 @@ button:disabled {
   display: flex;
   align-items: center;
   padding: 3px 9px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #667085;
   cursor: pointer;
   white-space: nowrap;
@@ -14215,14 +13945,14 @@ button:disabled {
 
 .vehicle-payment-error {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.35;
   color: #c62828;
 }
 
 .vehicle-already-owned-note {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #667085;
   line-height: 1.4;
 }
@@ -14270,13 +14000,13 @@ button:disabled {
 
 .housing-owned-simple-expense-note {
   margin: 8px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
 .housing-owned-detail-subtitle {
   margin-left: 6px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #666;
 }
@@ -14327,7 +14057,7 @@ button:disabled {
 
 .housing-owned-acquisition-note {
   flex: 1 1 100%;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   font-weight: 400;
 }
@@ -14370,11 +14100,13 @@ button:disabled {
 }
 
 .housing-owned-field-hint {
+  min-width: 0;
   min-height: 1.125rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
-  white-space: nowrap;
-  line-height: 1.125rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
 }
 
 .housing-owned-field--tax {
@@ -14387,7 +14119,7 @@ button:disabled {
   align-items: center;
   flex-wrap: nowrap;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -14430,7 +14162,7 @@ button:disabled {
 
 .housing-owned-warning p {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -14515,7 +14247,7 @@ button:disabled {
 
 .housing-owned-deduction-table-note {
   margin: 8px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -14577,7 +14309,7 @@ button:disabled {
 }
 
 .housing-owned-loan-meta {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -14587,7 +14319,7 @@ button:disabled {
   border-radius: 14px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -14605,7 +14337,7 @@ button:disabled {
   border-radius: 12px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -14624,7 +14356,7 @@ button:disabled {
 
 .housing-owned-loan-contractor-label {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -14641,7 +14373,7 @@ button:disabled {
   border-radius: 14px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -14654,7 +14386,7 @@ button:disabled {
   border: none;
   background: transparent;
   color: #888;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -14706,7 +14438,7 @@ button:disabled {
 
 .housing-owned-loan-open-btn {
   padding: 2px 10px;
-  font-size: 12px;
+  font-size: 0.8125rem;
   border: 1px solid #bdbdbd;
   border-radius: 4px;
   background: #fff;
@@ -14787,9 +14519,11 @@ button:disabled {
 }
 
 .housing-owned-insurance-meta {
-  font-size: 0.75rem;
+  min-width: 0;
+  font-size: 0.8125rem;
   color: #666;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .housing-owned-insurance-open-btn {
@@ -14798,7 +14532,7 @@ button:disabled {
   border-radius: 12px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -14897,7 +14631,7 @@ button:disabled {
 }
 
 .housing-owned-add-desc {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #999;
   text-align: center;
   line-height: 1.4;
@@ -14924,7 +14658,7 @@ button:disabled {
 }
 
 .housing-yen-unit {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -14967,12 +14701,12 @@ button:disabled {
 }
 
 .housing-maint-period-sep {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
 .housing-maint-inline-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -14983,7 +14717,7 @@ button:disabled {
   border-radius: 14px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -14993,7 +14727,7 @@ button:disabled {
 }
 
 .housing-maint-road-price-link {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #1976d2;
   text-decoration: none;
@@ -15010,7 +14744,7 @@ button:disabled {
 }
 
 .housing-maint-tax-year-suffix {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -15102,7 +14836,7 @@ button:disabled {
 }
 
 .loan-entry-housing-badge {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #2e7d32;
   background: #e8f5e9;
   padding: 2px 8px;
@@ -15120,7 +14854,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
@@ -15233,7 +14966,7 @@ button:disabled {
 }
 
 .loan-settings-form-table .loan-amount-linked-detail {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .loan-settings-form-table .loan-settings-form-value--loan-amount {
@@ -15361,7 +15094,7 @@ button:disabled {
   border: 1px solid #cfd8dc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   white-space: nowrap;
@@ -15396,7 +15129,7 @@ button:disabled {
 }
 
 .loan-settings-form-table .loan-amount-linked--table .loan-amount-linked-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .loan-entry-housing-link {
@@ -15428,14 +15161,14 @@ button:disabled {
   border-radius: 8px;
   background: #f5f8ff;
   border: 1px solid #d8e4ff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.55;
   color: #445;
 }
 
 .loan-fees-pair-linked-note {
   margin: 0 0 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.55;
   color: #555;
 }
@@ -15549,12 +15282,10 @@ button:disabled {
 .loan-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .loan-add-card-desc {
-  font-size: 0.6875rem;
-  color: #999;
+  font-size: 0.8125rem;
   text-align: center;
   line-height: 1.4;
 }
@@ -15599,7 +15330,7 @@ button:disabled {
   border: none;
   background: transparent;
   color: #888;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -15631,12 +15362,12 @@ button:disabled {
 
 .loan-structure-option-desc {
   color: #777;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .loan-structure-picker-note {
   margin: 0 0 12px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.5;
 }
@@ -15660,7 +15391,7 @@ button:disabled {
   width: 100%;
   min-width: 640px;
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   background: #fff;
 }
 
@@ -15793,7 +15524,7 @@ button:disabled {
   border-radius: 10px;
   background: #e8f5e9;
   color: #2e7d32;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -15812,12 +15543,12 @@ button:disabled {
 }
 
 .loan-amount-linked-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #2e7d32;
 }
 
 .loan-amount-linked-detail {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.4;
 }
@@ -15829,7 +15560,7 @@ button:disabled {
 }
 
 .loan-fee-inclusion-note {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -15862,7 +15593,7 @@ button:disabled {
 }
 
 .loan-fee-inclusion-surcharge-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -15979,7 +15710,7 @@ button:disabled {
 }
 
 .loan-rate-period-boundary-date-hint {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
   flex-shrink: 0;
@@ -16013,7 +15744,7 @@ button:disabled {
   border: 1px solid #cfd8dc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
   cursor: pointer;
   white-space: nowrap;
@@ -16042,7 +15773,7 @@ button:disabled {
 }
 
 .loan-group-credit-life-structure-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -16053,7 +15784,7 @@ button:disabled {
 
 .loan-group-credit-life-structure-note {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -16078,7 +15809,7 @@ button:disabled {
 
 .loan-pair-share-caption {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.5;
 }
@@ -16100,7 +15831,7 @@ button:disabled {
 .loan-pair-share-summary-label,
 .loan-pair-share-control-label,
 .loan-pair-share-member-amount-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #555;
 }
 
@@ -16112,7 +15843,7 @@ button:disabled {
 
 .loan-pair-share-summary-detail {
   margin: 0.35rem 0 0;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -16158,7 +15889,7 @@ button:disabled {
 }
 
 .loan-amount-linked-share {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -16170,7 +15901,7 @@ button:disabled {
 
 .loan-group-credit-life-block-title {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #444;
 }
@@ -16204,7 +15935,7 @@ button:disabled {
 }
 
 .loan-group-credit-life-surcharge-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
   white-space: nowrap;
 }
@@ -16228,9 +15959,11 @@ button:disabled {
 }
 
 .loan-group-credit-life-surcharge-hint {
-  font-size: 0.7rem;
+  min-width: 0;
+  font-size: 0.8125rem;
   color: #888;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .loan-group-credit-life-block--disabled .loan-group-credit-life-excluded {
@@ -16238,7 +15971,7 @@ button:disabled {
   padding: 0.5rem 0.65rem;
   border-radius: 4px;
   background: #f5f5f5;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #777;
 }
 
@@ -16383,7 +16116,7 @@ button:disabled {
   border-radius: 14px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.3;
   cursor: pointer;
   white-space: nowrap;
@@ -16435,7 +16168,7 @@ button:disabled {
 }
 
 .vehicle-loan-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #333;
   line-height: 1.3;
@@ -16449,7 +16182,7 @@ button:disabled {
   border-radius: 12px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -16538,14 +16271,14 @@ button:disabled {
 }
 
 .vehicle-monthly-label {
-  font-size: 0.625rem;
+  font-size: 0.8125rem;
   color: #666;
   line-height: 1.3;
 }
 
 .vehicle-inspection-hint {
   margin: 2px 0 0;
-  font-size: 0.5625rem;
+  font-size: 0.8125rem;
   color: #888;
   line-height: 1.35;
   white-space: normal;
@@ -16579,7 +16312,7 @@ button:disabled {
 
 .vehicle-replace-hint {
   margin: 0;
-  font-size: 0.5625rem;
+  font-size: 0.8125rem;
   color: #888;
   line-height: 1.35;
 }
@@ -16650,12 +16383,10 @@ button:disabled {
 .vehicle-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .vehicle-add-card-desc {
-  font-size: 0.6875rem;
-  color: #999;
+  font-size: 0.8125rem;
   text-align: center;
   line-height: 1.4;
 }
@@ -16753,7 +16484,6 @@ button:disabled {
   flex-shrink: 0;
   border: none;
   background: none;
-  color: #90a4ae;
   font-size: 1rem;
   line-height: 1;
   padding: 2px 4px;
@@ -16798,7 +16528,7 @@ button:disabled {
 }
 
 .insurance-entry-sector-badge {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 10px;
@@ -16818,7 +16548,7 @@ button:disabled {
 }
 
 .insurance-entry-category-badge {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
   background: #f5f5f5;
   padding: 2px 8px;
@@ -16842,7 +16572,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
@@ -16978,7 +16707,7 @@ button:disabled {
   background: none;
   padding: 0;
   color: #1976d2;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -16989,7 +16718,7 @@ button:disabled {
 
 .insurance-link-hint {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
   line-height: 1.4;
 }
@@ -17009,11 +16738,11 @@ button:disabled {
 
 .insurance-income-tax-formula {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: #6b7280;
   line-height: 1.45;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 
@@ -17060,13 +16789,11 @@ button:disabled {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
 }
 
 .insurance-add-group-desc {
   margin: 0;
-  font-size: 0.75rem;
-  color: #888;
+  font-size: 0.8125rem;
 }
 
 .insurance-add-grid {
@@ -17107,12 +16834,10 @@ button:disabled {
 .insurance-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .insurance-add-card-desc {
-  font-size: 0.6875rem;
-  color: #999;
+  font-size: 0.8125rem;
   text-align: center;
   line-height: 1.4;
 }
@@ -17143,9 +16868,12 @@ button:disabled {
 }
 
 .housing-insurance-item-name {
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.8125rem;
   color: #333;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .housing-insurance-edit-btn {
@@ -17154,7 +16882,7 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -17180,9 +16908,12 @@ button:disabled {
 }
 
 .linked-insurance-summary {
-  font-size: 0.75rem;
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 0.8125rem;
   color: #666;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .linked-insurance-open-btn {
@@ -17245,7 +16976,7 @@ button:disabled {
 }
 
 .insurance-entry-detail--linked .insurance-period-toggle {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .housing-insurance-item-wrap.linked-insurance-item--expanded {
@@ -17255,7 +16986,7 @@ button:disabled {
 .linked-insurance-loading {
   margin: 0;
   padding: 8px 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -17278,7 +17009,7 @@ button:disabled {
 }
 
 .linked-loan-summary {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #666;
 }
 
@@ -17301,7 +17032,7 @@ button:disabled {
 .linked-loan-loading {
   margin: 0;
   padding: 8px 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
 }
 
@@ -17328,7 +17059,7 @@ button:disabled {
   min-width: 0;
   margin-left: 0;
   padding: 3px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .vehicle-insurance-link-item.linked-insurance-item--expanded {
@@ -17353,7 +17084,7 @@ button:disabled {
   min-width: 0;
   margin-left: 0;
   padding: 3px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .vehicle-insurance-link-list {
@@ -17371,7 +17102,7 @@ button:disabled {
 }
 
 .vehicle-insurance-link-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #333;
 }
 
@@ -17488,7 +17219,6 @@ button:disabled {
   flex-shrink: 0;
   border: none;
   background: none;
-  color: #bcaaa4;
   font-size: 1rem;
   line-height: 1;
   padding: 2px 4px;
@@ -17526,7 +17256,7 @@ button:disabled {
 }
 
 .savings-entry-sector-badge {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 10px;
@@ -17546,7 +17276,7 @@ button:disabled {
 }
 
 .savings-entry-category-badge {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: #555;
   background: #f5f5f5;
   padding: 2px 8px;
@@ -17575,7 +17305,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
@@ -17644,7 +17373,7 @@ button:disabled {
 .savings-entry-detail-hint {
   display: block;
   width: 100%;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #888;
   line-height: 1.4;
 }
@@ -17672,7 +17401,7 @@ button:disabled {
 }
 
 .savings-nisa-quota-group-title {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #555;
   margin-bottom: 2px;
@@ -17848,7 +17577,7 @@ button:disabled {
   border-radius: 999px;
   background: #fff;
   color: #1565c0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   line-height: 1.4;
@@ -17895,7 +17624,7 @@ button:disabled {
   color: #475569;
   border-radius: 999px;
   padding: 5px 12px;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -17933,7 +17662,7 @@ button:disabled {
   align-items: center;
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #0f766e;
   background: #ccfbf1;
@@ -17942,7 +17671,7 @@ button:disabled {
 
 .retirement-timing-diagram-subtitle {
   margin: 3px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: #64748b;
   line-height: 1.45;
 }
@@ -17968,7 +17697,7 @@ button:disabled {
   border: 1px solid #cbd5e1;
   background: #fff;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   line-height: 1.35;
   z-index: 2;
   box-sizing: border-box;
@@ -18059,7 +17788,7 @@ button:disabled {
 
 .retirement-timing-tick-date,
 .retirement-timing-tick-age {
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   color: #334155;
   white-space: nowrap;
   line-height: 1.25;
@@ -18104,7 +17833,7 @@ button:disabled {
   left: 50%;
   top: 18px;
   transform: translateX(-50%);
-  font-size: 0.7rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #c2410c;
   white-space: nowrap;
@@ -18138,7 +17867,7 @@ button:disabled {
 }
 
 .retirement-timing-period-bar span {
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
   color: #0f172a;
@@ -18163,14 +17892,14 @@ button:disabled {
   background: #fff7ed;
   border: 1px solid #fed7aa;
   color: #9a3412;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
   font-weight: 600;
 }
 
 .retirement-timing-footer {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #64748b;
   line-height: 1.45;
 }
@@ -18179,7 +17908,7 @@ button:disabled {
   .retirement-timing-receipt {
     min-width: 108px;
     max-width: 140px;
-    font-size: 0.66rem;
+    font-size: 0.8125rem;
   }
 
   .retirement-timing-tick {
@@ -18188,7 +17917,7 @@ button:disabled {
 
   .retirement-timing-tick-date,
   .retirement-timing-tick-age {
-    font-size: 0.64rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -18280,7 +18009,7 @@ button:disabled {
   background: none;
   padding: 0;
   color: #00897b;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -18312,13 +18041,11 @@ button:disabled {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
 }
 
 .savings-add-group-desc {
   margin: 0;
-  font-size: 0.75rem;
-  color: #888;
+  font-size: 0.8125rem;
 }
 
 .savings-add-grid {
@@ -18359,12 +18086,10 @@ button:disabled {
 .savings-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .savings-add-card-desc {
-  font-size: 0.6875rem;
-  color: #999;
+  font-size: 0.8125rem;
   text-align: center;
   line-height: 1.4;
 }
@@ -18383,7 +18108,7 @@ button:disabled {
 
 .license-key-format-hint {
   margin: 8px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667;
 }
 
@@ -18444,13 +18169,13 @@ button:disabled {
   border-radius: 999px;
   background: #e8f5e9;
   color: #2e7d32;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
 
 .license-device-card-meta {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667;
 }
 
@@ -18461,7 +18186,7 @@ button:disabled {
 
 .license-device-card-note {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: #667;
 }
 
@@ -18507,7 +18232,7 @@ button:disabled {
   align-items: center;
   padding: 5px 12px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -18705,7 +18430,7 @@ button:disabled {
 }
 
 .license-key-admin-table th {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #667;
   white-space: nowrap;
@@ -18730,7 +18455,7 @@ button:disabled {
 
 .plan-bar-btn--compact {
   padding: 4px 10px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .license-key-admin-status {
@@ -18738,7 +18463,7 @@ button:disabled {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
 

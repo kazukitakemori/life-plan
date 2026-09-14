@@ -1,0 +1,873 @@
+/*
+ * Canonical screen convergence layer for Q1-Q12.
+ *
+ * Screen-specific legacy CSS still owns layout. This file owns the repeated
+ * visual contract: neutral surfaces, shared controls, brand actions,
+ * selection states, muted helper text and semantic danger states.
+ */
+
+:root {
+  --ui-callout-border: #d7e5dc;
+  --ui-callout-text: #345743;
+}
+
+/* Shared callouts ------------------------------------------------------- */
+:is(
+    .education-step .purpose-input-note,
+    .income-step .purpose-input-note,
+    .income-step .prior-year-income-guide,
+    .pension-step .purpose-input-note,
+    .pension-step .pension-info-box,
+    .education-ref-modal-summary
+  ) {
+  border-color: var(--ui-callout-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: var(--ui-callout-text);
+}
+
+/* Shared legacy controls ------------------------------------------------ */
+.step-page :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .education-select,
+    .education-text-input,
+    .education-yen-field,
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input,
+    .select-input,
+    .select-input--schedule,
+    .select-input--cycle,
+    .amount-input,
+    .rate-input,
+    .rate-end-input,
+    .living-cycle-input,
+    .living-content-input,
+    .housing-text-input,
+    .housing-occupancy-select,
+    .housing-rental-payer-select,
+    .housing-owned-name-input,
+    .housing-owned-usage-select,
+    .vehicle-annual-cycle-select,
+    .pension-field-input,
+    .pension-field-select,
+    .required-coverage-medical-preset-select,
+    .required-coverage-medical-employment-select,
+    .loan-entry-name-input,
+    .insurance-entry-name-input,
+    .loan-entry-note-input,
+    .insurance-premium-mode-select,
+    .savings-entry-name-input,
+    .second-life-age-input,
+    .second-life-priority-select
+  ),
+.second-life-step :is(
+    .second-life-inline-cost input,
+    .second-life-inline-cost select,
+    .third-life-field-row input,
+    .third-life-field-row select
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.step-page :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .education-select,
+    .education-text-input,
+    .education-yen-field,
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input,
+    .select-input,
+    .select-input--schedule,
+    .select-input--cycle,
+    .amount-input,
+    .rate-input,
+    .rate-end-input,
+    .living-cycle-input,
+    .living-content-input,
+    .housing-text-input,
+    .housing-occupancy-select,
+    .housing-rental-payer-select,
+    .housing-owned-name-input,
+    .housing-owned-usage-select,
+    .vehicle-annual-cycle-select,
+    .pension-field-input,
+    .pension-field-select,
+    .loan-entry-name-input,
+    .insurance-entry-name-input,
+    .loan-entry-note-input,
+    .insurance-premium-mode-select,
+    .savings-entry-name-input
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.step-page :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .education-select,
+    .education-text-input,
+    .education-yen-field,
+    .life-event-text-input,
+    .life-event-select,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-select,
+    .celebration-gift-amount-input,
+    .select-input,
+    .select-input--schedule,
+    .select-input--cycle,
+    .amount-input,
+    .rate-input,
+    .rate-end-input,
+    .living-cycle-input,
+    .living-content-input,
+    .housing-text-input,
+    .housing-occupancy-select,
+    .housing-rental-payer-select,
+    .housing-owned-name-input,
+    .housing-owned-usage-select,
+    .vehicle-annual-cycle-select,
+    .pension-field-input,
+    .pension-field-select,
+    .loan-entry-name-input,
+    .insurance-entry-name-input,
+    .loan-entry-note-input,
+    .insurance-premium-mode-select,
+    .savings-entry-name-input,
+    .second-life-age-input,
+    .second-life-priority-select
+  ):focus,
+.second-life-step :is(
+    .second-life-inline-cost input,
+    .second-life-inline-cost select,
+    .third-life-field-row input,
+    .third-life-field-row select
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+/* Shared card language -------------------------------------------------- */
+:is(
+    .family-step .residence-card,
+    .education-step .education-table-card,
+    .education-step .education-chart-card,
+    .education-ref-modal,
+    .life-event-step .life-event-table-card,
+    .life-event-step .celebration-gift-block,
+    .living-step .living-copy-bar,
+    .living-step .living-schedule-card,
+    .living-step .living-empty,
+    .living-step .living-modal,
+    .housing-step .housing-rental-card,
+    .housing-step .housing-owned-card-wrap,
+    .vehicle-step .vehicle-table-card,
+    .vehicle-step .vehicle-table-group,
+    .vehicle-step .vehicle-entry-block,
+    .income-step .income-period-card,
+    .income-step .income-retirement-card,
+    .income-step .income-empty,
+    .loan-step .loan-entry-card-wrap,
+    .insurance-step .insurance-entry-card-wrap,
+    .savings-step .savings-entry-card-wrap,
+    .second-life-step .second-life-guide-card,
+    .second-life-step .second-life-choice-card
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+/* Shared add cards ------------------------------------------------------ */
+:is(
+    .life-event-step .life-event-add-card,
+    .housing-step .housing-owned-add-card,
+    .housing-step .housing-rental-add-card,
+    .vehicle-step .vehicle-add-card,
+    .loan-step .loan-add-card,
+    .insurance-step .insurance-add-card,
+    .savings-step .savings-add-card
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+:is(
+    .life-event-step .life-event-add-card,
+    .housing-step .housing-owned-add-card,
+    .housing-step .housing-rental-add-card,
+    .vehicle-step .vehicle-add-card,
+    .loan-step .loan-add-card,
+    .insurance-step .insurance-add-card,
+    .savings-step .savings-add-card
+  ):hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+:is(
+    .life-event-add-card-title,
+    .vehicle-add-card-title,
+    .loan-add-card-title,
+    .insurance-add-card-title,
+    .insurance-add-group-title,
+    .savings-add-card-title,
+    .savings-add-group-title
+  ) {
+  color: var(--ui-text);
+}
+
+:is(
+    .life-event-add-card-desc,
+    .vehicle-add-card-desc,
+    .loan-add-card-desc,
+    .insurance-add-card-desc,
+    .insurance-add-group-desc,
+    .savings-add-card-desc,
+    .savings-add-group-desc
+  ) {
+  color: var(--ui-text-muted);
+}
+
+/* Shared brand-outline actions ----------------------------------------- */
+:is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
+    .housing-step .housing-owned-open-btn,
+    .housing-step .housing-owned-loan-add-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
+    .vehicle-step .vehicle-duplicate-btn,
+    .loan-step .loan-entry-open-btn,
+    .insurance-step .insurance-entry-open-btn,
+    .savings-step .savings-entry-open-btn,
+    .second-life-step .second-life-guide-nav-btn
+  ) {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+:is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
+    .housing-step .housing-owned-open-btn,
+    .housing-step .housing-owned-loan-add-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
+    .vehicle-step .vehicle-duplicate-btn,
+    .loan-step .loan-entry-open-btn,
+    .insurance-step .insurance-entry-open-btn,
+    .savings-step .savings-entry-open-btn,
+    .second-life-step .second-life-guide-nav-btn
+  ):hover:not(:disabled) {
+  background: var(--ui-brand-soft);
+}
+
+/* Shared selectable options -------------------------------------------- */
+:is(
+    .housing-step .housing-owned-expense-mode-option,
+    .housing-step .housing-owned-payment-option,
+    .housing-step .housing-owned-loan-contractor-btn,
+    .vehicle-step .vehicle-owned-payment-toggle-option,
+    .loan-step .loan-payment-mode-option
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.housing-step :is(
+    .housing-owned-expense-mode-option,
+    .housing-owned-payment-option,
+    .housing-owned-loan-contractor-btn
+  ).is-active,
+.vehicle-step .vehicle-owned-payment-toggle-option:has(input:checked),
+.vehicle-step .vehicle-owned-payment-toggle-option.is-active,
+.loan-step .loan-payment-mode-option:has(input:checked),
+.loan-step .loan-payment-mode-option.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Shared brand badges / help icons ------------------------------------- */
+:is(
+    .loan-step .loan-entry-structure-badge,
+    .insurance-step .insurance-entry-sector-badge,
+    .insurance-step .insurance-entry-category-badge,
+    .savings-step .savings-entry-sector-badge,
+    .savings-step .savings-entry-category-badge
+  ) {
+  border-color: var(--ui-callout-border);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+:is(
+    .education-help-icon,
+    .life-event-help-icon,
+    .living-help-icon,
+    .pension-help-icon
+  ) {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Destructive actions --------------------------------------------------- */
+:is(
+    .family-step .residence-remove-btn,
+    .life-event-step .life-event-row-remove,
+    .life-event-step .education-row-remove,
+    .living-step .living-schedule-remove-btn,
+    .housing-step .housing-row-remove,
+    .housing-step .remove-member-btn,
+    .income-step .remove-period-btn,
+    .income-step .income-remove-btn,
+    .loan-step .housing-row-remove,
+    .insurance-step .housing-row-remove,
+    .savings-step .housing-row-remove
+  ) {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+  background: var(--ui-bg-surface);
+  color: var(--ui-danger);
+}
+
+/* Q1 family / residence ------------------------------------------------- */
+.family-step .residence-card-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.family-step .residence-card-title,
+.family-step .residence-period-label {
+  color: var(--ui-text);
+}
+
+.family-step :is(.residence-period-from, .residence-data-version) {
+  color: var(--ui-text-muted);
+}
+
+.family-step .residence-calc-btn {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-subtle);
+}
+
+.family-step .residence-add-icon {
+  border-color: var(--ui-brand);
+}
+
+/* Q2 education ---------------------------------------------------------- */
+@media (min-width: 769px) {
+  .education-step .education-table-header {
+    border-bottom-color: var(--ui-border);
+    background: var(--ui-bg-subtle);
+    box-shadow: 0 2px 6px rgb(31 42 36 / 7%);
+  }
+
+  .education-step .education-header-cell {
+    border-right-color: var(--ui-border);
+    background: var(--ui-bg-subtle);
+    color: var(--ui-text-muted);
+    font-weight: 700;
+  }
+
+  .education-step .education-header-tuition-group,
+  .education-step .education-table-cell {
+    border-color: var(--ui-border);
+  }
+
+  .education-step :is(.education-header-sub-tuition-amount, .education-header-sub-tuition-monthly) {
+    background: #f7f9f8;
+    color: var(--ui-text-muted);
+  }
+
+  .education-step .education-table-row:nth-child(odd),
+  .education-step .education-table-row:nth-child(even) {
+    background: var(--ui-bg-surface);
+  }
+}
+
+.education-step :is(.education-yen-unit, .education-entrance-note, .education-aggregate-note, .education-empty) {
+  color: var(--ui-text-muted);
+}
+
+.education-step .education-period-arrow {
+  color: var(--ui-text-subtle);
+}
+
+.education-step .education-fetch-detail-link,
+.education-ref-section-title {
+  color: var(--ui-brand);
+}
+
+.education-step .education-other-item,
+.education-ref-kv-table th,
+.education-ref-kv-table td,
+.education-ref-data-table th,
+.education-ref-data-table td {
+  border-color: var(--ui-border);
+}
+
+.education-ref-modal-title,
+.education-chart-title {
+  color: var(--ui-text);
+}
+
+.education-ref-modal-close {
+  color: var(--ui-text-subtle);
+}
+
+.education-ref-modal-close:hover {
+  color: var(--ui-text);
+}
+
+.education-ref-section-title {
+  border-left-color: var(--ui-brand);
+}
+
+.education-ref-section-desc,
+.education-ref-subline,
+.education-chart-legend-label,
+.education-chart-tooltip-row {
+  color: var(--ui-text-muted);
+}
+
+.education-ref-kv-table th,
+.education-ref-data-table th {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.education-chart-tooltip {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+}
+
+.education-chart-tooltip-title {
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.education-step .education-period-alerts {
+  border-radius: var(--ui-radius-control);
+}
+
+/* Q3 life events -------------------------------------------------------- */
+.life-event-step .celebration-gift-block-header,
+.life-event-step :is(.life-event-table-header, .celebration-gift-table-header) {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.life-event-step :is(.life-event-header-cell, .celebration-gift-header-cell) {
+  border-right-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+  font-weight: 700;
+}
+
+.life-event-step .life-event-table-row:nth-child(odd),
+.life-event-step .life-event-table-row:nth-child(even),
+.life-event-step .celebration-gift-table-row:nth-child(odd),
+.life-event-step .celebration-gift-table-row:nth-child(even) {
+  background: var(--ui-bg-surface);
+}
+
+.life-event-step :is(.life-event-table-cell, .celebration-gift-table-cell) {
+  border-color: var(--ui-border);
+}
+
+.life-event-step :is(
+    .life-event-inflation-label,
+    .life-event-inflation-unit,
+    .life-event-rate-label,
+    .period-until-suffix,
+    .life-event-add-card-desc,
+    .celebration-gift-empty,
+    .life-event-table-empty
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.life-event-step .life-event-table-empty {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+/* Q4 living ------------------------------------------------------------- */
+.living-step .living-copy-from,
+.living-step :is(.living-summary-auto, .living-rate-same, .living-modal-note) {
+  color: var(--ui-text-muted);
+}
+
+.living-step .living-table-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.living-step .living-table-header-cell {
+  color: var(--ui-text-muted);
+  font-weight: 700;
+}
+
+.living-step :is(.living-table-cell, .living-schedule-cell, .living-add-item-row) {
+  border-color: var(--ui-border);
+}
+
+.living-step .living-summary-row {
+  border-top-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.living-step :is(.living-summary-label, .living-summary-amount) {
+  color: var(--ui-text);
+}
+
+.living-step .living-modal-add-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+/* Q5 housing ------------------------------------------------------------ */
+.housing-step :is(
+    .housing-section,
+    .housing-rental-card,
+    .housing-owned-card-wrap,
+    .housing-owned-card,
+    .housing-owned-detail-section,
+    .housing-owned-loan-card-wrap,
+    .housing-owned-insurance-card-wrap,
+    .housing-insurance-item,
+    .housing-loan-item
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.housing-step :is(
+    .housing-section-header,
+    .housing-rental-table-header,
+    .housing-table-header,
+    .housing-owned-detail-header
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.housing-step :is(
+    .housing-owned-acquisition-note,
+    .housing-owned-detail-note,
+    .housing-rental-note,
+    .housing-insurance-note,
+    .housing-loan-note
+  ) {
+  color: var(--ui-text-muted);
+}
+
+/* Q6 vehicle ------------------------------------------------------------ */
+.vehicle-step :is(.life-event-table-header, .vehicle-table-group-label) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.vehicle-step .life-event-header-cell {
+  border-right-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+  font-weight: 700;
+}
+
+.vehicle-step .life-event-table-cell {
+  border-color: var(--ui-border);
+}
+
+.vehicle-step :is(
+    .vehicle-replace-hint,
+    .vehicle-inspection-hint,
+    .vehicle-monthly-label,
+    .vehicle-annual-label
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.vehicle-step .vehicle-payment-error {
+  color: var(--ui-danger);
+}
+
+/* Q7 income ------------------------------------------------------------- */
+.income-step .income-entry-guidance {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.income-step .income-entry-index {
+  background: var(--ui-brand);
+}
+
+.income-step :is(.income-period-year-note, .prior-year-income-label, .rate-field-label, .rate-unit) {
+  color: var(--ui-text-muted);
+}
+
+/* Q8 pension ------------------------------------------------------------ */
+.pension-step :is(.pension-section-title, .pension-subsection-title, .teikibin-block-title, .benefit-settings-block-title, .pension-estimate-title) {
+  color: var(--ui-text);
+}
+
+.pension-step :is(.pension-enrollment-panel, .pension-estimate-panel, .income-annual-chart) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.pension-step :is(.pension-estimate-total, .pension-estimate-note, .pension-field-unit, .teikibin-block-title-sub, .benefit-death-date) {
+  color: var(--ui-text-muted);
+}
+
+.pension-step .pension-estimate-total strong,
+.pension-step .pension-info-emphasis,
+.pension-step .pension-field-calc {
+  color: var(--ui-brand);
+}
+
+.pension-step :is(
+    .teikibin-period-table-section,
+    .teikibin-period-table-summary-head,
+    .teikibin-period-table-side,
+    .teikibin-amount-corner,
+    .teikibin-amount-col-header,
+    .teikibin-amount-row-label,
+    .teikibin-amount-subheader,
+    .teikibin-monthly-table th,
+    .benefit-col-header
+  ) {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.pension-step :is(
+    .teikibin-period-table,
+    .teikibin-amount-table,
+    .teikibin-monthly-table-wrap,
+    .benefit-settings-table,
+    .benefit-survivor-table,
+    .teikibin-period-table th,
+    .teikibin-period-table td,
+    .teikibin-amount-table th,
+    .teikibin-amount-table td,
+    .teikibin-monthly-table th,
+    .teikibin-monthly-table td,
+    .benefit-settings-table th,
+    .benefit-settings-table td,
+    .benefit-survivor-table th,
+    .benefit-survivor-table td
+  ) {
+  border-color: var(--ui-border);
+}
+
+.pension-step :is(
+    .teikibin-amount-total-cell,
+    .teikibin-amount-total-cell--primary,
+    .teikibin-period-table-summary-value--eligible
+  ) {
+  border-color: var(--ui-brand);
+}
+
+.pension-step .benefit-amount-option:has(input:checked) .benefit-amount-option-label--auto {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Q9-Q11 dense editors -------------------------------------------------- */
+:is(.loan-step, .insurance-step, .savings-step) :is(
+    .loan-section,
+    .insurance-section,
+    .savings-section,
+    .loan-entry-card,
+    .insurance-entry-card,
+    .savings-entry-card,
+    .loan-entry-detail,
+    .insurance-entry-detail,
+    .savings-entry-detail,
+    .loan-settings-table-card,
+    .loan-detail-subsection
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+:is(.loan-step, .insurance-step, .savings-step) :is(
+    .loan-settings-form-label,
+    .loan-entry-summary,
+    .insurance-entry-summary,
+    .savings-entry-summary
+  ),
+:is(.insurance-entry-drag-handle, .savings-entry-drag-handle) {
+  color: var(--ui-text-muted);
+}
+
+.loan-step .loan-detail-subsection-title {
+  color: var(--ui-text);
+}
+
+/* Q12 second life ------------------------------------------------------- */
+.second-life-step :is(.second-life-lead, .second-life-guide-intro, .second-life-guide-checklist-lead) {
+  color: var(--ui-text-muted);
+}
+
+.second-life-step :is(
+    .second-life-guide-start-age,
+    .second-life-template-panel,
+    .second-life-refine-trigger,
+    .second-life-section,
+    .second-life-breakdown
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.second-life-step :is(
+    .second-life-guide-start-age,
+    .second-life-section-toolbar,
+    .second-life-section-actions,
+    .second-life-nursing-toolbar
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.second-life-step :is(
+    .second-life-guide-card-step,
+    .second-life-guide-card-design,
+    .second-life-template-panel-title,
+    .second-life-refine-title,
+    .second-life-refine-trigger-chevron,
+    .second-life-refine-modal-title
+  ) {
+  color: var(--ui-brand);
+}
+
+.second-life-step .second-life-template-panel {
+  border-color: var(--ui-callout-border);
+  background: var(--ui-brand-soft);
+}
+
+.second-life-step :is(.second-life-template-panel-btn, .second-life-apply-btn) {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.second-life-step .second-life-refine-trigger:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+.second-life-step .second-life-section-bar,
+.second-life-step .second-life-choice-header {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text);
+}
+
+.second-life-step .second-life-section-bar .second-life-section-sub,
+.second-life-step :is(
+    .second-life-living-note,
+    .second-life-apply-note,
+    .second-life-living-ref,
+    .second-life-breakdown-note,
+    .second-life-breakdown-empty,
+    .second-life-nursing-desc,
+    .second-life-skip-hint
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.second-life-step .second-life-choice-grid {
+  background: var(--ui-bg-page);
+}
+
+.second-life-step .second-life-choice-card.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 0 0 1px rgb(47 111 78 / 14%);
+}
+
+.second-life-step .second-life-choice-card.is-active .second-life-choice-header {
+  border-bottom-color: var(--ui-brand);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.second-life-step .second-life-choice-marker,
+.second-life-step .second-life-choice-marker.is-checked::after,
+.second-life-step .second-life-choice-card.is-active .second-life-choice-marker.is-checked::after {
+  border-color: var(--ui-brand);
+}
+
+.second-life-step .second-life-choice-marker.is-checked::after,
+.second-life-step .second-life-choice-card.is-active .second-life-choice-marker.is-checked::after {
+  background: var(--ui-brand);
+}
+
+.second-life-step :is(.second-life-choice-total strong, .second-life-living-monthly strong) {
+  color: var(--ui-brand);
+}
+
+.second-life-step .second-life-breakdown,
+.second-life-step .second-life-choice-card.is-active .second-life-breakdown {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.second-life-step :is(.second-life-back-btn, .second-life-next-btn) {
+  border-color: var(--ui-border-strong);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.second-life-step .second-life-next-btn {
+  border-color: var(--ui-brand);
+  color: var(--ui-brand);
+}

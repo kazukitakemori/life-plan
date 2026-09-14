@@ -95,11 +95,11 @@ export function LoanEntryCard({
         </button>
         <button
           type="button"
-          className="housing-row-remove"
+          className="housing-row-remove ui-entry-delete-button"
           onClick={onRemove}
           aria-label="ローンを削除"
         >
-          −
+          削除
         </button>
       </div>
 

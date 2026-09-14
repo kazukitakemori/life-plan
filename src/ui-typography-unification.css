@@ -1,0 +1,445 @@
+/*
+ * Canonical typography / readable-control layer.
+ * Loaded after screen-specific styles. This file owns type hierarchy and
+ * minimum readable control geometry; business logic must never depend on it.
+ */
+
+:root {
+  --ui-type-body: 0.9375rem; /* 15px */
+  --ui-type-control: 0.9375rem; /* 15px */
+  --ui-type-label: 0.875rem; /* 14px */
+  --ui-type-helper: 0.8125rem; /* 13px */
+  --ui-type-table: 0.875rem; /* 14px */
+  --ui-type-table-head: 0.8125rem; /* 13px */
+  --ui-type-card-title: 1rem; /* 16px */
+  --ui-type-section-title: 1.125rem; /* 18px */
+  --ui-type-page-title: 1.5rem; /* 24px */
+  --ui-control-height-readable: 40px;
+}
+
+body {
+  font-size: var(--ui-type-body);
+  line-height: 1.55;
+}
+
+:is(.step-title, .plan-admin-title, .header-tab-placeholder-title) {
+  font-size: var(--ui-type-page-title) !important;
+  line-height: 1.35 !important;
+}
+
+:is(.asset-building-page-title, .cashflow-title, .analysis-loading-panel-title) {
+  font-size: 1.25rem !important;
+  line-height: 1.4 !important;
+}
+
+.top-header-title {
+  font-size: 1.25rem !important;
+}
+
+:is(
+    .add-family-title,
+    .add-income-title,
+    .pension-section-title,
+    .life-event-add-title,
+    .second-life-guide-checklist-title,
+    .required-coverage-medical-intro .required-coverage-card-title,
+    .required-coverage-need-summary-label,
+    .education-chart-title,
+    .pension-estimate-title
+  ) {
+  font-size: var(--ui-type-section-title) !important;
+  line-height: 1.4 !important;
+  margin-bottom: 14px;
+}
+
+:is(
+    .income-entry-card-title,
+    .income-retirement-card-title,
+    .celebration-gift-block-title,
+    .second-life-section-title,
+    .second-life-choice-label,
+    .required-coverage-card-title,
+    .required-coverage-medical-section-title,
+    .required-coverage-work-member-name,
+    .other-breakdown-year-title,
+    .other-breakdown-life-stage-title,
+    .residence-card-title,
+    .education-ref-modal-title,
+    .tax-breakdown-reference-title,
+    .life-event-detail-popover-title
+  ) {
+  font-size: var(--ui-type-card-title) !important;
+  line-height: 1.45 !important;
+}
+
+:is(
+    .step-lead,
+    .step-description,
+    .purpose-input-note,
+    .ui-member-tabs-guidance,
+    .income-entry-guidance,
+    .plan-admin-desc,
+    .header-tab-placeholder-text,
+    .second-life-guide-intro,
+    .second-life-guide-card-summary,
+    .second-life-template-panel-desc,
+    .required-coverage-card-note,
+    .required-coverage-medical-section-reflect,
+    .required-coverage-medical-income-quote,
+    .required-coverage-medical-income-result,
+    .cashflow-note,
+    .education-aggregate-note
+  ) {
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.6 !important;
+}
+
+.step-page label,
+:is(
+    .ui-field-label,
+    .inline-field-label,
+    .income-field-label,
+    .rate-field-label,
+    .pension-enrollment-label,
+    .required-coverage-medical-field-label,
+    .residence-period-label,
+    .plan-meta-label,
+    .plan-save-as-label,
+    .cashflow-select-label,
+    .ui-copy-bar-label,
+    .ui-segmented-label
+  ) {
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.45 !important;
+}
+
+.step-page :is(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea
+  ),
+:is(
+    .plan-bar-name-input,
+    .plan-open-search,
+    .plan-save-as-input,
+    .plan-meta-input,
+    .plan-meta-textarea,
+    .plan-admin-status-filter
+  ) {
+  font-size: var(--ui-type-control) !important;
+  line-height: 1.45 !important;
+}
+
+:is(
+    .ui-btn:not(.ui-btn--compact),
+    .ui-copy-bar-button,
+    .ui-segmented-button,
+    .ui-member-tab,
+    .ui-member-tabs-summary-toggle,
+    .plan-bar-btn,
+    .sidebar-item,
+    .top-header-nav-item,
+    .top-header-dropdown-item,
+    .education-copy-btn,
+    .education-fetch-btn,
+    .education-add-other-btn,
+    .life-event-copy-btn,
+    .living-copy-btn,
+    .vehicle-duplicate-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .second-life-guide-nav-btn,
+    .second-life-template-panel-btn,
+    .second-life-back-btn,
+    .second-life-next-btn,
+    .second-life-apply-btn
+  ) {
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.4 !important;
+}
+
+.step-page table {
+  font-size: var(--ui-type-table) !important;
+}
+
+.step-page table th,
+:is(
+    .living-table-header-cell,
+    .education-header-cell,
+    .life-event-header-cell,
+    .celebration-gift-header-cell,
+    .required-coverage-expense-table thead th,
+    .required-coverage-design-table thead th,
+    .teikibin-period-table th,
+    .teikibin-amount-table th,
+    .teikibin-monthly-table th,
+    .benefit-settings-table th,
+    .benefit-survivor-table th
+  ) {
+  font-size: var(--ui-type-table-head) !important;
+  line-height: 1.4 !important;
+}
+
+.step-page table td,
+:is(.living-table-cell, .education-table-cell, .life-event-table-cell, .celebration-gift-table-cell) {
+  font-size: var(--ui-type-table) !important;
+  line-height: 1.5 !important;
+}
+
+:is(
+    .sidebar-label,
+    .required-coverage-section-tab,
+    .required-coverage-chart-switch-tab,
+    .required-coverage-owner-tab,
+    .other-breakdown-tab,
+    .second-life-workspace-tab
+  ) {
+  font-size: var(--ui-type-label) !important;
+}
+
+:is(
+    .sidebar-q,
+    .ui-member-tab-badge,
+    .ui-member-tab-birth,
+    .ui-member-tab-menu-meta,
+    .occupation-badge,
+    .plan-admin-status,
+    .plan-admin-current-badge,
+    .top-header-status-badge
+  ) {
+  font-size: var(--ui-type-helper) !important;
+  line-height: 1.35 !important;
+}
+
+:is(
+    .ui-field-hint,
+    .ui-note,
+    .income-period-year-note,
+    .income-retirement-field,
+    .prior-year-income-label,
+    .living-summary-auto,
+    .living-rate-same,
+    .education-entrance-note,
+    .education-chart-legend-label,
+    .life-event-add-card-desc,
+    .life-event-rate-label,
+    .required-coverage-medical-line-note,
+    .required-coverage-medical-line-formula,
+    .required-coverage-medical-result-note,
+    .required-coverage-horizon-help,
+    .lifetime-chart-layout-hint,
+    .lifetime-chart-yaxis-auto-hint,
+    .lifetime-chart-legend-label,
+    .cashflow-note,
+    .pension-timeline-pivot-bubble,
+    .pension-timeline-pivot-date,
+    .pension-timeline-pivot-months,
+    .teikibin-block-title-sub,
+    .teikibin-period-table-sub,
+    .teikibin-period-table-summary-head,
+    .teikibin-period-table-side,
+    .teikibin-period-table-summary-sub,
+    .teikibin-amount-col-header,
+    .teikibin-amount-subheader,
+    .teikibin-amount-field-label,
+    .teikibin-monthly-table,
+    .teikibin-monthly-date-unit,
+    .benefit-col-header--survivor,
+    .benefit-amount-option-label--auto,
+    .benefit-survivor-cell,
+    .benefit-survivor-suffix,
+    .second-life-choice-badge,
+    .second-life-breakdown-note,
+    .second-life-breakdown-empty,
+    .second-life-skip-hint,
+    .calc-breakdown-compound-note
+  ) {
+  font-size: var(--ui-type-helper) !important;
+  line-height: 1.5 !important;
+}
+
+:is(
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .pension-field-unit,
+    .pension-field-calc,
+    .benefit-death-date,
+    .residence-data-version,
+    .life-event-inflation-label,
+    .life-event-inflation-unit,
+    .education-yen-unit,
+    .second-life-living-ref,
+    .second-life-nursing-desc,
+    .calc-breakdown-row-title,
+    .calc-breakdown-compound-hint
+  ) {
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.5 !important;
+}
+
+.lifetime-chart-title {
+  font-size: 1.0625rem !important;
+}
+
+:is(.lifetime-chart-summary-title, .lifetime-chart-legend-title) {
+  font-size: var(--ui-type-label) !important;
+}
+
+.lifetime-chart-summary-row dt,
+:is(.lifetime-chart-tooltip-title, .lifetime-chart-tooltip-row) {
+  font-size: var(--ui-type-helper) !important;
+}
+
+.lifetime-chart-summary-row dd {
+  font-size: var(--ui-type-control) !important;
+}
+
+:is(
+    .top-header-customer,
+    .top-header-hint,
+    .top-header-autosave,
+    .plan-bar-name-display,
+    .plan-bar-name-label,
+    .plan-bar-dirty,
+    .plan-open-item-name,
+    .plan-open-item-date
+  ) {
+  font-size: var(--ui-type-label) !important;
+}
+
+/* Readable control geometry after type normalization. */
+.step-page :is(
+    button,
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea
+  ) {
+  min-height: var(--ui-control-height-readable);
+}
+
+.step-page :is(
+    .life-event-row-remove,
+    .education-row-remove,
+    .education-other-remove,
+    .life-event-drag-handle,
+    .insurance-entry-drag-handle,
+    .savings-entry-drag-handle,
+    .residence-calc-btn,
+    .pension-help-icon,
+    .education-help-icon,
+    .life-event-help-icon
+  ) {
+  min-height: 28px;
+}
+
+.step-page table :is(th, td) {
+  vertical-align: middle;
+}
+
+:is(
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell,
+    .loan-settings-form-row
+  ) {
+  line-height: 1.5;
+}
+
+:is(
+    .pension-enrollment-field,
+    .residence-period-row,
+    .life-event-inflation-field,
+    .second-life-timing,
+    .housing-rental-payer-label
+  ) {
+  row-gap: 8px;
+}
+
+:is(
+    .ui-member-tab-birth,
+    .ui-member-tab-badge,
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .residence-data-version,
+    .plan-admin-status,
+    .plan-admin-current-badge
+  ) {
+  width: max-content;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --ui-type-page-title: 1.3125rem; /* 21px */
+    --ui-type-section-title: 1.0625rem; /* 17px */
+  }
+
+  body {
+    font-size: var(--ui-type-body);
+    line-height: 1.6;
+  }
+
+  .step-page :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']),
+      select,
+      textarea
+    ) {
+    min-height: 44px;
+    font-size: 1rem !important;
+  }
+
+  .step-page button {
+    min-height: 44px;
+  }
+
+  :is(
+      .ui-btn:not(.ui-btn--compact),
+      .ui-copy-bar-button,
+      .ui-segmented-button,
+      .ui-member-tab,
+      .education-copy-btn,
+      .life-event-copy-btn,
+      .living-copy-btn,
+      .second-life-guide-nav-btn
+    ) {
+    font-size: var(--ui-type-body) !important;
+  }
+
+  .top-header-title {
+    font-size: 1.125rem !important;
+  }
+
+  .step-page table th {
+    font-size: var(--ui-type-table-head) !important;
+  }
+
+  .step-page table td {
+    font-size: var(--ui-type-table) !important;
+  }
+
+  .step-page :is(
+      .life-event-row-remove,
+      .education-row-remove,
+      .education-other-remove,
+      .life-event-drag-handle,
+      .insurance-entry-drag-handle,
+      .savings-entry-drag-handle,
+      .residence-calc-btn,
+      .pension-help-icon,
+      .education-help-icon,
+      .life-event-help-icon
+    ) {
+    min-height: 36px;
+  }
+
+  :is(.pension-enrollment-field, .residence-period-row, .life-event-inflation-field) {
+    flex-wrap: wrap;
+  }
+
+  .pension-enrollment-label,
+  .residence-period-label {
+    min-width: max-content;
+  }
+}

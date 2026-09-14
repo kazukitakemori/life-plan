@@ -35,36 +35,16 @@
   }
 
   .vehicle-step .life-event-table-row {
-    border-top-color: var(--color-brand);
+    border-top-color: var(--ui-brand);
   }
 
-  .vehicle-step .vehicle-col-summary::before {
-    content: '名称';
-  }
-
-  .vehicle-step .vehicle-col-type::before {
-    content: '種類';
-  }
-
-  .vehicle-step .vehicle-col-period::before {
-    content: '利用期間';
-  }
-
-  .vehicle-step .vehicle-col-purchase::before {
-    content: '購入費・返済額';
-  }
-
-  .vehicle-step .vehicle-col-monthly::before {
-    content: '月次維持費';
-  }
-
-  .vehicle-step .vehicle-col-annual::before {
-    content: '税金・メンテナンス費';
-  }
-
-  .vehicle-step .vehicle-col-replace::before {
-    content: '買い替え';
-  }
+  .vehicle-step .vehicle-col-summary::before { content: '名称'; }
+  .vehicle-step .vehicle-col-type::before { content: '種類'; }
+  .vehicle-step .vehicle-col-period::before { content: '利用期間'; }
+  .vehicle-step .vehicle-col-purchase::before { content: '購入費・返済額'; }
+  .vehicle-step .vehicle-col-monthly::before { content: '月次維持費'; }
+  .vehicle-step .vehicle-col-annual::before { content: '税金・メンテナンス費'; }
+  .vehicle-step .vehicle-col-replace::before { content: '買い替え'; }
 
   .vehicle-step :where(
       .vehicle-type-cell,
@@ -127,7 +107,7 @@
   .vehicle-step .vehicle-monthly-label {
     font-weight: 600;
     word-break: keep-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .vehicle-step .vehicle-annual-cost-row {
@@ -157,24 +137,23 @@
 
   .vehicle-step :where(.vehicle-payment-error, .vehicle-replace-hint, .vehicle-inspection-hint) {
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
-  /* 保険・ローンは車両カードの続きとして独立セクション化 */
   .vehicle-step .vehicle-table-group {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     overflow: hidden;
-    border: 1px solid var(--ui-card-border);
-    border-radius: var(--ui-card-radius);
-    background: var(--color-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
   }
 
   .vehicle-step .vehicle-table-group-label {
     padding: 10px 14px;
     border: 0;
-    border-bottom: 1px solid var(--ui-card-border);
-    background: var(--color-surface-soft, #f8faf8);
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
     font-weight: 700;
     word-break: keep-all;
   }
@@ -192,7 +171,6 @@
     min-height: 44px;
   }
 
-  /* 乗り物追加 */
   .vehicle-step .vehicle-add-section,
   .vehicle-step .vehicle-add-grid {
     width: 100%;
@@ -214,7 +192,7 @@
 
   .vehicle-step :where(.vehicle-add-card-title, .vehicle-add-card-desc) {
     word-break: keep-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 }
 
