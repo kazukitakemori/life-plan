@@ -204,7 +204,7 @@
   .housing-step :where(
       .housing-owned-loan-add-btn,
       .housing-insurance-action,
-      .housing-rental-add-actions .footer-action-btn
+      .housing-rental-add-actions .ui-btn
     ) {
     min-height: 44px;
     white-space: nowrap;
@@ -493,7 +493,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .housing-step .housing-rental-add-actions .footer-action-btn {
+  .housing-step .housing-rental-add-actions .ui-btn {
     width: 100%;
   }
 }
