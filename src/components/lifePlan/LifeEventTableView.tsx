@@ -6,6 +6,7 @@ import {
   type LifeEventTableData,
   type LifeMilestone,
 } from '../../lib/lifeMilestoneData';
+import { calcBirthYear } from '../../lib/birthDate';
 import { getLastOpenedPlanId } from '../../lib/lastOpenedPlan';
 import { getLocalPlanRepository } from '../../lib/localPlanRepository';
 import { fromPlanPayload } from '../../lib/planDocument';
@@ -39,6 +40,35 @@ function EmptyState({ text }: { text: string }) {
       <p>{text}</p>
     </div>
   );
+}
+
+function limitToHeadOrSpouseLifespan(
+  data: LifeEventTableData,
+  planState: PlanAppState,
+): LifeEventTableData {
+  const householdLifeEndYears = planState.familyMembers
+    .filter(
+      (member) =>
+        (member.role === 'head' || member.role === 'spouse') &&
+        member.age != null,
+    )
+    .map((member) => {
+      const birthYear = calcBirthYear(
+        member.age,
+        member.birthMonth,
+        planState.referenceDate,
+      );
+      return birthYear + member.expectedLifespan;
+    });
+
+  if (householdLifeEndYears.length === 0) return data;
+
+  const endYear = Math.max(data.startYear, ...householdLifeEndYears);
+  return {
+    ...data,
+    endYear,
+    years: data.years.filter((year) => year.calendarYear <= endYear),
+  };
 }
 
 export function LifeEventTableView() {
@@ -80,10 +110,13 @@ export function LifeEventTableView() {
     };
   }, []);
 
-  const data = useMemo<LifeEventTableData | null>(
-    () => (planState ? buildLifeEventTableData(planState) : null),
-    [planState],
-  );
+  const data = useMemo<LifeEventTableData | null>(() => {
+    if (!planState) return null;
+    return limitToHeadOrSpouseLifespan(
+      buildLifeEventTableData(planState),
+      planState,
+    );
+  }, [planState]);
 
   if (errorMessage) return <EmptyState text={errorMessage} />;
   if (!data) return <EmptyState text="ライフイベント表を読み込んでいます。" />;
