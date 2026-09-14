@@ -191,14 +191,6 @@
     min-width: 0;
   }
 
-  .member-tab-name,
-  .member-tab-birth,
-  .member-tab-badge {
-    white-space: nowrap;
-    word-break: keep-all;
-    overflow-wrap: normal;
-  }
-
   /* Shared toolbar patterns: tabs/copy controls should not fight for one row. */
   :where(
       .education-toolbar,
