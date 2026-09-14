@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AdminTabId } from '../../types/adminTabs';
 import type { AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { HeaderTabId } from '../../types/headerTabs';
@@ -13,6 +13,7 @@ import {
 } from './ShellFullscreenContext';
 import { Sidebar } from './Sidebar';
 import { TopHeader, type AutosaveStatus } from './TopHeader';
+import './AppShellNavigation.css';
 
 interface AppShellProps {
   activeStep: StepId;
@@ -46,6 +47,29 @@ interface AppShellProps {
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
   onRequiredCoverageRiskKindChange?: (kind: RequiredCoverageRiskKind) => void;
   children: ReactNode;
+}
+
+interface ShellNavigationState {
+  headerTab: HeaderTabId;
+  activeStep?: StepId;
+  adminTab?: AdminTabId;
+  assetBuildingTab?: AssetBuildingTabId;
+  requiredCoverageRiskKind?: RequiredCoverageRiskKind;
+}
+
+const MAX_NAVIGATION_HISTORY = 50;
+
+function isSameNavigationState(
+  left: ShellNavigationState,
+  right: ShellNavigationState,
+): boolean {
+  return (
+    left.headerTab === right.headerTab &&
+    left.activeStep === right.activeStep &&
+    left.adminTab === right.adminTab &&
+    left.assetBuildingTab === right.assetBuildingTab &&
+    left.requiredCoverageRiskKind === right.requiredCoverageRiskKind
+  );
 }
 
 function AppShellFrame(props: AppShellProps) {
@@ -84,6 +108,10 @@ function AppShellFrame(props: AppShellProps) {
 
   const { shellRef } = useShellFullscreen();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const navigationHistoryRef = useRef<ShellNavigationState[]>([]);
+  const previousNavigationRef = useRef<ShellNavigationState | null>(null);
+  const restoringNavigationRef = useRef<ShellNavigationState | null>(null);
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
@@ -91,9 +119,129 @@ function AppShellFrame(props: AppShellProps) {
     analysisStale &&
     !isAnalyzing;
 
+  const currentNavigation: ShellNavigationState = {
+    headerTab: activeHeaderTab,
+    activeStep: activeHeaderTab === 'input' ? activeStep : undefined,
+    adminTab: activeHeaderTab === 'admin' ? adminTab : undefined,
+    assetBuildingTab:
+      activeHeaderTab === 'asset-building' ? assetBuildingTab : undefined,
+    requiredCoverageRiskKind:
+      activeHeaderTab === 'required-coverage'
+        ? requiredCoverageRiskKind
+        : undefined,
+  };
+
+  const isNavigationStateAvailable = (state: ShellNavigationState): boolean => {
+    if (state.headerTab === 'admin') {
+      return isLicensed || state.adminTab === 'license' || state.adminTab == null;
+    }
+    if (state.headerTab === 'input') {
+      return Boolean(hasOpenPlan) &&
+        (state.activeStep == null || enabledSteps.includes(state.activeStep));
+    }
+    if (state.headerTab === 'required-coverage') {
+      if (!(analysisUnlocked || requiredCoverageUnlocked)) return false;
+      return (
+        state.requiredCoverageRiskKind == null ||
+        requiredCoverageRiskKinds == null ||
+        requiredCoverageRiskKinds.includes(state.requiredCoverageRiskKind)
+      );
+    }
+    return Boolean(analysisUnlocked);
+  };
+
+  const refreshCanGoBack = () => {
+    setCanGoBack(
+      navigationHistoryRef.current.some((state) =>
+        isNavigationStateAvailable(state),
+      ),
+    );
+  };
+
+  useEffect(() => {
+    const previous = previousNavigationRef.current;
+    if (previous == null) {
+      previousNavigationRef.current = currentNavigation;
+      return;
+    }
+
+    if (isSameNavigationState(previous, currentNavigation)) return;
+
+    const restoring = restoringNavigationRef.current;
+    if (restoring != null) {
+      if (isSameNavigationState(restoring, currentNavigation)) {
+        restoringNavigationRef.current = null;
+        previousNavigationRef.current = currentNavigation;
+      }
+      return;
+    }
+
+    navigationHistoryRef.current.push(previous);
+    if (navigationHistoryRef.current.length > MAX_NAVIGATION_HISTORY) {
+      navigationHistoryRef.current.shift();
+    }
+    previousNavigationRef.current = currentNavigation;
+    refreshCanGoBack();
+  }, [
+    activeHeaderTab,
+    activeStep,
+    adminTab,
+    assetBuildingTab,
+    requiredCoverageRiskKind,
+  ]);
+
+  useEffect(() => {
+    refreshCanGoBack();
+  }, [
+    analysisUnlocked,
+    requiredCoverageUnlocked,
+    hasOpenPlan,
+    isLicensed,
+    enabledSteps,
+    requiredCoverageRiskKinds,
+  ]);
+
   const handleStepChange = (step: StepId) => {
     onStepChange(step);
     setMobileSidebarOpen(false);
+  };
+
+  const handleGoBack = () => {
+    let target: ShellNavigationState | undefined;
+    while (navigationHistoryRef.current.length > 0) {
+      const candidate = navigationHistoryRef.current.pop();
+      if (candidate != null && isNavigationStateAvailable(candidate)) {
+        target = candidate;
+        break;
+      }
+    }
+
+    refreshCanGoBack();
+    if (target == null) return;
+
+    restoringNavigationRef.current = target;
+
+    if (target.headerTab === 'input' && target.activeStep != null) {
+      onStepChange(target.activeStep);
+      setMobileSidebarOpen(false);
+    }
+    if (target.headerTab === 'admin' && target.adminTab != null) {
+      onAdminTabChange?.(target.adminTab);
+    }
+    if (
+      target.headerTab === 'asset-building' &&
+      target.assetBuildingTab != null
+    ) {
+      onAssetBuildingTabChange?.(target.assetBuildingTab);
+    }
+    if (
+      target.headerTab === 'required-coverage' &&
+      target.requiredCoverageRiskKind != null
+    ) {
+      onRequiredCoverageRiskKindChange?.(target.requiredCoverageRiskKind);
+    }
+
+    onHeaderTabChange(target.headerTab);
   };
 
   return (
@@ -123,6 +271,18 @@ function AppShellFrame(props: AppShellProps) {
         requiredCoverageRiskKind={requiredCoverageRiskKind}
         onRequiredCoverageRiskKindChange={onRequiredCoverageRiskKindChange}
       />
+      <div className="shell-history-bar" aria-label="画面履歴">
+        <button
+          type="button"
+          className="shell-history-back"
+          onClick={handleGoBack}
+          disabled={!canGoBack}
+          aria-label="1つ前の画面に戻る"
+        >
+          <span className="shell-history-back-icon" aria-hidden="true">←</span>
+          <span>1つ前に戻る</span>
+        </button>
+      </div>
       <div className="shell-body">
         {showSidebar && (
           <>
