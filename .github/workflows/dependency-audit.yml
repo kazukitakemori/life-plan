@@ -1,0 +1,38 @@
+name: Dependency audit
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/dependency-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Audit all dependencies
+        run: |
+          echo '=== ALL DEPENDENCIES ==='
+          npm audit || true
+      - name: Audit production dependencies only
+        run: |
+          echo '=== PRODUCTION DEPENDENCIES ONLY ==='
+          npm audit --omit=dev || true
+      - name: Show outdated direct dependencies
+        run: npm outdated || true
+      - name: Verify build
+        run: npm run build
