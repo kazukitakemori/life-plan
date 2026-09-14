@@ -73,7 +73,6 @@ export function EducationExpenseRow({
   const [referenceDetail, setReferenceDetail] =
     useState<EducationReferenceDetail | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [mobileExpanded, setMobileExpanded] = useState(false);
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const ageOptions = getEducationAgeOptions(member);
   const schoolTypeOptions = getSchoolTypeOptions(entry.schoolCategory);
@@ -163,9 +162,7 @@ export function EducationExpenseRow({
   };
 
   return (
-    <div
-      className={`education-table-row${mobileExpanded ? ' is-mobile-expanded' : ''}`}
-    >
+    <div className="education-table-row">
       <div className="education-table-cell education-col-school">
         <div className="education-school-fields">
           <select
@@ -287,18 +284,6 @@ export function EducationExpenseRow({
             onChange={(e) => updateEntry({ schoolName: e.target.value })}
           />
         </div>
-
-        <button
-          type="button"
-          className="ui-btn ui-btn--ghost education-mobile-toggle"
-          aria-expanded={mobileExpanded}
-          onClick={() => setMobileExpanded((expanded) => !expanded)}
-        >
-          <span>{mobileExpanded ? '詳細を閉じる' : '詳細を開く'}</span>
-          <span className="education-mobile-toggle-icon" aria-hidden>
-            {mobileExpanded ? '−' : '＋'}
-          </span>
-        </button>
       </div>
 
       <div className="education-table-cell education-col-period">
@@ -402,7 +387,7 @@ export function EducationExpenseRow({
             disabled={!canFetchCosts}
             onClick={handleFetchCosts}
           >
-            参考
+            参考費用を反映
           </button>
           {referenceDetail && (
             <button
