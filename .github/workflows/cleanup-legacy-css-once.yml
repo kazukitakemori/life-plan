@@ -55,6 +55,33 @@ jobs:
               print('\n'.join(references[:100]), file=sys.stderr)
               sys.exit(1)
 
+          # The Q4 household guidance used to inherit layout from member-tabs-meta.
+          # Keep the same spacing under the new common ui-* class before deleting the old rule.
+          ui_path = root / 'ui-system.css'
+          ui_source = ui_path.read_text(encoding='utf-8')
+          if '.ui-member-tabs-meta {' not in ui_source:
+              marker = '''.ui-member-tabs-guidance {
+            margin: 0;
+            color: var(--color-muted);
+            font-size: var(--text-xs);
+            line-height: var(--leading-normal);
+          }
+          '''
+              replacement = marker + '''
+          .ui-member-tabs-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 12px;
+          }
+          '''
+              if marker not in ui_source:
+                  print('Could not find the shared guidance marker in ui-system.css.', file=sys.stderr)
+                  sys.exit(1)
+              ui_source = ui_source.replace(marker, replacement, 1)
+              ui_path.write_text(ui_source, encoding='utf-8')
+
           def strip_comments(text: str) -> str:
               return re.sub(r'/\*.*?\*/', '', text, flags=re.S)
 
@@ -169,12 +196,12 @@ jobs:
       - name: Commit cleanup
         shell: bash
         run: |
-          if git diff --quiet -- src/index.css; then
-            echo "No index.css changes to commit."
+          if git diff --quiet -- src/index.css src/ui-system.css; then
+            echo "No CSS changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/index.css
+          git add src/index.css src/ui-system.css
           git commit -m "不要になった旧共通CSSを削除"
           git push origin HEAD:refactor/mobile-responsive-steps
