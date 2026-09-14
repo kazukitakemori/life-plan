@@ -225,8 +225,8 @@ interface ChartTooltipProps {
 }
 
 interface ChartMouseState {
-  activeTooltipIndex?: number;
-  activeLabel?: number | string;
+  activeTooltipIndex?: unknown;
+  activeLabel?: unknown;
   isTooltipActive?: boolean;
 }
 
@@ -236,9 +236,15 @@ function headAgeFromChartMouseState(
 ): number | null {
   if (!state.isTooltipActive) return null;
 
+  const tooltipIndex =
+    typeof state.activeTooltipIndex === 'number'
+      ? state.activeTooltipIndex
+      : typeof state.activeTooltipIndex === 'string'
+        ? Number(state.activeTooltipIndex)
+        : null;
   const byIndex =
-    state.activeTooltipIndex != null && state.activeTooltipIndex >= 0
-      ? points[state.activeTooltipIndex]?.headAge
+    tooltipIndex != null && Number.isInteger(tooltipIndex) && tooltipIndex >= 0
+      ? points[tooltipIndex]?.headAge
       : undefined;
   if (byIndex != null) return byIndex;
 
@@ -440,8 +446,8 @@ function DualAgeAxisTick({
   payload,
   points,
 }: {
-  x?: number;
-  y?: number;
+  x?: string | number;
+  y?: string | number;
   index?: number;
   payload?: { value: number };
   points: LifetimeBalanceChartPoint[];
@@ -457,7 +463,8 @@ function DualAgeAxisTick({
         { value: String(point.spouseAge), label: '配偶者', rowIndex: 1 },
       ]
     : [{ value: String(point.headAge), label: '世帯主', rowIndex: 0 }];
-  const labelXInGroup = CHART_MARGIN_LEFT - 8 - x;
+  const xOffset = typeof x === 'number' ? x : Number(x) || 0;
+  const labelXInGroup = CHART_MARGIN_LEFT - 8 - xOffset;
 
   return (
     <g transform={`translate(${x},${y})`}>

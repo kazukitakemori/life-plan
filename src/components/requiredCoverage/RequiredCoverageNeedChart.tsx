@@ -618,17 +618,20 @@ export function RequiredCoverageNeedChart({
                     )}
                     barGap={0}
                     maxBarSize={EXPENSE_BAR_MAX_SIZE}
-                    onMouseMove={(state: {
-                      activeTooltipIndex?: number;
-                      isTooltipActive?: boolean;
-                    }) => {
+                    onMouseMove={(state) => {
                       if (!state.isTooltipActive) {
                         setHoveredHeadAge(null);
                         return;
                       }
-                      const index = state.activeTooltipIndex;
+                      const rawIndex = state.activeTooltipIndex;
+                      const index =
+                        typeof rawIndex === 'number'
+                          ? rawIndex
+                          : typeof rawIndex === 'string'
+                            ? Number(rawIndex)
+                            : null;
                       setHoveredHeadAge(
-                        index != null
+                        index != null && Number.isInteger(index)
                           ? (visiblePoints[index]?.headAge ?? null)
                           : null,
                       );
