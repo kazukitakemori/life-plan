@@ -1,0 +1,148 @@
+name: One-off UI layout risk fixes
+
+on:
+  push:
+    branches:
+      - ui/unify-foundation-cleanup
+    paths:
+      - '.github/workflows/ui-layout-risk-fix-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ui/unify-foundation-cleanup
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Apply targeted overflow fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Anywhere wrapping can split Japanese phrases too eagerly. Use emergency word breaking instead.
+          total_anywhere = 0
+          for p in Path('src').rglob('*.css'):
+              t = p.read_text(encoding='utf-8')
+              n = t.count('overflow-wrap: anywhere;')
+              if n:
+                  total_anywhere += n
+                  p.write_text(t.replace('overflow-wrap: anywhere;', 'overflow-wrap: break-word;'), encoding='utf-8')
+          if not (1 <= total_anywhere <= 20):
+              raise SystemExit(f'Unexpected anywhere count: {total_anywhere}')
+
+          p=Path('src/index.css')
+          t=p.read_text(encoding='utf-8')
+          replacements = {
+          '''.plan-admin-contact {
+  font-size: 0.8125rem;
+  color: #445;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.plan-admin-contact-line {
+  white-space: nowrap;
+}''': '''.plan-admin-contact {
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: #445;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.plan-admin-contact-line {
+  white-space: normal;
+  overflow-wrap: break-word;
+}''',
+          '''.housing-owned-field-hint {
+  min-height: 1.125rem;
+  font-size: 0.8125rem;
+  color: #888;
+  white-space: nowrap;
+  line-height: 1.125rem;
+}''': '''.housing-owned-field-hint {
+  min-width: 0;
+  min-height: 1.125rem;
+  font-size: 0.8125rem;
+  color: #888;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}''',
+          '''.loan-group-credit-life-surcharge-hint {
+  font-size: 0.8125rem;
+  color: #888;
+  white-space: nowrap;
+}''': '''.loan-group-credit-life-surcharge-hint {
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: #888;
+  white-space: normal;
+  overflow-wrap: break-word;
+}''',
+          '''.housing-insurance-item-name {
+  font-size: 0.8125rem;
+  color: #333;
+  white-space: nowrap;
+}''': '''.housing-insurance-item-name {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  color: #333;
+  white-space: normal;
+  overflow-wrap: break-word;
+}''',
+          '''.linked-insurance-summary {
+  font-size: 0.8125rem;
+  color: #666;
+  white-space: nowrap;
+}''': '''.linked-insurance-summary {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: #666;
+  white-space: normal;
+  overflow-wrap: break-word;
+}''',
+          '''.housing-owned-insurance-meta {
+  font-size: 0.8125rem;
+  color: #666;
+  white-space: nowrap;
+}''': '''.housing-owned-insurance-meta {
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: #666;
+  white-space: normal;
+  overflow-wrap: break-word;
+}'''
+          }
+          for old,new in replacements.items():
+              if t.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one block, found {t.count(old)} for: {old.splitlines()[0]}')
+              t=t.replace(old,new)
+          p.write_text(t,encoding='utf-8')
+          print(f'Replaced {total_anywhere} overflow-wrap:anywhere declarations.')
+          print(f'Adjusted {len(replacements)} long-text blocks.')
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Remove one-off workflows and commit
+        run: |
+          rm .github/workflows/ui-layout-risk-audit-once.yml
+          rm .github/workflows/ui-layout-risk-fix-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src .github/workflows/ui-layout-risk-audit-once.yml .github/workflows/ui-layout-risk-fix-once.yml
+          git commit -m "長文ラベルと補助文の横はみ出しを抑制"
+          git push origin HEAD:ui/unify-foundation-cleanup
