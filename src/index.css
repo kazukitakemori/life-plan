@@ -3494,8 +3494,6 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
   cursor: help;
@@ -8718,8 +8716,6 @@ button:disabled {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.6875rem;
   font-weight: 700;
   cursor: help;
@@ -9438,23 +9434,18 @@ button:disabled {
 }
 
 .family-step .residence-card {
-  border-color: var(--color-line);
-  border-radius: var(--radius-md);
 }
 
 .family-step .residence-card-header {
-  background: var(--color-soft);
 }
 
 .family-step .residence-card-title {
-  color: var(--color-ink);
 }
 
 .family-step .residence-add-btn {
   min-height: var(--control-height);
   margin-top: var(--space-3);
   padding: 8px 16px;
-  border-radius: var(--radius-sm);
   font-size: var(--text-base);
   font-weight: 600;
 }
@@ -9917,9 +9908,6 @@ button:disabled {
   max-height: min(88vh, 720px);
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
   padding: 24px 28px 20px;
 }
 
@@ -9930,29 +9918,23 @@ button:disabled {
   border: none;
   background: none;
   font-size: 1.25rem;
-  color: #999;
   line-height: 1;
   padding: 4px;
 }
 
 .education-ref-modal-close:hover {
-  color: #666;
 }
 
 .education-ref-modal-title {
   margin: 0 32px 8px 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #333;
 }
 
 .education-ref-modal-summary {
   margin: 0 0 16px;
   padding: 8px 12px;
-  background: #e3f2fd;
-  border-radius: 4px;
   font-size: 0.8125rem;
-  color: #1565c0;
   line-height: 1.45;
 }
 
@@ -10071,7 +10053,6 @@ button:disabled {
   margin: 0 0 8px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
   border-left: 3px solid #1976d2;
   padding-left: 8px;
 }
@@ -10079,7 +10060,6 @@ button:disabled {
 .education-ref-section-desc {
   margin: 0 0 10px;
   font-size: 0.75rem;
-  color: #666;
   line-height: 1.5;
 }
 
@@ -10099,9 +10079,7 @@ button:disabled {
 
 .education-ref-kv-table th {
   width: 38%;
-  background: #f5f9fc;
   font-weight: 600;
-  color: #444;
 }
 
 .education-ref-kv-table td {
@@ -10113,7 +10091,6 @@ button:disabled {
   display: block;
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: #666;
 }
 
 .education-ref-table-wrap {
@@ -10135,9 +10112,7 @@ button:disabled {
 }
 
 .education-ref-data-table th {
-  background: var(--color-table-header);
   font-weight: 600;
-  color: #333;
 }
 
 .education-ref-data-table td {
@@ -10162,8 +10137,6 @@ button:disabled {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
 }
@@ -10301,7 +10274,6 @@ button:disabled {
 
 .education-chart-title {
   margin: 0 0 8px;
-  color: #c0392b;
   font-size: 1rem;
   font-weight: 700;
 }
@@ -10349,24 +10321,19 @@ button:disabled {
 
 .education-chart-legend-label {
   font-size: 11px;
-  color: #475569;
   line-height: 1.3;
 }
 
 .education-chart-tooltip {
   border: 1px solid #cbd5e1;
-  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-  background: #fff;
   min-width: 200px;
 }
 
 .education-chart-tooltip-title {
   margin: 0;
   padding: 6px 10px;
-  background: #4f86c6;
-  color: #fff;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -10381,7 +10348,6 @@ button:disabled {
   gap: 8px;
   margin: 0 0 4px;
   font-size: 0.8125rem;
-  color: #334155;
 }
 
 .education-chart-tooltip-row:last-child {
@@ -10434,8 +10400,6 @@ button:disabled {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.625rem;
   font-weight: 700;
   cursor: help;
@@ -10879,12 +10843,10 @@ button:disabled {
 .life-event-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .life-event-add-card-desc {
   font-size: 0.6875rem;
-  color: #999;
   text-align: center;
   line-height: 1.4;
 }
@@ -15472,12 +15434,10 @@ button:disabled {
 .loan-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .loan-add-card-desc {
   font-size: 0.6875rem;
-  color: #999;
   text-align: center;
   line-height: 1.4;
 }
@@ -16573,12 +16533,10 @@ button:disabled {
 .vehicle-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .vehicle-add-card-desc {
   font-size: 0.6875rem;
-  color: #999;
   text-align: center;
   line-height: 1.4;
 }
@@ -16676,7 +16634,6 @@ button:disabled {
   flex-shrink: 0;
   border: none;
   background: none;
-  color: #90a4ae;
   font-size: 1rem;
   line-height: 1;
   padding: 2px 4px;
@@ -16983,13 +16940,11 @@ button:disabled {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
 }
 
 .insurance-add-group-desc {
   margin: 0;
   font-size: 0.75rem;
-  color: #888;
 }
 
 .insurance-add-grid {
@@ -17030,12 +16985,10 @@ button:disabled {
 .insurance-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .insurance-add-card-desc {
   font-size: 0.6875rem;
-  color: #999;
   text-align: center;
   line-height: 1.4;
 }
@@ -17411,7 +17364,6 @@ button:disabled {
   flex-shrink: 0;
   border: none;
   background: none;
-  color: #bcaaa4;
   font-size: 1rem;
   line-height: 1;
   padding: 2px 4px;
@@ -18235,13 +18187,11 @@ button:disabled {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #333;
 }
 
 .savings-add-group-desc {
   margin: 0;
   font-size: 0.75rem;
-  color: #888;
 }
 
 .savings-add-grid {
@@ -18282,12 +18232,10 @@ button:disabled {
 .savings-add-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #333;
 }
 
 .savings-add-card-desc {
   font-size: 0.6875rem;
-  color: #999;
   text-align: center;
   line-height: 1.4;
 }
