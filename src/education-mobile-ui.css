@@ -411,8 +411,8 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, auto));
     gap: 3px 10px;
-    margin: 5px 0 8px;
-    padding-bottom: 7px;
+    margin: 0;
+    padding: 10px 16px 9px;
     border-bottom: 1px solid var(--ui-border);
   }
 
@@ -429,6 +429,11 @@
   .education-step .education-chart-tooltip-context-row strong {
     color: var(--ui-text);
     font-weight: 700;
+  }
+
+  .education-step .education-chart-tooltip-body {
+    padding-right: 16px;
+    padding-left: 16px;
   }
 }
 
@@ -489,6 +494,14 @@
 
   .education-step .education-chart-mobile-meta {
     justify-content: flex-start;
+  }
+
+  /* 最終年を追加した際に末尾2ラベルが近接するため、狭い端末では1つ前を間引く。 */
+  .education-step .education-chart-container
+    .recharts-xAxis
+    .recharts-cartesian-axis-ticks
+    > .recharts-cartesian-axis-tick:nth-last-child(2) {
+    display: none;
   }
 
   .education-step .education-chart-tooltip-context {
