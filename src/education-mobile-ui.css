@@ -127,7 +127,7 @@
     min-width: 0;
   }
 
-  /* 5. 補足費用は最後にまとめる */
+  /* 5. 補足費用は最後にまとめる。内容名を先に読める順番にする。 */
   .education-step .education-col-other {
     grid-column: 1 / -1;
     padding: 14px;
@@ -140,24 +140,64 @@
     gap: 9px;
   }
 
+  .education-step .education-other-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .education-step .education-other-label-input {
+    order: -1;
+    margin-top: 0;
+    margin-bottom: 9px;
+  }
+
   .education-step .education-add-other-btn {
     width: 100%;
     min-height: 44px;
   }
 
-  /* 削除は入力フローから分離し、カード末尾へ置く */
+  /* 項目削除はカード全体の削除より小さく見せる。 */
+  .education-step .education-other-remove {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
+    width: auto;
+    min-width: 112px;
+  }
+
+  .education-step .education-other-remove .education-remove-label {
+    font-size: 0;
+  }
+
+  .education-step .education-other-remove .education-remove-label::after {
+    content: '項目を削除';
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* 教育費全体の削除は入力フローから分離し、カード末尾へ置く。 */
   .education-step .education-col-action {
     grid-column: 1 / -1;
-    justify-content: flex-end;
-    padding: 10px 14px 12px;
+    justify-content: stretch;
+    padding: 12px 14px 14px;
     border-bottom: 0;
     background: var(--ui-bg-surface);
   }
 
   .education-step .education-row-remove {
-    width: auto;
-    min-width: 104px;
+    width: 100%;
+    min-width: 0;
     min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-row-remove .education-remove-label {
+    font-size: 0;
+  }
+
+  .education-step .education-row-remove .education-remove-label::after {
+    content: 'この教育費を削除';
+    font-size: 13px;
     white-space: nowrap;
   }
 
@@ -203,5 +243,10 @@
   .education-step .education-col-action {
     padding-right: 13px;
     padding-left: 13px;
+  }
+
+  .education-step .education-other-remove {
+    grid-column: 1 / -1;
+    justify-self: end;
   }
 }
