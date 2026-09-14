@@ -142,17 +142,17 @@ export function MemberTabAddInBar({
       <button
         ref={buttonRef}
         type="button"
-        className={`member-tab member-tab--add${pickerOpen ? ' active' : ''}`}
+        className={`ui-member-tab ui-member-tab--add${pickerOpen ? ' active' : ''}`}
         aria-expanded={pickerOpen}
         aria-haspopup="listbox"
         aria-controls={pickerOpen ? listId : undefined}
         onClick={() => setPickerOpen((open) => !open)}
       >
-        <span className="member-tab-add-plus" aria-hidden>
+        <span className="ui-member-tab-add-plus" aria-hidden>
           ＋
         </span>
-        <div className="member-tab-info">
-          <span className="member-tab-name">入力する人を追加</span>
+        <div className="ui-member-tab-info">
+          <span className="ui-member-tab-name">入力する人を追加</span>
         </div>
       </button>
       {menu}
@@ -182,10 +182,10 @@ export function MemberPersonTab({
   const label = getMemberTabLabel(member);
 
   return (
-    <div className={`member-tab ${active ? 'active' : ''}`}>
+    <div className={`ui-member-tab ${active ? 'active' : ''}`}>
       <button
         type="button"
-        className="member-tab-select"
+        className="ui-member-tab-select"
         onClick={() => onSelect(member.id)}
       >
         <MemberAvatar
@@ -193,14 +193,14 @@ export function MemberPersonTab({
           gender={member.gender}
           age={member.age}
         />
-        <div className="member-tab-info">
-          <span className="member-tab-name">
+        <div className="ui-member-tab-info">
+          <span className="ui-member-tab-name">
             {label}
             {count > 0 && (
-              <span className="member-tab-badge">（{count}件）</span>
+              <span className="ui-member-tab-badge">（{count}件）</span>
             )}
           </span>
-          <span className="member-tab-birth">
+          <span className="ui-member-tab-birth">
             {formatBirthShort(member, referenceDate)}
           </span>
         </div>
@@ -208,7 +208,7 @@ export function MemberPersonTab({
       {canRemove && onRemove ? (
         <button
           type="button"
-          className="member-tab-close"
+          className="ui-member-tab-close"
           aria-label={`${label}のタブを外す`}
           title="タブを外す（入力が空のとき）"
           onClick={() => onRemove(member.id)}
