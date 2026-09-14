@@ -43,12 +43,12 @@ export function MemberTabs({
     : (summaryAction?.showLabel ?? '全員まとめて表示');
 
   return (
-    <div className="member-tabs-block">
+    <div className="ui-member-tabs-block">
       {summaryAction ? (
-        <div className="member-tabs-actions">
+        <div className="ui-member-tabs-actions">
           <button
             type="button"
-            className={`member-tabs-summary-toggle${summaryAction.active ? ' active' : ''}`}
+            className={`ui-member-tabs-summary-toggle${summaryAction.active ? ' active' : ''}`}
             aria-pressed={summaryAction.active}
             aria-label={summaryAction.ariaLabel ?? summaryLabel}
             onClick={summaryAction.onToggle}
@@ -58,8 +58,8 @@ export function MemberTabs({
         </div>
       ) : null}
 
-      <div className="member-tabs-row">
-        <div className="member-tabs">
+      <div className="ui-member-tabs-row">
+        <div className="ui-member-tabs-list">
           {members.map((member) => (
             <MemberPersonTab
               key={member.id}
