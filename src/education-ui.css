@@ -304,50 +304,6 @@
     margin-bottom: 14px;
   }
 
-  .education-step .education-table-body {
-    gap: 14px;
-  }
-
-  .education-step .education-table-row,
-  .education-step .education-table-row:nth-child(odd),
-  .education-step .education-table-row:nth-child(even) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .education-step .education-table-cell,
-  .education-step .education-col-school,
-  .education-step .education-col-period,
-  .education-step .education-col-fetch,
-  .education-step .education-col-entrance,
-  .education-step .education-col-tuition-amount,
-  .education-step .education-col-tuition-monthly,
-  .education-step .education-col-other,
-  .education-step .education-col-action {
-    grid-column: 1;
-    width: 100%;
-    padding: 13px 14px;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--ui-border);
-  }
-
-  .education-step .education-col-fetch,
-  .education-step .education-col-entrance,
-  .education-step .education-col-tuition-amount,
-  .education-step .education-col-tuition-monthly {
-    background: var(--ui-bg-surface);
-  }
-
-  .education-step .education-col-other {
-    border-top: 0;
-  }
-
-  .education-step .education-col-action {
-    border-bottom: 0;
-    background: var(--ui-bg-subtle);
-  }
-
   .education-step .education-school-fields {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -382,10 +338,6 @@
     content: '終了';
   }
 
-  .education-step .education-fetch-field {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .education-step .education-add-other-btn,
   .education-step .education-row-remove,
   .education-step .education-footer-actions .ui-btn {
@@ -393,37 +345,7 @@
     min-height: 44px;
   }
 
-  .education-step .education-col-action {
-    justify-content: stretch;
-  }
-
   .education-step .education-footer-actions {
     display: block;
-  }
-}
-
-@media (max-width: 430px) {
-  .education-step .education-table-cell,
-  .education-step .education-col-school,
-  .education-step .education-col-period,
-  .education-step .education-col-fetch,
-  .education-step .education-col-entrance,
-  .education-step .education-col-tuition-amount,
-  .education-step .education-col-tuition-monthly,
-  .education-step .education-col-other,
-  .education-step .education-col-action {
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .education-step .education-period-block {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .education-step .education-period-arrow {
-    justify-self: center;
-    margin: 0;
-    transform: rotate(90deg);
   }
 }
