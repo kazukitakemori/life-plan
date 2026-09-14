@@ -1,0 +1,490 @@
+/*
+ * Application shell + analysis convergence layer
+ *
+ * The input workflow now shares one visual language. This file extends the
+ * same system to navigation, plan management and analysis/result screens.
+ * Chart series and cash-flow category colors are intentionally preserved as
+ * data-visualization semantics.
+ */
+
+/* Application shell ------------------------------------------------------ */
+
+.top-header-primary,
+.top-header-dropdown {
+  background: var(--ui-brand);
+}
+
+.top-header-dropdown-item.active::before,
+.top-header-dropdown-item.active .top-header-dropdown-dot {
+  background: #b8d8c4;
+}
+
+.top-header-dropdown-item.active .top-header-dropdown-dot {
+  box-shadow: 0 0 0 3px rgb(184 216 196 / 22%);
+}
+
+.sidebar {
+  border-right-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.sidebar-actions {
+  border-top-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.sidebar-action-btn {
+  background: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+}
+
+.sidebar-action-btn:hover:not(:disabled),
+.sidebar-action-btn:active:not(:disabled) {
+  background: var(--ui-brand);
+  filter: brightness(0.95);
+}
+
+.sidebar-item {
+  color: var(--ui-text-muted);
+}
+
+.sidebar-item:hover:not(.disabled) {
+  background: var(--ui-bg-hover);
+}
+
+.sidebar-item.active {
+  border-right-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Plan / customer management -------------------------------------------- */
+
+.plan-bar {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.plan-bar-name-label,
+.plan-save-as-label,
+.plan-meta-label {
+  color: var(--ui-text-muted);
+}
+
+:is(
+    .plan-bar-name-input,
+    .plan-open-search,
+    .plan-save-as-input,
+    .plan-meta-input,
+    .plan-meta-textarea,
+    .plan-admin-status-filter
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+:is(
+    .plan-bar-name-input,
+    .plan-open-search,
+    .plan-save-as-input,
+    .plan-meta-input,
+    .plan-meta-textarea,
+    .plan-admin-status-filter
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+:is(
+    .plan-bar-name-input,
+    .plan-open-search,
+    .plan-save-as-input,
+    .plan-meta-input,
+    .plan-meta-textarea,
+    .plan-admin-status-filter
+  ):focus {
+  border-color: var(--ui-brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.plan-bar-btn {
+  border-color: var(--ui-border-strong);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.plan-bar-btn:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+.plan-bar-btn--primary,
+.plan-admin-empty-cta {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.plan-bar-btn--primary:hover:not(:disabled),
+.plan-admin-empty-cta:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand);
+  filter: brightness(0.95);
+}
+
+.plan-purpose-option,
+.plan-open-item-main,
+.plan-admin-table-wrap,
+.plan-admin-empty {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.plan-purpose-option:hover:not(.is-locked),
+.plan-open-item-main:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+.plan-purpose-option.is-selected,
+.plan-open-item-main.is-current,
+.plan-admin-table tr.is-current {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+.plan-admin-current-badge {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.plan-admin-table th {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.plan-admin-table th,
+.plan-admin-table td {
+  border-bottom-color: var(--ui-border);
+}
+
+.plan-admin-purpose,
+.plan-admin-status {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+/* Analysis page shell ---------------------------------------------------- */
+
+:is(
+    .asset-building-chart-card,
+    .lifetime-chart-card,
+    .lifetime-simulation-unified,
+    .required-coverage-card,
+    .required-coverage-chart-card,
+    .cashflow-table-wrap
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+:is(
+    .asset-building-title,
+    .lifetime-chart-title,
+    .required-coverage-main-title,
+    .required-coverage-section-title,
+    .required-coverage-card-title,
+    .cashflow-title
+  ) {
+  color: var(--ui-text);
+}
+
+:is(
+    .asset-building-lead,
+    .required-coverage-card-note,
+    .required-coverage-section-note,
+    .cashflow-note,
+    .required-coverage-chart-zero-note
+  ) {
+  color: var(--ui-text-muted);
+}
+
+/* Analysis menus and ordinary controls use one secondary-action language. */
+:is(
+    .asset-building-title-trigger,
+    .asset-building-title-menu-item,
+    .lifetime-chart-timeline-btn,
+    .lifetime-chart-zoom-btn,
+    .lifetime-chart-reset-btn,
+    .lifetime-chart-fullscreen-btn,
+    .lifetime-chart-yaxis-mode-btn,
+    .lifetime-chart-yaxis-step-btn,
+    .lifetime-chart-legend-bulk-btn,
+    .cashflow-select,
+    .required-coverage-design-fold
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+}
+
+:is(
+    .asset-building-title-trigger,
+    .asset-building-title-menu-item,
+    .lifetime-chart-timeline-btn,
+    .lifetime-chart-zoom-btn,
+    .lifetime-chart-reset-btn,
+    .lifetime-chart-fullscreen-btn,
+    .lifetime-chart-yaxis-mode-btn,
+    .lifetime-chart-yaxis-step-btn,
+    .lifetime-chart-legend-bulk-btn,
+    .required-coverage-design-fold
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-bg-hover);
+  color: var(--ui-text);
+}
+
+:is(
+    .lifetime-chart-timeline-btn.is-active,
+    .lifetime-chart-fullscreen-btn.is-active,
+    .lifetime-chart-yaxis-mode-btn.is-active,
+    .lifetime-chart-scale-btn.is-active
+  ) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.lifetime-chart-scale-toggle {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+}
+
+.lifetime-chart-scale-btn {
+  border-right-color: var(--ui-border);
+  color: var(--ui-text-muted);
+}
+
+.lifetime-chart-scale-btn:hover {
+  background: var(--ui-bg-hover);
+}
+
+.lifetime-chart-side-panel {
+  border-left-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.lifetime-chart-side-panel > * + *,
+.lifetime-chart-sidebar > * + * {
+  border-top-color: var(--ui-border);
+}
+
+.lifetime-chart-summary-title,
+.lifetime-chart-legend-title,
+.lifetime-chart-summary-row dd,
+.coverage-formula-value {
+  color: var(--ui-text);
+}
+
+.lifetime-chart-summary-row dt,
+.lifetime-chart-legend-label,
+.coverage-formula-label,
+.lifetime-chart-layout-hint,
+.lifetime-chart-yaxis-auto-hint {
+  color: var(--ui-text-muted);
+}
+
+/* Cash-flow navigation and interaction chrome; row category colors remain. */
+.cashflow-back-btn {
+  color: var(--ui-brand);
+}
+
+.cashflow-help {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.cashflow-select {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.cf-value-col--clickable:hover {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.cf-value-col--clickable:focus-visible {
+  outline-color: color-mix(in srgb, var(--ui-brand) 45%, transparent);
+}
+
+/* Required coverage ------------------------------------------------------ */
+
+.required-coverage-page :is(
+    .required-coverage-medical-card,
+    .required-coverage-work-entry,
+    .required-coverage-design-category,
+    .required-coverage-medical-preset
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.required-coverage-page :is(
+    .required-coverage-medical-section-title,
+    .required-coverage-work-member-name,
+    .required-coverage-medical-line.is-need .required-coverage-medical-line-label,
+    .required-coverage-medical-line.is-need .required-coverage-medical-line-amount,
+    .required-coverage-medical-result-row.is-need .required-coverage-medical-result-label,
+    .required-coverage-medical-result-row.is-need .required-coverage-medical-result-value
+  ) {
+  color: var(--ui-text);
+}
+
+.required-coverage-page :is(
+    .required-coverage-medical-field-label,
+    .required-coverage-medical-result-label,
+    .required-coverage-work-member-total,
+    .required-coverage-work-field,
+    .required-coverage-design-breakdown-label
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.required-coverage-page :is(
+    .required-coverage-medical-preset-select,
+    .required-coverage-medical-employment-select,
+    .required-coverage-design-amount,
+    .rate-input
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.required-coverage-page .required-coverage-owner-tabs {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.required-coverage-page .required-coverage-owner-tab {
+  border-right-color: var(--ui-border);
+  color: var(--ui-text-muted);
+}
+
+.required-coverage-page .required-coverage-owner-tab:hover {
+  background: var(--ui-bg-hover);
+}
+
+.required-coverage-page .required-coverage-owner-tab.is-active {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.required-coverage-page .required-coverage-owner-tab.is-active .required-coverage-owner-tab-total {
+  color: var(--ui-brand);
+}
+
+.required-coverage-page .required-coverage-rate-slider {
+  accent-color: var(--ui-brand);
+}
+
+.required-coverage-page :is(
+    .required-coverage-design-table thead th,
+    .required-coverage-expense-table thead th
+  ) {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.required-coverage-page .required-coverage-expense-table tfoot th,
+.required-coverage-page .required-coverage-expense-table tfoot td {
+  background: var(--ui-bg-subtle);
+}
+
+.required-coverage-page .required-coverage-total,
+.required-coverage-page .required-coverage-medical-result-value {
+  color: var(--ui-text);
+}
+
+.required-coverage-page .required-coverage-work-mode {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.required-coverage-page .required-coverage-work-mode.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+.required-coverage-page :is(
+    .required-coverage-work-text-btn,
+    .required-coverage-work-add-bonus-btn,
+    .required-coverage-work-add-btn,
+    .required-coverage-medical-income-loss-reset
+  ) {
+  color: var(--ui-brand);
+}
+
+.required-coverage-page :is(
+    .required-coverage-work-add-bonus-btn,
+    .required-coverage-work-add-btn
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.required-coverage-page :is(
+    .required-coverage-work-add-bonus-btn,
+    .required-coverage-work-add-btn
+  ):hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+.required-coverage-page .required-coverage-medical-preset-load {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.required-coverage-page .required-coverage-medical-sick-leave {
+  border-color: #d7e5dc;
+  background: var(--ui-brand-soft);
+}
+
+.required-coverage-page .required-coverage-medical-sick-leave-title {
+  color: var(--ui-brand);
+}
+
+.required-coverage-page .required-coverage-medical-sick-leave-apply {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.required-coverage-page .required-coverage-medical-sick-leave-apply:hover {
+  background: var(--ui-brand-soft);
+}
+
+/* Required amount is a result, not an error state. */
+.required-coverage-page :is(
+    .required-coverage-medical-need-summary-value,
+    .coverage-formula-value--need
+  ) {
+  color: var(--ui-brand);
+}
