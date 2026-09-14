@@ -387,7 +387,7 @@ export function EducationExpenseRow({
             disabled={!canFetchCosts}
             onClick={handleFetchCosts}
           >
-            参考
+            参考費用を反映
           </button>
           {referenceDetail && (
             <button

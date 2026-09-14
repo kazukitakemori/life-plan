@@ -1,0 +1,405 @@
+/*
+ * Q2 education mobile information architecture.
+ *
+ * This layer rearranges only the education-specific information structure on
+ * phones. Shared inputs, buttons, tabs, colors, focus states and typography
+ * continue to come from the common UI system.
+ */
+
+.education-mobile-accordion-item {
+  display: contents;
+}
+
+.education-mobile-summary,
+.education-mobile-toggle {
+  display: none;
+}
+
+.education-step .education-add-entry-panel {
+  width: min(100%, 720px);
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+}
+
+.education-step .education-add-entry-title {
+  margin: 0 0 10px;
+  color: var(--ui-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.education-step .education-add-entry-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.education-step .education-add-entry-option {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .education-step .education-table-body {
+    gap: 14px;
+  }
+
+  /* 1件 = 1つのアコーディオンカード。初期状態は要約のみ。 */
+  .education-step .education-mobile-accordion-item {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-top: 4px solid var(--ui-brand);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .education-step .education-mobile-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: 100%;
+    min-height: 72px;
+    padding: 14px;
+    border: 0;
+    background: var(--ui-bg-surface);
+    color: var(--ui-text);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .education-step .education-mobile-accordion-item.is-expanded .education-mobile-summary {
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-mobile-summary-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .education-step .education-mobile-summary-title {
+    color: var(--ui-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .education-step .education-mobile-summary-school-name {
+    overflow: hidden;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .education-step .education-mobile-summary-meta {
+    color: var(--ui-text-subtle);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .education-step .education-mobile-summary-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    color: var(--ui-brand);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .education-step .education-mobile-summary:focus-visible {
+    outline: 2px solid var(--ui-brand);
+    outline-offset: -2px;
+  }
+
+  .education-step .education-mobile-accordion-item:not(.is-expanded) > .education-table-row {
+    display: none;
+  }
+
+  .education-step .education-mobile-accordion-item > .education-table-row,
+  .education-step .education-mobile-accordion-item > .education-table-row:nth-child(odd),
+  .education-step .education-mobile-accordion-item > .education-table-row:nth-child(even) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .education-step .education-table-cell,
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    width: 100%;
+    min-width: 0;
+    border-right: 0;
+    border-left: 0;
+  }
+
+  /* 1. 学校・進路 */
+  .education-step .education-col-school {
+    grid-column: 1 / -1;
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-school::before,
+  .education-step .education-col-period::before,
+  .education-step .education-col-fetch::before,
+  .education-step .education-col-other::before {
+    margin-bottom: 9px;
+    font-size: 14px;
+    color: var(--ui-text);
+  }
+
+  /* 旧アコーディオンの操作は使わない。 */
+  .education-step .education-mobile-toggle {
+    display: none !important;
+  }
+
+  /* 2. 在籍期間 */
+  .education-step .education-col-period {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-period-block {
+    gap: 12px;
+  }
+
+  .education-step .education-period-side:first-child::before,
+  .education-step .education-period-side:last-child::before {
+    margin-bottom: 6px;
+  }
+
+  /* 3. 参考費用 */
+  .education-step .education-col-fetch {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-fetch-field {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .education-step .education-fetch-btn,
+  .education-step .education-fetch-detail-link {
+    min-width: 0;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* 4. 金額 */
+  .education-step .education-col-entrance {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    padding: 14px;
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-tuition-amount {
+    grid-column: 1;
+    border-right: 1px solid var(--ui-border);
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .education-step .education-col-tuition-monthly {
+    grid-column: 2;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .education-step .education-col-entrance::before,
+  .education-step .education-col-tuition-amount::before,
+  .education-step .education-col-tuition-monthly::before {
+    margin-bottom: 7px;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+  }
+
+  .education-step .education-yen-field,
+  .education-step .education-yen-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 5. その他費用 */
+  .education-step .education-col-other {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-top: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-other-list {
+    gap: 9px;
+  }
+
+  .education-step .education-other-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .education-step .education-other-label-input {
+    order: -1;
+    margin-top: 0;
+    margin-bottom: 9px;
+  }
+
+  .education-step .education-add-other-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 項目削除はカード全体の削除より小さく見せる。 */
+  .education-step .education-other-remove {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
+    width: auto;
+    min-width: 112px;
+  }
+
+  .education-step .education-other-remove .education-remove-label {
+    font-size: 0;
+  }
+
+  .education-step .education-other-remove .education-remove-label::after {
+    content: '項目を削除';
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* 教育費全体の削除はカード末尾へ分離する。 */
+  .education-step .education-col-action {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+    padding: 12px 14px 14px;
+    border-bottom: 0;
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-row-remove {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-row-remove .education-remove-label {
+    font-size: 0;
+  }
+
+  .education-step .education-row-remove .education-remove-label::after {
+    content: 'この教育費を削除';
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* 教育段階を選んで追加する。 */
+  .education-step .education-footer-actions {
+    margin-top: 16px;
+  }
+
+  .education-step .education-footer-actions > .education-add-entry-toggle {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .education-step .education-add-entry-panel {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+  }
+
+  .education-step .education-add-entry-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .education-step .education-add-entry-option {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 430px) {
+  .education-step .education-mobile-summary {
+    align-items: flex-start;
+    gap: 10px;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .education-step .education-mobile-summary-meta {
+    white-space: normal;
+  }
+
+  .education-step .education-period-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .education-step .education-period-arrow {
+    justify-self: center;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+
+  .education-step .education-fetch-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
+
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .education-step .education-other-remove {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}

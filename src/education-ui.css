@@ -1,0 +1,429 @@
+/*
+ * Q2 education screen composition.
+ *
+ * Education has many inputs, so the screen is composed as one card per school
+ * period instead of a wide spreadsheet. Shared colors, controls, buttons and
+ * typography continue to come from the common UI layers.
+ */
+
+.education-step .education-toolbar {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.education-step .education-table-card {
+  width: 100%;
+  max-width: none;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.education-step .education-table {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+.education-step .education-table-header {
+  display: none;
+}
+
+.education-step .education-table-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.education-step .education-table-row,
+.education-step .education-table-row:nth-child(odd),
+.education-step .education-table-row:nth-child(even) {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-top: 3px solid var(--ui-brand);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.education-step .education-table-cell {
+  display: block;
+  width: auto;
+  min-width: 0;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+}
+
+.education-step .education-table-cell::before {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+.education-step .education-col-school {
+  grid-column: 1 / 8;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-school::before {
+  content: '学校・進路';
+}
+
+.education-step .education-col-period {
+  grid-column: 8 / 13;
+  border-bottom: 1px solid var(--ui-border);
+  border-left: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-period::before {
+  content: '在籍期間';
+}
+
+.education-step .education-col-fetch,
+.education-step .education-col-entrance,
+.education-step .education-col-tuition-amount,
+.education-step .education-col-tuition-monthly {
+  background: var(--ui-bg-subtle);
+}
+
+.education-step .education-col-fetch {
+  grid-column: 1 / 3;
+}
+
+.education-step .education-col-fetch::before {
+  content: '参考費用';
+}
+
+.education-step .education-col-entrance {
+  grid-column: 3 / 6;
+  border-left: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-entrance::before {
+  content: '入学金';
+}
+
+.education-step .education-col-tuition-amount {
+  grid-column: 6 / 9;
+  border-left: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-tuition-amount::before {
+  content: '授業料（年額）';
+}
+
+.education-step .education-col-tuition-monthly {
+  grid-column: 9 / 13;
+  border-left: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-tuition-monthly::before {
+  content: '授業料（月額）';
+}
+
+.education-step .education-col-other {
+  grid-column: 1 / 13;
+  border-top: 1px solid var(--ui-border);
+}
+
+.education-step .education-col-other::before {
+  content: 'その他費用';
+}
+
+.education-step .education-col-action {
+  grid-column: 1 / 13;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  padding-bottom: 12px;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.education-step .education-col-action::before {
+  display: none;
+}
+
+.education-step .education-school-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.education-step .education-school-fields .education-text-input {
+  grid-column: 1 / -1;
+}
+
+.education-step :where(
+    .education-select,
+    .education-text-input,
+    .education-yen-input,
+    .education-yen-field
+  ) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.education-step .education-period-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.education-step .education-period-side,
+.education-step .education-period-fields {
+  min-width: 0;
+}
+
+.education-step .education-period-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.education-step .education-period-arrow {
+  align-self: center;
+  margin-top: 8px;
+}
+
+.education-step .period-start-label {
+  margin-top: 5px;
+  color: var(--ui-text-subtle);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.education-step .education-fetch-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  align-content: start;
+}
+
+.education-step .education-fetch-btn,
+.education-step .education-fetch-detail-link {
+  width: 100%;
+}
+
+.education-step .education-yen-input {
+  width: 100%;
+}
+
+.education-step .education-other-list {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.education-step .education-add-other-btn {
+  justify-self: start;
+}
+
+.education-step .education-row-remove {
+  min-width: 92px;
+}
+
+.education-step .education-remove-icon {
+  display: none;
+}
+
+.education-step .education-remove-label {
+  display: inline;
+}
+
+.education-step .education-footer-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+.education-step .education-empty {
+  padding: 20px;
+  border: 1px dashed var(--ui-border-strong);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+  text-align: center;
+  white-space: normal;
+}
+
+.education-step .education-chart-card {
+  margin-top: 24px;
+}
+
+@media (max-width: 980px) {
+  .education-step .education-col-school,
+  .education-step .education-col-period {
+    grid-column: 1 / 13;
+  }
+
+  .education-step .education-col-period {
+    border-left: 0;
+  }
+
+  .education-step .education-col-fetch {
+    grid-column: 1 / 4;
+  }
+
+  .education-step .education-col-entrance {
+    grid-column: 4 / 7;
+  }
+
+  .education-step .education-col-tuition-amount {
+    grid-column: 7 / 10;
+  }
+
+  .education-step .education-col-tuition-monthly {
+    grid-column: 10 / 13;
+  }
+}
+
+@media (max-width: 768px) {
+  .education-step .education-toolbar {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .education-step .education-table-body {
+    gap: 14px;
+  }
+
+  .education-step .education-table-row,
+  .education-step .education-table-row:nth-child(odd),
+  .education-step .education-table-row:nth-child(even) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .education-step .education-table-cell,
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    grid-column: 1;
+    width: 100%;
+    padding: 13px 14px;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-other {
+    border-top: 0;
+  }
+
+  .education-step .education-col-action {
+    border-bottom: 0;
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-school-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .education-step .education-school-fields .education-text-input {
+    grid-column: 1;
+  }
+
+  .education-step :where(
+      .education-select,
+      .education-text-input,
+      .education-yen-field
+    ) {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .education-step .education-period-side:first-child::before,
+  .education-step .education-period-side:last-child::before {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--ui-text-subtle);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .education-step .education-period-side:first-child::before {
+    content: '開始';
+  }
+
+  .education-step .education-period-side:last-child::before {
+    content: '終了';
+  }
+
+  .education-step .education-fetch-field {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .education-step .education-add-other-btn,
+  .education-step .education-row-remove,
+  .education-step .education-footer-actions .ui-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .education-step .education-col-action {
+    justify-content: stretch;
+  }
+
+  .education-step .education-footer-actions {
+    display: block;
+  }
+}
+
+@media (max-width: 430px) {
+  .education-step .education-table-cell,
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .education-step .education-period-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .education-step .education-period-arrow {
+    justify-self: center;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+}
