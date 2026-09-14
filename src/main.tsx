@@ -30,6 +30,7 @@ import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
 import './ui-add-cards.css';
 import './education-ui.css';
+import './education-mobile-ui.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
