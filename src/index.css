@@ -21,10 +21,7 @@
 
   /* Legacy aliases (header / older steps still reference these) */
   --color-primary: #4caf50;
-  --color-primary-light: #e8f5e9;
-  --color-primary-border: #a5d6a7;
   --color-header-bg: #283c58;
-  --color-sidebar-bg: #ffffff;
   --color-table-header: #e8f4fc;
   --color-border: #e0e0e0;
   --color-input-highlight: #fffde7;
@@ -49,7 +46,6 @@
   --control-height-sm: 36px;
   --radius-sm: 8px;
   --radius-md: 12px;
-  --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
@@ -3325,11 +3321,6 @@ button:disabled {
   font-weight: 600;
 }
 
-.income-retirement-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .income-retirement-field {
   display: flex;
@@ -3357,12 +3348,6 @@ button:disabled {
   max-width: 100%;
 }
 
-.income-retirement-period-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
 
 .income-retirement-period-years {
   flex-shrink: 0;
@@ -7194,7 +7179,6 @@ button:disabled {
   --sim-label-col: 44px;
   --sim-sidebar-gap: 12px;
   --sim-sidebar-col: 212px;
-  --sim-plot-edge-padding: 6px;
 }
 
 /* 全画面はシェル全体（TopHeader＝資産形成タブなどを残す） */
