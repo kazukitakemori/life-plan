@@ -1,0 +1,49 @@
+/*
+ * Product theme: Deep Teal × Slate
+ *
+ * This layer is intentionally loaded last. It changes the product palette
+ * without rewriting screen-level layout rules or chart-series semantics.
+ */
+
+:root {
+  /* Core brand */
+  --color-brand: #176b68;
+  --color-brand-soft: #e8f3f2;
+  --color-primary: #176b68;
+  --color-header-bg: #176b68;
+  --color-accent: #557a95;
+  --color-focus-ring: rgb(23 107 104 / 18%);
+
+  /* Neutral system */
+  --color-ink: #263238;
+  --color-muted: #66727a;
+  --color-faint: #829097;
+  --color-line: #dde3e5;
+  --color-border: #dde3e5;
+  --color-surface: #ffffff;
+  --color-soft: #f1f5f5;
+  --color-page: #f7f9f9;
+  --color-table-header: #e8f3f2;
+  --color-input-highlight: #f5faf9;
+
+  /* State colors */
+  --color-danger: #c94a4a;
+  --color-danger-soft: #fcf0f0;
+
+  /* Unified UI semantic tokens */
+  --ui-bg-subtle: #f1f5f5;
+  --ui-bg-hover: #f3f8f7;
+  --ui-border: #dde3e5;
+  --ui-border-strong: #bbc8ca;
+  --ui-shadow-subtle: 0 1px 2px rgb(38 50 56 / 5%);
+}
+
+/* Header selection details previously used a green-specific tint. */
+.top-header-dropdown-item.active::before,
+.top-header-dropdown-item.active .top-header-dropdown-dot {
+  background: #a7d6d3;
+}
+
+.top-header-dropdown-item.active .top-header-dropdown-dot {
+  box-shadow: 0 0 0 3px rgb(167 214 211 / 24%);
+}
