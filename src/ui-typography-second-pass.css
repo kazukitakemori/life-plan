@@ -1,0 +1,188 @@
+/*
+ * Typography / layout second pass
+ *
+ * Runs after the first typography normalization. The goal is to remove the
+ * remaining micro-text and absorb the most common breakage caused by larger type.
+ */
+
+:root {
+  --ui-type-micro-floor: 0.8125rem; /* 13px */
+  --ui-type-secondary: 0.875rem; /* 14px */
+  --ui-control-height-readable: 40px;
+}
+
+/* Remaining legacy micro-copy: 10–12px is too small for normal product UI. */
+:is(
+    .pension-timeline-pivot-bubble,
+    .pension-timeline-pivot-date,
+    .pension-timeline-pivot-months,
+    .teikibin-block-title-sub,
+    .teikibin-period-table-sub,
+    .teikibin-period-table-summary-head,
+    .teikibin-period-table-side,
+    .teikibin-period-table-summary-sub,
+    .teikibin-amount-col-header,
+    .teikibin-amount-subheader,
+    .teikibin-amount-field-label,
+    .teikibin-monthly-table,
+    .teikibin-monthly-date-unit,
+    .benefit-col-header--survivor,
+    .benefit-amount-option-label--auto,
+    .benefit-survivor-cell,
+    .benefit-survivor-suffix,
+    .life-event-add-card-desc,
+    .education-entrance-note,
+    .education-chart-legend-label,
+    .second-life-choice-badge,
+    .second-life-breakdown-note,
+    .second-life-breakdown-empty,
+    .second-life-skip-hint,
+    .calc-breakdown-compound-note,
+    .required-coverage-horizon-help,
+    .required-coverage-medical-line-note,
+    .required-coverage-medical-line-formula,
+    .required-coverage-medical-result-note
+  ) {
+  font-size: var(--ui-type-micro-floor) !important;
+  line-height: 1.5 !important;
+}
+
+/* Secondary values should be visually quieter, not physically hard to read. */
+:is(
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .pension-field-unit,
+    .pension-field-calc,
+    .benefit-death-date,
+    .residence-data-version,
+    .life-event-rate-label,
+    .life-event-inflation-label,
+    .life-event-inflation-unit,
+    .education-yen-unit,
+    .second-life-living-ref,
+    .second-life-nursing-desc,
+    .calc-breakdown-row-title,
+    .calc-breakdown-compound-hint,
+    .cashflow-note
+  ) {
+  font-size: var(--ui-type-secondary) !important;
+  line-height: 1.5 !important;
+}
+
+/* Compact controls must grow with the text instead of clipping it. */
+.step-page :is(
+    button,
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea
+  ) {
+  min-height: var(--ui-control-height-readable);
+}
+
+/* True icon-only controls keep compact geometry. */
+.step-page :is(
+    .life-event-row-remove,
+    .education-row-remove,
+    .education-other-remove,
+    .life-event-drag-handle,
+    .insurance-entry-drag-handle,
+    .savings-entry-drag-handle,
+    .residence-calc-btn,
+    .pension-help-icon,
+    .education-help-icon,
+    .life-event-help-icon
+  ) {
+  min-height: 28px;
+}
+
+/* Larger type needs a little more breathing room in dense table rows. */
+.step-page table :is(th, td) {
+  vertical-align: middle;
+}
+
+:is(
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell,
+    .loan-settings-form-row
+  ) {
+  line-height: 1.5;
+}
+
+/* Avoid squeezed labels beside newly enlarged controls. */
+:is(
+    .pension-enrollment-field,
+    .residence-period-row,
+    .life-event-inflation-field,
+    .second-life-timing,
+    .housing-rental-payer-label
+  ) {
+  row-gap: 8px;
+}
+
+/* Headings should separate sections consistently after the size increase. */
+:is(
+    .pension-section-title,
+    .life-event-add-title,
+    .second-life-guide-checklist-title,
+    .education-chart-title,
+    .pension-estimate-title
+  ) {
+  margin-bottom: 14px !important;
+}
+
+/* Very long explanatory text may wrap; short metadata should not become a narrow vertical strip. */
+:is(
+    .ui-member-tab-birth,
+    .ui-member-tab-badge,
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .residence-data-version,
+    .plan-admin-status,
+    .plan-admin-current-badge
+  ) {
+  width: max-content;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  /* Touch controls and fields get consistent height after the 16px mobile type pass. */
+  .step-page :is(
+      button,
+      input:not([type='checkbox']):not([type='radio']):not([type='range']),
+      select,
+      textarea
+    ) {
+    min-height: 44px;
+  }
+
+  .step-page :is(
+      .life-event-row-remove,
+      .education-row-remove,
+      .education-other-remove,
+      .life-event-drag-handle,
+      .insurance-entry-drag-handle,
+      .savings-entry-drag-handle,
+      .residence-calc-btn,
+      .pension-help-icon,
+      .education-help-icon,
+      .life-event-help-icon
+    ) {
+    min-height: 36px;
+  }
+
+  /* Let form rows stack before labels become unreadably narrow. */
+  :is(
+      .pension-enrollment-field,
+      .residence-period-row,
+      .life-event-inflation-field
+    ) {
+    flex-wrap: wrap;
+  }
+
+  .pension-enrollment-label,
+  .residence-period-label {
+    min-width: max-content;
+  }
+}
