@@ -1648,8 +1648,8 @@ button:disabled {
 .ui-select {
   min-height: var(--control-height);
   padding: 8px 12px;
-  border: 1px solid #c5d0c9;
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
   background: var(--color-surface);
   font-size: var(--text-base);
   color: var(--color-ink);
@@ -1758,7 +1758,7 @@ button:disabled {
 }
 
 .ui-btn--danger {
-  border-color: #e0b4b4;
+  border-color: var(--ui-danger-border);
   color: var(--color-danger);
   background: var(--color-surface);
 }

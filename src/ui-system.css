@@ -10,6 +10,7 @@
   --ui-card-radius: var(--radius-md);
   --ui-control-border: #c5d0c9;
   --ui-control-border-hover: #97a49d;
+  --ui-danger-border: #e0b4b4;
   --ui-card-border: var(--color-line);
   --ui-surface-hover: #f6f9f7;
   --ui-surface-selected: var(--color-brand-soft);
@@ -71,7 +72,14 @@
  * subtle borders and rounded controls. Individual screens should inherit this
  * instead of introducing another control treatment.
  */
-:is(.ui-input, .ui-select, .ui-copy-bar-select) {
+:is(.ui-input, .ui-select) {
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}
+
+.ui-copy-bar-select {
   border-color: var(--ui-control-border);
   border-radius: var(--ui-control-radius);
   background: var(--color-surface);

@@ -21,7 +21,9 @@
     .ui-field-label,
     .ui-segmented-label,
     .living-summary-label,
-    .celebration-gift-block-title
+    .celebration-gift-block-title,
+    .housing-section-title,
+    .housing-owned-detail-title
   ) {
   word-break: keep-all;
   overflow-wrap: anywhere;
@@ -51,7 +53,12 @@
 }
 
 /* Generated compact labels use the same phrase-preserving rule. */
-.step-page :where(.life-event-table-cell, .living-table-cell)::before {
+.step-page :where(
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell
+  )::before {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }

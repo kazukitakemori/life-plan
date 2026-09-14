@@ -30,12 +30,6 @@
     display: block;
   }
 
-  .housing-step .housing-section-title,
-  .housing-step .housing-owned-detail-title {
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-  }
-
   /* 所有物件の一覧カード */
   .housing-step .housing-owned-card-wrap {
     overflow: hidden;
@@ -102,7 +96,7 @@
     grid-column: 1 / -1;
     width: 100%;
     min-height: 44px;
-    border: 1px solid #e0b4b4;
+    border: 1px solid var(--ui-danger-border);
     border-radius: var(--ui-control-radius);
     background: var(--color-surface);
     color: var(--color-danger);
@@ -255,8 +249,6 @@
     font-size: var(--text-xs);
     font-weight: 700;
     line-height: var(--leading-tight);
-    word-break: keep-all;
-    overflow-wrap: anywhere;
   }
 
   /* 賃貸物件 */
@@ -376,7 +368,7 @@
   .housing-step .housing-row-remove {
     width: 100%;
     min-height: 44px;
-    border: 1px solid #e0b4b4;
+    border: 1px solid var(--ui-danger-border);
     border-radius: var(--ui-control-radius);
     background: var(--color-surface);
     color: var(--color-danger);
