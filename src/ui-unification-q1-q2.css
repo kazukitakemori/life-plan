@@ -1,0 +1,322 @@
+/*
+ * Q1 / Q2 convergence layer
+ *
+ * Q1 is already close to the shared design system. This layer removes the
+ * remaining legacy blue/yellow treatments from residence controls and brings
+ * Q2 education into the same quiet neutral + green visual language.
+ *
+ * Layout and business logic stay screen-owned. This file only changes visuals.
+ */
+
+/* Q1: family / residence -------------------------------------------------- */
+
+.family-step .residence-card {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.family-step .residence-card-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.family-step .residence-card-title {
+  color: var(--ui-text);
+  font-size: var(--ui-font-section);
+}
+
+.family-step .residence-card-body {
+  background: var(--ui-bg-surface);
+}
+
+.family-step .residence-period-label {
+  color: var(--ui-text);
+  font-size: var(--ui-font-label);
+}
+
+.family-step :is(.residence-period-from, .residence-data-version) {
+  color: var(--ui-text-muted);
+}
+
+.family-step :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .residence-period-timing .select-input
+  ) {
+  min-height: 36px;
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-font-label);
+}
+
+.family-step :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .residence-period-timing .select-input
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.family-step :is(
+    .residence-age-select,
+    .residence-prefecture-select,
+    .residence-period-timing .select-input
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.family-step .residence-calc-btn {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-subtle);
+}
+
+.family-step .residence-remove-btn {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-danger);
+}
+
+.family-step .residence-add-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.family-step .residence-add-btn:hover {
+  background: var(--ui-brand-soft);
+}
+
+.family-step .residence-add-icon {
+  border-color: var(--ui-brand);
+}
+
+/* Q2: education ---------------------------------------------------------- */
+
+.education-step .purpose-input-note {
+  border-color: #d7e5dc;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: #345743;
+}
+
+/* Desktop table keeps its existing grid. Only its visual chrome changes. */
+@media (min-width: 769px) {
+  .education-step .education-table-card {
+    border-color: var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .education-step .education-table-header {
+    border-bottom-color: var(--ui-border);
+    background: var(--ui-bg-subtle);
+    box-shadow: 0 2px 6px rgb(31 42 36 / 7%);
+  }
+
+  .education-step .education-header-cell {
+    border-right-color: var(--ui-border);
+    background: var(--ui-bg-subtle);
+    color: var(--ui-text-muted);
+    font-size: var(--ui-font-helper);
+    font-weight: 700;
+  }
+
+  .education-step .education-header-tuition-group {
+    border-bottom-color: var(--ui-border);
+  }
+
+  .education-step :is(
+      .education-header-sub-tuition-amount,
+      .education-header-sub-tuition-monthly
+    ) {
+    background: #f7f9f8;
+    color: var(--ui-text-muted);
+  }
+
+  .education-step .education-table-row:nth-child(odd),
+  .education-step .education-table-row:nth-child(even) {
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-table-cell {
+    border-color: var(--ui-border);
+  }
+}
+
+.education-step :is(.education-select, .education-text-input, .education-yen-field) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-font-label);
+}
+
+.education-step :is(
+    .education-select,
+    .education-text-input,
+    .education-yen-field
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.education-step :is(
+    .education-select,
+    .education-text-input,
+    .education-yen-field
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.education-step .education-yen-unit {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-font-helper);
+}
+
+.education-step .education-period-arrow {
+  color: var(--ui-text-subtle);
+}
+
+.education-step :is(
+    .education-fetch-btn,
+    .education-add-other-btn,
+    .education-copy-btn
+  ) {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.education-step :is(
+    .education-fetch-btn,
+    .education-add-other-btn,
+    .education-copy-btn
+  ):hover:not(:disabled) {
+  background: var(--ui-brand-soft);
+}
+
+.education-step .education-fetch-detail-link {
+  color: var(--ui-brand);
+}
+
+.education-step .education-fetch-detail-link:hover {
+  color: var(--ui-brand);
+  opacity: 0.82;
+}
+
+.education-step .education-other-item {
+  border-bottom-color: var(--ui-border);
+}
+
+.education-step .education-entrance-note {
+  color: var(--ui-text-subtle);
+}
+
+.education-step .education-aggregate-note {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.education-step .education-empty {
+  color: var(--ui-text-muted);
+}
+
+/* Reference modal follows the same card and callout language. */
+.education-ref-modal {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.education-ref-modal-title {
+  color: var(--ui-text);
+}
+
+.education-ref-modal-close {
+  color: var(--ui-text-subtle);
+}
+
+.education-ref-modal-close:hover {
+  color: var(--ui-text);
+}
+
+.education-ref-modal-summary {
+  border: 1px solid #d7e5dc;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: #345743;
+}
+
+.education-ref-section-title {
+  border-left-color: var(--ui-brand);
+  color: var(--ui-text);
+}
+
+.education-ref-section-desc,
+.education-ref-subline {
+  color: var(--ui-text-muted);
+}
+
+.education-ref-kv-table th,
+.education-ref-data-table th {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.education-ref-kv-table th,
+.education-ref-kv-table td,
+.education-ref-data-table th,
+.education-ref-data-table td {
+  border-color: var(--ui-border);
+}
+
+.education-help-icon {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Chart title is normal content, not an error: never use red here. */
+.education-chart-card {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.education-chart-title {
+  color: var(--ui-text);
+  font-size: var(--ui-font-section);
+}
+
+.education-chart-legend-label,
+.education-chart-tooltip-row {
+  color: var(--ui-text-muted);
+}
+
+.education-chart-tooltip {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+}
+
+.education-chart-tooltip-title {
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+/* Keep warnings amber and destructive actions red: their semantics are valid. */
+.education-step .education-period-alerts {
+  border-radius: var(--ui-radius-control);
+}
