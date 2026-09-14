@@ -54,6 +54,7 @@ jobs:
           matched = set()
 
           def normalize(selector: str) -> str:
+              selector = re.sub(r'/\*.*?\*/', ' ', selector, flags=re.S)
               return ' '.join(selector.split())
 
           def transform(match: re.Match) -> str:
