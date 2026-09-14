@@ -1,0 +1,298 @@
+/*
+ * Q11 / Q12 convergence layer
+ * Complete the first visual pass across the input workflow.
+ */
+
+/* Q11: savings / investment --------------------------------------------- */
+
+.savings-step :is(
+    .savings-section,
+    .savings-entry-card-wrap,
+    .savings-entry-card,
+    .savings-entry-detail,
+    .loan-settings-table-card
+  ) {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.savings-step .savings-entry-card-wrap {
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.savings-step :is(
+    .savings-entry-name-input,
+    .select-input,
+    .amount-input,
+    .life-event-text-input,
+    .life-event-select
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.savings-step :is(
+    .savings-entry-name-input,
+    .select-input,
+    .amount-input,
+    .life-event-text-input,
+    .life-event-select
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.savings-step :is(
+    .savings-entry-name-input,
+    .select-input,
+    .amount-input,
+    .life-event-text-input,
+    .life-event-select
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.savings-step .savings-entry-open-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.savings-step .savings-entry-open-btn:hover:not(:disabled) {
+  background: var(--ui-brand-soft);
+}
+
+.savings-step :is(.savings-entry-sector-badge, .savings-entry-category-badge) {
+  border-color: #d7e5dc;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.savings-step .savings-entry-drag-handle {
+  color: var(--ui-text-subtle);
+}
+
+.savings-step .savings-entry-summary,
+.savings-step :is(.savings-add-card-desc, .savings-add-group-desc) {
+  color: var(--ui-text-muted);
+}
+
+.savings-step .savings-add-card {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.savings-step .savings-add-card:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+.savings-step :is(.savings-add-card-title, .savings-add-group-title) {
+  color: var(--ui-text);
+}
+
+.savings-step .housing-row-remove {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+  background: var(--ui-bg-surface);
+  color: var(--ui-danger);
+}
+
+/* Q12: second life ------------------------------------------------------- */
+
+.second-life-step .second-life-lead,
+.second-life-step .second-life-guide-intro,
+.second-life-step .second-life-guide-checklist-lead {
+  color: var(--ui-text-muted);
+}
+
+.second-life-step :is(
+    .second-life-guide-start-age,
+    .second-life-guide-card,
+    .second-life-template-panel,
+    .second-life-refine-trigger,
+    .second-life-section,
+    .second-life-choice-card,
+    .second-life-breakdown
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.second-life-step :is(.second-life-guide-card, .second-life-choice-card) {
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.second-life-step .second-life-guide-start-age,
+.second-life-step .second-life-section-toolbar,
+.second-life-step .second-life-section-actions,
+.second-life-step .second-life-nursing-toolbar {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.second-life-step :is(
+    .second-life-age-input,
+    .second-life-priority-select,
+    .second-life-inline-cost input,
+    .second-life-inline-cost select,
+    .third-life-field-row input,
+    .third-life-field-row select
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.second-life-step :is(
+    .second-life-age-input,
+    .second-life-priority-select,
+    .second-life-inline-cost input,
+    .second-life-inline-cost select,
+    .third-life-field-row input,
+    .third-life-field-row select
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.second-life-step :is(
+    .second-life-guide-card-step,
+    .second-life-guide-card-design,
+    .second-life-template-panel-title,
+    .second-life-refine-title,
+    .second-life-refine-trigger-chevron,
+    .second-life-refine-modal-title
+  ) {
+  color: var(--ui-brand);
+}
+
+.second-life-step .second-life-guide-nav-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+.second-life-step .second-life-guide-nav-btn:hover {
+  background: var(--ui-brand-soft);
+}
+
+.second-life-step .second-life-template-panel {
+  border-color: #d7e5dc;
+  background: var(--ui-brand-soft);
+}
+
+.second-life-step .second-life-template-panel-btn {
+  border-color: var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.second-life-step .second-life-template-panel-btn:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand);
+  filter: brightness(0.96);
+}
+
+.second-life-step .second-life-refine-trigger:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+.second-life-step .second-life-refine-trigger:focus-visible {
+  outline-color: var(--ui-brand);
+}
+
+.second-life-step .second-life-section-bar {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text);
+}
+
+.second-life-step .second-life-section-bar .second-life-section-sub {
+  color: var(--ui-text-muted);
+}
+
+.second-life-step .second-life-choice-grid {
+  background: var(--ui-bg-page);
+}
+
+.second-life-step .second-life-choice-header {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text);
+}
+
+.second-life-step .second-life-choice-card.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 0 0 1px rgb(47 111 78 / 14%);
+}
+
+.second-life-step .second-life-choice-card.is-active .second-life-choice-header {
+  border-bottom-color: var(--ui-brand);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+.second-life-step .second-life-choice-marker {
+  border-color: var(--ui-brand);
+}
+
+.second-life-step .second-life-choice-marker.is-checked::after,
+.second-life-step .second-life-choice-card.is-active .second-life-choice-marker.is-checked::after {
+  background: var(--ui-brand);
+}
+
+/* Totals are normal information, not errors. */
+.second-life-step .second-life-choice-total strong,
+.second-life-step .second-life-living-monthly strong {
+  color: var(--ui-brand);
+}
+
+.second-life-step :is(
+    .second-life-living-note,
+    .second-life-apply-note,
+    .second-life-living-ref,
+    .second-life-breakdown-note,
+    .second-life-breakdown-empty,
+    .second-life-nursing-desc,
+    .second-life-skip-hint
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.second-life-step .second-life-breakdown,
+.second-life-step .second-life-choice-card.is-active .second-life-breakdown {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+}
+
+.second-life-step :is(.second-life-back-btn, .second-life-next-btn) {
+  border-color: var(--ui-border-strong);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.second-life-step .second-life-next-btn {
+  border-color: var(--ui-brand);
+  color: var(--ui-brand);
+}
+
+.second-life-step .second-life-apply-btn {
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+}
+
+/* Valid warnings/success states retain their semantic amber/green colors. */
