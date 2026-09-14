@@ -164,9 +164,7 @@ body {
     .family-member-card,
     .income-entry,
     .ui-copy-bar,
-    .ui-member-tab-menu,
-    .add-family-card,
-    .add-income-card
+    .ui-member-tab-menu
   ) {
   border-color: var(--ui-border);
   border-radius: var(--ui-radius-card);

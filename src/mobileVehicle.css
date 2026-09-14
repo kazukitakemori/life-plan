@@ -158,7 +158,16 @@
     word-break: keep-all;
   }
 
-  .vehicle-step .vehicle-table-group-body {
+  .vehicle-step .vehicle-add-section {
+  width: 100%;
+  min-width: 0;
+}
+
+.vehicle-step .vehicle-duplicate-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vehicle-step .vehicle-table-group-body {
     display: block;
     padding: 12px 14px;
     border: 0;
@@ -171,36 +180,13 @@
     min-height: 44px;
   }
 
-  .vehicle-step .vehicle-add-section,
-  .vehicle-step .vehicle-add-grid {
-    width: 100%;
-    min-width: 0;
-  }
 
-  .vehicle-step .vehicle-add-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
 
-  .vehicle-step .vehicle-add-card {
-    width: 100%;
-    min-width: 0;
-    min-height: 112px;
-    padding: 12px;
-  }
 
-  .vehicle-step :where(.vehicle-add-card-title, .vehicle-add-card-desc) {
-    word-break: keep-all;
-    overflow-wrap: break-word;
-  }
 }
 
 @media (max-width: 430px) {
-  .vehicle-step .vehicle-duplicate-controls,
-  .vehicle-step .vehicle-add-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+
 
   .vehicle-step .vehicle-duplicate-btn {
     width: 100%;

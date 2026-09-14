@@ -194,13 +194,8 @@
 
 /* Shared add cards ------------------------------------------------------ */
 :is(
-    .life-event-step .life-event-add-card,
     .housing-step .housing-owned-add-card,
     .housing-step .housing-rental-add-card,
-    .vehicle-step .vehicle-add-card,
-    .loan-step .loan-add-card,
-    .insurance-step .insurance-add-card,
-    .savings-step .savings-add-card
   ) {
   border-color: var(--ui-border);
   border-radius: var(--ui-radius-card);
@@ -209,37 +204,22 @@
 }
 
 :is(
-    .life-event-step .life-event-add-card,
     .housing-step .housing-owned-add-card,
     .housing-step .housing-rental-add-card,
-    .vehicle-step .vehicle-add-card,
-    .loan-step .loan-add-card,
-    .insurance-step .insurance-add-card,
-    .savings-step .savings-add-card
   ):hover:not(:disabled) {
   border-color: var(--ui-brand);
   background: var(--ui-brand-soft);
 }
 
 :is(
-    .life-event-add-card-title,
-    .vehicle-add-card-title,
-    .loan-add-card-title,
-    .insurance-add-card-title,
     .insurance-add-group-title,
-    .savings-add-card-title,
     .savings-add-group-title
   ) {
   color: var(--ui-text);
 }
 
 :is(
-    .life-event-add-card-desc,
-    .vehicle-add-card-desc,
-    .loan-add-card-desc,
-    .insurance-add-card-desc,
     .insurance-add-group-desc,
-    .savings-add-card-desc,
     .savings-add-group-desc
   ) {
   color: var(--ui-text-muted);
@@ -513,7 +493,6 @@
     .life-event-inflation-unit,
     .life-event-rate-label,
     .period-until-suffix,
-    .life-event-add-card-desc,
     .celebration-gift-empty,
     .life-event-table-empty
   ) {
