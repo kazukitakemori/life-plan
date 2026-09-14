@@ -10,22 +10,22 @@ const ADD_OPTIONS: AddOption[] = [
   {
     role: 'spouse',
     label: '配偶者',
-    description: '夫・妻を追加',
+    description: '夫・妻',
   },
   {
     role: 'child',
     label: '子供',
-    description: '将来のお子さんもOK',
+    description: '将来のお子さんも追加',
   },
   {
     role: 'other',
     label: 'その他',
-    description: 'パートナー・同居の親族など',
+    description: 'パートナー・親族など',
   },
   {
     role: 'pet',
     label: 'ペット',
-    description: '犬や猫などの家族',
+    description: '犬・猫など',
   },
 ];
 
@@ -38,7 +38,7 @@ export function AddFamilyBar({ onAdd, canAddSpouse }: AddFamilyBarProps) {
   return (
     <section className="add-family-bar">
       <h3 className="add-family-title">家族を追加</h3>
-      <div className="add-family-grid">
+      <div className="add-family-grid ui-add-card-grid">
         {ADD_OPTIONS.map((option) => {
           const disabled = option.role === 'spouse' && !canAddSpouse;
 
@@ -46,12 +46,16 @@ export function AddFamilyBar({ onAdd, canAddSpouse }: AddFamilyBarProps) {
             <button
               key={option.role}
               type="button"
-              className="add-family-card"
+              className="add-family-card ui-add-card"
               onClick={() => onAdd(option.role)}
               disabled={disabled}
             >
-              <span className="add-family-label">{option.label}</span>
-              <span className="add-family-desc">{option.description}</span>
+              <span className="add-family-label ui-add-card__title">
+                {option.label}
+              </span>
+              <span className="add-family-desc ui-add-card__description">
+                {option.description}
+              </span>
             </button>
           );
         })}
