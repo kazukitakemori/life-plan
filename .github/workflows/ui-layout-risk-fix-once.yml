@@ -26,8 +26,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-
-          # Anywhere wrapping can split Japanese phrases too eagerly. Use emergency word breaking instead.
+          import re
           total_anywhere = 0
           for p in Path('src').rglob('*.css'):
               t = p.read_text(encoding='utf-8')
@@ -37,101 +36,33 @@ jobs:
                   p.write_text(t.replace('overflow-wrap: anywhere;', 'overflow-wrap: break-word;'), encoding='utf-8')
           if not (1 <= total_anywhere <= 20):
               raise SystemExit(f'Unexpected anywhere count: {total_anywhere}')
-
-          p=Path('src/index.css')
-          t=p.read_text(encoding='utf-8')
-          replacements = {
-          '''.plan-admin-contact {
-  font-size: 0.8125rem;
-  color: #445;
-  line-height: 1.45;
-  white-space: nowrap;
-}
-
-.plan-admin-contact-line {
-  white-space: nowrap;
-}''': '''.plan-admin-contact {
-  min-width: 0;
-  font-size: 0.8125rem;
-  color: #445;
-  line-height: 1.45;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-
-.plan-admin-contact-line {
-  white-space: normal;
-  overflow-wrap: break-word;
-}''',
-          '''.housing-owned-field-hint {
-  min-height: 1.125rem;
-  font-size: 0.8125rem;
-  color: #888;
-  white-space: nowrap;
-  line-height: 1.125rem;
-}''': '''.housing-owned-field-hint {
-  min-width: 0;
-  min-height: 1.125rem;
-  font-size: 0.8125rem;
-  color: #888;
-  white-space: normal;
-  overflow-wrap: break-word;
-  line-height: 1.45;
-}''',
-          '''.loan-group-credit-life-surcharge-hint {
-  font-size: 0.8125rem;
-  color: #888;
-  white-space: nowrap;
-}''': '''.loan-group-credit-life-surcharge-hint {
-  min-width: 0;
-  font-size: 0.8125rem;
-  color: #888;
-  white-space: normal;
-  overflow-wrap: break-word;
-}''',
-          '''.housing-insurance-item-name {
-  font-size: 0.8125rem;
-  color: #333;
-  white-space: nowrap;
-}''': '''.housing-insurance-item-name {
-  min-width: 0;
-  max-width: 100%;
-  font-size: 0.8125rem;
-  color: #333;
-  white-space: normal;
-  overflow-wrap: break-word;
-}''',
-          '''.linked-insurance-summary {
-  font-size: 0.8125rem;
-  color: #666;
-  white-space: nowrap;
-}''': '''.linked-insurance-summary {
-  flex: 1 1 180px;
-  min-width: 0;
-  font-size: 0.8125rem;
-  color: #666;
-  white-space: normal;
-  overflow-wrap: break-word;
-}''',
-          '''.housing-owned-insurance-meta {
-  font-size: 0.8125rem;
-  color: #666;
-  white-space: nowrap;
-}''': '''.housing-owned-insurance-meta {
-  min-width: 0;
-  font-size: 0.8125rem;
-  color: #666;
-  white-space: normal;
-  overflow-wrap: break-word;
-}'''
-          }
-          for old,new in replacements.items():
-              if t.count(old) != 1:
-                  raise SystemExit(f'Expected exactly one block, found {t.count(old)} for: {old.splitlines()[0]}')
-              t=t.replace(old,new)
-          p.write_text(t,encoding='utf-8')
+          p = Path('src/index.css')
+          t = p.read_text(encoding='utf-8')
+          def edit_rule(selector, replacements, prepend=None):
+              global t
+              pattern = re.compile(r'(' + re.escape(selector) + r'\s*\{)(.*?)(\n\})', re.S)
+              matches = list(pattern.finditer(t))
+              if len(matches) != 1:
+                  raise SystemExit(f'Expected one rule for {selector}, found {len(matches)}')
+              m = matches[0]
+              body = m.group(2)
+              for old, new in replacements:
+                  if old not in body:
+                      raise SystemExit(f'Missing declaration in {selector}: {old}')
+                  body = body.replace(old, new, 1)
+              if prepend:
+                  body = '\n  ' + prepend + ';' + body
+              t = t[:m.start()] + m.group(1) + body + m.group(3) + t[m.end():]
+          edit_rule('.plan-admin-contact', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0')
+          edit_rule('.plan-admin-contact-line', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')])
+          edit_rule('.housing-owned-field-hint', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;'), ('line-height: 1.125rem;', 'line-height: 1.45;')], 'min-width: 0')
+          edit_rule('.loan-group-credit-life-surcharge-hint', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0')
+          edit_rule('.housing-insurance-item-name', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0;\n  max-width: 100%')
+          edit_rule('.linked-insurance-summary', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'flex: 1 1 180px;\n  min-width: 0')
+          edit_rule('.housing-owned-insurance-meta', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0')
+          p.write_text(t, encoding='utf-8')
           print(f'Replaced {total_anywhere} overflow-wrap:anywhere declarations.')
-          print(f'Adjusted {len(replacements)} long-text blocks.')
+          print('Adjusted 7 long-text rules.')
           PY
       - name: Install dependencies
         run: npm ci
