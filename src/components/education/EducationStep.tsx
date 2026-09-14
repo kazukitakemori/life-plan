@@ -165,6 +165,11 @@ export function EducationStep({
     setActiveMemberId(memberId);
   };
 
+  const handleAddEducationMember = (memberId: string) => {
+    setShowAllMembers(false);
+    handleAddMemberTab(memberId);
+  };
+
   if (!headMember) {
     return (
       <div className="step-page">
@@ -177,20 +182,7 @@ export function EducationStep({
 
   return (
     <div className="step-page education-step">
-      <StepHeading
-        number={2}
-        title="教育費"
-        actions={
-          <button
-            type="button"
-            className={`show-all-btn${showAllMembers ? ' active' : ''}`}
-            onClick={() => setShowAllMembers((prev) => !prev)}
-            aria-pressed={showAllMembers}
-          >
-            {showAllMembers ? '個人ごとに表示' : '全員まとめて表示'}
-          </button>
-        }
-      />
+      <StepHeading number={2} title="教育費" />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
@@ -198,42 +190,44 @@ export function EducationStep({
         </p>
       ) : null}
 
-      {!showAllMembers ? (
-        <div className="education-toolbar">
-          <MemberEducationTabs
-            members={visibleMembers}
-            activeMemberId={resolvedActiveId}
-            entryCounts={entryCounts}
-            referenceDate={referenceDate}
-            onSelect={handleSelectMember}
-            addableMembers={addableMembers}
-            onAddMemberTab={(memberId) => {
-              setShowAllMembers(false);
-              handleAddMemberTab(memberId);
-            }}
-            removableMemberIds={removableMemberIds}
-            onRemoveMemberTab={handleRemoveMemberTab}
-          />
+      <div className="education-toolbar">
+        <MemberEducationTabs
+          members={visibleMembers}
+          activeMemberId={resolvedActiveId}
+          entryCounts={entryCounts}
+          referenceDate={referenceDate}
+          onSelect={handleSelectMember}
+          addableMembers={addableMembers}
+          onAddMemberTab={handleAddEducationMember}
+          removableMemberIds={removableMemberIds}
+          onRemoveMemberTab={handleRemoveMemberTab}
+          summaryAction={{
+            active: showAllMembers,
+            onToggle: () => setShowAllMembers((prev) => !prev),
+            showLabel: '全員まとめて表示',
+            hideLabel: '個人ごとに表示',
+            ariaLabel: '教育費の表示を切り替え',
+          }}
+        />
 
-          {activeMember && (
-            <CopySettingsBar
-              value={copySourceId}
-              options={copySourceOptions}
-              onChange={setCopySourceId}
-              onCopy={copySettingsFrom}
-              disabled={
-                copySourceId === resolvedActiveId ||
-                (educationByMember[copySourceId]?.length ?? 0) === 0
-              }
-            />
-          )}
-        </div>
-      ) : null}
+        {!showAllMembers && activeMember ? (
+          <CopySettingsBar
+            value={copySourceId}
+            options={copySourceOptions}
+            onChange={setCopySourceId}
+            onCopy={copySettingsFrom}
+            disabled={
+              copySourceId === resolvedActiveId ||
+              (educationByMember[copySourceId]?.length ?? 0) === 0
+            }
+          />
+        ) : null}
+      </div>
 
       {showAllMembers ? (
         <>
           <p className="education-aggregate-note">
-            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは「個人ごとに表示」を押してください。
+            世帯全体の教育費を合算したグラフです。個人の入力に戻すときは人物タブ、または「個人ごとに表示」を選んでください。
           </p>
           <EducationExpenseChart
             mode="aggregate"
@@ -262,7 +256,7 @@ export function EducationStep({
             <div className="education-footer-actions">
               <button
                 type="button"
-                className="footer-action-btn"
+                className="ui-btn ui-btn--ghost"
                 onClick={addEntry}
               >
                 ＋ 教育費を追加

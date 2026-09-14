@@ -6,3 +6,5 @@ export { DisclosureSection } from './DisclosureSection';
 export { AmountInput } from './AmountInput';
 export { StepHeading } from './StepHeading';
 export { CopySettingsBar } from './CopySettingsBar';
+export { SegmentedControl } from './SegmentedControl';
+export type { SegmentedControlOption } from './SegmentedControl';

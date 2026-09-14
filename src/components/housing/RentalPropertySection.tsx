@@ -115,7 +115,7 @@ export function RentalPropertySection({
       </div>
 
       <div className="living-footer-actions housing-rental-add-actions">
-        <button type="button" className="footer-action-btn" onClick={onAdd}>
+        <button type="button" className="ui-btn ui-btn--ghost" onClick={onAdd}>
           ＋ 賃貸物件を追加
         </button>
       </div>

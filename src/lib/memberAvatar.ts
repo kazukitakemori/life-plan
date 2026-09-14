@@ -30,17 +30,27 @@ const ROLE_EMOJI: Record<FamilyMemberRole, string> = {
 };
 
 function ageBandKey(age: number): string {
-  const band = AGE_BANDS.find((b) => age >= b.min && age <= b.max);
-  return band?.key ?? '40_49';
+  const normalizedAge = Math.max(0, age);
+  const band = AGE_BANDS.find(
+    (candidate) =>
+      normalizedAge >= candidate.min && normalizedAge <= candidate.max,
+  );
+  return band?.key ?? '70';
+}
+
+function isKnownGender(gender: Gender | null | undefined): gender is Gender {
+  return gender === 'male' || gender === 'female';
 }
 
 export function resolveMemberAvatarSrc(
   role: FamilyMemberRole,
-  gender: Gender,
+  gender: Gender | null | undefined,
   age: number | null,
 ): string | null {
-  if (role === 'pet') return null;
-  const resolvedAge = age ?? ROLE_FALLBACK_AGE[role];
+  if (role === 'pet' || !isKnownGender(gender)) return null;
+
+  const resolvedAge =
+    age != null && Number.isFinite(age) ? age : ROLE_FALLBACK_AGE[role];
   const band = ageBandKey(resolvedAge);
   return `/icons/people/${gender}_${band}.png`;
 }

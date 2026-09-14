@@ -31,28 +31,23 @@
   .shell-main {
     width: 100%;
     min-width: 0;
-    padding: 48px 12px 24px;
+    padding-right: 12px;
+    padding-bottom: 24px;
+    padding-left: 12px;
     overflow-x: hidden;
     overflow-y: auto;
   }
 
+  /* Top spacing and the toggle position/size are owned by mobileCompact.css. */
   .mobile-sidebar-toggle {
-    position: absolute;
-    z-index: 40;
-    top: 8px;
-    left: 10px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 36px;
-    padding: 7px 10px;
     border: 1px solid var(--color-line);
-    border-radius: 8px;
     background: #fff;
     color: var(--color-ink);
     font-size: 13px;
     font-weight: 600;
-    box-shadow: 0 2px 8px rgb(31 42 36 / 8%);
   }
 
   .mobile-sidebar-backdrop {
@@ -91,136 +86,8 @@
     opacity: 1;
   }
 
-  /* Header: show all primary destinations at once instead of horizontal scrolling. */
   .top-header {
     min-width: 0;
-  }
-
-  .top-header-primary {
-    position: relative;
-    min-width: 0;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 10px 12px;
-  }
-
-  .top-header-brand {
-    min-width: 0;
-    flex: 1 1 100%;
-    padding-right: 74px;
-  }
-
-  .top-header-title {
-    font-size: 17px;
-    line-height: 1.2;
-  }
-
-  .top-header-hint {
-    max-width: 100%;
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .top-header-context {
-    max-width: 100%;
-    flex-wrap: wrap;
-    gap: 4px 6px;
-    margin-top: 4px;
-  }
-
-  .top-header-customer {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .top-header-status-badge,
-  .top-header-autosave {
-    font-size: 11px;
-  }
-
-  .top-header-primary-right {
-    display: block;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .top-header-nav {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    width: 100%;
-    min-width: 0;
-    overflow: visible;
-  }
-
-  .top-header-nav-item,
-  .top-header-nav-item-wrap {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .top-header-nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40px;
-    padding: 7px 5px;
-    font-size: 12.5px;
-    line-height: 1.25;
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  .top-header-nav-item-wrap {
-    position: relative;
-  }
-
-  .top-header-nav-item-wrap > .top-header-nav-item {
-    width: 100%;
-  }
-
-  .top-header-nav-chevron {
-    flex: 0 0 auto;
-    margin-left: 4px;
-  }
-
-  .top-header-fullscreen-btn {
-    position: absolute;
-    top: 9px;
-    right: 10px;
-    min-height: 34px;
-    padding: 6px 9px;
-    font-size: 11.5px;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .top-header-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: auto;
-    width: min(280px, calc(100vw - 20px));
-    max-width: calc(100vw - 20px);
-  }
-
-  .top-header-nav-item-wrap:nth-child(3n + 2) .top-header-dropdown {
-    left: 50%;
-    transform: translate(-50%, 6px);
-  }
-
-  .top-header-nav-item-wrap:nth-child(3n + 2).is-open .top-header-dropdown,
-  .top-header-nav-item-wrap:nth-child(3n + 2):hover .top-header-dropdown {
-    transform: translate(-50%, 0);
-  }
-
-  .top-header-nav-item-wrap:nth-child(3n) .top-header-dropdown {
-    left: auto;
-    right: 0;
   }
 
   /* Keep wide data views usable without shrinking text into illegibility. */
@@ -481,15 +348,6 @@
 }
 
 @media (max-width: 640px) {
-  .shell-main {
-    padding-right: 10px;
-    padding-left: 10px;
-  }
-
-  .mobile-sidebar-toggle {
-    left: 8px;
-  }
-
   .sidebar {
     width: min(88vw, 300px);
   }
@@ -500,40 +358,5 @@
 
   .plan-admin-header-actions .plan-bar-btn {
     min-height: 44px;
-  }
-
-  .top-header-primary {
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .top-header-brand {
-    padding-right: 68px;
-  }
-
-  .top-header-title {
-    font-size: 16px;
-  }
-
-  .top-header-nav {
-    gap: 5px;
-  }
-
-  .top-header-nav-item {
-    min-height: 42px;
-    padding-right: 3px;
-    padding-left: 3px;
-    font-size: 12px;
-  }
-
-  .top-header-fullscreen-btn {
-    right: 8px;
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .top-header-dropdown {
-    width: min(260px, calc(100vw - 16px));
-    max-width: calc(100vw - 16px);
   }
 }

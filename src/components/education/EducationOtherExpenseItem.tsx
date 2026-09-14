@@ -48,7 +48,7 @@ export function EducationOtherExpenseItem({
     <div className="education-other-item">
       <div className="education-other-item-top">
         <select
-          className="select-input select-input--compact education-select education-other-year-select"
+          className="ui-select ui-select--compact education-select education-other-year-select"
           value={item.enrollmentYear}
           onChange={(e) =>
             onChange({ ...item, enrollmentYear: Number(e.target.value) })
@@ -61,7 +61,7 @@ export function EducationOtherExpenseItem({
           ))}
         </select>
         <select
-          className="select-input select-input--compact education-select education-other-cycle-select"
+          className="ui-select ui-select--compact education-select education-other-cycle-select"
           value={item.paymentCycle}
           onChange={(e) =>
             setPaymentCycle(
@@ -82,16 +82,20 @@ export function EducationOtherExpenseItem({
         />
         <button
           type="button"
-          className="education-other-remove"
+          className="ui-btn ui-btn--danger ui-btn--compact education-other-remove"
           onClick={onRemove}
           aria-label="項目を削除"
+          title="項目を削除"
         >
-          −
+          <span className="education-remove-icon" aria-hidden>
+            ×
+          </span>
+          <span className="education-remove-label">削除</span>
         </button>
       </div>
       <input
         type="text"
-        className="education-text-input education-other-label-input"
+        className="ui-input education-text-input education-other-label-input"
         placeholder="内容など"
         value={item.label}
         onChange={(e) => onChange({ ...item, label: e.target.value })}

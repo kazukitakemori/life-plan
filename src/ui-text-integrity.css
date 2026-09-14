@@ -1,0 +1,64 @@
+/*
+ * Shared text-integrity rules for compact UI labels.
+ * Japanese action labels and short metadata should not split character-by-character
+ * just because a grid/flex column becomes narrow on phones.
+ */
+
+.step-page :where(button, [role='button']) {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* Short headings / labels should keep semantic phrases together whenever possible. */
+.step-page :where(
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    label,
+    legend,
+    .ui-field-label,
+    .ui-segmented-label,
+    .living-summary-label,
+    .celebration-gift-block-title,
+    .housing-section-title,
+    .housing-owned-detail-title
+  ) {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* Short atomic labels are always one semantic unit. */
+.step-page :where(
+    .ui-member-tab-name,
+    .ui-member-tab-birth,
+    .ui-member-tab-badge,
+    .ui-member-tab-menu-name,
+    .ui-member-tab-menu-meta,
+    .ui-member-tabs-summary-toggle,
+    .ui-copy-bar-label,
+    .ui-copy-bar-button,
+    .ui-amount-unit,
+    .education-yen-unit,
+    .amount-unit,
+    .rate-unit,
+    .period-until-suffix,
+    .living-summary-auto,
+    .celebration-gift-block-title
+  ) {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+/* Generated compact labels use the same phrase-preserving rule. */
+.step-page :where(
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell
+  )::before {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}

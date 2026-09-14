@@ -4,10 +4,21 @@
   --step-width-standard: 920px;
   --step-width-wide: 1100px;
 
-  /* Interaction / readability */
+  /* Shared interaction / design foundation. */
   --ui-control-min-height: 40px;
+  --ui-control-radius: var(--radius-sm);
+  --ui-card-radius: var(--radius-md);
+  --ui-control-border: #c5d0c9;
+  --ui-control-border-hover: #97a49d;
+  --ui-danger-border: #e0b4b4;
+  --ui-card-border: var(--color-line);
+  --ui-surface-hover: #f6f9f7;
+  --ui-surface-selected: var(--color-brand-soft);
+  --ui-shadow-card: 0 1px 2px rgb(31 42 36 / 4%);
+  --ui-shadow-menu: 0 10px 28px rgb(31 42 36 / 12%);
   --ui-focus-outline: 2px solid var(--color-brand);
   --ui-focus-offset: 2px;
+  --ui-transition-fast: 140ms ease;
 }
 
 /*
@@ -55,6 +66,66 @@
   line-height: var(--leading-relaxed);
 }
 
+/*
+ * Common form controls.
+ * Q1/Q7 are the current visual reference: white surface, calm green brand,
+ * subtle borders and rounded controls. Individual screens should inherit this
+ * instead of introducing another control treatment.
+ */
+:is(.ui-input, .ui-select) {
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}
+
+.ui-copy-bar-select {
+  border-color: var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    background var(--ui-transition-fast);
+}
+
+:is(.ui-input, .ui-select, .ui-copy-bar-select):hover:not(:disabled) {
+  border-color: var(--ui-control-border-hover);
+}
+
+:is(.ui-input, .ui-select, .ui-copy-bar-select):disabled {
+  background: #f4f6f5;
+  color: var(--color-faint);
+}
+
+/* Q1 family cards and Q7 income cards define the current card language. */
+:is(.family-member-card, .income-entry) {
+  border-color: var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--ui-shadow-card);
+}
+
+/* Shared button geometry and motion. Variants keep their semantic colors. */
+:is(.ui-btn, .ui-copy-bar-button) {
+  min-height: var(--ui-control-min-height);
+  border-radius: var(--ui-control-radius);
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+.ui-btn--compact {
+  width: auto;
+  height: auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+}
+
 /* Shared copy-from-member control. */
 .ui-copy-bar {
   display: flex;
@@ -62,9 +133,10 @@
   gap: var(--space-2);
   min-height: 48px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-control-radius);
   background: var(--color-surface);
+  box-shadow: var(--ui-shadow-card);
 }
 
 .ui-copy-bar-label {
@@ -79,23 +151,14 @@
   min-width: 136px;
   height: var(--ui-control-min-height);
   padding: 0 34px 0 12px;
-  border: 1px solid #c8d0cb;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-ink);
+  border: 1px solid var(--ui-control-border);
   font-size: var(--text-md);
   line-height: var(--leading-normal);
 }
 
-.ui-copy-bar-select:hover:not(:disabled) {
-  border-color: #97a49d;
-}
-
 .ui-copy-bar-button {
-  min-height: var(--ui-control-min-height);
   padding: 0 var(--space-4);
   border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-brand);
   font-size: var(--text-md);
@@ -110,6 +173,400 @@
 .ui-copy-bar-button:disabled,
 .ui-copy-bar-select:disabled {
   opacity: 0.5;
+}
+
+/* Shared view-mode switch. Keep it near the content it changes. */
+.ui-segmented {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ui-segmented-label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-normal);
+}
+
+.ui-segmented-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: #f4f6f5;
+}
+
+.ui-segmented-button {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--ui-control-radius) - 2px);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition:
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+.ui-segmented-button:hover:not(.active) {
+  background: var(--ui-surface-hover);
+  color: var(--color-ink);
+}
+
+.ui-segmented-button.active {
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  box-shadow: inset 0 0 0 1px rgb(47 111 78 / 10%);
+}
+
+.step-view-control {
+  justify-content: flex-start;
+  margin: 0 0 var(--space-4);
+}
+
+/*
+ * Shared person tabs.
+ * Selection, add-person menu, household summary action and wrapper geometry all
+ * live here. Current MemberTabs markup no longer depends on legacy index.css.
+ */
+.ui-member-tabs-block {
+  min-width: 0;
+  margin-bottom: 20px;
+}
+
+.ui-member-tabs-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: var(--space-2);
+}
+
+.ui-member-tabs-summary-toggle {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-control-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+.ui-member-tabs-summary-toggle:hover {
+  border-color: var(--ui-control-border-hover);
+  background: var(--ui-surface-hover);
+}
+
+.ui-member-tabs-summary-toggle.active {
+  border-color: var(--color-brand);
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+}
+
+.ui-member-tabs-row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow: visible;
+  border-bottom: 2px solid var(--color-line);
+}
+
+.ui-member-tabs-list {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  margin-bottom: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.ui-member-tab,
+button.ui-member-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 160px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  transition:
+    background var(--ui-transition-fast),
+    border-color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+button.ui-member-tab {
+  gap: 10px;
+  padding: 12px 20px;
+}
+
+.ui-member-tab:hover,
+button.ui-member-tab:hover {
+  background: var(--ui-surface-hover);
+}
+
+.ui-member-tab.active,
+button.ui-member-tab.active {
+  border-bottom-color: transparent;
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  box-shadow: inset 0 -3px 0 var(--color-brand);
+}
+
+.ui-member-tab .member-avatar {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  font-size: 1.6rem;
+}
+
+.ui-member-tab-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 8px 12px 20px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.ui-member-tab-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ui-member-tab-name {
+  color: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.ui-member-tab-badge {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.ui-member-tab-birth {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.ui-member-tab.active .ui-member-tab-name {
+  color: var(--color-brand);
+}
+
+.ui-member-tab-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.ui-member-tab-close:hover {
+  background: var(--ui-surface-hover);
+  color: var(--color-ink);
+}
+
+.ui-member-tab-add-wrap {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+button.ui-member-tab--add {
+  min-width: auto;
+  height: 100%;
+  gap: 8px;
+  padding: 12px 16px;
+  color: var(--color-brand);
+}
+
+.ui-member-tab-add-plus {
+  color: var(--color-brand);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ui-member-tab-menu {
+  position: fixed;
+  z-index: 1200;
+  max-height: min(320px, calc(100vh - 16px));
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--ui-shadow-menu);
+}
+
+.ui-member-tab-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--ui-control-radius);
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  transition:
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+.ui-member-tab-menu-item:hover,
+.ui-member-tab-menu-item:focus-visible {
+  background: var(--ui-surface-selected);
+  color: var(--color-brand);
+  outline: none;
+}
+
+.ui-member-tab-menu-item .member-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  font-size: 1.35rem;
+}
+
+.ui-member-tab-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ui-member-tab-menu-name {
+  color: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.ui-member-tab-menu-meta {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.ui-member-tabs-guidance {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+.ui-member-tabs-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+:is(
+    .education-toolbar,
+    .life-event-toolbar,
+    .vehicle-toolbar,
+    .second-life-nursing-toolbar
+  ) .ui-member-tabs-block {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.second-life-nursing-toolbar .ui-member-tabs-row {
+  border-bottom: 0;
+}
+
+/*
+ * Q1 "家族を追加" and Q7 "収入を追加" are the same interaction pattern.
+ * Treat them as one visual primitive even though their business choices differ.
+ */
+:is(.add-family-title, .add-income-title) {
+  margin: 0 0 var(--space-3);
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+:is(.add-family-grid, .add-income-grid) {
+  gap: var(--space-3);
+}
+
+:is(.add-family-card, .add-income-card) {
+  min-height: 88px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--ui-shadow-card);
+  text-align: left;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+:is(.add-family-card, .add-income-card):hover:not(:disabled) {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+}
+
+:is(.add-family-card, .add-income-card):disabled,
+.add-income-card--disabled {
+  cursor: not-allowed;
+  border-color: var(--ui-card-border);
+  background: #f7f8f7;
+  box-shadow: none;
+  opacity: 0.48;
+}
+
+:is(.add-family-label, .add-income-label) {
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+:is(.add-family-desc, .add-income-desc) {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
 }
 
 /* Repeated toolbars should share the same rhythm. */
@@ -144,7 +601,7 @@
 :is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) {
   padding: var(--space-5);
   border: 1px dashed #cbd3ce;
-  border-radius: var(--radius-md);
+  border-radius: var(--ui-card-radius);
   background: #fafbfa;
   color: var(--color-muted);
   font-size: var(--text-md);
@@ -155,13 +612,34 @@
   margin: 0;
 }
 
-/* Header actions are controls too; keep them large enough to target comfortably. */
-.show-all-btn {
-  min-height: var(--ui-control-min-height);
-  padding: 0 var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1;
+@media (max-width: 768px) {
+  .step-view-control {
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .step-view-control .ui-segmented-label {
+    flex-basis: 100%;
+  }
+
+  .step-view-control .ui-segmented-options {
+    width: 100%;
+  }
+
+  .step-view-control .ui-segmented-button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .ui-member-tabs-actions {
+    margin-bottom: 8px;
+  }
+
+  .ui-member-tabs-summary-toggle {
+    min-height: 44px;
+    max-width: 100%;
+  }
 }
 
 /* PC-first, but avoid making the shared controls unusable when the viewport narrows. */

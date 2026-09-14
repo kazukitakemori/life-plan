@@ -166,7 +166,7 @@ export function EducationExpenseRow({
       <div className="education-table-cell education-col-school">
         <div className="education-school-fields">
           <select
-            className="select-input select-input--compact education-select"
+            className="ui-select ui-select--compact education-select"
             value={entry.schoolCategory}
             onChange={(e) =>
               setSchoolCategory(
@@ -181,7 +181,7 @@ export function EducationExpenseRow({
             ))}
           </select>
           <select
-            className="select-input select-input--compact education-select"
+            className="ui-select ui-select--compact education-select"
             value={resolveSchoolType(entry.schoolCategory, entry.schoolType)}
             onChange={(e) => {
               const next = applySchoolTypeChange(
@@ -202,7 +202,7 @@ export function EducationExpenseRow({
           </select>
           {entry.schoolCategory === 'university' && (
             <select
-              className="select-input select-input--compact education-select"
+              className="ui-select ui-select--compact education-select"
               value={
                 resolveUniversityHousingType(
                   entry.schoolCategory,
@@ -227,7 +227,7 @@ export function EducationExpenseRow({
           {entry.schoolCategory === 'graduate' && (
             <>
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={
                   resolveGraduateProgramType(
                     entry.schoolCategory,
@@ -253,7 +253,7 @@ export function EducationExpenseRow({
                 ))}
               </select>
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={
                   resolveUniversityHousingType(
                     entry.schoolCategory,
@@ -278,7 +278,7 @@ export function EducationExpenseRow({
           )}
           <input
             type="text"
-            className="education-text-input"
+            className="ui-input education-text-input"
             placeholder={getSchoolNamePlaceholder(entry.schoolCategory)}
             value={entry.schoolName}
             onChange={(e) => updateEntry({ schoolName: e.target.value })}
@@ -291,7 +291,7 @@ export function EducationExpenseRow({
           <div className="education-period-side">
             <div className="education-period-fields">
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={entry.startAge}
                 onChange={(e) =>
                   updateEntry({ startAge: Number(e.target.value) })
@@ -304,7 +304,7 @@ export function EducationExpenseRow({
                 ))}
               </select>
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={entry.startMonth}
                 onChange={(e) =>
                   updateEntry({ startMonth: Number(e.target.value) })
@@ -334,7 +334,7 @@ export function EducationExpenseRow({
           <div className="education-period-side">
             <div className="education-period-fields">
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={entry.endAge}
                 onChange={(e) =>
                   updateEntry({ endAge: Number(e.target.value) })
@@ -347,7 +347,7 @@ export function EducationExpenseRow({
                 ))}
               </select>
               <select
-                className="select-input select-input--compact education-select"
+                className="ui-select ui-select--compact education-select"
                 value={entry.endMonth}
                 onChange={(e) =>
                   updateEntry({ endMonth: Number(e.target.value) })
@@ -383,7 +383,7 @@ export function EducationExpenseRow({
         <div className="education-fetch-field">
           <button
             type="button"
-            className="education-fetch-btn"
+            className="ui-btn ui-btn--ghost education-fetch-btn"
             disabled={!canFetchCosts}
             onClick={handleFetchCosts}
           >
@@ -392,7 +392,7 @@ export function EducationExpenseRow({
           {referenceDetail && (
             <button
               type="button"
-              className="education-fetch-detail-link"
+              className="ui-btn ui-btn--ghost education-fetch-detail-link"
               onClick={() => setDetailModalOpen(true)}
             >
               詳細
@@ -464,7 +464,7 @@ export function EducationExpenseRow({
           ))}
           <button
             type="button"
-            className="education-add-other-btn"
+            className="ui-btn ui-btn--ghost education-add-other-btn"
             onClick={addOtherExpense}
           >
             ＋ 項目を追加
@@ -475,12 +475,16 @@ export function EducationExpenseRow({
       <div className="education-table-cell education-col-action">
         <button
           type="button"
-          className="education-row-remove"
+          className="ui-btn ui-btn--danger ui-btn--compact education-row-remove"
           onClick={onRemove}
           disabled={!canRemove}
           aria-label="教育費を削除"
+          title="教育費を削除"
         >
-          −
+          <span className="education-remove-icon" aria-hidden>
+            ×
+          </span>
+          <span className="education-remove-label">削除</span>
         </button>
       </div>
     </div>

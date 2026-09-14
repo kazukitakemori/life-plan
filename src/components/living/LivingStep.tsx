@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { roundManToThousandYen } from '../../lib/livingAmount';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   createFollowUpLivingSchedule,
@@ -36,6 +37,22 @@ interface LivingStepProps {
   onChange: (state: LivingExpenseState) => void;
   onSecondLifeChange?: (state: SecondLifeState) => void;
   onApplySecondLifeLiving?: () => void;
+}
+
+/** 生活費は万円表示を維持し、金額だけ0.1万円（1千円）単位へそろえる。 */
+function normalizeLivingScheduleAmounts(
+  schedule: LivingExpenseSchedule,
+): LivingExpenseSchedule {
+  return {
+    ...schedule,
+    simpleMonthlyExpenseMan: roundManToThousandYen(
+      schedule.simpleMonthlyExpenseMan,
+    ),
+    items: schedule.items.map((item) => ({
+      ...item,
+      amountMan: roundManToThousandYen(item.amountMan),
+    })),
+  };
 }
 
 export function LivingStep({
@@ -132,21 +149,26 @@ export function LivingStep({
   ) => {
     onChange({
       ...livingState,
-      byTarget: { ...livingState.byTarget, [targetId]: updated },
+      byTarget: {
+        ...livingState.byTarget,
+        [targetId]: updated.map(normalizeLivingScheduleAmounts),
+      },
     });
   };
 
   const updateSchedule = (scheduleId: string, updated: LivingExpenseSchedule) => {
     persistSchedules(
       resolvedTargetId,
-      schedules.map((s) => (s.id === scheduleId ? updated : s)),
+      schedules.map((schedule) =>
+        schedule.id === scheduleId ? updated : schedule,
+      ),
     );
   };
 
   const removeSchedule = (scheduleId: string) => {
     persistSchedules(
       resolvedTargetId,
-      schedules.filter((s) => s.id !== scheduleId),
+      schedules.filter((schedule) => schedule.id !== scheduleId),
     );
   };
 
@@ -216,11 +238,6 @@ export function LivingStep({
         number={4}
         title="生活費"
         lead="世帯の共有費は負担している人（多くの場合は世帯主）のタブへ。小遣いなど個人分はそれぞれのタブへ入力します。"
-        actions={
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        }
       />
 
       {purposeNote ? (
@@ -275,12 +292,12 @@ export function LivingStep({
       </div>
 
       <div className="living-footer-actions">
-        <button type="button" className="footer-action-btn" onClick={addSchedule}>
+        <button type="button" className="ui-btn ui-btn--ghost" onClick={addSchedule}>
           ＋ 生活費スケジュールを追加
         </button>
         <button
           type="button"
-          className="footer-action-btn"
+          className="ui-btn ui-btn--ghost"
           onClick={copyPreviousSchedule}
           disabled={schedules.length === 0}
         >

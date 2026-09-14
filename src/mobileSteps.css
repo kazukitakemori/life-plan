@@ -1,0 +1,358 @@
+/*
+ * Responsive step layer for phones.
+ * Keep desktop behavior intact; this file is loaded after the existing
+ * mobile header styles and only narrows Q1-Q12 / shared input UI.
+ */
+
+@media (max-width: 768px) {
+  :root {
+    --mobile-step-gutter: 10px;
+    --mobile-touch-target: 44px;
+  }
+
+  .shell-main {
+    padding-right: var(--mobile-step-gutter);
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    padding-left: var(--mobile-step-gutter);
+  }
+
+  .step-page,
+  .family-step,
+  .education-step,
+  .life-event-step,
+  .living-step,
+  .housing-step,
+  .vehicle-step,
+  .income-step,
+  .pension-step,
+  .loan-step,
+  .insurance-step,
+  .savings-step,
+  .second-life-step {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Page heading: preserve hierarchy while avoiding a wide desktop header row. */
+  .step-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 2px 16px;
+  }
+
+  .step-header > div:first-child,
+  .step-header-right {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .step-title {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    font-size: 1.35rem;
+    line-height: 1.3;
+  }
+
+  .step-subtitle {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .step-lead,
+  .purpose-input-note {
+    max-width: none;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  /* iOS zooms focused form controls below 16px. Keep inputs readable and stable. */
+  .step-page :where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .step-page :where(.ui-field, .ui-field-controls, .ui-amount) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .step-page .ui-field-controls > :only-child {
+    max-width: 100%;
+  }
+
+  .step-page :where(.ui-select--wide, .ui-input--title) {
+    width: 100%;
+  }
+
+  .step-page :where(.ui-btn, .ui-copy-bar-button) {
+    min-height: var(--mobile-touch-target);
+    touch-action: manipulation;
+  }
+
+  /*
+   * Shared member tabs are used by several Q screens.
+   * The strip itself owns horizontal scrolling; parent toolbars must not change
+   * that behavior. Tabs may be a little wider on phones so atomic metadata such
+   * as a birth date never breaks in the middle; horizontal swipe is intentional.
+   */
+  .ui-member-tabs-block {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .ui-member-tabs-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding-bottom: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 0;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .ui-member-tabs-row::-webkit-scrollbar,
+  .ui-member-tabs-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .step-page .ui-member-tabs-row > .ui-member-tabs-list {
+    display: flex;
+    flex: 0 0 max-content;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    gap: 8px;
+    margin: 0;
+    overflow: visible;
+    border-bottom: 0;
+  }
+
+  .ui-member-tab-add-wrap {
+    flex: 0 0 auto;
+  }
+
+  .ui-member-tab {
+    flex: 0 0 auto;
+    min-width: min(204px, 82vw);
+    max-width: 240px;
+    overflow: hidden;
+    border: 1px solid var(--ui-card-border);
+    border-radius: var(--ui-control-radius);
+    background: var(--color-surface);
+    box-shadow: none !important;
+    scroll-snap-align: start;
+  }
+
+  .ui-member-tab.active {
+    border-color: var(--color-brand);
+    background: var(--color-brand-soft);
+    box-shadow: none !important;
+  }
+
+  .ui-member-tab-select,
+  button.ui-member-tab--add {
+    min-height: 52px;
+    touch-action: manipulation;
+  }
+
+  .ui-member-tab-select {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 9px;
+    text-align: left;
+  }
+
+  button.ui-member-tab--add {
+    min-width: min(184px, 74vw);
+    padding: 7px 10px;
+  }
+
+  .ui-member-tab-close {
+    min-width: 40px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .ui-member-tab-info,
+  .ui-member-tab-name,
+  .ui-member-tab-birth {
+    min-width: 0;
+  }
+
+  /* Shared toolbar patterns: tabs/copy controls should not fight for one row. */
+  :where(
+      .education-toolbar,
+      .life-event-toolbar,
+      .vehicle-toolbar,
+      .second-life-nursing-toolbar
+    ) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  :where(
+      .education-toolbar,
+      .life-event-toolbar,
+      .vehicle-toolbar,
+      .second-life-nursing-toolbar
+    ) > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Q1 family cards. */
+  .family-member-card {
+    min-width: 0;
+    border-radius: var(--ui-card-radius);
+  }
+
+  .family-member-card-head {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .family-member-identity,
+  .family-member-identity-text {
+    min-width: 0;
+  }
+
+  .family-member-identity {
+    flex: 1 1 auto;
+  }
+
+  .family-member-identity-text {
+    flex: 1 1 auto;
+  }
+
+  .family-basics-grid,
+  .family-details-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+  }
+
+  .family-birth-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .family-birth-controls .ui-select {
+    width: 100%;
+    min-width: 0;
+    padding-right: 22px;
+    padding-left: 8px;
+  }
+
+  .family-period-options {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .family-period-range {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .add-family-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .add-family-grid button {
+    min-height: var(--mobile-touch-target);
+  }
+
+  /* Repeated cards / wide data surfaces should stay inside the viewport. */
+  :where(
+      .income-table-card,
+      .education-table-card,
+      .vehicle-table-card,
+      .pension-table-card,
+      .loan-table-card,
+      .insurance-table-card,
+      .savings-table-card
+    ) {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Shared Q12 containers only; tab behavior itself is owned by mobileSecondLife.css. */
+  .second-life-workspace-panel,
+  .second-life-renovation-scope,
+  .third-life-reference-details {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-copy-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .ui-copy-bar-label,
+  .ui-copy-bar-select,
+  .ui-copy-bar-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ui-copy-bar-select,
+  .ui-copy-bar-button {
+    min-height: var(--mobile-touch-target);
+  }
+}
+
+@media (max-width: 430px) {
+  :root {
+    --mobile-step-gutter: 8px;
+  }
+
+  .step-header {
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+
+  .step-title {
+    font-size: 1.25rem;
+  }
+
+  .step-lead,
+  .purpose-input-note {
+    font-size: 0.84375rem;
+  }
+
+  .family-member-card-head {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .family-birth-controls {
+    gap: 4px;
+  }
+
+  .family-birth-controls .ui-select {
+    padding-right: 18px;
+    padding-left: 6px;
+  }
+}

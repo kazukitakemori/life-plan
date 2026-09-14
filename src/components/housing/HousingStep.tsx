@@ -453,11 +453,6 @@ export function HousingStep({
         number={5}
         title="住まい"
         lead="物件は負担する人のタブへ。賃貸は負担者を選べ、持ち家はローン契約者に連動します。"
-        actions={
-          <button type="button" className="show-all-btn" disabled>
-            全員まとめて表示
-          </button>
-        }
       />
 
       {purposeNote ? (

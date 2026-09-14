@@ -15,6 +15,11 @@ export function calcMonthlyEquivalentMan(items: LivingExpenseItem[]): number {
   }, 0);
 }
 
+/** 万円表示のまま、1千円 = 0.1万円単位へ丸める。 */
+export function roundManToThousandYen(valueMan: number): number {
+  return Math.round(valueMan * 10) / 10;
+}
+
 export function formatManAmount(value: number): string {
-  return `${value.toFixed(1)}万円`;
+  return `${roundManToThousandYen(value).toFixed(1)}万円`;
 }

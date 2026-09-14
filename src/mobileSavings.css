@@ -1,0 +1,171 @@
+/* Q11 貯蓄・運用: 口座カード/詳細構造のみをスマホ向けに整える。 */
+
+@media (max-width: 768px) {
+  .savings-step .savings-section,
+  .savings-step .savings-entry-list,
+  .savings-step .savings-entry-list-item,
+  .savings-step .savings-entry-card-wrap,
+  .savings-step .savings-entry-detail {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .savings-step .savings-entry-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .savings-step .savings-entry-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .savings-step .savings-entry-drag-handle {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .savings-step .savings-entry-name-input {
+    grid-column: 2 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .savings-step .savings-entry-sector-badge,
+  .savings-step .savings-entry-category-badge {
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .savings-step .savings-entry-sector-badge {
+    grid-column: 1 / span 2;
+  }
+
+  .savings-step .savings-entry-category-badge {
+    grid-column: 2 / -1;
+  }
+
+  .savings-step .savings-entry-summary {
+    grid-column: 1 / span 2;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .savings-step .savings-entry-open-btn {
+    grid-column: 3;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .savings-step .savings-entry-card > .housing-row-remove {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    margin: 2px 0 0;
+  }
+
+  .savings-step .savings-entry-detail {
+    padding: 14px 12px 16px;
+  }
+
+  .savings-step .loan-settings-table-card,
+  .savings-step .loan-settings-form-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .savings-step .loan-settings-form-table {
+    display: grid;
+    gap: 10px;
+  }
+
+  .savings-step .loan-settings-form-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+    padding: 10px 0;
+  }
+
+  .savings-step .loan-settings-form-label,
+  .savings-step .loan-settings-form-value {
+    width: auto;
+    min-width: 0;
+  }
+
+  .savings-step .loan-settings-form-label {
+    font-weight: 700;
+  }
+
+  .savings-step .life-event-period-block,
+  .savings-step .life-event-period-side,
+  .savings-step .life-event-period-fields,
+  .savings-step .life-event-amount-field,
+  .savings-step .select-input,
+  .savings-step .amount-input {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .savings-step .life-event-period-block {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .savings-step .life-event-period-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+
+  .savings-step .savings-add-section,
+  .savings-step .savings-add-group {
+    min-width: 0;
+  }
+
+  .savings-step .savings-add-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .savings-step .savings-add-card {
+    width: 100%;
+    min-height: 76px;
+    text-align: left;
+  }
+
+  .savings-step .savings-add-card-title,
+  .savings-step .savings-add-card-desc,
+  .savings-step .savings-add-group-desc {
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .savings-step .savings-entry-detail table {
+    max-width: none;
+  }
+
+  .savings-step .savings-entry-detail:has(table) {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 430px) {
+  .savings-step .life-event-period-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

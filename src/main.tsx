@@ -10,8 +10,20 @@ import { seedPreviewDataIfNeeded } from './lib/previewSeed';
 import './index.css';
 import './secondLifeConsistency.css';
 import './ui-system.css';
+import './ui-text-integrity.css';
 import './mobile.css';
 import './mobileCompact.css';
+import './mobileSteps.css';
+import './mobileEducation.css';
+import './mobileLifeEvent.css';
+import './mobileLiving.css';
+import './mobileHousing.css';
+import './mobileVehicle.css';
+import './mobilePension.css';
+import './mobileLoan.css';
+import './mobileInsurance.css';
+import './mobileSavings.css';
+import './mobileSecondLife.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
