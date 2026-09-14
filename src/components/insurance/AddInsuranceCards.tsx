@@ -1,10 +1,7 @@
 import {
-  INSURANCE_CATEGORY_DESCRIPTIONS,
-  INSURANCE_CATEGORY_ICONS,
   INSURANCE_CATEGORY_LABELS,
   INSURANCE_LIFE_ADD_CATEGORIES,
   INSURANCE_NONLIFE_ADD_CATEGORIES,
-  INSURANCE_SECTOR_DESCRIPTIONS,
   INSURANCE_SECTOR_LABELS,
 } from '../../lib/insuranceLabels';
 import type { InsuranceCategory } from '../../types/insurance';
@@ -12,6 +9,18 @@ import type { InsuranceCategory } from '../../types/insurance';
 interface AddInsuranceCardsProps {
   onAdd: (category: InsuranceCategory) => void;
 }
+
+const ADD_DESCRIPTIONS: Record<InsuranceCategory, string> = {
+  fire: '建物・家財',
+  auto: '自動車',
+  nonlife_other: '傷害・旅行など',
+  life: '死亡・収入保障',
+  medical: '入院・手術',
+  cancer: 'がん治療',
+  education: '教育資金',
+  personal_pension: '老後資金',
+  life_other: 'その他の保障',
+};
 
 function CategoryGrid({
   categories,
@@ -21,22 +30,19 @@ function CategoryGrid({
   onAdd: (category: InsuranceCategory) => void;
 }) {
   return (
-    <div className="insurance-add-grid">
+    <div className="insurance-add-grid ui-add-card-grid">
       {categories.map((category) => (
         <button
           key={category}
           type="button"
-          className="insurance-add-card"
+          className="insurance-add-card ui-add-card"
           onClick={() => onAdd(category)}
         >
-          <span className="insurance-add-icon" aria-hidden>
-            {INSURANCE_CATEGORY_ICONS[category]}
-          </span>
-          <span className="insurance-add-card-title">
+          <span className="insurance-add-card-title ui-add-card__title">
             {INSURANCE_CATEGORY_LABELS[category]}
           </span>
-          <span className="insurance-add-card-desc">
-            {INSURANCE_CATEGORY_DESCRIPTIONS[category]}
+          <span className="insurance-add-card-desc ui-add-card__description">
+            {ADD_DESCRIPTIONS[category]}
           </span>
         </button>
       ))}
@@ -54,9 +60,7 @@ export function AddInsuranceCards({ onAdd }: AddInsuranceCardsProps) {
           <h4 className="insurance-add-group-title">
             {INSURANCE_SECTOR_LABELS.nonlife}
           </h4>
-          <p className="insurance-add-group-desc">
-            {INSURANCE_SECTOR_DESCRIPTIONS.nonlife}
-          </p>
+          <p className="insurance-add-group-desc">火災・自動車など</p>
         </div>
         <CategoryGrid
           categories={INSURANCE_NONLIFE_ADD_CATEGORIES}
@@ -69,9 +73,7 @@ export function AddInsuranceCards({ onAdd }: AddInsuranceCardsProps) {
           <h4 className="insurance-add-group-title">
             {INSURANCE_SECTOR_LABELS.life}
           </h4>
-          <p className="insurance-add-group-desc">
-            {INSURANCE_SECTOR_DESCRIPTIONS.life}
-          </p>
+          <p className="insurance-add-group-desc">死亡・医療・老後など</p>
         </div>
         <CategoryGrid
           categories={INSURANCE_LIFE_ADD_CATEGORIES}
