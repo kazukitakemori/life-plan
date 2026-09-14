@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { getStepGuidance } from './stepGuidance';
+import { getStepGuidance, type StepGuidance } from './stepGuidance';
 
 interface StepHeadingProps {
   number?: number | null;
@@ -15,9 +15,15 @@ interface StepHeadingProps {
   lead?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  /** Q番号に紐づかない画面でも、同じ説明ポップアップを使うための任意ガイダンス。 */
+  guidance?: StepGuidance | null;
+  guidanceKicker?: string;
+  guidanceOverviewTitle?: string;
+  guidanceStepsTitle?: string;
+  guidanceUnsureTitle?: string;
 }
 
-/** Shared step page heading — Q1〜Q12はタイトルから共通ガイダンスを開く。 */
+/** Shared page heading — Q1〜Q12と結果画面で共通ガイダンスを開く。 */
 export function StepHeading({
   number,
   title,
@@ -25,8 +31,16 @@ export function StepHeading({
   lead,
   actions,
   className,
+  guidance: guidanceOverride,
+  guidanceKicker,
+  guidanceOverviewTitle = 'この画面で考えること',
+  guidanceStepsTitle = 'まず入力すること',
+  guidanceUnsureTitle = '迷ったときは',
 }: StepHeadingProps) {
-  const guidance = getStepGuidance(number);
+  const guidance =
+    guidanceOverride === undefined
+      ? getStepGuidance(number)
+      : guidanceOverride;
   const [guideOpen, setGuideOpen] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
@@ -74,7 +88,8 @@ export function StepHeading({
               <div className="step-guide-dialog-head">
                 <div>
                   <p className="step-guide-dialog-kicker">
-                    {number != null ? `Q${number}` : '入力ガイド'}
+                    {guidanceKicker ??
+                      (number != null ? `Q${number}` : '画面ガイド')}
                   </p>
                   <h2 id={titleId} className="step-guide-dialog-title">
                     {title}
@@ -93,7 +108,9 @@ export function StepHeading({
 
               <div className="step-guide-dialog-body">
                 <section className="step-guide-section">
-                  <h3 className="step-guide-section-title">この画面で考えること</h3>
+                  <h3 className="step-guide-section-title">
+                    {guidanceOverviewTitle}
+                  </h3>
                   <p id={descriptionId} className="step-guide-overview">
                     {guidance.overview}
                   </p>
@@ -102,13 +119,17 @@ export function StepHeading({
                       {subtitle ? (
                         <p className="step-guide-context-line">{subtitle}</p>
                       ) : null}
-                      {lead ? <div className="step-guide-context-line">{lead}</div> : null}
+                      {lead ? (
+                        <div className="step-guide-context-line">{lead}</div>
+                      ) : null}
                     </div>
                   ) : null}
                 </section>
 
                 <section className="step-guide-section">
-                  <h3 className="step-guide-section-title">まず入力すること</h3>
+                  <h3 className="step-guide-section-title">
+                    {guidanceStepsTitle}
+                  </h3>
                   <ol className="step-guide-list">
                     {guidance.firstSteps.map((item) => (
                       <li key={item}>{item}</li>
@@ -117,7 +138,9 @@ export function StepHeading({
                 </section>
 
                 <section className="step-guide-section step-guide-section--hint">
-                  <h3 className="step-guide-section-title">迷ったときは</h3>
+                  <h3 className="step-guide-section-title">
+                    {guidanceUnsureTitle}
+                  </h3>
                   <p>{guidance.whenUnsure}</p>
                 </section>
 

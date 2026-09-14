@@ -1,0 +1,327 @@
+.life-event-table-view {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  padding: 28px 28px 40px;
+  color: var(--ui-text);
+}
+
+.life-event-table-view > .step-header {
+  margin-bottom: 16px;
+}
+
+.life-event-table-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.life-event-table-legend-item,
+.life-event-table-event-category {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.life-event-table-legend-item {
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+
+.life-event-table-legend-item::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--life-event-accent, var(--ui-border-strong));
+  content: '';
+  flex: 0 0 auto;
+}
+
+.life-event-table-desktop-wrap {
+  overflow: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.life-event-table-desktop {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-sm);
+}
+
+.life-event-table-desktop th,
+.life-event-table-desktop td {
+  padding: 12px 14px;
+  border-right: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--ui-border);
+  vertical-align: top;
+}
+
+.life-event-table-desktop thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #eef2f4;
+  color: var(--ui-text);
+  text-align: center;
+  font-weight: 700;
+}
+
+.life-event-table-desktop tr:last-child > * {
+  border-bottom: 0;
+}
+
+.life-event-table-desktop tr > *:last-child {
+  border-right: 0;
+}
+
+.life-event-table-year-heading,
+.life-event-table-year-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 94px;
+  background: var(--ui-bg-surface);
+}
+
+.life-event-table-desktop thead .life-event-table-year-heading {
+  z-index: 3;
+  background: #eef2f4;
+}
+
+.life-event-table-year-cell {
+  color: var(--ui-text);
+  text-align: left;
+  font-weight: 700;
+}
+
+.life-event-table-year-cell span,
+.life-event-table-year-cell small {
+  display: block;
+}
+
+.life-event-table-year-cell small {
+  margin-top: 3px;
+  color: var(--ui-brand);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.life-event-table-age-cell {
+  min-width: 94px;
+  color: var(--ui-text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.life-event-table-events-heading,
+.life-event-table-events-cell {
+  min-width: 330px;
+}
+
+.life-event-table-row.is-current-year > * {
+  background: var(--ui-brand-soft);
+}
+
+.life-event-table-row.is-current-year .life-event-table-year-cell {
+  background: var(--ui-brand-soft);
+}
+
+.life-event-table-events,
+.life-event-table-card-events {
+  display: grid;
+  gap: 7px;
+}
+
+.life-event-table-event {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid var(--ui-border);
+  border-left: 4px solid var(--life-event-accent, var(--ui-border-strong));
+  border-radius: var(--ui-radius-control);
+  background: color-mix(
+    in srgb,
+    var(--life-event-accent, var(--ui-bg-surface)) 8%,
+    var(--ui-bg-surface)
+  );
+}
+
+.life-event-table-event-category {
+  min-width: 48px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid var(--life-event-accent, var(--ui-border));
+  background: color-mix(
+    in srgb,
+    var(--life-event-accent, var(--ui-bg-subtle)) 18%,
+    var(--ui-bg-surface)
+  );
+  color: var(--ui-text);
+  font-size: 11px;
+}
+
+.life-event-table-event-title {
+  min-width: 0;
+  color: var(--ui-text);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.life-event-table-event-month {
+  color: var(--ui-text-subtle);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.life-event-table-event-detail {
+  grid-column: 2 / -1;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+
+.life-event-table-no-event {
+  color: var(--ui-text-subtle);
+}
+
+.life-event-table-mobile {
+  display: none;
+}
+
+.life-event-table-state {
+  width: min(100%, var(--step-width-standard));
+  margin: 0 auto;
+  padding: 40px 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+
+.life-event-table-state p {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .life-event-table-view {
+    width: 100%;
+    padding: 18px 14px 28px;
+  }
+
+  .life-event-table-view > .step-header {
+    margin-bottom: 12px;
+  }
+
+  .life-event-table-legend {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .life-event-table-legend-item {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+
+  .life-event-table-desktop-wrap {
+    display: none;
+  }
+
+  .life-event-table-mobile {
+    display: grid;
+    gap: 10px;
+  }
+
+  .life-event-table-year-card {
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .life-event-table-year-card.is-current-year {
+    border-color: var(--ui-brand);
+  }
+
+  .life-event-table-year-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--ui-border);
+    background: #f2f5f6;
+  }
+
+  .life-event-table-year-card.is-current-year .life-event-table-year-card-header {
+    background: var(--ui-brand-soft);
+  }
+
+  .life-event-table-year-card-header h3 {
+    margin: 0;
+    font-size: 17px;
+  }
+
+  .life-event-table-year-card-header span {
+    color: var(--ui-brand);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .life-event-table-age-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .life-event-table-age-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    min-height: 30px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #f2f5f6;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+  }
+
+  .life-event-table-age-chip strong {
+    color: var(--ui-text);
+    font-size: 12px;
+  }
+
+  .life-event-table-card-events {
+    padding: 10px 12px 12px;
+  }
+
+  .life-event-table-event {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 44px;
+  }
+
+  .life-event-table-card-empty {
+    margin: 0;
+    padding: 10px 12px 12px;
+    color: var(--ui-text-subtle);
+    font-size: 13px;
+  }
+}
