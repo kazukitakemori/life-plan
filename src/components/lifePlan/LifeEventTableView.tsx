@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from 'react';
 
 import {
   buildLifeEventTableData,
@@ -11,11 +16,45 @@ import { getLastOpenedPlanId } from '../../lib/lastOpenedPlan';
 import { getLocalPlanRepository } from '../../lib/localPlanRepository';
 import { fromPlanPayload } from '../../lib/planDocument';
 import type { PlanAppState } from '../../types/plan';
+import {
+  ASSET_CHART_COLORS,
+  ASSET_INCOME_LEGEND_ITEMS,
+} from '../assetBuilding/assetBuildingChartShared';
 import { StepHeading } from '../ui/StepHeading';
 import type { StepGuidance } from '../ui/stepGuidance';
 import './life-event-table.css';
 
 const planRepository = getLocalPlanRepository();
+
+type MilestoneCategory = LifeMilestone['category'];
+
+function incomeLegendColor(
+  key: (typeof ASSET_INCOME_LEGEND_ITEMS)[number]['key'],
+  fallback: string,
+): string {
+  return ASSET_INCOME_LEGEND_ITEMS.find((item) => item.key === key)?.color ?? fallback;
+}
+
+/** 生涯収支グラフの凡例色をそのままライフイベント表にも使う。 */
+const LIFE_EVENT_TABLE_CATEGORY_COLORS: Record<MilestoneCategory, string> = {
+  family: ASSET_CHART_COLORS.living,
+  education: ASSET_CHART_COLORS.education,
+  'life-event': ASSET_CHART_COLORS.lifeEvent,
+  housing: ASSET_CHART_COLORS.housing,
+  vehicle: ASSET_CHART_COLORS.vehicle,
+  work: incomeLegendColor('salary', ASSET_CHART_COLORS.income),
+  pension: incomeLegendColor('oldAgeBasic', ASSET_CHART_COLORS.financialAssets),
+  loan: ASSET_CHART_COLORS.loan,
+  insurance: ASSET_CHART_COLORS.insurance,
+  savings: ASSET_CHART_COLORS.assetContribution,
+  'second-life': ASSET_CHART_COLORS.financialAssets,
+};
+
+function categoryAccentStyle(category: MilestoneCategory): CSSProperties {
+  return {
+    '--life-event-accent': LIFE_EVENT_TABLE_CATEGORY_COLORS[category],
+  } as CSSProperties;
+}
 
 const LIFE_EVENT_TABLE_GUIDANCE: StepGuidance = {
   overview:
@@ -27,14 +66,13 @@ const LIFE_EVENT_TABLE_GUIDANCE: StepGuidance = {
   ],
   whenUnsure:
     'お金の増減や資産残高まで確認したい場合は「資産形成」を見てください。ライフイベント表は、人生上の予定と家族の年齢を時系列で把握するための画面です。',
-  note:
-    'この表は入力内容から自動生成される確認用画面です。ここでは直接編集せず、変更は各入力画面から行います。',
 };
 
 function EventBadge({ milestone }: { milestone: LifeMilestone }) {
   return (
     <div
-      className={`life-event-table-event life-event-table-event--${milestone.category}`}
+      className="life-event-table-event"
+      style={categoryAccentStyle(milestone.category)}
     >
       <span className="life-event-table-event-category">
         {LIFE_MILESTONE_CATEGORY_LABELS[milestone.category]}
@@ -138,6 +176,9 @@ export function LifeEventTableView() {
   if (!data) return <EmptyState text="ライフイベント表を読み込んでいます。" />;
 
   const currentYear = planState?.referenceDate.getFullYear() ?? data.startYear;
+  const legendEntries = Object.entries(LIFE_MILESTONE_CATEGORY_LABELS) as Array<
+    [MilestoneCategory, string]
+  >;
 
   return (
     <section className="life-event-table-view">
@@ -147,24 +188,18 @@ export function LifeEventTableView() {
         guidanceKicker="ライフイベント表"
         guidanceOverviewTitle="この画面で確認できること"
         guidanceStepsTitle="見方"
-        actions={
-          <p className="life-event-table-readonly-note">
-            入力内容から自動表示しています。変更は各入力画面から行ってください。
-          </p>
-        }
       />
 
       <div className="life-event-table-legend" aria-label="イベント分類">
-        {Object.entries(LIFE_MILESTONE_CATEGORY_LABELS).map(
-          ([category, label]) => (
-            <span
-              key={category}
-              className={`life-event-table-legend-item life-event-table-legend-item--${category}`}
-            >
-              {label}
-            </span>
-          ),
-        )}
+        {legendEntries.map(([category, label]) => (
+          <span
+            key={category}
+            className="life-event-table-legend-item"
+            style={categoryAccentStyle(category)}
+          >
+            {label}
+          </span>
+        ))}
       </div>
 
       <div className="life-event-table-desktop-wrap">
