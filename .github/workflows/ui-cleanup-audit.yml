@@ -1,5 +1,6 @@
 name: UI Cleanup Audit
 
+# Final verification before removing this temporary workflow.
 on:
   push:
     branches:
@@ -25,34 +26,41 @@ jobs:
           code_files = sorted([*root.rglob('*.tsx'), *root.rglob('*.ts')])
           all_files = [*css_files, *code_files]
           texts = {p: p.read_text(encoding='utf-8') for p in all_files}
-          code_text = '\n'.join(texts[p] for p in code_files)
 
           print('=== CSS WITH NO TS/TSX FILENAME REFERENCE ===')
+          missing_css = []
           for p in css_files:
               refs = [(str(q), texts[q].count(p.name)) for q in code_files if p.name in texts[q]]
               if not refs:
+                  missing_css.append(str(p))
                   print(p)
+          if not missing_css:
+              print('NONE')
 
           defs = defaultdict(list)
           refs = Counter()
-          ref_locs = defaultdict(list)
           for p, text in texts.items():
               for m in re.finditer(r'(?m)^\s*(--[A-Za-z0-9_-]+)\s*:', text):
                   defs[m.group(1)].append((str(p), text.count('\n', 0, m.start()) + 1))
               for m in re.finditer(r'var\(\s*(--[A-Za-z0-9_-]+)', text):
-                  name = m.group(1)
-                  refs[name] += 1
-                  ref_locs[name].append((str(p), text.count('\n', 0, m.start()) + 1))
+                  refs[m.group(1)] += 1
 
           print('\n=== CUSTOM PROPERTIES WITH ZERO var() REFERENCES ===')
+          zero_props = []
           for name in sorted(defs):
               if refs[name] == 0:
+                  zero_props.append(name)
                   print(f'{name} | defs={defs[name]}')
+          if not zero_props:
+              print('NONE')
 
           print('\n=== REMAINING MIGRATION ui TOKENS ===')
-          for name in sorted(defs):
-              if name in {'--ui-control-border','--ui-danger-border'}:
-                  print(f'{name} | refs={refs[name]} | refs_at={ref_locs[name]} | defs={defs[name]}')
+          migration = [name for name in defs if name in {'--ui-control-border','--ui-danger-border'}]
+          if migration:
+              for name in migration:
+                  print(name)
+          else:
+              print('NONE')
 
           rule_re = re.compile(r'([^{}]+)\{([^{}]*)\}', re.S)
           decl_re = re.compile(r'([A-Za-z-]+)\s*:\s*([^;{}]+);')
@@ -70,12 +78,11 @@ jobs:
                   exact[(selector, decls)].append((str(p), line))
 
           print('\n=== EXACT DUPLICATE RULE BLOCKS ===')
-          found = 0
-          for key, locs in sorted(exact.items(), key=lambda kv: (-len(kv[1]), kv[0][0])):
-              if len(locs) > 1:
+          duplicates = [(key,locs) for key,locs in exact.items() if len(locs) > 1]
+          if duplicates:
+              for key, locs in sorted(duplicates, key=lambda kv: (-len(kv[1]), kv[0][0])):
                   print(f'{key[0]} | copies={len(locs)} | {locs}')
-                  found += 1
-          if not found:
+          else:
               print('NONE')
 
           print('\n=== CSS SIZE TOTAL ===')
