@@ -1,9 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  hasLocalPlanUndo,
-  LOCAL_PLAN_UNDO_HISTORY_EVENT,
-  undoLastLocalPlanChange,
-} from '../../lib/localPlanRepository';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { AdminTabId } from '../../types/adminTabs';
 import type { AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { HeaderTabId } from '../../types/headerTabs';
@@ -43,6 +38,9 @@ interface AppShellProps {
   customerName?: string;
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
+  undoAvailable?: boolean;
+  undoBusy?: boolean;
+  onUndo?: () => void | Promise<void>;
   showHonorific?: boolean;
   isLicensed?: boolean;
   adminTab?: AdminTabId;
@@ -77,6 +75,9 @@ function AppShellFrame(props: AppShellProps) {
     customerName,
     planStatus,
     autosaveStatus = 'idle',
+    undoAvailable = false,
+    undoBusy = false,
+    onUndo,
     showHonorific,
     isLicensed = false,
     adminTab,
@@ -90,80 +91,30 @@ function AppShellFrame(props: AppShellProps) {
 
   const { shellRef } = useShellFullscreen();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [undoAvailable, setUndoAvailable] = useState(() => hasLocalPlanUndo());
-  const [undoBusy, setUndoBusy] = useState(false);
-  const autosaveStatusRef = useRef<AutosaveStatus>(autosaveStatus);
-  const undoRequestedRef = useRef(false);
+  const [undoQueued, setUndoQueued] = useState(false);
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
     activeHeaderTab !== 'admin' &&
     analysisStale &&
     !isAnalyzing;
+  const autosaveBusy = autosaveStatus === 'pending' || autosaveStatus === 'saving';
+  const undoWaiting = undoBusy || undoQueued;
 
-  const refreshUndoAvailability = () => {
-    const saving =
-      autosaveStatusRef.current === 'pending' ||
-      autosaveStatusRef.current === 'saving';
-    setUndoAvailable(saving || hasLocalPlanUndo());
-  };
-
-  const performUndo = async () => {
-    setUndoBusy(true);
-    try {
-      if (autosaveStatusRef.current === 'error' && !hasLocalPlanUndo()) {
-        window.location.reload();
-        return;
-      }
-      const undone = await undoLastLocalPlanChange();
-      if (!undone) {
-        setUndoBusy(false);
-        refreshUndoAvailability();
-        return;
-      }
-      window.location.reload();
-    } catch (error) {
-      console.error(error);
-      setUndoBusy(false);
-      refreshUndoAvailability();
-      window.alert('操作を元に戻せませんでした。');
-    }
-  };
-
-  const handleUndo = () => {
-    if (undoBusy || !undoAvailable) return;
-    const status = autosaveStatusRef.current;
-    if (status === 'pending' || status === 'saving') {
-      undoRequestedRef.current = true;
-      setUndoBusy(true);
+  const requestUndo = () => {
+    if (!onUndo || !undoAvailable || undoWaiting) return;
+    if (autosaveBusy) {
+      setUndoQueued(true);
       return;
     }
-    void performUndo();
+    void onUndo();
   };
 
   useEffect(() => {
-    autosaveStatusRef.current = autosaveStatus;
-    refreshUndoAvailability();
-
-    if (
-      undoRequestedRef.current &&
-      autosaveStatus !== 'pending' &&
-      autosaveStatus !== 'saving'
-    ) {
-      undoRequestedRef.current = false;
-      void performUndo();
-    }
-  }, [autosaveStatus]);
-
-  useEffect(() => {
-    const handleHistoryChanged = () => refreshUndoAvailability();
-    window.addEventListener(LOCAL_PLAN_UNDO_HISTORY_EVENT, handleHistoryChanged);
-    return () =>
-      window.removeEventListener(
-        LOCAL_PLAN_UNDO_HISTORY_EVENT,
-        handleHistoryChanged,
-      );
-  }, []);
+    if (!undoQueued || autosaveBusy || !onUndo) return;
+    setUndoQueued(false);
+    void onUndo();
+  }, [undoQueued, autosaveBusy, onUndo]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -172,14 +123,14 @@ function AppShellFrame(props: AppShellProps) {
         !event.altKey &&
         !event.shiftKey &&
         event.key.toLowerCase() === 'z';
-      if (!isUndoShortcut || undoBusy || !undoAvailable) return;
+      if (!isUndoShortcut || !undoAvailable || undoWaiting || !onUndo) return;
       event.preventDefault();
-      handleUndo();
+      requestUndo();
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [undoAvailable, undoBusy, autosaveStatus]);
+  }, [undoAvailable, undoWaiting, autosaveBusy, onUndo]);
 
   const handleStepChange = (step: StepId) => {
     onStepChange(step);
@@ -217,14 +168,14 @@ function AppShellFrame(props: AppShellProps) {
         <button
           type="button"
           className="shell-undo-button"
-          onClick={handleUndo}
-          disabled={!undoAvailable || undoBusy}
+          onClick={requestUndo}
+          disabled={!undoAvailable || undoWaiting}
           aria-label="直前の操作を元に戻す"
           aria-keyshortcuts="Control+Z Meta+Z"
           title="直前の操作を元に戻す（Ctrl/⌘ + Z）"
         >
           <span className="shell-undo-icon" aria-hidden="true">↶</span>
-          <span>{undoBusy ? '元に戻しています…' : '元に戻す'}</span>
+          <span>{undoWaiting ? '元に戻しています…' : '元に戻す'}</span>
           <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Z</span>
         </button>
       </div>
