@@ -23,35 +23,16 @@
   --ui-danger: var(--color-danger);
   --ui-danger-soft: var(--color-danger-soft);
 
-  /* Compatibility typography tokens used by screen convergence rules. */
-  --ui-font-body: var(--text-md);
-  --ui-font-control: var(--text-md);
+  /* Typography token still shared by the entry-card delete action. */
   --ui-font-label: var(--text-sm);
-  --ui-font-helper: var(--text-xs);
-  --ui-font-section: var(--text-lg);
-  --ui-font-page-title: var(--text-xl);
 
-  /* Shape / spacing */
+  /* Shape */
   --ui-radius-control: var(--radius-sm);
   --ui-radius-card: var(--radius-md);
-  --ui-space-control-x: var(--space-3);
-  --ui-space-card: var(--space-4);
   --ui-shadow-subtle: 0 1px 2px rgb(31 42 36 / 4%);
 
-  /*
-   * Temporary migration aliases.
-   * Older mobile/screen CSS may still reference these names. They resolve to
-   * the canonical UI tokens so cleanup can proceed file-by-file without visual
-   * regressions. Remove aliases only after the old references are gone.
-   */
-  --ui-control-radius: var(--ui-radius-control);
-  --ui-card-radius: var(--ui-radius-card);
+  /* Migration aliases that are still referenced by legacy screen CSS. */
   --ui-control-border: var(--ui-border);
-  --ui-control-border-hover: var(--ui-border-strong);
-  --ui-card-border: var(--ui-border);
-  --ui-surface-hover: var(--ui-bg-hover);
-  --ui-surface-selected: var(--ui-bg-selected);
-  --ui-shadow-card: var(--ui-shadow-subtle);
   --ui-danger-border: color-mix(in srgb, var(--ui-danger) 30%, white);
 }
 
