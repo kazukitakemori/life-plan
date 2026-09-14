@@ -1,0 +1,207 @@
+/*
+ * Q2 education mobile information architecture.
+ *
+ * This layer only rearranges the education-specific card structure on phones.
+ * Shared inputs, buttons, tabs, colors, focus states and typography continue to
+ * come from the common UI system.
+ */
+
+@media (max-width: 768px) {
+  .education-step .education-table-body {
+    gap: 18px;
+  }
+
+  .education-step .education-table-row,
+  .education-step .education-table-row:nth-child(odd),
+  .education-step .education-table-row:nth-child(even) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border-top-width: 4px;
+  }
+
+  .education-step .education-table-cell,
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    width: 100%;
+    min-width: 0;
+    border-right: 0;
+    border-left: 0;
+  }
+
+  /* 1. まず学校・進路を決める */
+  .education-step .education-col-school {
+    grid-column: 1 / -1;
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-school::before,
+  .education-step .education-col-period::before,
+  .education-step .education-col-fetch::before,
+  .education-step .education-col-other::before {
+    margin-bottom: 9px;
+    font-size: 14px;
+    color: var(--ui-text);
+  }
+
+  /* 2. 次に在籍期間を決める */
+  .education-step .education-col-period {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-period-block {
+    gap: 12px;
+  }
+
+  .education-step .education-period-side:first-child::before,
+  .education-step .education-period-side:last-child::before {
+    margin-bottom: 6px;
+  }
+
+  /* 3. 参考費用の取得を独立した操作ブロックとして見せる */
+  .education-step .education-col-fetch {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-fetch-field {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .education-step .education-fetch-btn,
+  .education-step .education-fetch-detail-link {
+    min-width: 0;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  /* 4. 金額は、1回だけの費用と継続費用を視覚的に分ける */
+  .education-step .education-col-entrance {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    padding: 14px;
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-col-tuition-amount {
+    grid-column: 1;
+    border-right: 1px solid var(--ui-border);
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .education-step .education-col-tuition-monthly {
+    grid-column: 2;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .education-step .education-col-entrance::before,
+  .education-step .education-col-tuition-amount::before,
+  .education-step .education-col-tuition-monthly::before {
+    margin-bottom: 7px;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+  }
+
+  .education-step .education-yen-field,
+  .education-step .education-yen-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 5. 補足費用は最後にまとめる */
+  .education-step .education-col-other {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-top: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-other-list {
+    gap: 9px;
+  }
+
+  .education-step .education-add-other-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 削除は入力フローから分離し、カード末尾へ置く */
+  .education-step .education-col-action {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    padding: 10px 14px 12px;
+    border-bottom: 0;
+    background: var(--ui-bg-surface);
+  }
+
+  .education-step .education-row-remove {
+    width: auto;
+    min-width: 104px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-footer-actions {
+    margin-top: 16px;
+  }
+
+  .education-step .education-footer-actions .ui-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 430px) {
+  .education-step .education-period-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .education-step .education-period-arrow {
+    justify-self: center;
+    margin: 0;
+    transform: rotate(90deg);
+  }
+
+  .education-step .education-fetch-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly {
+    grid-column: 1 / -1;
+    border-right: 0;
+  }
+
+  .education-step .education-col-school,
+  .education-step .education-col-period,
+  .education-step .education-col-fetch,
+  .education-step .education-col-entrance,
+  .education-step .education-col-tuition-amount,
+  .education-step .education-col-tuition-monthly,
+  .education-step .education-col-other,
+  .education-step .education-col-action {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+}
