@@ -2,11 +2,6 @@ name: Deploy to Cloudflare Workers
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - .github/workflows/deploy-cloudflare-pages.yml
 
 concurrency:
   group: cloudflare-workers
