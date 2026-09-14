@@ -39,8 +39,10 @@ interface AppShellProps {
   planStatus?: PlanStatus;
   autosaveStatus?: AutosaveStatus;
   undoAvailable?: boolean;
+  redoAvailable?: boolean;
   undoBusy?: boolean;
   onUndo?: () => void | Promise<void>;
+  onRedo?: () => void | Promise<void>;
   showHonorific?: boolean;
   isLicensed?: boolean;
   adminTab?: AdminTabId;
@@ -76,8 +78,10 @@ function AppShellFrame(props: AppShellProps) {
     planStatus,
     autosaveStatus = 'idle',
     undoAvailable = false,
+    redoAvailable = false,
     undoBusy = false,
     onUndo,
+    onRedo,
     showHonorific,
     isLicensed = false,
     adminTab,
@@ -92,6 +96,7 @@ function AppShellFrame(props: AppShellProps) {
   const { shellRef } = useShellFullscreen();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [undoQueued, setUndoQueued] = useState(false);
+  const [redoQueued, setRedoQueued] = useState(false);
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
@@ -99,15 +104,24 @@ function AppShellFrame(props: AppShellProps) {
     analysisStale &&
     !isAnalyzing;
   const autosaveBusy = autosaveStatus === 'pending' || autosaveStatus === 'saving';
-  const undoWaiting = undoBusy || undoQueued;
+  const historyWaiting = undoBusy || undoQueued || redoQueued;
 
   const requestUndo = () => {
-    if (!onUndo || !undoAvailable || undoWaiting) return;
+    if (!onUndo || !undoAvailable || historyWaiting) return;
     if (autosaveBusy) {
       setUndoQueued(true);
       return;
     }
     void onUndo();
+  };
+
+  const requestRedo = () => {
+    if (!onRedo || !redoAvailable || historyWaiting) return;
+    if (autosaveBusy) {
+      setRedoQueued(true);
+      return;
+    }
+    void onRedo();
   };
 
   useEffect(() => {
@@ -117,20 +131,41 @@ function AppShellFrame(props: AppShellProps) {
   }, [undoQueued, autosaveBusy, onUndo]);
 
   useEffect(() => {
+    if (!redoQueued || autosaveBusy || !onRedo) return;
+    setRedoQueued(false);
+    void onRedo();
+  }, [redoQueued, autosaveBusy, onRedo]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isUndoShortcut =
-        (event.ctrlKey || event.metaKey) &&
-        !event.altKey &&
-        !event.shiftKey &&
-        event.key.toLowerCase() === 'z';
-      if (!isUndoShortcut || !undoAvailable || undoWaiting || !onUndo) return;
-      event.preventDefault();
-      requestUndo();
+      if ((!event.ctrlKey && !event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      const isUndoShortcut = !event.shiftKey && key === 'z';
+      const isRedoShortcut =
+        (!event.shiftKey && key === 'y') || (event.shiftKey && key === 'z');
+
+      if (isUndoShortcut && undoAvailable && !historyWaiting && onUndo) {
+        event.preventDefault();
+        requestUndo();
+        return;
+      }
+
+      if (isRedoShortcut && redoAvailable && !historyWaiting && onRedo) {
+        event.preventDefault();
+        requestRedo();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [undoAvailable, undoWaiting, autosaveBusy, onUndo]);
+  }, [
+    undoAvailable,
+    redoAvailable,
+    historyWaiting,
+    autosaveBusy,
+    onUndo,
+    onRedo,
+  ]);
 
   const handleStepChange = (step: StepId) => {
     onStepChange(step);
@@ -169,14 +204,27 @@ function AppShellFrame(props: AppShellProps) {
           type="button"
           className="shell-undo-button"
           onClick={requestUndo}
-          disabled={!undoAvailable || undoWaiting}
+          disabled={!undoAvailable || historyWaiting}
           aria-label="直前の操作を元に戻す"
           aria-keyshortcuts="Control+Z Meta+Z"
           title="直前の操作を元に戻す（Ctrl/⌘ + Z）"
         >
           <span className="shell-undo-icon" aria-hidden="true">↶</span>
-          <span>{undoWaiting ? '元に戻しています…' : '元に戻す'}</span>
+          <span>{undoQueued ? '待機中…' : '元に戻す'}</span>
           <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Z</span>
+        </button>
+        <button
+          type="button"
+          className="shell-undo-button"
+          onClick={requestRedo}
+          disabled={!redoAvailable || historyWaiting}
+          aria-label="元に戻した操作をやり直す"
+          aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Shift+Z"
+          title="元に戻した操作をやり直す（Ctrl+Y / ⌘⇧Z）"
+        >
+          <span className="shell-undo-icon" aria-hidden="true">↷</span>
+          <span>{redoQueued ? '待機中…' : 'やり直す'}</span>
+          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Y</span>
         </button>
       </div>
       <div className="shell-body">
