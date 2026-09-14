@@ -9,18 +9,6 @@
   margin-bottom: 16px;
 }
 
-.life-event-table-readonly-note {
-  max-width: 320px;
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-control);
-  background: var(--ui-bg-subtle);
-  color: var(--ui-text-muted);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-}
-
 .life-event-table-legend {
   display: flex;
   flex-wrap: wrap;
@@ -39,12 +27,22 @@
 }
 
 .life-event-table-legend-item {
+  gap: 6px;
   min-height: 28px;
   padding: 4px 10px;
-  border: 1px solid var(--life-event-accent, var(--ui-border));
-  background: var(--life-event-accent, var(--ui-bg-surface));
-  color: #fff;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
   font-size: 12px;
+}
+
+.life-event-table-legend-item::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--life-event-accent, var(--ui-border-strong));
+  content: '';
+  flex: 0 0 auto;
 }
 
 .life-event-table-desktop-wrap {
@@ -157,15 +155,24 @@
   border: 1px solid var(--ui-border);
   border-left: 4px solid var(--life-event-accent, var(--ui-border-strong));
   border-radius: var(--ui-radius-control);
-  background: var(--life-event-soft, var(--ui-bg-surface));
+  background: color-mix(
+    in srgb,
+    var(--life-event-accent, var(--ui-bg-surface)) 8%,
+    var(--ui-bg-surface)
+  );
 }
 
 .life-event-table-event-category {
   min-width: 48px;
   min-height: 22px;
   padding: 2px 7px;
-  background: var(--life-event-accent, var(--ui-bg-subtle));
-  color: #fff;
+  border: 1px solid var(--life-event-accent, var(--ui-border));
+  background: color-mix(
+    in srgb,
+    var(--life-event-accent, var(--ui-bg-subtle)) 18%,
+    var(--ui-bg-surface)
+  );
+  color: var(--ui-text);
   font-size: 11px;
 }
 
@@ -211,73 +218,6 @@
   margin: 0;
 }
 
-/* Category tones: the legend and each event use exactly the same accent. */
-.life-event-table-event--family,
-.life-event-table-legend-item--family {
-  --life-event-accent: #4f766f;
-  --life-event-soft: #eef5f3;
-}
-
-.life-event-table-event--education,
-.life-event-table-legend-item--education {
-  --life-event-accent: #4f6f9f;
-  --life-event-soft: #eef3fa;
-}
-
-.life-event-table-event--life-event,
-.life-event-table-legend-item--life-event {
-  --life-event-accent: #a36a2d;
-  --life-event-soft: #fbf3e8;
-}
-
-.life-event-table-event--housing,
-.life-event-table-legend-item--housing {
-  --life-event-accent: #2b7a78;
-  --life-event-soft: #e9f5f4;
-}
-
-.life-event-table-event--vehicle,
-.life-event-table-legend-item--vehicle {
-  --life-event-accent: #5f6f82;
-  --life-event-soft: #f0f3f6;
-}
-
-.life-event-table-event--work,
-.life-event-table-legend-item--work {
-  --life-event-accent: #4d7a55;
-  --life-event-soft: #eef6ef;
-}
-
-.life-event-table-event--pension,
-.life-event-table-legend-item--pension {
-  --life-event-accent: #74619a;
-  --life-event-soft: #f2eef8;
-}
-
-.life-event-table-event--loan,
-.life-event-table-legend-item--loan {
-  --life-event-accent: #9a654f;
-  --life-event-soft: #f8efeb;
-}
-
-.life-event-table-event--insurance,
-.life-event-table-legend-item--insurance {
-  --life-event-accent: #9a5f78;
-  --life-event-soft: #f8eef2;
-}
-
-.life-event-table-event--savings,
-.life-event-table-legend-item--savings {
-  --life-event-accent: #3f7f87;
-  --life-event-soft: #eaf5f6;
-}
-
-.life-event-table-event--second-life,
-.life-event-table-legend-item--second-life {
-  --life-event-accent: #9a7937;
-  --life-event-soft: #faf4e5;
-}
-
 @media (max-width: 768px) {
   .life-event-table-view {
     width: 100%;
@@ -286,12 +226,6 @@
 
   .life-event-table-view > .step-header {
     margin-bottom: 12px;
-  }
-
-  .life-event-table-readonly-note {
-    max-width: none;
-    margin-top: 10px;
-    font-size: 13px;
   }
 
   .life-event-table-legend {
