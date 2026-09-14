@@ -107,7 +107,7 @@
   .vehicle-step .vehicle-monthly-label {
     font-weight: 600;
     word-break: keep-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .vehicle-step .vehicle-annual-cost-row {
@@ -137,7 +137,7 @@
 
   .vehicle-step :where(.vehicle-payment-error, .vehicle-replace-hint, .vehicle-inspection-hint) {
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .vehicle-step .vehicle-table-group {
@@ -192,7 +192,7 @@
 
   .vehicle-step :where(.vehicle-add-card-title, .vehicle-add-card-desc) {
     word-break: keep-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 }
 

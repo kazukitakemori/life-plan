@@ -748,14 +748,17 @@ button:disabled {
 }
 
 .plan-admin-contact {
+  min-width: 0;
   font-size: 0.8125rem;
   color: #445;
   line-height: 1.45;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-contact-line {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-contact-email {
@@ -768,7 +771,7 @@ button:disabled {
   color: #556;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .plan-admin-date {
@@ -5232,7 +5235,7 @@ button:disabled {
   padding: 0 2px;
   line-height: 1.5;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 
@@ -14097,11 +14100,13 @@ button:disabled {
 }
 
 .housing-owned-field-hint {
+  min-width: 0;
   min-height: 1.125rem;
   font-size: 0.8125rem;
   color: #888;
-  white-space: nowrap;
-  line-height: 1.125rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
 }
 
 .housing-owned-field--tax {
@@ -14514,9 +14519,11 @@ button:disabled {
 }
 
 .housing-owned-insurance-meta {
+  min-width: 0;
   font-size: 0.8125rem;
   color: #666;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .housing-owned-insurance-open-btn {
@@ -15952,9 +15959,11 @@ button:disabled {
 }
 
 .loan-group-credit-life-surcharge-hint {
+  min-width: 0;
   font-size: 0.8125rem;
   color: #888;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .loan-group-credit-life-block--disabled .loan-group-credit-life-excluded {
@@ -16733,7 +16742,7 @@ button:disabled {
   font-weight: 400;
   color: #6b7280;
   line-height: 1.45;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 
@@ -16859,9 +16868,12 @@ button:disabled {
 }
 
 .housing-insurance-item-name {
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.8125rem;
   color: #333;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .housing-insurance-edit-btn {
@@ -16896,9 +16908,12 @@ button:disabled {
 }
 
 .linked-insurance-summary {
+  flex: 1 1 180px;
+  min-width: 0;
   font-size: 0.8125rem;
   color: #666;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .linked-insurance-open-btn {

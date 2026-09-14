@@ -67,7 +67,7 @@
 
   .loan-step .loan-entry-housing-link {
     line-height: 1.6;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .loan-step .loan-payment-mode {
