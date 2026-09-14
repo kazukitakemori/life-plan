@@ -480,6 +480,14 @@ button.ui-member-tab--add {
   line-height: var(--leading-normal);
 }
 
+.ui-member-tabs-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 :is(
     .education-toolbar,
     .life-event-toolbar,
