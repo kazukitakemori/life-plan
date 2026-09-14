@@ -1,0 +1,146 @@
+name: One-off index.css analysis cleanup
+
+on:
+  push:
+    branches:
+      - ui/unify-foundation-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ui/unify-foundation-cleanup
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Remove analysis visuals superseded by final UI layer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          index_path = Path('src/index.css')
+          final_path = Path('src/ui-unification-shell-analysis.css')
+          text = index_path.read_text(encoding='utf-8')
+          final = final_path.read_text(encoding='utf-8')
+
+          allowed_prefixes = (
+              '.asset-building',
+              '.lifetime-chart',
+              '.cashflow',
+              '.cf-',
+              '.required-coverage',
+              '.coverage-formula',
+          )
+          visual_props = {
+              'color', 'background', 'background-color', 'border', 'border-color',
+              'border-radius', 'border-left-color', 'border-right-color',
+              'border-top-color', 'border-bottom-color', 'box-shadow',
+              'font-size', 'font-weight', 'line-height', 'outline', 'outline-color',
+              'text-decoration', 'accent-color'
+          }
+          rule_re = re.compile(r'(?P<selector>[^{}]+)\{(?P<body>[^{}]*)\}')
+
+          def clean_selector(selector: str) -> str:
+              selector = re.sub(r'/\*.*?\*/', ' ', selector, flags=re.S)
+              return ' '.join(selector.split())
+
+          def split_selectors(selector: str):
+              selector = clean_selector(selector)
+              parts, buf, depth = [], [], 0
+              for ch in selector:
+                  if ch == '(':
+                      depth += 1
+                  elif ch == ')' and depth:
+                      depth -= 1
+                  if ch == ',' and depth == 0:
+                      part = ''.join(buf).strip()
+                      if part:
+                          parts.append(part)
+                      buf = []
+                  else:
+                      buf.append(ch)
+              part = ''.join(buf).strip()
+              if part:
+                  parts.append(part)
+              return parts
+
+          def declarations(body: str):
+              return {
+                  m.group(1).lower()
+                  for m in re.finditer(r'(?m)^[ \t]*([a-zA-Z-]+)\s*:', body)
+              }
+
+          final_map = {}
+          for m in rule_re.finditer(final):
+              props = declarations(m.group('body'))
+              for selector in split_selectors(m.group('selector')):
+                  final_map.setdefault(selector, set()).update(props)
+
+          removed = []
+
+          def transform(match: re.Match) -> str:
+              selector_raw = match.group('selector')
+              body = match.group('body')
+              selectors = split_selectors(selector_raw)
+              if not selectors or not all(s.startswith(allowed_prefixes) for s in selectors):
+                  return match.group(0)
+
+              removable = {
+                  prop for prop in visual_props
+                  if all(prop in final_map.get(s, set()) for s in selectors)
+              }
+              if not removable:
+                  return match.group(0)
+
+              new_body = body
+              local_removed = []
+              for prop in sorted(removable, key=len, reverse=True):
+                  pattern = re.compile(rf'(?m)^[ \t]*{re.escape(prop)}\s*:(?P<value>[^;{{}}]*);[ \t]*(?:\n|$)')
+                  def repl(dm):
+                      if '!important' in dm.group('value'):
+                          return dm.group(0)
+                      local_removed.append(prop)
+                      return ''
+                  new_body = pattern.sub(repl, new_body)
+              if local_removed:
+                  key = ' | '.join(selectors)
+                  removed.extend((key, p) for p in local_removed)
+              return f'{selector_raw}{{{new_body}}}'
+
+          updated = rule_re.sub(transform, text)
+          if not (8 <= len(removed) <= 220):
+              raise SystemExit(f'Cleanup safety range failed: {len(removed)} declarations')
+          if updated == text:
+              raise SystemExit('No index.css changes produced')
+
+          index_path.write_text(updated, encoding='utf-8')
+          print(f'Removed {len(removed)} analysis visual declarations exactly superseded by the final UI layer.')
+          for selector, prop in removed:
+              print(f'- {selector}: {prop}')
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Remove one-off workflow and commit cleanup
+        run: |
+          rm .github/workflows/index-css-analysis-cleanup-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.css .github/workflows/index-css-analysis-cleanup-once.yml
+          git commit -m "index.cssの分析画面重複見た目指定を整理"
+          git push origin HEAD:ui/unify-foundation-cleanup
