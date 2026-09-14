@@ -64,7 +64,7 @@
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
-  text-align: left;
+  text-align: left !important;
 }
 
 .ui-add-card .ui-add-card__description {
@@ -79,7 +79,7 @@
   line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
-  text-align: left;
+  text-align: left !important;
 }
 
 @media (max-width: 768px) {
