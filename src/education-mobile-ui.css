@@ -10,8 +10,7 @@
   display: contents;
 }
 
-.education-mobile-summary,
-.education-mobile-toggle {
+.education-mobile-summary {
   display: none;
 }
 
@@ -171,11 +170,6 @@
     margin-bottom: 9px;
     font-size: 14px;
     color: var(--ui-text);
-  }
-
-  /* 旧アコーディオンの操作は使わない。 */
-  .education-step .education-mobile-toggle {
-    display: none !important;
   }
 
   /* 2. 在籍期間 */
