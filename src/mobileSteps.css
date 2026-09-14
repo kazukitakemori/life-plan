@@ -87,7 +87,7 @@
     width: 100%;
   }
 
-  .step-page :where(.ui-btn, .show-all-btn, .ui-copy-bar-button, .footer-action-btn) {
+  .step-page :where(.ui-btn, .ui-copy-bar-button, .footer-action-btn) {
     min-height: var(--mobile-touch-target);
     touch-action: manipulation;
   }
