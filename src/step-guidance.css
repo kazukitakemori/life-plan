@@ -1,0 +1,261 @@
+/* Shared Q1-Q12 title guidance ------------------------------------------ */
+
+/* Q12の旧ページ内概要は、同内容をタイトルガイドへ集約して初期表示しない。 */
+.second-life-step > .second-life-guide-intro {
+  display: none;
+}
+
+.step-title-guide-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 40px;
+  margin: -6px 0;
+  padding: 6px 8px 6px 0;
+  border: 0;
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.step-title-guide-trigger:hover .step-title-text {
+  color: var(--ui-brand);
+}
+
+.step-title-guide-trigger:focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: 3px;
+}
+
+.step-title-guide-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 999px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: lowercase;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast);
+}
+
+.step-title-guide-trigger:hover .step-title-guide-icon {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.step-guide-backdrop {
+  position: fixed;
+  z-index: 3000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(20 32 36 / 48%);
+  overscroll-behavior: contain;
+}
+
+.step-guide-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, calc(100vw - 48px));
+  max-height: min(780px, calc(100dvh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: calc(var(--ui-radius-card) + 4px);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  box-shadow: 0 24px 64px rgb(20 32 36 / 24%);
+}
+
+.step-guide-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.step-guide-dialog-kicker {
+  margin: 0 0 3px;
+  color: var(--ui-brand);
+  font-size: var(--ui-type-helper);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.step-guide-dialog-title {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 1.35rem;
+  line-height: 1.35;
+}
+
+.step-guide-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.step-guide-close:hover {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-bg-hover);
+  color: var(--ui-text);
+}
+
+.step-guide-dialog-body {
+  display: grid;
+  gap: 22px;
+  min-height: 0;
+  padding: 22px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.step-guide-section {
+  min-width: 0;
+}
+
+.step-guide-section-title {
+  margin: 0 0 8px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-card-title);
+  line-height: 1.45;
+}
+
+.step-guide-section p,
+.step-guide-note {
+  margin: 0;
+  font-size: var(--ui-type-body);
+  line-height: 1.75;
+}
+
+.step-guide-overview {
+  color: var(--ui-text);
+}
+
+.step-guide-current-context {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: var(--ui-text);
+}
+
+.step-guide-context-line {
+  margin: 0;
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.6 !important;
+}
+
+.step-guide-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding-left: 1.45em;
+}
+
+.step-guide-list li {
+  padding-left: 3px;
+  font-size: var(--ui-type-body);
+  line-height: 1.7;
+}
+
+.step-guide-section--hint {
+  padding: 14px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+}
+
+.step-guide-note {
+  padding: 12px 14px;
+  border-left: 3px solid var(--ui-brand);
+  background: var(--ui-bg-hover);
+  color: var(--ui-text-muted);
+}
+
+.step-guide-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.step-guide-done {
+  min-width: 104px;
+}
+
+@media (max-width: 768px) {
+  .step-title-guide-trigger {
+    min-height: 44px;
+    padding-block: 8px;
+  }
+
+  .step-title-guide-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .step-guide-backdrop {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .step-guide-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 16px;
+  }
+
+  .step-guide-dialog-head {
+    padding: 18px 18px 14px;
+  }
+
+  .step-guide-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .step-guide-dialog-body {
+    gap: 20px;
+    padding: 18px;
+  }
+
+  .step-guide-dialog-footer {
+    padding: 12px 18px 18px;
+  }
+
+  .step-guide-done {
+    width: 100%;
+    min-height: 44px;
+  }
+}
