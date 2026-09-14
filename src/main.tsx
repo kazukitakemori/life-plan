@@ -25,12 +25,7 @@ import './mobileInsurance.css';
 import './mobileSavings.css';
 import './mobileSecondLife.css';
 import './ui-unification.css';
-import './ui-unification-q1-q2.css';
-import './ui-unification-q3-q4.css';
-import './ui-unification-q5-q6.css';
-import './ui-unification-q7-q8.css';
-import './ui-unification-q9-q10.css';
-import './ui-unification-q11-q12.css';
+import './ui-unification-screens.css';
 import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
 
