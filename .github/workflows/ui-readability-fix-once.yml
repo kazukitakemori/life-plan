@@ -1,0 +1,118 @@
+name: One-off UI readability fixes
+
+on:
+  push:
+    branches:
+      - ui/unify-foundation-cleanup
+    paths:
+      - '.github/workflows/ui-readability-fix-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ui/unify-foundation-cleanup
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Apply code-audit readability fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          css_paths = sorted(Path('src').rglob('*.css'))
+          changed_sizes=[]
+          skipped_icons=[]
+          selector=''
+
+          icon_like = re.compile(r'(?:^|[-_])(icon|chevron|caret|handle|marker|dot|spinner|glyph)(?:$|[-_: ])', re.I)
+
+          for path in css_paths:
+              text=path.read_text(encoding='utf-8')
+              lines=text.splitlines(keepends=True)
+              out=[]
+              current_selector=''
+              buf=[]
+              for i,line in enumerate(lines,1):
+                  stripped=line.strip()
+                  if '{' in line:
+                      before=line.split('{',1)[0].strip()
+                      if before: buf.append(before)
+                      current_selector=' '.join(buf)[-360:]
+                      buf=[]
+                  elif stripped and ':' not in stripped and '}' not in stripped and not stripped.startswith('@') and not stripped.startswith('/*') and not stripped.startswith('*'):
+                      buf.append(stripped)
+
+                  m=re.search(r'(font-size\s*:\s*)([0-9.]+)(px|rem|em)(\s*!important)?(\s*;)', line)
+                  if m:
+                      value=float(m.group(2)); unit=m.group(3)
+                      px=value if unit=='px' else value*16
+                      if px < 13:
+                          if icon_like.search(current_selector):
+                              skipped_icons.append((str(path),i,current_selector,px))
+                          else:
+                              suffix=' !important' if m.group(4) else ''
+                              replacement=f'{m.group(1)}0.8125rem{suffix}{m.group(5)}'
+                              line=line[:m.start()] + replacement + line[m.end():]
+                              changed_sizes.append((str(path),i,current_selector,px))
+                  out.append(line)
+                  if '}' in line:
+                      current_selector=''
+              path.write_text(''.join(out),encoding='utf-8')
+
+          if not (240 <= len(changed_sizes) <= 298):
+              raise SystemExit(f'Font-size safety range failed: {len(changed_sizes)}')
+
+          # Phrase-preserving emergency wrapping: only break a long unbreakable phrase when needed.
+          p=Path('src/ui-text-integrity.css')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace('overflow-wrap: anywhere;', 'overflow-wrap: break-word;')
+          p.write_text(t,encoding='utf-8')
+
+          # Remove the only remaining explicit break-all in legacy styles.
+          p=Path('src/index.css')
+          t=p.read_text(encoding='utf-8')
+          old='  word-break: break-all;\n'
+          if old not in t:
+              raise SystemExit('Expected stream-type break-all was not found')
+          t=t.replace(old, '  word-break: keep-all;\n  overflow-wrap: break-word;\n', 1)
+          p.write_text(t,encoding='utf-8')
+
+          # Education chart axis labels were still 11px in TSX rather than CSS.
+          p=Path('src/components/education/EducationExpenseChart.tsx')
+          t=p.read_text(encoding='utf-8')
+          count=t.count('fontSize={11}') + t.count('fontSize: 11')
+          if count != 4:
+              raise SystemExit(f'Expected 4 education chart 11px declarations, found {count}')
+          t=t.replace('fontSize={11}', 'fontSize={13}').replace('fontSize: 11', 'fontSize: 13')
+          p.write_text(t,encoding='utf-8')
+
+          print(f'Raised {len(changed_sizes)} textual font-size declarations to 13px floor.')
+          print(f'Kept {len(skipped_icons)} icon-like declarations below 13px.')
+          print('First 40 raised selectors:')
+          for row in changed_sizes[:40]: print(row)
+          print('Skipped icon-like selectors:')
+          for row in skipped_icons: print(row)
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Remove one-off audit workflows and commit fixes
+        run: |
+          rm .github/workflows/ui-code-audit-once.yml
+          rm .github/workflows/ui-microtype-audit-once.yml
+          rm .github/workflows/ui-readability-fix-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.css src/secondLifeConsistency.css src/ui-text-integrity.css src/components/education/EducationExpenseChart.tsx .github/workflows/ui-code-audit-once.yml .github/workflows/ui-microtype-audit-once.yml .github/workflows/ui-readability-fix-once.yml
+          git commit -m "コード監査で残った極小文字と不自然な改行を補正"
+          git push origin HEAD:ui/unify-foundation-cleanup
