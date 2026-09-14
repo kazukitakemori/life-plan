@@ -11,9 +11,25 @@ import { getLastOpenedPlanId } from '../../lib/lastOpenedPlan';
 import { getLocalPlanRepository } from '../../lib/localPlanRepository';
 import { fromPlanPayload } from '../../lib/planDocument';
 import type { PlanAppState } from '../../types/plan';
+import { StepHeading } from '../ui/StepHeading';
+import type { StepGuidance } from '../ui/stepGuidance';
 import './life-event-table.css';
 
 const planRepository = getLocalPlanRepository();
+
+const LIFE_EVENT_TABLE_GUIDANCE: StepGuidance = {
+  overview:
+    '入力済みの家族情報や教育、住まい、乗り物、仕事、年金、老後などから、人生の節目を年ごとにまとめて確認する画面です。金額の推移ではなく「いつ、誰に、何が起こるか」を見るための一覧です。',
+  firstSteps: [
+    '西暦ごとに、ご家族それぞれが何歳になる年かを確認します。',
+    '色分けされたイベントから、教育・住まい・仕事・年金などの大きな節目が重なる時期を確認します。',
+    '気になる予定があれば、該当する入力画面に戻って時期や内容を見直します。',
+  ],
+  whenUnsure:
+    'お金の増減や資産残高まで確認したい場合は「資産形成」を見てください。ライフイベント表は、人生上の予定と家族の年齢を時系列で把握するための画面です。',
+  note:
+    'この表は入力内容から自動生成される確認用画面です。ここでは直接編集せず、変更は各入力画面から行います。',
+};
 
 function EventBadge({ milestone }: { milestone: LifeMilestone }) {
   return (
@@ -124,21 +140,19 @@ export function LifeEventTableView() {
   const currentYear = planState?.referenceDate.getFullYear() ?? data.startYear;
 
   return (
-    <section className="life-event-table-view" aria-labelledby="life-event-table-title">
-      <header className="life-event-table-header">
-        <div>
-          <p className="life-event-table-eyebrow">Life Event Table</p>
-          <h2 id="life-event-table-title" className="life-event-table-title">
-            ライフイベント表
-          </h2>
-          <p className="life-event-table-lead">
-            ご家族の年齢と、教育・住まい・乗り物・仕事・年金・老後などの節目を年ごとに確認できます。
+    <section className="life-event-table-view">
+      <StepHeading
+        title="ライフイベント表"
+        guidance={LIFE_EVENT_TABLE_GUIDANCE}
+        guidanceKicker="ライフイベント表"
+        guidanceOverviewTitle="この画面で確認できること"
+        guidanceStepsTitle="見方"
+        actions={
+          <p className="life-event-table-readonly-note">
+            入力内容から自動表示しています。変更は各入力画面から行ってください。
           </p>
-        </div>
-        <p className="life-event-table-readonly-note">
-          入力内容から自動表示しています。変更は各入力画面から行ってください。
-        </p>
-      </header>
+        }
+      />
 
       <div className="life-event-table-legend" aria-label="イベント分類">
         {Object.entries(LIFE_MILESTONE_CATEGORY_LABELS).map(
@@ -210,7 +224,10 @@ export function LifeEventTableView() {
         </table>
       </div>
 
-      <div className="life-event-table-mobile" aria-label="ライフイベント表 モバイル表示">
+      <div
+        className="life-event-table-mobile"
+        aria-label="ライフイベント表 モバイル表示"
+      >
         {data.years.map((year) => (
           <article
             key={year.calendarYear}
@@ -241,7 +258,9 @@ export function LifeEventTableView() {
                 ))}
               </div>
             ) : (
-              <p className="life-event-table-card-empty">大きな予定はありません</p>
+              <p className="life-event-table-card-empty">
+                大きな予定はありません
+              </p>
             )}
           </article>
         ))}
