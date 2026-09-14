@@ -5,39 +5,11 @@
   color: var(--ui-text);
 }
 
-.life-event-table-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 18px;
-}
-
-.life-event-table-eyebrow {
-  margin: 0 0 6px;
-  color: var(--ui-brand);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.life-event-table-title {
-  margin: 0;
-  color: var(--ui-text);
-  font-size: clamp(24px, 2.2vw, 32px);
-  line-height: 1.25;
-}
-
-.life-event-table-lead {
-  max-width: 68ch;
-  margin: 10px 0 0;
-  color: var(--ui-text-muted);
-  line-height: 1.7;
+.life-event-table-view > .step-header {
+  margin-bottom: 16px;
 }
 
 .life-event-table-readonly-note {
-  flex: 0 0 auto;
   max-width: 320px;
   margin: 0;
   padding: 10px 12px;
@@ -69,9 +41,9 @@
 .life-event-table-legend-item {
   min-height: 28px;
   padding: 4px 10px;
-  border: 1px solid var(--ui-border);
-  background: var(--ui-bg-surface);
-  color: var(--ui-text-muted);
+  border: 1px solid var(--life-event-accent, var(--ui-border));
+  background: var(--life-event-accent, var(--ui-bg-surface));
+  color: #fff;
   font-size: 12px;
 }
 
@@ -103,7 +75,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--color-table-header);
+  background: #eef2f4;
   color: var(--ui-text);
   text-align: center;
   font-weight: 700;
@@ -128,7 +100,7 @@
 
 .life-event-table-desktop thead .life-event-table-year-heading {
   z-index: 3;
-  background: var(--color-table-header);
+  background: #eef2f4;
 }
 
 .life-event-table-year-cell {
@@ -183,17 +155,17 @@
   min-height: 36px;
   padding: 6px 9px;
   border: 1px solid var(--ui-border);
-  border-left: 3px solid var(--ui-border-strong);
+  border-left: 4px solid var(--life-event-accent, var(--ui-border-strong));
   border-radius: var(--ui-radius-control);
-  background: var(--ui-bg-surface);
+  background: var(--life-event-soft, var(--ui-bg-surface));
 }
 
 .life-event-table-event-category {
   min-width: 48px;
   min-height: 22px;
   padding: 2px 7px;
-  background: var(--ui-bg-subtle);
-  color: var(--ui-text-muted);
+  background: var(--life-event-accent, var(--ui-bg-subtle));
+  color: #fff;
   font-size: 11px;
 }
 
@@ -215,18 +187,6 @@
   color: var(--ui-text-muted);
   font-size: 12px;
 }
-
-.life-event-table-event--education { border-left-color: #557a95; }
-.life-event-table-event--life-event { border-left-color: #8b6f47; }
-.life-event-table-event--housing { border-left-color: #176b68; }
-.life-event-table-event--vehicle { border-left-color: #637287; }
-.life-event-table-event--work { border-left-color: #486a55; }
-.life-event-table-event--pension { border-left-color: #6b5c8f; }
-.life-event-table-event--loan { border-left-color: #846a54; }
-.life-event-table-event--insurance { border-left-color: #7a647a; }
-.life-event-table-event--savings { border-left-color: #47746e; }
-.life-event-table-event--second-life { border-left-color: #9a7548; }
-.life-event-table-event--family { border-left-color: #6e7f72; }
 
 .life-event-table-no-event {
   color: var(--ui-text-subtle);
@@ -251,29 +211,86 @@
   margin: 0;
 }
 
+/* Category tones: the legend and each event use exactly the same accent. */
+.life-event-table-event--family,
+.life-event-table-legend-item--family {
+  --life-event-accent: #4f766f;
+  --life-event-soft: #eef5f3;
+}
+
+.life-event-table-event--education,
+.life-event-table-legend-item--education {
+  --life-event-accent: #4f6f9f;
+  --life-event-soft: #eef3fa;
+}
+
+.life-event-table-event--life-event,
+.life-event-table-legend-item--life-event {
+  --life-event-accent: #a36a2d;
+  --life-event-soft: #fbf3e8;
+}
+
+.life-event-table-event--housing,
+.life-event-table-legend-item--housing {
+  --life-event-accent: #2b7a78;
+  --life-event-soft: #e9f5f4;
+}
+
+.life-event-table-event--vehicle,
+.life-event-table-legend-item--vehicle {
+  --life-event-accent: #5f6f82;
+  --life-event-soft: #f0f3f6;
+}
+
+.life-event-table-event--work,
+.life-event-table-legend-item--work {
+  --life-event-accent: #4d7a55;
+  --life-event-soft: #eef6ef;
+}
+
+.life-event-table-event--pension,
+.life-event-table-legend-item--pension {
+  --life-event-accent: #74619a;
+  --life-event-soft: #f2eef8;
+}
+
+.life-event-table-event--loan,
+.life-event-table-legend-item--loan {
+  --life-event-accent: #9a654f;
+  --life-event-soft: #f8efeb;
+}
+
+.life-event-table-event--insurance,
+.life-event-table-legend-item--insurance {
+  --life-event-accent: #9a5f78;
+  --life-event-soft: #f8eef2;
+}
+
+.life-event-table-event--savings,
+.life-event-table-legend-item--savings {
+  --life-event-accent: #3f7f87;
+  --life-event-soft: #eaf5f6;
+}
+
+.life-event-table-event--second-life,
+.life-event-table-legend-item--second-life {
+  --life-event-accent: #9a7937;
+  --life-event-soft: #faf4e5;
+}
+
 @media (max-width: 768px) {
   .life-event-table-view {
     width: 100%;
     padding: 18px 14px 28px;
   }
 
-  .life-event-table-header {
-    display: block;
-    margin-bottom: 14px;
-  }
-
-  .life-event-table-title {
-    font-size: 24px;
-  }
-
-  .life-event-table-lead {
-    margin-top: 8px;
-    font-size: 14px;
+  .life-event-table-view > .step-header {
+    margin-bottom: 12px;
   }
 
   .life-event-table-readonly-note {
     max-width: none;
-    margin-top: 12px;
+    margin-top: 10px;
     font-size: 13px;
   }
 
@@ -315,7 +332,7 @@
     gap: 12px;
     padding: 11px 13px;
     border-bottom: 1px solid var(--ui-border);
-    background: var(--ui-bg-subtle);
+    background: #f2f5f6;
   }
 
   .life-event-table-year-card.is-current-year .life-event-table-year-card-header {
@@ -348,7 +365,7 @@
     min-height: 30px;
     padding: 5px 8px;
     border-radius: 999px;
-    background: var(--ui-bg-subtle);
+    background: #f2f5f6;
     color: var(--ui-text-muted);
     font-size: 13px;
   }
@@ -373,109 +390,4 @@
     color: var(--ui-text-subtle);
     font-size: 13px;
   }
-}
-
-/* Category tones -------------------------------------------------------- */
-
-.life-event-table-event--family,
-.life-event-table-legend-item--family {
-  --life-event-accent: #4f766f;
-  --life-event-soft: #eef5f3;
-  --life-event-ink: #365a54;
-}
-
-.life-event-table-event--education,
-.life-event-table-legend-item--education {
-  --life-event-accent: #4f6f9f;
-  --life-event-soft: #eef3fa;
-  --life-event-ink: #395779;
-}
-
-.life-event-table-event--life-event,
-.life-event-table-legend-item--life-event {
-  --life-event-accent: #a36a2d;
-  --life-event-soft: #fbf3e8;
-  --life-event-ink: #775022;
-}
-
-.life-event-table-event--housing,
-.life-event-table-legend-item--housing {
-  --life-event-accent: #2b7a78;
-  --life-event-soft: #e9f5f4;
-  --life-event-ink: #1f5f5d;
-}
-
-.life-event-table-event--vehicle,
-.life-event-table-legend-item--vehicle {
-  --life-event-accent: #5f6f82;
-  --life-event-soft: #f0f3f6;
-  --life-event-ink: #465565;
-}
-
-.life-event-table-event--work,
-.life-event-table-legend-item--work {
-  --life-event-accent: #4d7a55;
-  --life-event-soft: #eef6ef;
-  --life-event-ink: #355d3c;
-}
-
-.life-event-table-event--pension,
-.life-event-table-legend-item--pension {
-  --life-event-accent: #74619a;
-  --life-event-soft: #f2eef8;
-  --life-event-ink: #584679;
-}
-
-.life-event-table-event--loan,
-.life-event-table-legend-item--loan {
-  --life-event-accent: #9a654f;
-  --life-event-soft: #f8efeb;
-  --life-event-ink: #754936;
-}
-
-.life-event-table-event--insurance,
-.life-event-table-legend-item--insurance {
-  --life-event-accent: #9a5f78;
-  --life-event-soft: #f8eef2;
-  --life-event-ink: #744459;
-}
-
-.life-event-table-event--savings,
-.life-event-table-legend-item--savings {
-  --life-event-accent: #3f7f87;
-  --life-event-soft: #eaf5f6;
-  --life-event-ink: #2d6066;
-}
-
-.life-event-table-event--second-life,
-.life-event-table-legend-item--second-life {
-  --life-event-accent: #9a7937;
-  --life-event-soft: #faf4e5;
-  --life-event-ink: #735b28;
-}
-
-.life-event-table-legend-item {
-  border-color: var(--life-event-accent, var(--ui-border));
-  background: var(--life-event-soft, var(--ui-bg-surface));
-  color: var(--life-event-ink, var(--ui-text-muted));
-}
-
-.life-event-table-event {
-  border-left-color: var(--life-event-accent, var(--ui-border-strong));
-  background: var(--life-event-soft, var(--ui-bg-surface));
-}
-
-.life-event-table-event-category {
-  background: var(--life-event-accent, var(--ui-bg-subtle));
-  color: #fff;
-}
-
-.life-event-table-desktop thead th,
-.life-event-table-desktop thead .life-event-table-year-heading {
-  background: #eef2f4;
-}
-
-.life-event-table-year-card-header,
-.life-event-table-age-chip {
-  background: #f2f5f6;
 }
