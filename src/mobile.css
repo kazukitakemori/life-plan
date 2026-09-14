@@ -31,12 +31,14 @@
   .shell-main {
     width: 100%;
     min-width: 0;
-    padding: 48px 12px 24px;
+    padding-right: 12px;
+    padding-bottom: 24px;
+    padding-left: 12px;
     overflow-x: hidden;
     overflow-y: auto;
   }
 
-  /* Position/size are owned by mobileCompact.css. Keep only shared visual basics here. */
+  /* Top spacing and the toggle position/size are owned by mobileCompact.css. */
   .mobile-sidebar-toggle {
     display: inline-flex;
     align-items: center;
@@ -346,11 +348,6 @@
 }
 
 @media (max-width: 640px) {
-  .shell-main {
-    padding-right: 10px;
-    padding-left: 10px;
-  }
-
   .sidebar {
     width: min(88vw, 300px);
   }
