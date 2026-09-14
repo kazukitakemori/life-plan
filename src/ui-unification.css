@@ -1,9 +1,9 @@
 /*
  * UI unification layer
  *
- * This file is intentionally loaded after legacy / screen-specific styles.
- * It establishes the visual contract that individual screens should converge on.
- * Business logic and saved-data behavior must never depend on this file.
+ * Loaded after legacy / screen-specific styles. This file owns the visual
+ * contract (palette, surfaces, borders and states). Typography hierarchy lives
+ * in ui-typography-unification.css.
  */
 
 :root {
@@ -23,7 +23,7 @@
   --ui-danger: var(--color-danger);
   --ui-danger-soft: var(--color-danger-soft);
 
-  /* Typography */
+  /* Compatibility typography tokens used by screen convergence rules. */
   --ui-font-body: var(--text-md);
   --ui-font-control: var(--text-md);
   --ui-font-label: var(--text-sm);
@@ -39,16 +39,12 @@
   --ui-shadow-subtle: 0 1px 2px rgb(31 42 36 / 4%);
 }
 
-/* Keep the application typography on one baseline. */
 body {
   color: var(--ui-text);
   background: var(--ui-bg-page);
   font-family: var(--font-sans);
-  font-size: var(--ui-font-body);
-  line-height: var(--leading-normal);
 }
 
-/* Native controls should not fall back to browser-specific typography. */
 :is(input, select, textarea, button) {
   font-family: inherit;
 }
@@ -57,15 +53,13 @@ body {
   color: var(--ui-text);
 }
 
-/* Shared form primitives. Specific layout widths remain screen-owned. */
+/* Shared form visuals. Geometry remains screen-owned. */
 :is(.ui-input, .ui-select, .ui-copy-bar-select) {
   min-height: var(--ui-control-min-height);
   border-color: var(--ui-border);
   border-radius: var(--ui-radius-control);
   background: var(--ui-bg-surface);
   color: var(--ui-text);
-  font-size: var(--ui-font-control);
-  line-height: var(--leading-normal);
 }
 
 :is(.ui-input, .ui-select, .ui-copy-bar-select):hover:not(:disabled) {
@@ -77,7 +71,6 @@ body {
   color: var(--ui-text-subtle);
 }
 
-/* Shared button geometry. Semantic variants may still own their colors. */
 :is(.ui-btn, .ui-copy-bar-button, .ui-member-tabs-summary-toggle, .ui-segmented-button) {
   border-radius: var(--ui-radius-control);
   font-family: inherit;
@@ -85,10 +78,8 @@ body {
 
 .ui-btn:not(.ui-btn--compact) {
   min-height: var(--ui-control-min-height);
-  font-size: var(--ui-font-control);
 }
 
-/* The normal secondary action should look the same across steps. */
 .ui-btn--secondary {
   border-color: var(--ui-border-strong);
   background: var(--ui-bg-surface);
@@ -100,12 +91,11 @@ body {
   background: var(--ui-bg-hover);
 }
 
-/* Destructive actions stay visually distinct without turning ordinary notices red. */
 :is(.ui-btn--danger, .danger-button, .delete-button) {
   color: var(--ui-danger);
 }
 
-/* Card language: quiet border, white surface, restrained shadow. */
+/* Shared card language. */
 :is(
     .family-member-card,
     .income-entry,
@@ -120,24 +110,20 @@ body {
   box-shadow: var(--ui-shadow-subtle);
 }
 
-/* Common text hierarchy. */
 :is(.step-lead, .purpose-input-note, .ui-member-tabs-guidance) {
   color: var(--ui-text-muted);
 }
 
 :is(.ui-copy-bar-label, .ui-segmented-label) {
   color: var(--ui-text-muted);
-  font-size: var(--ui-font-label);
 }
 
 :is(.ui-member-tab-badge, .ui-member-tab-birth, .ui-member-tab-menu-meta) {
   color: var(--ui-text-muted);
-  font-size: var(--ui-font-helper);
 }
 
 :is(.add-family-title, .add-income-title) {
   color: var(--ui-text);
-  font-size: var(--ui-font-section);
 }
 
 /* Selection uses one calm brand treatment everywhere. */
@@ -160,13 +146,11 @@ body {
   color: var(--ui-text);
 }
 
-/* Focus style is intentionally shared across all interactive controls. */
 :is(button, input, select, textarea):focus-visible {
   outline: 2px solid var(--ui-brand);
   outline-offset: 2px;
 }
 
-/* Keep warning/error semantics separate from ordinary helper text. */
 :is(.app-error-boundary-detail, [role='alert']) {
   border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
 }
