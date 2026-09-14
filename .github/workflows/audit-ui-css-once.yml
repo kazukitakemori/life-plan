@@ -1,0 +1,239 @@
+name: One-off UI CSS responsibility cleanup
+
+on:
+  push:
+    branches:
+      - refactor/mobile-responsive-steps
+    paths:
+      - .github/workflows/audit-ui-css-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  audit-and-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/mobile-responsive-steps
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Consolidate shared UI CSS ownership
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          root = Path('src')
+
+          def read(name):
+              return (root / name).read_text(encoding='utf-8')
+
+          def write(name, text):
+              (root / name).write_text(text, encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  print(f'{label}: expected exactly 1 match, found {count}', file=sys.stderr)
+                  sys.exit(1)
+              return text.replace(old, new, 1)
+
+          # 1) Base ui-input/ui-select geometry should use the shared tokens at its source,
+          #    so ui-system.css no longer needs to restate the same visual values.
+          index = read('index.css')
+          old_input = '''.ui-input,
+          .ui-select {
+            min-height: var(--control-height);
+            padding: 8px 12px;
+            border: 1px solid #c5d0c9;
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            font-size: var(--text-base);
+            color: var(--color-ink);
+          }'''
+          new_input = '''.ui-input,
+          .ui-select {
+            min-height: var(--control-height);
+            padding: 8px 12px;
+            border: 1px solid var(--ui-control-border);
+            border-radius: var(--ui-control-radius);
+            background: var(--color-surface);
+            font-size: var(--text-base);
+            color: var(--color-ink);
+          }'''
+          index = replace_once(index, old_input, new_input, 'index ui-input/ui-select')
+
+          old_danger = '''.ui-btn--danger {
+            border-color: #e0b4b4;
+            color: var(--color-danger);
+            background: var(--color-surface);
+          }'''
+          new_danger = '''.ui-btn--danger {
+            border-color: var(--ui-danger-border);
+            color: var(--color-danger);
+            background: var(--color-surface);
+          }'''
+          index = replace_once(index, old_danger, new_danger, 'index ui-btn--danger')
+          write('index.css', index)
+
+          ui = read('ui-system.css')
+          ui = replace_once(
+              ui,
+              '  --ui-control-border-hover: #97a49d;\n',
+              '  --ui-control-border-hover: #97a49d;\n  --ui-danger-border: #e0b4b4;\n',
+              'ui danger token',
+          )
+
+          old_common_controls = ''':is(.ui-input, .ui-select, .ui-copy-bar-select) {
+            border-color: var(--ui-control-border);
+            border-radius: var(--ui-control-radius);
+            background: var(--color-surface);
+            color: var(--color-ink);
+            transition:
+              border-color var(--ui-transition-fast),
+              box-shadow var(--ui-transition-fast),
+              background var(--ui-transition-fast);
+          }'''
+          new_common_controls = ''':is(.ui-input, .ui-select) {
+            transition:
+              border-color var(--ui-transition-fast),
+              box-shadow var(--ui-transition-fast),
+              background var(--ui-transition-fast);
+          }
+
+          .ui-copy-bar-select {
+            border-color: var(--ui-control-border);
+            border-radius: var(--ui-control-radius);
+            background: var(--color-surface);
+            color: var(--color-ink);
+            transition:
+              border-color var(--ui-transition-fast),
+              box-shadow var(--ui-transition-fast),
+              background var(--ui-transition-fast);
+          }'''
+          ui = replace_once(ui, old_common_controls, new_common_controls, 'ui common controls')
+          write('ui-system.css', ui)
+
+          # 2) Text integrity belongs to the shared text layer, not Q5-specific CSS.
+          integrity = read('ui-text-integrity.css')
+          integrity = replace_once(
+              integrity,
+              '''    .ui-segmented-label,
+              .living-summary-label,
+              .celebration-gift-block-title
+            ) {''',
+              '''    .ui-segmented-label,
+              .living-summary-label,
+              .celebration-gift-block-title,
+              .housing-section-title,
+              .housing-owned-detail-title
+            ) {''',
+              'text-integrity headings',
+          )
+          integrity = replace_once(
+              integrity,
+              '''.step-page :where(.life-event-table-cell, .living-table-cell)::before {
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+          }''',
+              '''.step-page :where(
+              .education-table-cell,
+              .life-event-table-cell,
+              .living-table-cell,
+              .housing-table-cell
+            )::before {
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+          }''',
+              'text-integrity generated labels',
+          )
+          write('ui-text-integrity.css', integrity)
+
+          housing = read('mobileHousing.css')
+          housing = replace_once(
+              housing,
+              '''  .housing-step .housing-section-title,
+            .housing-step .housing-owned-detail-title {
+              word-break: keep-all;
+              overflow-wrap: anywhere;
+            }
+
+          ''',
+              '',
+              'housing heading text-integrity duplicate',
+          )
+          housing = replace_once(
+              housing,
+              '''    line-height: var(--leading-tight);
+              word-break: keep-all;
+              overflow-wrap: anywhere;
+            }''',
+              '''    line-height: var(--leading-tight);
+            }''',
+              'housing generated label text-integrity duplicate',
+          )
+          write('mobileHousing.css', housing)
+
+          # 3) Same semantic danger border should not be repeated as a raw literal
+          #    across responsive screen files.
+          for name in ['mobileLifeEvent.css', 'mobileLiving.css', 'mobileHousing.css']:
+              text = read(name)
+              text = text.replace('#e0b4b4', 'var(--ui-danger-border)')
+              write(name, text)
+
+          # Audit common ownership leaks introduced by this PR.
+          screen_files = sorted(root.glob('mobile[A-Z]*.css'))
+          forbidden = re.compile(r'(^|\n)\s*(?:\.step-header|\.shell-main|\.ui-member-tabs(?:-|\b)|\.ui-copy-bar(?:-|\b))')
+          leaks = []
+          for path in screen_files:
+              text = path.read_text(encoding='utf-8')
+              if forbidden.search(text):
+                  leaks.append(path.name)
+          if leaks:
+              print('Common UI ownership leak in screen-specific CSS: ' + ', '.join(leaks), file=sys.stderr)
+              sys.exit(1)
+
+          # The Q5-specific word-break rules moved to ui-text-integrity.css.
+          housing_text = read('mobileHousing.css')
+          for token in ['word-break:', 'overflow-wrap:']:
+              if token in housing_text:
+                  print(f'mobileHousing.css still contains {token}', file=sys.stderr)
+                  sys.exit(1)
+
+          # Shared danger styling should use the token in the files touched above.
+          for name in ['index.css', 'mobileLifeEvent.css', 'mobileLiving.css', 'mobileHousing.css']:
+              text = read(name)
+              if '#e0b4b4' in text:
+                  print(f'{name} still contains raw danger border literal', file=sys.stderr)
+                  sys.exit(1)
+
+          print('UI CSS responsibility audit passed.')
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          if git diff --quiet -- src/index.css src/ui-system.css src/ui-text-integrity.css src/mobileHousing.css src/mobileLifeEvent.css src/mobileLiving.css; then
+            echo "No CSS changes to commit."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.css src/ui-system.css src/ui-text-integrity.css src/mobileHousing.css src/mobileLifeEvent.css src/mobileLiving.css
+          git commit -m "共通UIのCSS責務と色トークンを整理"
+          git push origin HEAD:refactor/mobile-responsive-steps
