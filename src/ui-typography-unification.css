@@ -1,8 +1,7 @@
 /*
- * Typography unification layer
- *
- * Loaded last on purpose. This pass prioritizes readability and hierarchy over
- * preserving every legacy compact layout. It does not affect business logic.
+ * Canonical typography / readable-control layer.
+ * Loaded after screen-specific styles. This file owns type hierarchy and
+ * minimum readable control geometry; business logic must never depend on it.
  */
 
 :root {
@@ -15,6 +14,7 @@
   --ui-type-card-title: 1rem; /* 16px */
   --ui-type-section-title: 1.125rem; /* 18px */
   --ui-type-page-title: 1.5rem; /* 24px */
+  --ui-control-height-readable: 40px;
 }
 
 body {
@@ -22,21 +22,12 @@ body {
   line-height: 1.55;
 }
 
-/* Page hierarchy */
-:is(
-    .step-title,
-    .plan-admin-title,
-    .header-tab-placeholder-title
-  ) {
+:is(.step-title, .plan-admin-title, .header-tab-placeholder-title) {
   font-size: var(--ui-type-page-title) !important;
   line-height: 1.35 !important;
 }
 
-:is(
-    .asset-building-page-title,
-    .cashflow-title,
-    .analysis-loading-panel-title
-  ) {
+:is(.asset-building-page-title, .cashflow-title, .analysis-loading-panel-title) {
   font-size: 1.25rem !important;
   line-height: 1.4 !important;
 }
@@ -58,6 +49,7 @@ body {
   ) {
   font-size: var(--ui-type-section-title) !important;
   line-height: 1.4 !important;
+  margin-bottom: 14px;
 }
 
 :is(
@@ -80,7 +72,6 @@ body {
   line-height: 1.45 !important;
 }
 
-/* Explanatory copy: keep it secondary, but not tiny. */
 :is(
     .step-lead,
     .step-description,
@@ -103,7 +94,6 @@ body {
   line-height: 1.6 !important;
 }
 
-/* Form labels */
 .step-page label,
 :is(
     .ui-field-label,
@@ -123,7 +113,6 @@ body {
   line-height: 1.45 !important;
 }
 
-/* Inputs/selects/textareas were especially inconsistent in legacy screens. */
 .step-page :is(
     input:not([type='checkbox']):not([type='radio']):not([type='range']),
     select,
@@ -141,7 +130,6 @@ body {
   line-height: 1.45 !important;
 }
 
-/* Main interactive text */
 :is(
     .ui-btn:not(.ui-btn--compact),
     .ui-copy-bar-button,
@@ -171,7 +159,6 @@ body {
   line-height: 1.4 !important;
 }
 
-/* Dense tables: still compact, but no longer 10–12px in normal reading areas. */
 .step-page table {
   font-size: var(--ui-type-table) !important;
 }
@@ -195,17 +182,11 @@ body {
 }
 
 .step-page table td,
-:is(
-    .living-table-cell,
-    .education-table-cell,
-    .life-event-table-cell,
-    .celebration-gift-table-cell
-  ) {
+:is(.living-table-cell, .education-table-cell, .life-event-table-cell, .celebration-gift-table-cell) {
   font-size: var(--ui-type-table) !important;
   line-height: 1.5 !important;
 }
 
-/* Tabs / navigation / badges */
 :is(
     .sidebar-label,
     .required-coverage-section-tab,
@@ -231,7 +212,6 @@ body {
   line-height: 1.35 !important;
 }
 
-/* Helper copy floor. These are intentionally allowed to stay smaller than body. */
 :is(
     .ui-field-hint,
     .ui-note,
@@ -251,13 +231,53 @@ body {
     .lifetime-chart-layout-hint,
     .lifetime-chart-yaxis-auto-hint,
     .lifetime-chart-legend-label,
-    .cashflow-note
+    .cashflow-note,
+    .pension-timeline-pivot-bubble,
+    .pension-timeline-pivot-date,
+    .pension-timeline-pivot-months,
+    .teikibin-block-title-sub,
+    .teikibin-period-table-sub,
+    .teikibin-period-table-summary-head,
+    .teikibin-period-table-side,
+    .teikibin-period-table-summary-sub,
+    .teikibin-amount-col-header,
+    .teikibin-amount-subheader,
+    .teikibin-amount-field-label,
+    .teikibin-monthly-table,
+    .teikibin-monthly-date-unit,
+    .benefit-col-header--survivor,
+    .benefit-amount-option-label--auto,
+    .benefit-survivor-cell,
+    .benefit-survivor-suffix,
+    .second-life-choice-badge,
+    .second-life-breakdown-note,
+    .second-life-breakdown-empty,
+    .second-life-skip-hint,
+    .calc-breakdown-compound-note
   ) {
   font-size: var(--ui-type-helper) !important;
   line-height: 1.5 !important;
 }
 
-/* Charts should read as part of the same product, without inflating axis labels. */
+:is(
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .pension-field-unit,
+    .pension-field-calc,
+    .benefit-death-date,
+    .residence-data-version,
+    .life-event-inflation-label,
+    .life-event-inflation-unit,
+    .education-yen-unit,
+    .second-life-living-ref,
+    .second-life-nursing-desc,
+    .calc-breakdown-row-title,
+    .calc-breakdown-compound-hint
+  ) {
+  font-size: var(--ui-type-label) !important;
+  line-height: 1.5 !important;
+}
+
 .lifetime-chart-title {
   font-size: 1.0625rem !important;
 }
@@ -266,7 +286,8 @@ body {
   font-size: var(--ui-type-label) !important;
 }
 
-.lifetime-chart-summary-row dt {
+.lifetime-chart-summary-row dt,
+:is(.lifetime-chart-tooltip-title, .lifetime-chart-tooltip-row) {
   font-size: var(--ui-type-helper) !important;
 }
 
@@ -274,12 +295,6 @@ body {
   font-size: var(--ui-type-control) !important;
 }
 
-.lifetime-chart-tooltip-title,
-.lifetime-chart-tooltip-row {
-  font-size: var(--ui-type-helper) !important;
-}
-
-/* Header/sidebar utility text should remain readable but subordinate. */
 :is(
     .top-header-customer,
     .top-header-hint,
@@ -293,7 +308,68 @@ body {
   font-size: var(--ui-type-label) !important;
 }
 
-/* Mobile: controls use 16px to avoid browser zoom and improve touch readability. */
+/* Readable control geometry after type normalization. */
+.step-page :is(
+    button,
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea
+  ) {
+  min-height: var(--ui-control-height-readable);
+}
+
+.step-page :is(
+    .life-event-row-remove,
+    .education-row-remove,
+    .education-other-remove,
+    .life-event-drag-handle,
+    .insurance-entry-drag-handle,
+    .savings-entry-drag-handle,
+    .residence-calc-btn,
+    .pension-help-icon,
+    .education-help-icon,
+    .life-event-help-icon
+  ) {
+  min-height: 28px;
+}
+
+.step-page table :is(th, td) {
+  vertical-align: middle;
+}
+
+:is(
+    .education-table-cell,
+    .life-event-table-cell,
+    .living-table-cell,
+    .housing-table-cell,
+    .loan-settings-form-row
+  ) {
+  line-height: 1.5;
+}
+
+:is(
+    .pension-enrollment-field,
+    .residence-period-row,
+    .life-event-inflation-field,
+    .second-life-timing,
+    .housing-rental-payer-label
+  ) {
+  row-gap: 8px;
+}
+
+:is(
+    .ui-member-tab-birth,
+    .ui-member-tab-badge,
+    .pension-timeline-age,
+    .pension-timeline-year,
+    .residence-data-version,
+    .plan-admin-status,
+    .plan-admin-current-badge
+  ) {
+  width: max-content;
+  max-width: 100%;
+}
+
 @media (max-width: 768px) {
   :root {
     --ui-type-page-title: 1.3125rem; /* 21px */
@@ -301,7 +377,7 @@ body {
   }
 
   body {
-    font-size: 0.9375rem;
+    font-size: var(--ui-type-body);
     line-height: 1.6;
   }
 
@@ -310,7 +386,12 @@ body {
       select,
       textarea
     ) {
+    min-height: 44px;
     font-size: 1rem !important;
+  }
+
+  .step-page button {
+    min-height: 44px;
   }
 
   :is(
@@ -323,7 +404,7 @@ body {
       .living-copy-btn,
       .second-life-guide-nav-btn
     ) {
-    font-size: 0.9375rem !important;
+    font-size: var(--ui-type-body) !important;
   }
 
   .top-header-title {
@@ -331,10 +412,34 @@ body {
   }
 
   .step-page table th {
-    font-size: 0.8125rem !important;
+    font-size: var(--ui-type-table-head) !important;
   }
 
   .step-page table td {
-    font-size: 0.875rem !important;
+    font-size: var(--ui-type-table) !important;
+  }
+
+  .step-page :is(
+      .life-event-row-remove,
+      .education-row-remove,
+      .education-other-remove,
+      .life-event-drag-handle,
+      .insurance-entry-drag-handle,
+      .savings-entry-drag-handle,
+      .residence-calc-btn,
+      .pension-help-icon,
+      .education-help-icon,
+      .life-event-help-icon
+    ) {
+    min-height: 36px;
+  }
+
+  :is(.pension-enrollment-field, .residence-period-row, .life-event-inflation-field) {
+    flex-wrap: wrap;
+  }
+
+  .pension-enrollment-label,
+  .residence-period-label {
+    min-width: max-content;
   }
 }
