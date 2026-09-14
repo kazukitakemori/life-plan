@@ -6,6 +6,10 @@
  * come from the common UI system.
  */
 
+.education-mobile-toggle {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .education-step .education-table-body {
     gap: 18px;
@@ -34,12 +38,33 @@
     border-left: 0;
   }
 
+  /* スマホでは初期状態を学校・進路だけにする。 */
+  .education-step
+    .education-table-row:not(.is-mobile-expanded)
+    > :is(
+      .education-col-period,
+      .education-col-fetch,
+      .education-col-entrance,
+      .education-col-tuition-amount,
+      .education-col-tuition-monthly,
+      .education-col-other,
+      .education-col-action
+    ) {
+    display: none;
+  }
+
   /* 1. まず学校・進路を決める */
   .education-step .education-col-school {
     grid-column: 1 / -1;
     padding: 16px 14px;
     border-bottom: 1px solid var(--ui-border);
     background: var(--ui-bg-surface);
+  }
+
+  .education-step
+    .education-table-row:not(.is-mobile-expanded)
+    .education-col-school {
+    border-bottom: 0;
   }
 
   .education-step .education-col-school::before,
@@ -49,6 +74,23 @@
     margin-bottom: 9px;
     font-size: 14px;
     color: var(--ui-text);
+  }
+
+  .education-step .education-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 12px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-mobile-toggle-icon {
+    flex: 0 0 auto;
+    margin-left: 12px;
+    font-size: 18px;
+    line-height: 1;
   }
 
   /* 2. 次に在籍期間を決める */
