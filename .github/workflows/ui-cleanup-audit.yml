@@ -1,0 +1,118 @@
+name: UI Cleanup Audit
+
+on:
+  push:
+    branches:
+      - cleanup/ui-dead-code
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Audit UI code
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          from collections import Counter, defaultdict
+
+          root = Path('src')
+          css_files = sorted(root.rglob('*.css'))
+          source_files = sorted([*root.rglob('*.tsx'), *root.rglob('*.ts'), *root.rglob('*.css')])
+          texts = {p: p.read_text(encoding='utf-8') for p in source_files}
+          all_text = '\n'.join(texts.values())
+
+          print('=== CSS FILES ===')
+          for p in css_files:
+              print(f'{p}: {p.stat().st_size} bytes')
+
+          main = Path('src/main.tsx').read_text(encoding='utf-8')
+          imported_css = set(re.findall(r"import\s+['\"]\./([^'\"]+\.css)['\"]", main))
+          print('\n=== CSS NOT IMPORTED BY main.tsx ===')
+          for p in css_files:
+              rel = p.relative_to(root).as_posix()
+              if rel not in imported_css:
+                  hits = sum(t.count(p.name) for q,t in texts.items() if q != p)
+                  print(f'{rel} | filename refs elsewhere={hits}')
+
+          defs = defaultdict(list)
+          refs = Counter()
+          for p, text in texts.items():
+              for m in re.finditer(r'(--[A-Za-z0-9_-]+)\s*:', text):
+                  defs[m.group(1)].append((str(p), text.count('\n', 0, m.start()) + 1))
+              for m in re.finditer(r'var\(\s*(--[A-Za-z0-9_-]+)', text):
+                  refs[m.group(1)] += 1
+
+          print('\n=== CUSTOM PROPERTIES WITH ZERO var() REFERENCES ===')
+          for name in sorted(defs):
+              if refs[name] == 0:
+                  print(f'{name} | defs={defs[name]}')
+
+          print('\n=== MIGRATION/LEGACY ui TOKENS ===')
+          for name in sorted(defs):
+              if name.startswith('--ui-') and any(key in name for key in ['control-border','card-border','surface-hover','surface-selected','shadow-card','danger-border','control-radius','card-radius']):
+                  print(f'{name} | refs={refs[name]} | defs={defs[name]}')
+
+          # Parse simple CSS blocks (safe audit only; not a full CSS parser).
+          rule_re = re.compile(r'([^{}]+)\{([^{}]*)\}', re.S)
+          decl_re = re.compile(r'([A-Za-z-]+)\s*:\s*([^;{}]+);')
+          exact = defaultdict(list)
+          selector_prop = defaultdict(list)
+          for p in css_files:
+              text = texts[p]
+              for m in rule_re.finditer(text):
+                  selector = ' '.join(m.group(1).split())
+                  if selector.startswith('@'):
+                      continue
+                  decls = tuple((k.strip(), ' '.join(v.split())) for k,v in decl_re.findall(m.group(2)))
+                  if not decls:
+                      continue
+                  line = text.count('\n', 0, m.start()) + 1
+                  exact[(selector, decls)].append((str(p), line))
+                  for prop, val in decls:
+                      selector_prop[(selector, prop, val)].append((str(p), line))
+
+          print('\n=== EXACT DUPLICATE RULE BLOCKS ===')
+          n=0
+          for key, locs in sorted(exact.items(), key=lambda kv: (-len(kv[1]), kv[0][0])):
+              if len(locs) > 1:
+                  print(f'{key[0]} | copies={len(locs)} | {locs}')
+                  n += 1
+                  if n >= 80: break
+
+          print('\n=== DUPLICATE SELECTOR+PROPERTY+VALUE ===')
+          n=0
+          for (sel, prop, val), locs in sorted(selector_prop.items(), key=lambda kv: (-len(kv[1]), kv[0][0])):
+              files = {x[0] for x in locs}
+              if len(locs) > 1 and len(files) > 1:
+                  print(f'{sel} | {prop}: {val} | {locs}')
+                  n += 1
+                  if n >= 160: break
+
+          # Class names present in CSS but nowhere in TS/TSX (heuristic candidates only).
+          code_text = '\n'.join(t for p,t in texts.items() if p.suffix in ('.ts','.tsx'))
+          css_classes = defaultdict(list)
+          for p in css_files:
+              text = texts[p]
+              for m in re.finditer(r'\.([A-Za-z_][A-Za-z0-9_-]*)', text):
+                  cls = m.group(1)
+                  css_classes[cls].append((str(p), text.count('\n', 0, m.start()) + 1))
+
+          print('\n=== CSS CLASS CANDIDATES ABSENT FROM TS/TSX TEXT ===')
+          n=0
+          for cls, locs in sorted(css_classes.items()):
+              if cls not in code_text:
+                  print(f'.{cls} | occurrences={len(locs)} | first={locs[0]}')
+                  n += 1
+                  if n >= 200: break
+
+          print('\n=== IMPORTANT COUNTS ===')
+          for p in css_files:
+              c = texts[p].count('!important')
+              if c:
+                  print(f'{p}: {c}')
+          PY
