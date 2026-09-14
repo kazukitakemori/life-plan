@@ -29,9 +29,9 @@
 
 /* Short atomic labels are always one semantic unit. */
 .step-page :where(
-    .member-tab-name,
-    .member-tab-birth,
-    .member-tab-badge,
+    .ui-member-tab-name,
+    .ui-member-tab-birth,
+    .ui-member-tab-badge,
     .member-tab-add-menu-name,
     .member-tab-add-menu-meta,
     .member-tabs-summary-toggle,
