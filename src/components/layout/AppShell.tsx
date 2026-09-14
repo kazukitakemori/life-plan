@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  hasLocalPlanUndo,
+  LOCAL_PLAN_UNDO_HISTORY_EVENT,
+  undoLastLocalPlanChange,
+} from '../../lib/localPlanRepository';
 import type { AdminTabId } from '../../types/adminTabs';
 import type { AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { HeaderTabId } from '../../types/headerTabs';
@@ -13,7 +18,7 @@ import {
 } from './ShellFullscreenContext';
 import { Sidebar } from './Sidebar';
 import { TopHeader, type AutosaveStatus } from './TopHeader';
-import './AppShellNavigation.css';
+import './AppShellUndo.css';
 
 interface AppShellProps {
   activeStep: StepId;
@@ -49,29 +54,6 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-interface ShellNavigationState {
-  headerTab: HeaderTabId;
-  activeStep?: StepId;
-  adminTab?: AdminTabId;
-  assetBuildingTab?: AssetBuildingTabId;
-  requiredCoverageRiskKind?: RequiredCoverageRiskKind;
-}
-
-const MAX_NAVIGATION_HISTORY = 50;
-
-function isSameNavigationState(
-  left: ShellNavigationState,
-  right: ShellNavigationState,
-): boolean {
-  return (
-    left.headerTab === right.headerTab &&
-    left.activeStep === right.activeStep &&
-    left.adminTab === right.adminTab &&
-    left.assetBuildingTab === right.assetBuildingTab &&
-    left.requiredCoverageRiskKind === right.requiredCoverageRiskKind
-  );
-}
-
 function AppShellFrame(props: AppShellProps) {
   const {
     activeStep,
@@ -94,7 +76,7 @@ function AppShellFrame(props: AppShellProps) {
     hasOpenPlan,
     customerName,
     planStatus,
-    autosaveStatus,
+    autosaveStatus = 'idle',
     showHonorific,
     isLicensed = false,
     adminTab,
@@ -108,10 +90,10 @@ function AppShellFrame(props: AppShellProps) {
 
   const { shellRef } = useShellFullscreen();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [canGoBack, setCanGoBack] = useState(false);
-  const navigationHistoryRef = useRef<ShellNavigationState[]>([]);
-  const previousNavigationRef = useRef<ShellNavigationState | null>(null);
-  const restoringNavigationRef = useRef<ShellNavigationState | null>(null);
+  const [undoAvailable, setUndoAvailable] = useState(() => hasLocalPlanUndo());
+  const [undoBusy, setUndoBusy] = useState(false);
+  const autosaveStatusRef = useRef<AutosaveStatus>(autosaveStatus);
+  const undoRequestedRef = useRef(false);
   const showSidebar = activeHeaderTab === 'input';
   const showStatusBanner =
     showAnalysisStaleBanner &&
@@ -119,129 +101,89 @@ function AppShellFrame(props: AppShellProps) {
     analysisStale &&
     !isAnalyzing;
 
-  const currentNavigation: ShellNavigationState = {
-    headerTab: activeHeaderTab,
-    activeStep: activeHeaderTab === 'input' ? activeStep : undefined,
-    adminTab: activeHeaderTab === 'admin' ? adminTab : undefined,
-    assetBuildingTab:
-      activeHeaderTab === 'asset-building' ? assetBuildingTab : undefined,
-    requiredCoverageRiskKind:
-      activeHeaderTab === 'required-coverage'
-        ? requiredCoverageRiskKind
-        : undefined,
+  const refreshUndoAvailability = () => {
+    const saving =
+      autosaveStatusRef.current === 'pending' ||
+      autosaveStatusRef.current === 'saving';
+    setUndoAvailable(saving || hasLocalPlanUndo());
   };
 
-  const isNavigationStateAvailable = (state: ShellNavigationState): boolean => {
-    if (state.headerTab === 'admin') {
-      return isLicensed || state.adminTab === 'license' || state.adminTab == null;
-    }
-    if (state.headerTab === 'input') {
-      return Boolean(hasOpenPlan) &&
-        (state.activeStep == null || enabledSteps.includes(state.activeStep));
-    }
-    if (state.headerTab === 'required-coverage') {
-      if (!(analysisUnlocked || requiredCoverageUnlocked)) return false;
-      return (
-        state.requiredCoverageRiskKind == null ||
-        requiredCoverageRiskKinds == null ||
-        requiredCoverageRiskKinds.includes(state.requiredCoverageRiskKind)
-      );
-    }
-    return Boolean(analysisUnlocked);
-  };
-
-  const refreshCanGoBack = () => {
-    setCanGoBack(
-      navigationHistoryRef.current.some((state) =>
-        isNavigationStateAvailable(state),
-      ),
-    );
-  };
-
-  useEffect(() => {
-    const previous = previousNavigationRef.current;
-    if (previous == null) {
-      previousNavigationRef.current = currentNavigation;
-      return;
-    }
-
-    if (isSameNavigationState(previous, currentNavigation)) return;
-
-    const restoring = restoringNavigationRef.current;
-    if (restoring != null) {
-      if (isSameNavigationState(restoring, currentNavigation)) {
-        restoringNavigationRef.current = null;
-        previousNavigationRef.current = currentNavigation;
+  const performUndo = async () => {
+    setUndoBusy(true);
+    try {
+      if (autosaveStatusRef.current === 'error' && !hasLocalPlanUndo()) {
+        window.location.reload();
+        return;
       }
+      const undone = await undoLastLocalPlanChange();
+      if (!undone) {
+        setUndoBusy(false);
+        refreshUndoAvailability();
+        return;
+      }
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      setUndoBusy(false);
+      refreshUndoAvailability();
+      window.alert('操作を元に戻せませんでした。');
+    }
+  };
+
+  const handleUndo = () => {
+    if (undoBusy || !undoAvailable) return;
+    const status = autosaveStatusRef.current;
+    if (status === 'pending' || status === 'saving') {
+      undoRequestedRef.current = true;
+      setUndoBusy(true);
       return;
     }
-
-    navigationHistoryRef.current.push(previous);
-    if (navigationHistoryRef.current.length > MAX_NAVIGATION_HISTORY) {
-      navigationHistoryRef.current.shift();
-    }
-    previousNavigationRef.current = currentNavigation;
-    refreshCanGoBack();
-  }, [
-    activeHeaderTab,
-    activeStep,
-    adminTab,
-    assetBuildingTab,
-    requiredCoverageRiskKind,
-  ]);
+    void performUndo();
+  };
 
   useEffect(() => {
-    refreshCanGoBack();
-  }, [
-    analysisUnlocked,
-    requiredCoverageUnlocked,
-    hasOpenPlan,
-    isLicensed,
-    enabledSteps,
-    requiredCoverageRiskKinds,
-  ]);
+    autosaveStatusRef.current = autosaveStatus;
+    refreshUndoAvailability();
+
+    if (
+      undoRequestedRef.current &&
+      autosaveStatus !== 'pending' &&
+      autosaveStatus !== 'saving'
+    ) {
+      undoRequestedRef.current = false;
+      void performUndo();
+    }
+  }, [autosaveStatus]);
+
+  useEffect(() => {
+    const handleHistoryChanged = () => refreshUndoAvailability();
+    window.addEventListener(LOCAL_PLAN_UNDO_HISTORY_EVENT, handleHistoryChanged);
+    return () =>
+      window.removeEventListener(
+        LOCAL_PLAN_UNDO_HISTORY_EVENT,
+        handleHistoryChanged,
+      );
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isUndoShortcut =
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'z';
+      if (!isUndoShortcut || undoBusy || !undoAvailable) return;
+      event.preventDefault();
+      handleUndo();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undoAvailable, undoBusy, autosaveStatus]);
 
   const handleStepChange = (step: StepId) => {
     onStepChange(step);
     setMobileSidebarOpen(false);
-  };
-
-  const handleGoBack = () => {
-    let target: ShellNavigationState | undefined;
-    while (navigationHistoryRef.current.length > 0) {
-      const candidate = navigationHistoryRef.current.pop();
-      if (candidate != null && isNavigationStateAvailable(candidate)) {
-        target = candidate;
-        break;
-      }
-    }
-
-    refreshCanGoBack();
-    if (target == null) return;
-
-    restoringNavigationRef.current = target;
-
-    if (target.headerTab === 'input' && target.activeStep != null) {
-      onStepChange(target.activeStep);
-      setMobileSidebarOpen(false);
-    }
-    if (target.headerTab === 'admin' && target.adminTab != null) {
-      onAdminTabChange?.(target.adminTab);
-    }
-    if (
-      target.headerTab === 'asset-building' &&
-      target.assetBuildingTab != null
-    ) {
-      onAssetBuildingTabChange?.(target.assetBuildingTab);
-    }
-    if (
-      target.headerTab === 'required-coverage' &&
-      target.requiredCoverageRiskKind != null
-    ) {
-      onRequiredCoverageRiskKindChange?.(target.requiredCoverageRiskKind);
-    }
-
-    onHeaderTabChange(target.headerTab);
   };
 
   return (
@@ -271,16 +213,19 @@ function AppShellFrame(props: AppShellProps) {
         requiredCoverageRiskKind={requiredCoverageRiskKind}
         onRequiredCoverageRiskKindChange={onRequiredCoverageRiskKindChange}
       />
-      <div className="shell-history-bar" aria-label="画面履歴">
+      <div className="shell-undo-bar" aria-label="操作履歴">
         <button
           type="button"
-          className="shell-history-back"
-          onClick={handleGoBack}
-          disabled={!canGoBack}
-          aria-label="1つ前の画面に戻る"
+          className="shell-undo-button"
+          onClick={handleUndo}
+          disabled={!undoAvailable || undoBusy}
+          aria-label="直前の操作を元に戻す"
+          aria-keyshortcuts="Control+Z Meta+Z"
+          title="直前の操作を元に戻す（Ctrl/⌘ + Z）"
         >
-          <span className="shell-history-back-icon" aria-hidden="true">←</span>
-          <span>1つ前に戻る</span>
+          <span className="shell-undo-icon" aria-hidden="true">↶</span>
+          <span>{undoBusy ? '元に戻しています…' : '元に戻す'}</span>
+          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Z</span>
         </button>
       </div>
       <div className="shell-body">
