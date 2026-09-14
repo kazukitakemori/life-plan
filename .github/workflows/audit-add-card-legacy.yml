@@ -20,14 +20,14 @@ jobs:
           import re
 
           targets = [
-              'add-family-card',
-              'income-add-card',
-              'life-event-add-card',
-              'housing-owned-add-option',
-              'vehicle-add-card',
-              'insurance-add-card',
-              'loan-add-card',
-              'savings-add-card',
+              'add-family-',
+              'add-income-',
+              'life-event-add-',
+              'housing-owned-add-',
+              'vehicle-add-',
+              'insurance-add-',
+              'loan-add-',
+              'savings-add-',
           ]
 
           for path in sorted(Path('src').glob('*.css')):
