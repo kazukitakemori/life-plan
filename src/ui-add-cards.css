@@ -1,0 +1,91 @@
+/* Shared add-card presentation.
+ * Keep legacy screen rules intact during the UI adoption phase.
+ * Once this design is accepted and merged, obsolete legacy rules can be removed in a separate cleanup PR.
+ */
+
+.ui-add-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ui-add-card-grid > .ui-add-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 88px;
+  min-height: 88px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ui-add-card-grid > .ui-add-card:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-bg-hover);
+}
+
+.ui-add-card-grid > .ui-add-card:focus-visible {
+  outline: none;
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px rgb(47 111 78 / 16%);
+}
+
+.ui-add-card-grid > .ui-add-card.ui-add-card--active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 0 0 1px rgb(47 111 78 / 14%);
+}
+
+.ui-add-card .ui-add-card__title {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ui-add-card .ui-add-card__description {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .ui-add-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .ui-add-card-grid > .ui-add-card {
+    height: 84px;
+    min-height: 84px;
+    padding: 12px 14px;
+  }
+}
