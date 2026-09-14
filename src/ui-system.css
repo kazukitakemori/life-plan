@@ -246,9 +246,6 @@
   font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1;
-  white-space: nowrap;
-  word-break: keep-all;
-  overflow-wrap: normal;
   transition:
     border-color var(--ui-transition-fast),
     background var(--ui-transition-fast),
@@ -295,21 +292,6 @@ button.member-tab.active {
 
 .member-tab-name {
   color: inherit;
-}
-
-.member-tab-name,
-.member-tab-birth,
-.member-tab-badge,
-.member-tab-add-menu-name,
-.member-tab-add-menu-meta {
-  word-break: keep-all;
-  overflow-wrap: normal;
-}
-
-.member-tab-name,
-.member-tab-birth,
-.member-tab-badge {
-  white-space: nowrap;
 }
 
 .member-tab-birth,
