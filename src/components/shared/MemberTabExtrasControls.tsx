@@ -94,7 +94,7 @@ export function MemberTabAddInBar({
           <div
             ref={menuRef}
             id={listId}
-            className="member-tab-add-menu"
+            className="ui-member-tab-menu"
             role="listbox"
             aria-label="追加する家族"
             style={{
@@ -110,7 +110,7 @@ export function MemberTabAddInBar({
                   key={member.id}
                   type="button"
                   role="option"
-                  className="member-tab-add-menu-item"
+                  className="ui-member-tab-menu-item"
                   onClick={() => {
                     onAdd(member.id);
                     setPickerOpen(false);
@@ -121,10 +121,10 @@ export function MemberTabAddInBar({
                     gender={member.gender}
                     age={member.age}
                   />
-                  <span className="member-tab-add-menu-text">
-                    <span className="member-tab-add-menu-name">{label}</span>
+                  <span className="ui-member-tab-menu-text">
+                    <span className="ui-member-tab-menu-name">{label}</span>
                     {referenceDate ? (
-                      <span className="member-tab-add-menu-meta">
+                      <span className="ui-member-tab-menu-meta">
                         {formatBirthShort(member, referenceDate)}
                       </span>
                     ) : null}
@@ -138,7 +138,7 @@ export function MemberTabAddInBar({
       : null;
 
   return (
-    <div className="member-tab-add-wrap">
+    <div className="ui-member-tab-add-wrap">
       <button
         ref={buttonRef}
         type="button"
@@ -222,7 +222,7 @@ export function MemberPersonTab({
 
 export function MemberTabHouseholdGuidance() {
   return (
-    <p className="member-tab-extras-guidance">
+    <p className="ui-member-tabs-guidance">
       ご家族タブは本宅など世帯の物件をまとめる場所です。家賃やローンの支払い（CF上の出口）は契約者個人に紐づきます。個人名義の物件は「入力する人を追加」で個人タブを出してください。
     </p>
   );
