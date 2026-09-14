@@ -113,6 +113,16 @@ function limitTickYears(ticks: number[], maxTicks: number): number[] {
   return result;
 }
 
+function removeCrowdedFinalTick(ticks: number[], minimumYearGap = 2): number[] {
+  if (ticks.length < 2) return ticks;
+
+  const last = ticks[ticks.length - 1];
+  const previous = ticks[ticks.length - 2];
+  if (last - previous > minimumYearGap) return ticks;
+
+  return [...ticks.slice(0, -2), last];
+}
+
 function compactLegendLabel(value: string): string {
   return value.replace(/\s*\([^)]*生\)$/, '');
 }
@@ -377,8 +387,13 @@ export function EducationExpenseChart(props: EducationExpenseChartProps) {
   );
 
   const tickYears = useMemo(() => {
-    if (!isMobile || !isAggregate) return standardTickYears;
-    return limitTickYears(standardTickYears, 5);
+    if (!isMobile) return standardTickYears;
+
+    const mobileTicks = isAggregate
+      ? limitTickYears(standardTickYears, 5)
+      : standardTickYears;
+
+    return removeCrowdedFinalTick(mobileTicks);
   }, [isMobile, isAggregate, standardTickYears]);
 
   const pointsByYear = useMemo(() => {
