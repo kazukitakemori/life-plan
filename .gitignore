@@ -16,3 +16,6 @@ scripts/final-reconstructed-*.tsx
 scripts/fac647-*.txt
 scripts/skip-log.txt
 scripts/cashflow-patch.txt
+
+# Local / diagnostic scratch data
+tmp-*.json
