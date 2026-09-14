@@ -141,8 +141,7 @@ function AppShellFrame(props: AppShellProps) {
       if ((!event.ctrlKey && !event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();
       const isUndoShortcut = !event.shiftKey && key === 'z';
-      const isRedoShortcut =
-        (!event.shiftKey && key === 'y') || (event.shiftKey && key === 'z');
+      const isRedoShortcut = event.shiftKey && key === 'z';
 
       if (isUndoShortcut && undoAvailable && !historyWaiting && onUndo) {
         event.preventDefault();
@@ -219,12 +218,12 @@ function AppShellFrame(props: AppShellProps) {
           onClick={requestRedo}
           disabled={!redoAvailable || historyWaiting}
           aria-label="元に戻した操作をやり直す"
-          aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Shift+Z"
-          title="元に戻した操作をやり直す（Ctrl+Y / ⌘⇧Z）"
+          aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z"
+          title="元に戻した操作をやり直す（Ctrl/⌘ + Shift + Z）"
         >
           <span className="shell-undo-icon" aria-hidden="true">↷</span>
           <span>{redoQueued ? '待機中…' : 'やり直す'}</span>
-          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Y</span>
+          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Shift+Z</span>
         </button>
       </div>
       <div className="shell-body">
