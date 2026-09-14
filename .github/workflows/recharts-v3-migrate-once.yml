@@ -71,6 +71,16 @@ jobs:
 
           replace_once(
               'src/components/assetBuilding/LifetimeBalanceSimulationChart.tsx',
+              "}: {\n  x?: number;\n  y?: number;\n  index?: number;\n  payload?: { value: number };\n  points: LifetimeBalanceChartPoint[];\n}) {",
+              "}: {\n  x?: string | number;\n  y?: string | number;\n  index?: number;\n  payload?: { value: number };\n  points: LifetimeBalanceChartPoint[];\n}) {",
+          )
+          replace_once(
+              'src/components/assetBuilding/LifetimeBalanceSimulationChart.tsx',
+              "  const labelXInGroup = CHART_MARGIN_LEFT - 8 - x;",
+              "  const xOffset = typeof x === 'number' ? x : Number(x) || 0;\n  const labelXInGroup = CHART_MARGIN_LEFT - 8 - xOffset;",
+          )
+          replace_once(
+              'src/components/assetBuilding/LifetimeBalanceSimulationChart.tsx',
               "interface ChartMouseState {\n  activeTooltipIndex?: number;\n  activeLabel?: number | string;\n  isTooltipActive?: boolean;\n}",
               "interface ChartMouseState {\n  activeTooltipIndex?: unknown;\n  activeLabel?: unknown;\n  isTooltipActive?: boolean;\n}",
           )
@@ -96,7 +106,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/components
-            git commit -m "Recharts v3の型変更に対応"
+            git commit -m "Recharts v3の型変更対応を補完"
             git push origin HEAD:chore/recharts-v3-20260914
           fi
 
