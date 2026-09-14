@@ -25,6 +25,7 @@ import './mobileInsurance.css';
 import './mobileSavings.css';
 import './mobileSecondLife.css';
 import './ui-unification.css';
+import './ui-unification-q1-q2.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
