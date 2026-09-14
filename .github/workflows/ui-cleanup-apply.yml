@@ -1,0 +1,66 @@
+name: Apply Safe UI Cleanup
+
+on:
+  push:
+    branches:
+      - cleanup/ui-dead-code
+    paths:
+      - .github/workflows/ui-cleanup-apply.yml
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: cleanup/ui-dead-code
+      - name: Remove proven-dead CSS
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/index.css')
+          text = p.read_text(encoding='utf-8')
+          original = text
+
+          dead_lines = [
+              '  --color-primary-light: #e8f5e9;\n',
+              '  --color-primary-border: #a5d6a7;\n',
+              '  --color-sidebar-bg: #ffffff;\n',
+              '  --space-1: 4px;\n',
+              '  --sim-plot-edge-padding: 6px;\n',
+          ]
+          for line in dead_lines:
+              count = text.count(line)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one occurrence of {line.strip()!r}, got {count}')
+              text = text.replace(line, '', 1)
+
+          duplicate_blocks = [
+              ".income-retirement-fields {\n  display: flex;\n  flex-direction: column;\n  gap: 14px;\n}\n",
+              ".income-retirement-period-row {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 8px;\n}\n",
+          ]
+          for block in duplicate_blocks:
+              count = text.count(block)
+              if count != 2:
+                  raise SystemExit(f'Expected exactly two copies of duplicate block, got {count}: {block.splitlines()[0]}')
+              pos = text.rfind(block)
+              text = text[:pos] + text[pos + len(block):]
+
+          if text == original:
+              raise SystemExit('No changes made')
+          p.write_text(text, encoding='utf-8')
+          print(f'index.css bytes: {len(original.encode())} -> {len(text.encode())}')
+          PY
+
+          npm ci
+          npm run build
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/index.css
+          git commit -m "未使用変数と重複CSSを削除"
+          git push origin HEAD:cleanup/ui-dead-code
