@@ -235,7 +235,6 @@ button:disabled {
 }
 
 .plan-bar-name-label {
-  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -247,7 +246,6 @@ button:disabled {
   padding: 6px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   background: #fff;
 }
 
@@ -257,7 +255,6 @@ button:disabled {
 }
 
 .plan-bar-dirty {
-  font-size: 0.75rem;
   color: #6a7685;
   white-space: nowrap;
 }
@@ -277,7 +274,6 @@ button:disabled {
 .plan-bar-btn {
   padding: 6px 12px;
   border: 1px solid #c5ced9;
-  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
 }
@@ -310,7 +306,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
 }
 
 .plan-open-list-wrap {
@@ -358,13 +353,11 @@ button:disabled {
 }
 
 .plan-open-item-name {
-  font-size: 0.875rem;
   font-weight: 600;
   color: #223;
 }
 
 .plan-open-item-date {
-  font-size: 0.75rem;
   color: #6a7685;
 }
 
@@ -390,7 +383,6 @@ button:disabled {
 .plan-save-as-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #445;
 }
@@ -400,7 +392,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
 }
 
@@ -415,7 +406,6 @@ button:disabled {
   min-width: 120px;
   max-width: 280px;
   flex: 1 1 160px;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #223;
   white-space: nowrap;
@@ -542,7 +532,6 @@ button:disabled {
 .plan-meta-label {
   display: block;
   margin: 12px 0 6px;
-  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -555,7 +544,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
   background: #fff;
 }
@@ -565,7 +553,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   box-sizing: border-box;
   resize: vertical;
   min-height: 88px;
@@ -612,14 +599,12 @@ button:disabled {
 
 .plan-admin-title {
   margin: 0 0 6px;
-  font-size: 1.25rem;
   font-weight: 700;
   color: #223;
 }
 
 .plan-admin-desc {
   margin: 0;
-  font-size: 0.875rem;
   color: #667;
 }
 
@@ -670,7 +655,6 @@ button:disabled {
   padding: 8px 10px;
   border: 1px solid #c5ced9;
   border-radius: 6px;
-  font-size: 0.875rem;
   background: #fff;
 }
 
@@ -722,7 +706,6 @@ button:disabled {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -735,7 +718,6 @@ button:disabled {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -888,7 +870,6 @@ button:disabled {
 
 .top-header-title {
   margin: 0;
-  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #fff;
@@ -908,7 +889,6 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
 }
@@ -917,7 +897,6 @@ button:disabled {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.8125rem;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
@@ -944,7 +923,6 @@ button:disabled {
 }
 
 .top-header-autosave {
-  font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -968,7 +946,6 @@ button:disabled {
 .top-header-hint {
   margin: 0;
   min-height: 1.5rem;
-  font-size: 0.875rem;
   line-height: 1.5rem;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -989,7 +966,6 @@ button:disabled {
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 1rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.78);
   white-space: nowrap;
@@ -1272,7 +1248,6 @@ button:disabled {
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 0.9375rem;
   transition: background 0.15s;
 }
 
@@ -1285,7 +1260,6 @@ button:disabled {
 }
 
 .sidebar-q {
-  font-size: 0.8125rem;
   font-weight: 700;
   color: inherit;
   min-width: 1.75rem;
@@ -1566,10 +1540,8 @@ button:disabled {
 }
 
 .ui-field-label {
-  font-size: var(--text-md);
   font-weight: 600;
   color: var(--color-muted);
-  line-height: var(--leading-tight);
 }
 
 .ui-field-controls {
@@ -1582,8 +1554,6 @@ button:disabled {
 .ui-field-hint,
 .ui-note {
   margin: 0;
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
   color: var(--color-faint);
 }
 
@@ -2118,7 +2088,6 @@ button:disabled {
 }
 
 .income-field-label {
-  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-muted);
 }
@@ -2139,7 +2108,6 @@ button:disabled {
 .income-period-year-note {
   margin: 0;
   width: 100%;
-  font-size: var(--text-sm);
   color: var(--color-faint);
 }
 
@@ -2475,9 +2443,7 @@ button:disabled {
 .income-entry-guidance {
   margin: 0;
   padding: 12px 18px;
-  font-size: var(--text-sm);
   color: var(--color-muted);
-  line-height: var(--leading-relaxed);
   background: #fafbfc;
   border-bottom: 1px solid var(--color-line);
 }
@@ -2508,7 +2474,6 @@ button:disabled {
   background: var(--color-brand-soft);
   border: 1px solid #c5d9cc;
   border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-brand);
 }
@@ -3367,7 +3332,6 @@ button:disabled {
 }
 
 .income-retirement-card-title {
-  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -3381,7 +3345,6 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 
@@ -3527,7 +3490,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
 }
 
 .living-copy-btn:hover:not(:disabled) {
@@ -3572,7 +3534,6 @@ button:disabled {
 
 .living-table-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -3615,7 +3576,6 @@ button:disabled {
 }
 
 .living-summary-auto {
-  font-size: 0.75rem;
   color: #667;
   white-space: nowrap;
 }
@@ -3805,7 +3765,6 @@ button:disabled {
 }
 
 .living-rate-same {
-  font-size: 0.8125rem;
   color: #888;
   padding-top: 6px;
 }
@@ -3983,10 +3942,8 @@ button:disabled {
 
 .asset-building-page-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #333;
-  line-height: 1.4;
 }
 
 .asset-building-title-menu {
@@ -4723,7 +4680,6 @@ button:disabled {
   border-bottom: 2px solid transparent;
   border-radius: 0;
   background: transparent;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #7a8490;
   cursor: pointer;
@@ -4755,7 +4711,6 @@ button:disabled {
   border-right: 1px solid var(--color-border);
   border-radius: 0;
   background: transparent;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #667;
   cursor: pointer;
@@ -4868,7 +4823,6 @@ button:disabled {
 
 .required-coverage-card-title {
   margin: 0 0 8px;
-  font-size: 1rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
@@ -4930,8 +4884,6 @@ button:disabled {
 
 .required-coverage-card-note {
   margin: 0 0 12px;
-  font-size: 0.8125rem;
-  line-height: 1.55;
   color: #666;
 }
 
@@ -4958,8 +4910,6 @@ button:disabled {
 
 .required-coverage-medical-intro .required-coverage-card-title {
   margin: 0;
-  font-size: 1.125rem;
-  line-height: 1.4;
 }
 
 .required-coverage-medical-intro .required-coverage-card-note {
@@ -4986,15 +4936,12 @@ button:disabled {
 
 .required-coverage-medical-section-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
 
 .required-coverage-medical-section-reflect {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.45;
   color: #667;
 }
 
@@ -5201,8 +5148,6 @@ button:disabled {
 .required-coverage-medical-income-result {
   flex: 1 1 100%;
   margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.55;
   color: #667085;
 }
 
@@ -5414,15 +5359,12 @@ button:disabled {
 }
 
 .required-coverage-medical-line-note {
-  font-size: 0.75rem;
   font-weight: 400;
   color: #98a2b3;
 }
 
 .required-coverage-medical-line-formula {
-  font-size: 0.75rem;
   color: #667085;
-  line-height: 1.4;
   word-break: break-word;
 }
 
@@ -5569,7 +5511,6 @@ button:disabled {
 }
 
 .required-coverage-medical-field-label {
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #344054;
 }
@@ -5632,7 +5573,6 @@ button:disabled {
 .required-coverage-medical-result-note {
   display: block;
   margin-top: 2px;
-  font-size: 0.75rem;
   font-weight: 400;
   color: #98a2b3;
 }
@@ -5866,7 +5806,6 @@ button:disabled {
 
 .required-coverage-work-member-name {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-header-bg);
 }
@@ -6202,7 +6141,6 @@ button:disabled {
   border-right: 1px solid var(--color-border);
   background: transparent;
   color: #555;
-  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.35;
   text-align: left;
@@ -6390,7 +6328,6 @@ button:disabled {
 }
 
 .required-coverage-design-table thead th {
-  font-size: 0.6875rem;
   font-weight: 600;
   color: #1565c0;
   background: var(--color-table-header);
@@ -6474,8 +6411,6 @@ button:disabled {
 
 .required-coverage-horizon-help {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.5;
   color: #777;
 }
 
@@ -6551,7 +6486,6 @@ button:disabled {
 .required-coverage-expense-table thead th {
   background: var(--color-table-header);
   color: #1565c0;
-  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -6673,7 +6607,6 @@ button:disabled {
 
 .lifetime-chart-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #283c58;
 }
@@ -6909,8 +6842,6 @@ button:disabled {
 
 .lifetime-chart-layout-hint {
   margin: 0;
-  font-size: 0.6875rem;
-  line-height: 1.4;
 }
 
 .lifetime-chart-fullscreen-btn {
@@ -7034,7 +6965,6 @@ button:disabled {
 
 .lifetime-chart-yaxis-auto-hint {
   margin: 0;
-  font-size: 0.75rem;
 }
 
 .lifetime-chart-summary {
@@ -7044,7 +6974,6 @@ button:disabled {
 .lifetime-chart-summary-title,
 .lifetime-chart-legend-title {
   margin: 0 0 6px;
-  font-size: 0.8125rem;
   font-weight: 700;
 }
 
@@ -7064,12 +6993,10 @@ button:disabled {
 }
 
 .lifetime-chart-summary-row dt {
-  font-size: 0.75rem;
 }
 
 .lifetime-chart-summary-row dd {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
 }
 
@@ -7227,8 +7154,6 @@ button:disabled {
 }
 
 .lifetime-chart-legend-label {
-  font-size: 0.75rem;
-  line-height: 1.35;
 }
 
 .lifetime-chart-tooltip {
@@ -7241,7 +7166,6 @@ button:disabled {
 
 .lifetime-chart-tooltip-title {
   margin: 0 0 8px;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #333;
 }
@@ -7258,7 +7182,6 @@ button:disabled {
   gap: 8px;
   align-items: center;
   margin: 0;
-  font-size: 0.8125rem;
   color: #444;
 }
 
@@ -8026,10 +7949,8 @@ button:disabled {
 
 .life-event-detail-popover-title {
   margin: 0;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #334155;
-  line-height: 1.3;
 }
 
 .life-event-detail-popover-close {
@@ -8107,7 +8028,6 @@ button:disabled {
 
 .cashflow-title {
   margin: 0;
-  font-size: 1.125rem;
   font-weight: 700;
   color: #333;
   display: flex;
@@ -8476,7 +8396,6 @@ button:disabled {
 
 .cashflow-note {
   margin: 12px 0 0;
-  font-size: 0.75rem;
   color: #888;
 }
 
@@ -8521,7 +8440,6 @@ button:disabled {
 
 .pension-section-title {
   margin: 0 0 20px;
-  font-size: 1rem;
   font-weight: 700;
   color: #1565c0;
 }
@@ -8553,14 +8471,12 @@ button:disabled {
 }
 
 .pension-timeline-age {
-  font-size: 0.75rem;
   font-weight: 600;
   color: #333;
   white-space: nowrap;
 }
 
 .pension-timeline-year {
-  font-size: 0.6875rem;
   color: #888;
   white-space: nowrap;
 }
@@ -8632,9 +8548,7 @@ button:disabled {
   background: #212121;
   border-radius: 4px;
   color: #fff;
-  font-size: 0.6875rem;
   font-weight: 600;
-  line-height: 1.3;
   white-space: nowrap;
 }
 
@@ -8652,11 +8566,9 @@ button:disabled {
 }
 
 .pension-timeline-pivot-date {
-  font-size: 0.6875rem;
 }
 
 .pension-timeline-pivot-months {
-  font-size: 0.75rem;
 }
 
 .pension-enrollment-panel {
@@ -8700,7 +8612,6 @@ button:disabled {
 }
 
 .pension-enrollment-label {
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
 }
@@ -8753,7 +8664,6 @@ button:disabled {
 
 .pension-estimate-title {
   margin: 0;
-  font-size: 1rem;
   font-weight: 700;
   color: #223;
 }
@@ -8899,13 +8809,11 @@ button:disabled {
 }
 
 .pension-field-unit {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
 
 .pension-field-calc {
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #1565c0;
 }
@@ -9472,7 +9380,6 @@ button:disabled {
 
 .residence-card-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -9502,7 +9409,6 @@ button:disabled {
 
 .residence-period-label {
   min-width: 88px;
-  font-size: 0.8125rem;
   font-weight: 600;
   color: #333;
 }
@@ -9531,7 +9437,6 @@ button:disabled {
 }
 
 .residence-data-version {
-  font-size: 0.75rem;
   color: #888;
   white-space: nowrap;
 }
@@ -9623,7 +9528,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -9667,7 +9571,6 @@ button:disabled {
 
 .education-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -9859,7 +9762,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
   white-space: nowrap;
   text-align: center;
 }
@@ -9885,9 +9787,7 @@ button:disabled {
 
 .education-entrance-note {
   margin: 0;
-  font-size: 0.625rem;
   color: #888;
-  line-height: 1.4;
 }
 
 .education-ref-modal-overlay {
@@ -9927,7 +9827,6 @@ button:disabled {
 
 .education-ref-modal-title {
   margin: 0 32px 8px 0;
-  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -10025,7 +9924,6 @@ button:disabled {
 
 .tax-breakdown-reference-title {
   margin: 0 0 8px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -10162,7 +10060,6 @@ button:disabled {
 }
 
 .education-yen-unit {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
@@ -10226,7 +10123,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.75rem;
 }
 
 .education-add-other-btn:hover {
@@ -10259,7 +10155,6 @@ button:disabled {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   color: #64748b;
-  font-size: 0.875rem;
 }
 
 
@@ -10274,7 +10169,6 @@ button:disabled {
 
 .education-chart-title {
   margin: 0 0 8px;
-  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -10320,8 +10214,6 @@ button:disabled {
 }
 
 .education-chart-legend-label {
-  font-size: 11px;
-  line-height: 1.3;
 }
 
 .education-chart-tooltip {
@@ -10436,7 +10328,6 @@ button:disabled {
   border-radius: 4px;
   background: #fff;
   color: #1976d2;
-  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -10486,7 +10377,6 @@ button:disabled {
 
 .celebration-gift-block-title {
   margin: 0;
-  font-size: 0.875rem;
   font-weight: 700;
   color: #333;
 }
@@ -10517,7 +10407,6 @@ button:disabled {
 
 .celebration-gift-header-cell {
   padding: 8px 12px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -10611,7 +10500,6 @@ button:disabled {
 
 .life-event-header-cell {
   padding: 8px 10px;
-  font-size: 0.75rem;
   font-weight: 600;
   color: #1565c0;
   text-align: center;
@@ -10741,7 +10629,6 @@ button:disabled {
 }
 
 .life-event-rate-label {
-  font-size: 0.75rem;
   color: #666;
   white-space: nowrap;
 }
@@ -10806,7 +10693,6 @@ button:disabled {
 
 .life-event-add-title {
   margin: 0 0 12px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -10846,9 +10732,7 @@ button:disabled {
 }
 
 .life-event-add-card-desc {
-  font-size: 0.6875rem;
   text-align: center;
-  line-height: 1.4;
 }
 
 /* Other step ? tax/social insurance breakdown */
@@ -10983,7 +10867,6 @@ button:disabled {
 
 .other-breakdown-year-title {
   margin: 0 0 4px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -11015,7 +10898,6 @@ button:disabled {
 
 .other-breakdown-life-stage-title {
   margin: 0 0 4px;
-  font-size: 0.9375rem;
   font-weight: 700;
   color: #333;
 }
@@ -11062,7 +10944,6 @@ button:disabled {
   background: transparent;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
-  font-size: 0.875rem;
   font-weight: 600;
   color: #666;
   cursor: pointer;
@@ -11201,8 +11082,6 @@ button:disabled {
 .second-life-guide-intro {
   margin: 16px 0 0;
   color: #555;
-  font-size: 0.875rem;
-  line-height: 1.6;
 }
 
 .second-life-guide-start-age {
@@ -11268,8 +11147,6 @@ button:disabled {
 
 .second-life-guide-card-summary {
   margin: 6px 0 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
   color: #333;
 }
 
@@ -11282,7 +11159,6 @@ button:disabled {
 
 .second-life-guide-checklist-title {
   margin: 28px 0 0;
-  font-size: 1rem;
   font-weight: 700;
   color: #333;
 }
@@ -11333,7 +11209,6 @@ button:disabled {
   border-radius: 6px;
   background: #fff;
   color: #1565c0;
-  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -11507,8 +11382,6 @@ button:disabled {
 
 .second-life-template-panel-desc {
   margin: 4px 0 0;
-  font-size: 0.8125rem;
-  line-height: 1.5;
   color: #555;
 }
 
@@ -11519,7 +11392,6 @@ button:disabled {
   border-radius: 6px;
   background: #1565c0;
   color: #fff;
-  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -11801,7 +11673,6 @@ button:disabled {
 
 .second-life-section-title {
   margin: 0;
-  font-size: 0.9375rem;
   font-weight: 700;
 }
 
@@ -11994,7 +11865,6 @@ button:disabled {
 
 .second-life-skip-hint {
   color: #888;
-  font-size: 0.75rem;
 }
 
 .second-life-choice-grid {
@@ -12076,7 +11946,6 @@ button:disabled {
 
 .second-life-choice-label {
   flex: 1;
-  line-height: 1.4;
 }
 
 .second-life-choice-badge {
@@ -12084,7 +11953,6 @@ button:disabled {
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
-  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -12167,7 +12035,6 @@ button:disabled {
 
 .second-life-living-ref {
   margin: 0 0 8px;
-  font-size: 0.75rem;
   color: #888;
 }
 
@@ -12181,7 +12048,6 @@ button:disabled {
 
 .second-life-breakdown-note {
   margin: 0 0 8px;
-  font-size: 0.7rem;
   color: #888;
 }
 
@@ -12207,12 +12073,10 @@ button:disabled {
 .second-life-breakdown-empty {
   margin: 0;
   color: #888;
-  font-size: 0.75rem;
 }
 
 .second-life-nursing-desc {
   margin: 0 0 10px;
-  line-height: 1.5;
   color: #666;
 }
 
@@ -12268,7 +12132,6 @@ button:disabled {
 .second-life-apply-btn {
   padding: 8px 18px;
   border-radius: 20px;
-  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -12363,7 +12226,6 @@ button:disabled {
   flex: 0 0 5.5em;
   margin: 0;
   padding-top: 12px;
-  font-size: 0.8125rem;
   font-weight: 700;
   color: #555;
 }
@@ -12393,9 +12255,7 @@ button:disabled {
 
 .calc-breakdown-compound-note {
   margin: 6px 0 0;
-  font-size: 0.6875rem;
   color: #888;
-  line-height: 1.4;
 }
 
 .calc-breakdown-compound-hint {
@@ -12404,9 +12264,7 @@ button:disabled {
   border: 1px dashed #bdbdbd;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.75rem;
   color: #666;
-  line-height: 1.5;
 }
 
 .calc-breakdown--pension .calc-breakdown-box--highlight {
@@ -15005,7 +14863,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
@@ -16722,7 +16579,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
@@ -17450,7 +17306,6 @@ button:disabled {
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #fff;
-  font-size: 0.8125rem;
   color: #333;
   white-space: nowrap;
   cursor: pointer;
