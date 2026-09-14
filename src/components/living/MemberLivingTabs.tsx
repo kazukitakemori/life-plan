@@ -35,20 +35,20 @@ export function MemberLivingTabs({
   const removable = new Set(removableMemberIds);
 
   return (
-    <div className="member-tabs-block">
-      <div className="member-tabs-row">
-        <div className="member-tabs">
+    <div className="ui-member-tabs-block">
+      <div className="ui-member-tabs-row">
+        <div className="ui-member-tabs-list">
           <button
             type="button"
-            className={`member-tab ${activeTargetId === HOUSEHOLD_LIVING_KEY ? 'active' : ''}`}
+            className={`ui-member-tab ${activeTargetId === HOUSEHOLD_LIVING_KEY ? 'active' : ''}`}
             onClick={() => onSelect(HOUSEHOLD_LIVING_KEY)}
           >
             <span className="member-avatar member-avatar--household">👨‍👩‍👧</span>
-            <div className="member-tab-info">
-              <span className="member-tab-name">
+            <div className="ui-member-tab-info">
+              <span className="ui-member-tab-name">
                 ご家族
                 {householdCount > 0 && (
-                  <span className="member-tab-badge">（{householdCount}件）</span>
+                  <span className="ui-member-tab-badge">（{householdCount}件）</span>
                 )}
               </span>
             </div>
@@ -78,7 +78,7 @@ export function MemberLivingTabs({
       </div>
 
       {showHouseholdGuidance ? (
-        <div className="member-tabs-meta">
+        <div className="ui-member-tabs-meta">
           <MemberTabHouseholdGuidance />
         </div>
       ) : null}
