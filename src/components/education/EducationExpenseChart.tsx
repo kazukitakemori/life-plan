@@ -162,8 +162,8 @@ function XAxisRowText({
 }
 
 interface XAxisTickProps {
-  x?: number;
-  y?: number;
+  x?: string | number;
+  y?: string | number;
   index?: number;
   payload?: { value: number };
   point: EducationChartPoint | undefined;
@@ -182,7 +182,8 @@ function XAxisTick({
 }: XAxisTickProps) {
   if (!payload || !point) return null;
 
-  const labelXInGroup = labelX - x;
+  const xOffset = typeof x === 'number' ? x : Number(x) || 0;
+  const labelXInGroup = labelX - xOffset;
   const year = payload.value;
 
   return (
