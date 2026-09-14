@@ -27,6 +27,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
+
           total_anywhere = 0
           for p in Path('src').rglob('*.css'):
               t = p.read_text(encoding='utf-8')
@@ -36,23 +37,32 @@ jobs:
                   p.write_text(t.replace('overflow-wrap: anywhere;', 'overflow-wrap: break-word;'), encoding='utf-8')
           if not (1 <= total_anywhere <= 20):
               raise SystemExit(f'Unexpected anywhere count: {total_anywhere}')
+
           p = Path('src/index.css')
           t = p.read_text(encoding='utf-8')
+
           def edit_rule(selector, replacements, prepend=None):
               global t
               pattern = re.compile(r'(' + re.escape(selector) + r'\s*\{)(.*?)(\n\})', re.S)
               matches = list(pattern.finditer(t))
-              if len(matches) != 1:
-                  raise SystemExit(f'Expected one rule for {selector}, found {len(matches)}')
-              m = matches[0]
+              candidates = []
+              for m in matches:
+                  body = m.group(2)
+                  if all(old in body for old, _ in replacements):
+                      candidates.append(m)
+              if len(candidates) != 1:
+                  raise SystemExit(
+                      f'Expected one matching rule for {selector}, '
+                      f'found {len(candidates)} matching bodies across {len(matches)} selector rules'
+                  )
+              m = candidates[0]
               body = m.group(2)
               for old, new in replacements:
-                  if old not in body:
-                      raise SystemExit(f'Missing declaration in {selector}: {old}')
                   body = body.replace(old, new, 1)
               if prepend:
                   body = '\n  ' + prepend + ';' + body
               t = t[:m.start()] + m.group(1) + body + m.group(3) + t[m.end():]
+
           edit_rule('.plan-admin-contact', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0')
           edit_rule('.plan-admin-contact-line', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')])
           edit_rule('.housing-owned-field-hint', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;'), ('line-height: 1.125rem;', 'line-height: 1.45;')], 'min-width: 0')
@@ -60,6 +70,7 @@ jobs:
           edit_rule('.housing-insurance-item-name', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0;\n  max-width: 100%')
           edit_rule('.linked-insurance-summary', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'flex: 1 1 180px;\n  min-width: 0')
           edit_rule('.housing-owned-insurance-meta', [('white-space: nowrap;', 'white-space: normal;\n  overflow-wrap: break-word;')], 'min-width: 0')
+
           p.write_text(t, encoding='utf-8')
           print(f'Replaced {total_anywhere} overflow-wrap:anywhere declarations.')
           print('Adjusted 7 long-text rules.')
