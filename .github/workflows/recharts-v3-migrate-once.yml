@@ -115,3 +115,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Verify chart calculations
+        run: |
+          npx --yes tsx scripts/verify-asset-building-charts.mjs
+          npx --yes tsx scripts/verify-education-chart-past.mjs
+          npx --yes tsx scripts/verify-required-coverage.mjs
