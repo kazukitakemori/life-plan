@@ -5,17 +5,20 @@
 
 .ui-add-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, 200px);
   gap: 12px;
   align-items: stretch;
+  justify-content: start;
 }
 
 .ui-add-card-grid > .ui-add-card {
   box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
   height: 88px;
   min-height: 88px;
+  max-height: 88px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -61,6 +64,7 @@
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
+  text-align: left;
 }
 
 .ui-add-card .ui-add-card__description {
@@ -75,6 +79,7 @@
   line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 @media (max-width: 768px) {
@@ -84,8 +89,12 @@
   }
 
   .ui-add-card-grid > .ui-add-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
     height: 84px;
     min-height: 84px;
+    max-height: 84px;
     padding: 12px 14px;
   }
 }
