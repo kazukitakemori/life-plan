@@ -1390,7 +1390,6 @@ button:disabled {
   margin: 10px 0 0;
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
-  color: var(--color-muted);
 }
 
 .step-actions {
@@ -1562,10 +1561,7 @@ button:disabled {
   min-height: var(--control-height);
   padding: 8px 12px;
   border: 1px solid var(--ui-control-border);
-  border-radius: var(--ui-control-radius);
-  background: var(--color-surface);
   font-size: var(--text-base);
-  color: var(--color-ink);
 }
 
 .ui-input {
@@ -1649,7 +1645,6 @@ button:disabled {
   justify-content: center;
   min-height: var(--control-height);
   padding: 8px 14px;
-  border-radius: var(--radius-sm);
   border: 1px solid var(--color-line);
   background: var(--color-surface);
   color: var(--color-ink);
@@ -1672,7 +1667,6 @@ button:disabled {
 
 .ui-btn--danger {
   border-color: var(--ui-danger-border);
-  color: var(--color-danger);
   background: var(--color-surface);
 }
 
@@ -1800,9 +1794,7 @@ button:disabled {
 }
 
 .family-member-card {
-  background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -1971,7 +1963,6 @@ button:disabled {
   margin: 0 0 var(--space-3);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-ink);
 }
 
 .add-family-grid {
@@ -1988,8 +1979,6 @@ button:disabled {
   min-height: 88px;
   padding: var(--space-4) 18px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -2030,7 +2019,6 @@ button:disabled {
   border-radius: 6px;
   border: 1px solid #d0dceb;
   background: #f3f7fc;
-  color: #345;
   font-size: 0.8125rem;
   line-height: 1.5;
 }
@@ -2423,9 +2411,7 @@ button:disabled {
 }
 
 .income-entry {
-  background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -3389,7 +3375,6 @@ button:disabled {
   margin: 0 0 var(--space-3);
   font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-ink);
 }
 
 .add-income-grid {
@@ -3406,8 +3391,6 @@ button:disabled {
   min-height: 88px;
   padding: var(--space-4) 18px;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
 }
