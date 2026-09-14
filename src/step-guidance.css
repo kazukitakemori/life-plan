@@ -1,5 +1,10 @@
 /* Shared Q1-Q12 title guidance ------------------------------------------ */
 
+/* Q12の旧ページ内概要は、同内容をタイトルガイドへ集約して初期表示しない。 */
+.second-life-step > .second-life-guide-intro {
+  display: none;
+}
+
 .step-title-guide-trigger {
   display: inline-flex;
   align-items: center;
