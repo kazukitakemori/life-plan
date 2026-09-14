@@ -1,0 +1,46 @@
+name: Recharts v3 production deploy (one-off)
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/deploy-once-recharts-v3.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify chart calculations
+        run: |
+          npx --yes tsx scripts/verify-asset-building-charts.mjs
+          npx --yes tsx scripts/verify-education-chart-past.mjs
+          npx --yes tsx scripts/verify-required-coverage.mjs
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
