@@ -1,0 +1,227 @@
+/*
+ * Q7 / Q8 convergence layer
+ *
+ * Q7 already uses much of the shared UI language, so this mostly normalizes
+ * legacy form controls. Q8 still carries older blue/yellow table chrome and is
+ * brought into the same neutral + brand-green system.
+ */
+
+/* Q7: income ------------------------------------------------------------- */
+
+.income-step .purpose-input-note,
+.income-step .prior-year-income-guide {
+  border-color: #d7e5dc;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: #345743;
+}
+
+.income-step :is(
+    .select-input,
+    .amount-input,
+    .rate-input,
+    .rate-end-input
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.income-step :is(
+    .select-input,
+    .amount-input,
+    .rate-input,
+    .rate-end-input
+  ):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.income-step :is(
+    .select-input,
+    .amount-input,
+    .rate-input,
+    .rate-end-input
+  ):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.income-step :is(.income-period-card, .income-retirement-card) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.income-step .income-entry-guidance {
+  border-bottom-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.income-step .income-entry-index {
+  background: var(--ui-brand);
+}
+
+.income-step :is(
+    .income-period-year-note,
+    .prior-year-income-label,
+    .rate-field-label,
+    .rate-unit
+  ) {
+  color: var(--ui-text-muted);
+}
+
+.income-step .income-empty {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+}
+
+.income-step :is(.remove-period-btn, .income-remove-btn) {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, white);
+  background: var(--ui-bg-surface);
+  color: var(--ui-danger);
+}
+
+/* Q8: pension ------------------------------------------------------------ */
+
+.pension-step .purpose-input-note {
+  border-color: #d7e5dc;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: #345743;
+}
+
+.pension-step .pension-section-title {
+  color: var(--ui-text);
+  font-size: var(--ui-font-section);
+}
+
+.pension-step .pension-subsection-title,
+.pension-step .teikibin-block-title,
+.pension-step .benefit-settings-block-title {
+  color: var(--ui-text);
+}
+
+.pension-step .pension-help-icon {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.pension-step :is(.pension-enrollment-panel, .pension-estimate-panel, .income-annual-chart) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+.pension-step .pension-estimate-title {
+  color: var(--ui-text);
+}
+
+.pension-step .pension-estimate-total,
+.pension-step .pension-estimate-note {
+  color: var(--ui-text-muted);
+}
+
+.pension-step .pension-estimate-total strong {
+  color: var(--ui-brand);
+}
+
+.pension-step .pension-info-box {
+  border-color: #d7e5dc;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand-soft);
+  color: #345743;
+}
+
+.pension-step .pension-info-emphasis {
+  color: var(--ui-brand);
+}
+
+.pension-step :is(
+    .pension-field-input,
+    .pension-field-select,
+    .required-coverage-medical-preset-select,
+    .required-coverage-medical-employment-select
+  ) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.pension-step :is(.pension-field-input, .pension-field-select):hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.pension-step :is(.pension-field-input, .pension-field-select):focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.pension-step .pension-field-unit,
+.pension-step :is(.teikibin-block-title-sub, .benefit-death-date) {
+  color: var(--ui-text-muted);
+}
+
+.pension-step .pension-field-calc {
+  color: var(--ui-brand);
+}
+
+.pension-step :is(
+    .teikibin-period-table-section,
+    .teikibin-period-table-summary-head,
+    .teikibin-period-table-side,
+    .teikibin-amount-corner,
+    .teikibin-amount-col-header,
+    .teikibin-amount-row-label,
+    .teikibin-amount-subheader,
+    .teikibin-monthly-table th,
+    .benefit-col-header
+  ) {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.pension-step :is(
+    .teikibin-period-table,
+    .teikibin-amount-table,
+    .teikibin-monthly-table-wrap,
+    .benefit-settings-table,
+    .benefit-survivor-table
+  ) {
+  border-color: var(--ui-border);
+}
+
+.pension-step :is(
+    .teikibin-period-table th,
+    .teikibin-period-table td,
+    .teikibin-amount-table th,
+    .teikibin-amount-table td,
+    .teikibin-monthly-table th,
+    .teikibin-monthly-table td,
+    .benefit-settings-table th,
+    .benefit-settings-table td,
+    .benefit-survivor-table th,
+    .benefit-survivor-table td
+  ) {
+  border-color: var(--ui-border);
+}
+
+.pension-step .teikibin-amount-total-cell,
+.pension-step .teikibin-amount-total-cell--primary,
+.pension-step .teikibin-period-table-summary-value--eligible {
+  border-color: var(--ui-brand);
+}
+
+.pension-step .benefit-amount-option:has(input:checked) .benefit-amount-option-label--auto {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+/* Survivor-related orange remains semantic; early-pension warnings remain amber. */
