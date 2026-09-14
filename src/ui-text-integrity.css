@@ -55,8 +55,3 @@
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-
-/* Legacy placeholder actions should not occupy space when the feature is unavailable. */
-.show-all-btn:disabled {
-  display: none;
-}
