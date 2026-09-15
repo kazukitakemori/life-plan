@@ -17,7 +17,6 @@ import './mobileCompact.css';
 import './mobileSteps.css';
 import './mobileEducation.css';
 import './mobileLifeEvent.css';
-import './mobileLiving.css';
 import './mobileHousing.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
@@ -41,6 +40,7 @@ import './life-event-ui.css';
 import './ui-form-units.css';
 import './ui-action-integrity.css';
 import './living-ui.css';
+import './mobileLiving.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
