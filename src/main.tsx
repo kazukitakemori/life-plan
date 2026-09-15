@@ -28,6 +28,7 @@ import './ui-unification.css';
 import './ui-unification-screens.css';
 import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
+import './ui-mobile-control-geometry.css';
 import './ui-add-cards.css';
 import './education-ui.css';
 import './education-mobile-ui.css';
@@ -41,6 +42,7 @@ import './ui-form-units.css';
 import './ui-action-integrity.css';
 import './living-ui.css';
 import './mobileLiving.css';
+import './living-mobile-touch.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
