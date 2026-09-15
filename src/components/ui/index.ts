@@ -3,6 +3,7 @@ export { FormSelect } from './FormSelect';
 export type { FormSelectOption } from './FormSelect';
 export { FormChoice } from './FormChoice';
 export { DisclosureSection } from './DisclosureSection';
+export { AddDisclosure } from './AddDisclosure';
 export { AmountInput } from './AmountInput';
 export { StepHeading } from './StepHeading';
 export { CopySettingsBar } from './CopySettingsBar';
