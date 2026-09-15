@@ -1,5 +1,5 @@
-/* Q4 生活費: スケジュールを要約バー + アコーディオンで扱う。
- * データ・計算は共通のまま、期間 / 入力方法 / 入力内容 / 合計を段階表示する。
+/* Q4 生活費: スケジュールの中身だけを画面固有レイアウトとして扱う。
+ * カード外枠・要約行・開閉表現は ui-accordion-card.css の共通基盤を利用する。
  */
 
 .living-step .living-schedules {
@@ -7,84 +7,6 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   width: 100%;
-  min-width: 0;
-}
-
-.living-step .living-schedule-card {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-card);
-  background: var(--ui-bg-surface);
-  box-shadow: var(--ui-shadow-subtle);
-}
-
-.living-step .living-schedule-card > .ui-disclosure-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 16px;
-  min-height: 64px;
-  padding: 13px 16px 13px 18px;
-  border-left: 4px solid var(--ui-brand);
-  background: var(--ui-bg-surface);
-  cursor: pointer;
-  list-style: none;
-  transition:
-    background var(--ui-transition-fast),
-    border-color var(--ui-transition-fast);
-}
-
-.living-step .living-schedule-card > .ui-disclosure-summary::-webkit-details-marker {
-  display: none;
-}
-
-.living-step .living-schedule-card > .ui-disclosure-summary:hover {
-  background: var(--ui-bg-hover);
-}
-
-.living-step .living-schedule-card[open] > .ui-disclosure-summary {
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-bg-selected);
-}
-
-.living-step .living-schedule-card > .ui-disclosure-summary::after {
-  content: '開く';
-  min-width: 52px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--ui-brand) 38%, var(--ui-border));
-  border-radius: var(--ui-radius-control);
-  background: var(--ui-bg-surface);
-  color: var(--ui-brand);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.living-step .living-schedule-card[open] > .ui-disclosure-summary::after {
-  content: '閉じる';
-}
-
-.living-step .ui-disclosure-title {
-  min-width: 0;
-  color: var(--ui-text);
-  font-size: var(--text-base);
-  font-weight: 700;
-  line-height: var(--leading-tight);
-  white-space: nowrap;
-}
-
-.living-step .ui-disclosure-meta {
-  color: var(--ui-text-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.living-step .ui-disclosure-body {
   min-width: 0;
 }
 
