@@ -31,8 +31,8 @@ export function CopySettingsBar({
         justifyContent: 'flex-end',
         width: '100%',
         minWidth: 0,
-        marginTop: '12px',
-        marginBottom: '16px',
+        marginTop: 'var(--space-3)',
+        marginBottom: 'var(--space-4)',
       }}
     >
       <div className={['ui-copy-bar', className].filter(Boolean).join(' ')}>
