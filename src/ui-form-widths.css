@@ -10,6 +10,7 @@
   --ui-field-width-short: 10rem;
   --ui-field-width-medium: 18rem;
   --ui-field-width-long: 32rem;
+  --ui-field-unit-gap: 4px;
 }
 
 /* Sensible defaults for ordinary shared controls. */
@@ -90,6 +91,49 @@
     .savings-entry-name-input
   ) {
   max-inline-size: var(--ui-field-width-long);
+}
+
+/*
+ * Input + unit is one visual group. A wider parent column must never create
+ * extra distance between the editable value and its unit (万円 / 円 / % / 年 / 歳 etc.).
+ */
+.ui-input-unit-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-field-unit-gap);
+  width: fit-content;
+  max-width: 100%;
+}
+
+:is(
+    .ui-amount,
+    .education-yen-input,
+    .housing-yen-input,
+    .housing-man-input--inline,
+    .celebration-gift-amount-field,
+    .life-event-amount-field,
+    .life-event-rate-field,
+    .living-amount-field,
+    .living-rate-field,
+    .rate-field-controls,
+    .teikibin-period-cell,
+    .bonus-row
+  ) {
+  column-gap: var(--ui-field-unit-gap);
+}
+
+:is(
+    .ui-amount-unit,
+    .amount-unit,
+    .rate-unit,
+    .pension-field-unit,
+    .education-yen-unit,
+    .housing-yen-unit,
+    .teikibin-monthly-date-unit
+  ) {
+  flex: 0 0 auto;
+  margin-inline: 0;
+  white-space: nowrap;
 }
 
 /* Explicit semantic widths. These can be used by any shared form control. */
