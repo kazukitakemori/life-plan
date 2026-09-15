@@ -15,8 +15,6 @@ import './ui-text-integrity.css';
 import './mobile.css';
 import './mobileCompact.css';
 import './mobileSteps.css';
-import './mobileEducation.css';
-import './mobileLifeEvent.css';
 import './mobileLiving.css';
 import './mobileHousing.css';
 import './mobileVehicle.css';
