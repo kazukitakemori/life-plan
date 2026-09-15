@@ -5,6 +5,7 @@ import {
   SAVINGS_SECTOR_LABELS,
 } from '../../lib/savingsLabels';
 import type { SavingsCategory } from '../../types/savings';
+import { AddDisclosure } from '../ui';
 
 interface AddSavingsCardsProps {
   onAdd: (category: SavingsCategory) => void;
@@ -53,34 +54,43 @@ function CategoryGrid({
 
 export function AddSavingsCards({ onAdd }: AddSavingsCardsProps) {
   return (
-    <section className="savings-add-section" aria-label="貯蓄・運用を追加">
-      <h3 className="savings-add-title">貯蓄・運用を追加</h3>
+    <AddDisclosure label="貯蓄・運用を追加" className="savings-add-section">
+      {(close) => {
+        const handleAdd = (category: SavingsCategory) => {
+          onAdd(category);
+          close();
+        };
 
-      <div className="savings-add-group">
-        <div className="savings-add-group-header">
-          <h4 className="savings-add-group-title">
-            {SAVINGS_SECTOR_LABELS.deposit}
-          </h4>
-          <p className="savings-add-group-desc">預貯金など</p>
-        </div>
-        <CategoryGrid
-          categories={SAVINGS_DEPOSIT_ADD_CATEGORIES}
-          onAdd={onAdd}
-        />
-      </div>
+        return (
+          <>
+            <div className="savings-add-group">
+              <div className="savings-add-group-header">
+                <h4 className="savings-add-group-title">
+                  {SAVINGS_SECTOR_LABELS.deposit}
+                </h4>
+                <p className="savings-add-group-desc">預貯金など</p>
+              </div>
+              <CategoryGrid
+                categories={SAVINGS_DEPOSIT_ADD_CATEGORIES}
+                onAdd={handleAdd}
+              />
+            </div>
 
-      <div className="savings-add-group">
-        <div className="savings-add-group-header">
-          <h4 className="savings-add-group-title">
-            {SAVINGS_SECTOR_LABELS.invest}
-          </h4>
-          <p className="savings-add-group-desc">投資・年金資産</p>
-        </div>
-        <CategoryGrid
-          categories={SAVINGS_INVEST_ADD_CATEGORIES}
-          onAdd={onAdd}
-        />
-      </div>
-    </section>
+            <div className="savings-add-group">
+              <div className="savings-add-group-header">
+                <h4 className="savings-add-group-title">
+                  {SAVINGS_SECTOR_LABELS.invest}
+                </h4>
+                <p className="savings-add-group-desc">投資・年金資産</p>
+              </div>
+              <CategoryGrid
+                categories={SAVINGS_INVEST_ADD_CATEGORIES}
+                onAdd={handleAdd}
+              />
+            </div>
+          </>
+        );
+      }}
+    </AddDisclosure>
   );
 }
