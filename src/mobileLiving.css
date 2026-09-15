@@ -1,6 +1,7 @@
 /* Q4 living expenses: phone-specific expanded-body composition only.
  * Accordion card shell / summary / open-close UI are owned by ui-accordion-card.css.
- * The same schedule data / input modes are used on desktop and mobile.
+ * Shared input sizing / value-unit proximity stay owned by ui-form-widths.css and
+ * ui-form-units.css. This file changes only the mobile information layout.
  */
 
 @media (max-width: 768px) {
@@ -9,38 +10,66 @@
   }
 
   .living-step .living-card-section {
-    padding: 14px 12px;
+    padding: 14px 13px;
   }
 
   .living-step .living-card-section-title {
-    margin-bottom: 10px;
-    font-size: var(--text-sm);
+    margin: 0 0 10px;
+    font-size: var(--ui-type-label);
+    line-height: 1.45;
   }
 
+  /* Period: stack start/end as two compact rows instead of shrinking PC columns. */
   .living-step .living-schedule-inputs {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: start;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
     width: 100%;
+  }
+
+  .living-step .living-schedule-side {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .living-step .living-schedule-side > .living-field-label {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
   }
 
   .living-step .living-schedule-fields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
     gap: 6px;
     width: 100%;
+    min-width: 0;
   }
 
-  .living-step .living-schedule-arrow {
-    align-self: center;
-    margin-top: 30px;
-  }
-
-  .living-step :where(.select-input--schedule, .amount-input, .rate-input) {
+  .living-step .living-schedule-fields > .select-input--schedule {
+    flex: 1 1 0;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
     min-height: 44px;
   }
 
+  .living-step :where(.period-start-label, .period-end-label) {
+    grid-column: 2;
+    margin: 0;
+  }
+
+  .living-step .living-schedule-arrow {
+    display: none;
+  }
+
+  /* Input mode stays the shared segmented control, only expanded to phone width. */
   .living-step .living-input-mode-control,
   .living-step .living-input-mode-control .ui-segmented-options {
     width: 100%;
@@ -53,31 +82,41 @@
     padding-inline: 8px;
   }
 
+  /* Simple input: label + control per row keeps units close without wasted width. */
   .living-step .living-simple-fields {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
-  .living-step .living-simple-field :where(.living-amount-field, .living-rate-field) {
+  .living-step .living-simple-field {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    width: 100%;
-  }
-
-  .living-step .living-simple-field :where(.amount-input, .rate-input) {
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
     width: 100%;
     min-width: 0;
   }
 
+  .living-step .living-simple-field > .living-field-label {
+    margin: 0;
+  }
+
+  .living-step .living-simple-field :where(.amount-input, .rate-input) {
+    min-height: 44px;
+  }
+
+  /* Detail input: each expense item becomes one self-contained edit card. */
   .living-step .living-detail-heading-row {
-    align-items: flex-end;
-    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
     margin-bottom: 10px;
   }
 
   .living-step .living-detail-heading-total {
-    font-size: var(--text-xs);
+    margin-left: auto;
+    font-size: var(--ui-type-helper);
   }
 
   .living-step .living-detail-table {
@@ -93,7 +132,7 @@
   .living-step .living-detail-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px 12px;
     margin-top: 10px;
     padding: 12px;
     border: 1px solid var(--ui-border);
@@ -113,7 +152,9 @@
     border: 0;
   }
 
-  .living-step .living-detail-content {
+  .living-step .living-detail-content,
+  .living-step .living-detail-cell:nth-child(2),
+  .living-step .living-detail-action {
     grid-column: 1 / -1;
   }
 
@@ -121,9 +162,9 @@
     display: block;
     margin-bottom: 5px;
     color: var(--ui-text-muted);
-    font-size: var(--text-xs);
+    font-size: var(--ui-type-helper);
     font-weight: 700;
-    line-height: var(--leading-tight);
+    line-height: 1.35;
   }
 
   .living-step .living-content-field {
@@ -144,32 +185,42 @@
   .living-step .select-input--cycle,
   .living-step .living-detail-cell .amount-input,
   .living-step .living-detail-cell .rate-input {
-    width: 100%;
     min-width: 0;
-    max-width: 100%;
     min-height: 44px;
   }
 
-  .living-step .living-cycle-field {
-    grid-template-columns: minmax(52px, 0.65fr) minmax(0, 1.35fr);
-    gap: 6px;
+  .living-step .living-content-input,
+  .living-step .select-input--cycle {
+    width: 100%;
+    max-width: none;
   }
 
-  .living-step .living-detail-cell :where(.living-amount-field, .living-rate-field) {
+  .living-step .living-cycle-field {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 6px;
     width: 100%;
+    min-width: 0;
+  }
+
+  .living-step .living-cycle-input {
+    width: 72px;
+    max-width: 72px;
   }
 
   .living-step .living-detail-action {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-end;
+    align-items: flex-end;
+  }
+
+  .living-step .living-detail-action:not(:has(.living-item-remove-btn)) {
+    display: none;
   }
 
   .living-step .living-item-remove-btn {
-    width: 100%;
+    width: auto;
+    min-width: 96px;
     min-height: 44px;
   }
 
@@ -185,19 +236,21 @@
   .living-step .living-summary-row {
     justify-content: space-between;
     gap: 10px;
-    padding: 13px 12px;
+    padding: 13px;
   }
 
   .living-step .living-summary-label {
+    font-size: var(--ui-type-helper);
     white-space: normal;
   }
 
   .living-step .living-summary-amount {
     flex: 0 0 auto;
+    font-size: var(--ui-type-card-title);
   }
 
   .living-step .living-schedule-remove {
-    padding: 12px;
+    padding: 12px 13px 14px;
   }
 
   .living-step .living-schedule-remove-btn {
@@ -215,30 +268,103 @@
     width: 100%;
     min-height: 44px;
   }
+
+  /* Q4 item picker must also be usable without desktop-sized modal geometry. */
+  .living-modal-overlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .living-modal {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 20px 16px 16px;
+    border-radius: var(--ui-radius-card);
+  }
+
+  .living-modal-close {
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .living-modal-title {
+    margin: 0 40px 14px 0;
+    font-size: var(--ui-type-body);
+    line-height: 1.45;
+  }
+
+  .living-modal-check-all {
+    min-height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .living-modal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+    margin-bottom: 14px;
+  }
+
+  .living-modal-option {
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px 4px;
+    font-size: var(--ui-type-label);
+    white-space: normal;
+  }
+
+  .living-modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .living-modal-add-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .living-modal-note {
+    font-size: var(--ui-type-helper);
+    line-height: 1.5;
+  }
 }
 
-@media (max-width: 430px) {
-  .living-step .living-schedule-inputs {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 360px) {
+  .living-step .living-card-section {
+    padding-inline: 11px;
   }
 
-  .living-step .living-schedule-arrow {
-    margin: 0;
-    transform: rotate(90deg);
-    justify-self: center;
+  .living-step .living-schedule-side {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap-inline: 6px;
   }
 
-  .living-step .living-detail-row,
-  .living-step .living-simple-fields {
-    grid-template-columns: minmax(0, 1fr);
+  .living-step .living-simple-field {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 6px;
   }
 
-  .living-step .living-detail-content {
-    grid-column: auto;
+  .living-step .living-detail-cell:nth-child(3),
+  .living-step .living-detail-cell:nth-child(4) {
+    grid-column: 1 / -1;
   }
 
   .living-step .living-detail-heading-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .living-step .living-detail-heading-total {
+    margin-left: 0;
+  }
+
+  .living-modal-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
