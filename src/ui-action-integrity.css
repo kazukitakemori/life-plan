@@ -152,6 +152,67 @@
 }
 
 /* ----------------------------------------------------------------------
+ * Shared primary actions
+ * ------------------------------------------------------------------- */
+
+/* Legacy feature-specific primary CTAs use the same filled brand language. */
+:is(
+    .living-step .living-modal-add-btn,
+    .second-life-step .second-life-template-panel-btn,
+    .second-life-step .second-life-apply-btn
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--ui-brand);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-brand);
+  color: #fff;
+  box-shadow: none;
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+
+:is(
+    .living-step .living-modal-add-btn,
+    .second-life-step .second-life-template-panel-btn,
+    .second-life-step .second-life-apply-btn
+  ):hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: color-mix(in srgb, var(--ui-brand) 92%, black);
+  color: #fff;
+}
+
+:is(
+    .living-step .living-modal-add-btn,
+    .second-life-step .second-life-template-panel-btn,
+    .second-life-step .second-life-apply-btn
+  ):active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+:is(
+    .living-step .living-modal-add-btn,
+    .second-life-step .second-life-template-panel-btn,
+    .second-life-step .second-life-apply-btn
+  ):disabled {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-subtle);
+}
+
+/* ----------------------------------------------------------------------
  * Destructive actions
  * ------------------------------------------------------------------- */
 
@@ -484,7 +545,10 @@
       .insurance-entry-open-btn,
       .savings-entry-open-btn,
       .vehicle-duplicate-btn,
-      .second-life-step .second-life-guide-nav-btn
+      .second-life-step .second-life-guide-nav-btn,
+      .living-step .living-modal-add-btn,
+      .second-life-step .second-life-template-panel-btn,
+      .second-life-step .second-life-apply-btn
     ) {
     min-height: 44px;
   }
