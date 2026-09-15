@@ -3,6 +3,7 @@ import {
   ADD_INCOME_OPTIONS,
   INCOME_CATEGORY_LABELS,
 } from '../../lib/incomeLabels';
+import { AddDisclosure } from '../ui';
 
 interface AddIncomeBarProps {
   canAddSideBusiness: boolean;
@@ -34,34 +35,38 @@ export function AddIncomeBar({
   onAdd,
 }: AddIncomeBarProps) {
   return (
-    <section className="add-income-bar">
-      <h3 className="add-income-title">収入を追加</h3>
-      <div className="add-income-grid ui-add-card-grid">
-        {ADD_INCOME_OPTIONS.map((option) => {
-          const isSideBusiness = option.variant === 'side_business';
-          const disabled = isSideBusiness && !canAddSideBusiness;
-          const description = getAddIncomeDescription(option, disabled);
+    <AddDisclosure label="収入を追加" className="add-income-bar">
+      {(close) => (
+        <div className="add-income-grid ui-add-card-grid">
+          {ADD_INCOME_OPTIONS.map((option) => {
+            const isSideBusiness = option.variant === 'side_business';
+            const disabled = isSideBusiness && !canAddSideBusiness;
+            const description = getAddIncomeDescription(option, disabled);
 
-          return (
-            <button
-              key={`${option.category}-${option.variant ?? 'default'}`}
-              type="button"
-              className={`add-income-card ui-add-card${
-                disabled ? ' add-income-card--disabled' : ''
-              }`}
-              disabled={disabled}
-              onClick={() => onAdd(option)}
-            >
-              <span className="add-income-label ui-add-card__title">
-                {option.label ?? INCOME_CATEGORY_LABELS[option.category]}
-              </span>
-              <span className="add-income-desc ui-add-card__description">
-                {description}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+            return (
+              <button
+                key={`${option.category}-${option.variant ?? 'default'}`}
+                type="button"
+                className={`add-income-card ui-add-card${
+                  disabled ? ' add-income-card--disabled' : ''
+                }`}
+                disabled={disabled}
+                onClick={() => {
+                  onAdd(option);
+                  close();
+                }}
+              >
+                <span className="add-income-label ui-add-card__title">
+                  {option.label ?? INCOME_CATEGORY_LABELS[option.category]}
+                </span>
+                <span className="add-income-desc ui-add-card__description">
+                  {description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </AddDisclosure>
   );
 }
