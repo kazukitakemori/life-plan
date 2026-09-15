@@ -169,6 +169,84 @@
   text-align: center;
 }
 
+/* Owned properties ----------------------------------------------------- */
+
+.housing-owned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.housing-owned-card {
+  display: grid;
+  grid-template-columns: minmax(140px, auto) minmax(260px, 1fr) minmax(140px, auto) auto;
+  gap: 14px 18px;
+  align-items: end;
+  padding: 16px 18px;
+}
+
+.housing-owned-card-identity {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.housing-owned-card-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.housing-owned-card-field-label {
+  color: var(--ui-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+.housing-owned-card-name-field .housing-owned-name-input {
+  width: 100%;
+}
+
+.housing-owned-card-usage-field .housing-owned-usage-select {
+  width: 100%;
+  min-width: 9rem;
+}
+
+.housing-owned-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.housing-owned-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: max-content;
+  height: auto;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--ui-radius-control);
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.housing-owned-detail {
+  border-top: 1px solid var(--ui-border);
+}
+
 @media (max-width: 980px) and (min-width: 769px) {
   .housing-rental-card-header {
     align-items: stretch;
@@ -185,5 +263,13 @@
 
   .housing-rental-cost-grid--four {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  .housing-owned-card {
+    grid-template-columns: minmax(140px, auto) minmax(240px, 1fr) minmax(140px, auto);
+  }
+
+  .housing-owned-card-actions {
+    grid-column: 1 / -1;
   }
 }
