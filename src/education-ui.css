@@ -297,17 +297,19 @@
   }
 
   .education-step .education-other-year-select {
-    flex: 0 0 96px;
-    width: 96px;
-    min-width: 96px;
-    padding-right: 30px;
+    flex: 0 0 128px;
+    width: 128px;
+    min-width: 128px;
+    padding-right: 34px;
+    white-space: nowrap;
   }
 
   .education-step .education-other-cycle-select {
-    flex: 0 0 88px;
-    width: 88px;
-    min-width: 88px;
-    padding-right: 30px;
+    flex: 0 0 104px;
+    width: 104px;
+    min-width: 104px;
+    padding-right: 34px;
+    white-space: nowrap;
   }
 
   .education-step .education-other-item-top .education-yen-input {
