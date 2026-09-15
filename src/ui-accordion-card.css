@@ -1,0 +1,246 @@
+/*
+ * Shared accordion-card shell for repeated editable entries.
+ *
+ * Q3 life events and Q4 living schedules share the same closed-card hierarchy,
+ * open/close affordance, surface, border, spacing and interaction states.
+ * Screen-specific files own only the fields inside the expanded body.
+ */
+
+:is(
+    .life-event-step .life-event-mobile-accordion-item,
+    .living-step .living-schedule-card
+  ) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-top: 3px solid var(--ui-brand);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-subtle);
+}
+
+:is(
+    .life-event-step .life-event-mobile-summary,
+    .living-step .living-schedule-card > .ui-disclosure-summary
+  ) {
+  width: 100%;
+  min-height: 74px;
+  padding: 14px 18px;
+  border: 0;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ui-transition-fast);
+}
+
+.life-event-step .life-event-mobile-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.living-step .living-schedule-card > .ui-disclosure-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 5px 20px;
+  list-style: none;
+}
+
+.living-step .living-schedule-card > .ui-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+:is(
+    .life-event-step .life-event-mobile-summary,
+    .living-step .living-schedule-card > .ui-disclosure-summary
+  ):hover {
+  background: var(--ui-bg-subtle);
+}
+
+:is(
+    .life-event-step .life-event-mobile-summary,
+    .living-step .living-schedule-card > .ui-disclosure-summary
+  ):focus-visible {
+  outline: 2px solid var(--ui-brand);
+  outline-offset: -2px;
+}
+
+.life-event-step
+  .life-event-mobile-accordion-item.is-expanded
+  > .life-event-mobile-summary,
+.living-step .living-schedule-card[open] > .ui-disclosure-summary {
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.life-event-step .life-event-mobile-summary-copy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px 10px;
+  min-width: 0;
+}
+
+:is(
+    .life-event-step .life-event-mobile-summary-title,
+    .living-step .ui-disclosure-title
+  ) {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.life-event-step .life-event-mobile-summary-type {
+  justify-self: start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ui-bg-muted, var(--ui-bg-subtle));
+  color: var(--ui-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+:is(
+    .life-event-step .life-event-mobile-summary-meta,
+    .living-step .ui-disclosure-meta
+  ) {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--ui-text-subtle);
+  font-size: 13px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.life-event-step .life-event-mobile-summary-meta {
+  grid-column: 1 / -1;
+}
+
+.living-step .ui-disclosure-title {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.living-step .ui-disclosure-meta {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.life-event-step .life-event-mobile-summary-action,
+.living-step .living-schedule-card > .ui-disclosure-summary::after {
+  color: var(--ui-brand);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.life-event-step .life-event-mobile-summary-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.living-step .living-schedule-card > .ui-disclosure-summary::after {
+  content: '詳細を開く  ＋';
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.living-step .living-schedule-card[open] > .ui-disclosure-summary::after {
+  content: '閉じる  −';
+}
+
+@media (max-width: 768px) {
+  :is(
+      .life-event-step .life-event-mobile-accordion-item,
+      .living-step .living-schedule-card
+    ) {
+    border-top-width: 4px;
+  }
+
+  :is(
+      .life-event-step .life-event-mobile-summary,
+      .living-step .living-schedule-card > .ui-disclosure-summary
+    ) {
+    min-height: 72px;
+    padding: 14px;
+  }
+
+  .life-event-step .life-event-mobile-summary {
+    gap: 14px;
+  }
+
+  .living-step .living-schedule-card > .ui-disclosure-summary {
+    gap: 4px 12px;
+  }
+
+  :is(
+      .life-event-step .life-event-mobile-summary-title,
+      .living-step .ui-disclosure-title
+    ) {
+    font-size: 15px;
+  }
+
+  .life-event-step .life-event-mobile-summary-type {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  :is(
+      .life-event-step .life-event-mobile-summary-meta,
+      .living-step .ui-disclosure-meta
+    ) {
+    font-size: 12px;
+  }
+
+  .life-event-step .life-event-mobile-summary-action,
+  .living-step .living-schedule-card > .ui-disclosure-summary::after {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 430px) {
+  :is(
+      .life-event-step .life-event-mobile-summary,
+      .living-step .living-schedule-card > .ui-disclosure-summary
+    ) {
+    align-items: flex-start;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .life-event-step .life-event-mobile-summary {
+    gap: 10px;
+  }
+
+  .living-step .living-schedule-card > .ui-disclosure-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+  }
+
+  :is(
+      .life-event-step .life-event-mobile-summary-meta,
+      .living-step .ui-disclosure-meta
+    ) {
+    white-space: normal;
+  }
+}
