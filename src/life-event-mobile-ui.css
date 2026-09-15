@@ -3,12 +3,8 @@
  *
  * The shared accordion-card shell and summary presentation live in
  * ui-mobile-accordion.css. This file owns Q3-specific labels, expanded-row
- * layout, display-order placement, celebration-gift layout and add-flow structure.
+ * layout, display-order placement and celebration-gift layout.
  */
-
-.life-event-add-toggle {
-  display: none;
-}
 
 /* 手動並べ替えは廃止。既存テーブルの先頭列は構造互換のため0幅にする。 */
 .life-event-step .life-event-table {
@@ -43,7 +39,6 @@
     margin-bottom: 14px;
   }
 
-  /* Use plain-language labels on phones while leaving the desktop table untouched. */
   .life-event-step .life-event-col-summary::before {
     content: 'イベント名';
   }
@@ -175,44 +170,5 @@
   .life-event-step .celebration-gift-amount-field {
     width: 100%;
     min-width: 0;
-  }
-
-  /* Q2-style collapsed add flow. Desktop keeps the existing card list. */
-  .life-event-step .life-event-add-section {
-    margin-top: 16px;
-  }
-
-  .life-event-step .life-event-add-title {
-    display: none;
-  }
-
-  .life-event-step .life-event-add-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .life-event-step .life-event-add-grid {
-    display: none;
-    width: 100%;
-    margin-top: 10px;
-    padding: 13px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius-card);
-    background: var(--ui-bg-subtle);
-  }
-
-  .life-event-step .life-event-add-section.is-open .life-event-add-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .life-event-step .life-event-add-grid > .life-event-add-card {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
   }
 }
