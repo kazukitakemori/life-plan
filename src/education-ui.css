@@ -9,30 +9,12 @@
 .education-step .education-toolbar {
   display: grid;
   gap: 12px;
-  width: 100%;
-  max-width: var(--step-width-standard);
-  margin: 0 auto 18px;
-}
-
-.education-step .ui-member-tabs-block {
-  flex: 0 0 100%;
-  width: 100%;
-  max-width: none;
-}
-
-.education-step .ui-member-tabs-row {
-  width: 100%;
-  max-width: none;
-}
-
-.education-step .ui-member-tabs-list {
-  flex: 1 1 auto;
+  margin-bottom: 18px;
 }
 
 .education-step .education-table-card {
   width: 100%;
-  max-width: var(--step-width-standard);
-  margin-inline: auto;
+  max-width: none;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -284,9 +266,7 @@
 .education-step .education-footer-actions {
   display: flex;
   justify-content: flex-start;
-  width: 100%;
-  max-width: var(--step-width-standard);
-  margin: 14px auto 0;
+  margin-top: 14px;
 }
 
 .education-step .education-empty {
