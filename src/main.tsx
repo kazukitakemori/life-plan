@@ -17,6 +17,7 @@ import './mobileCompact.css';
 import './mobileSteps.css';
 import './mobileEducation.css';
 import './mobileLifeEvent.css';
+import './housing-ui.css';
 import './mobileHousing.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
