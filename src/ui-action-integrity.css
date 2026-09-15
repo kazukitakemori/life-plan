@@ -2,11 +2,120 @@
  * Final shared action-role integrity layer.
  *
  * Screen-specific CSS owns placement and composition. This file is loaded after
- * those layers so destructive controls keep one semantic language even when
- * legacy screen rules still contain fixed widths or old glyph treatments.
+ * those layers so action roles keep one semantic language even when legacy
+ * screen rules still contain fixed widths, old glyphs or older button chrome.
  */
 
-/* Whole-entry deletion: quiet explicit action = trash icon + 「削除」. */
+/* ----------------------------------------------------------------------
+ * Shared secondary actions
+ * ------------------------------------------------------------------- */
+
+/*
+ * Older screens still use feature-specific class names for the same actions.
+ * Converge those actions here instead of reproducing visual rules per screen.
+ */
+:is(
+    .living-step .inline-add-btn,
+    .housing-owned-loan-add-btn,
+    .housing-owned-open-btn,
+    .housing-owned-loan-open-btn,
+    .housing-owned-insurance-open-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .vehicle-duplicate-btn
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-brand) 42%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+  box-shadow: var(--ui-shadow-button);
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+
+:is(
+    .living-step .inline-add-btn,
+    .housing-owned-loan-add-btn,
+    .housing-owned-open-btn,
+    .housing-owned-loan-open-btn,
+    .housing-owned-insurance-open-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .vehicle-duplicate-btn
+  ):hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+  color: var(--ui-brand);
+}
+
+:is(
+    .living-step .inline-add-btn,
+    .housing-owned-loan-add-btn,
+    .housing-owned-open-btn,
+    .housing-owned-loan-open-btn,
+    .housing-owned-insurance-open-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .vehicle-duplicate-btn
+  ):active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+:is(
+    .housing-owned-open-btn--active,
+    .housing-owned-loan-open-btn--active,
+    .housing-owned-insurance-open-btn--active,
+    .loan-entry-open-btn--active,
+    .insurance-entry-open-btn--active,
+    .savings-entry-open-btn--active
+  ) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  box-shadow: none;
+}
+
+:is(
+    .living-step .inline-add-btn,
+    .housing-owned-loan-add-btn,
+    .housing-owned-open-btn,
+    .housing-owned-loan-open-btn,
+    .housing-owned-insurance-open-btn,
+    .loan-entry-open-btn,
+    .insurance-entry-open-btn,
+    .savings-entry-open-btn,
+    .vehicle-duplicate-btn
+  ):disabled {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-subtle);
+  box-shadow: none;
+}
+
+/* ----------------------------------------------------------------------
+ * Destructive actions
+ * ------------------------------------------------------------------- */
+
+/* Whole-entry deletion: quiet explicit action = trash icon + clear label. */
 :is(
     .education-step .education-row-remove,
     .housing-step .housing-owned-card > .housing-row-remove
@@ -44,10 +153,21 @@
   mask: var(--ui-icon-trash) center / contain no-repeat;
 }
 
-:is(
-    .education-step .education-row-remove,
-    .housing-step .housing-owned-card > .housing-row-remove
-  )::after {
+/* Education has room at the end of the school card, so keep the useful context. */
+.education-step .education-row-remove::after {
+  content: 'この教育費を削除';
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* The old markup still contains a × and a longer dynamic label. */
+.education-step .education-row-remove :is(.education-remove-icon, .education-remove-label) {
+  display: none;
+}
+
+/* Housing card headers are denser, so use the concise destructive label. */
+.housing-step .housing-owned-card > .housing-row-remove::after {
   content: '削除';
   font-size: var(--ui-font-label);
   font-weight: 600;
@@ -63,14 +183,118 @@
   color: var(--ui-danger);
 }
 
-/* Legacy education markup still contains × and a contextual long label.
- * Keep the contextual wording in aria-label/title, not in the visible button.
- */
-.education-step .education-row-remove :is(.education-remove-icon, .education-remove-label) {
-  display: none;
+/* Living-expense item deletion keeps the visible word 「削除」 on every device. */
+.living-step .remove-member-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  width: auto;
+  min-width: 64px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+  font-size: 0;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-/* Dense nested deletion: same trash icon, icon-only. */
+.living-step .remove-member-btn::before {
+  content: '';
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+.living-step .remove-member-btn::after {
+  content: '削除';
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.living-step .remove-member-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+/* A whole living-expense schedule already has useful context; preserve it. */
+.living-step .living-schedule-remove-btn {
+  width: auto;
+  min-width: max-content;
+  min-height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+/* Linked loan / insurance cards used old square-minus controls. */
+:is(
+    .housing-owned-loan-card-header > .housing-row-remove,
+    .housing-owned-insurance-card-header > .housing-row-remove
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  width: auto;
+  min-width: 64px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+  font-size: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+:is(
+    .housing-owned-loan-card-header > .housing-row-remove,
+    .housing-owned-insurance-card-header > .housing-row-remove
+  )::before {
+  content: '';
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+:is(
+    .housing-owned-loan-card-header > .housing-row-remove,
+    .housing-owned-insurance-card-header > .housing-row-remove
+  )::after {
+  content: '削除';
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1;
+}
+
+:is(
+    .housing-owned-loan-card-header > .housing-row-remove,
+    .housing-owned-insurance-card-header > .housing-row-remove
+  ):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+/* Dense nested deletion: same trash icon, icon-only where the row is very tight. */
 :is(
     .education-step .education-other-remove,
     .income-step .income-bonus-row > .ui-btn--ghost
@@ -162,12 +386,28 @@
   /* Whole-card delete actions remain easy to tap and never compress their label. */
   :is(
       .education-step .education-row-remove,
-      .housing-step .housing-owned-card > .housing-row-remove
+      .housing-step .housing-owned-card > .housing-row-remove,
+      .living-step .living-schedule-remove-btn
     ) {
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    min-height: 44px;
+  }
+
+  /* Living item deletion remains explicit instead of collapsing into an icon. */
+  .living-step .remove-member-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  /* Linked cards keep a practical touch target without reverting to the old minus sign. */
+  :is(
+      .housing-owned-loan-card-header > .housing-row-remove,
+      .housing-owned-insurance-card-header > .housing-row-remove
+    ) {
     min-height: 44px;
   }
 
@@ -181,6 +421,21 @@
     min-width: 44px;
     max-width: 44px;
     height: 44px;
+    min-height: 44px;
+  }
+
+  /* Legacy secondary actions remain easy to tap on phones. */
+  :is(
+      .living-step .inline-add-btn,
+      .housing-owned-loan-add-btn,
+      .housing-owned-open-btn,
+      .housing-owned-loan-open-btn,
+      .housing-owned-insurance-open-btn,
+      .loan-entry-open-btn,
+      .insurance-entry-open-btn,
+      .savings-entry-open-btn,
+      .vehicle-duplicate-btn
+    ) {
     min-height: 44px;
   }
 }
