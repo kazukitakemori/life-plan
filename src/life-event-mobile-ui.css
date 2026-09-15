@@ -1,9 +1,10 @@
 /*
- * Q3 life-event mobile information architecture.
+ * Q3 life-event mobile expanded-body information architecture.
  *
- * The shared accordion-card shell and summary presentation live in
- * ui-mobile-accordion.css. This file owns Q3-specific labels, expanded-row
- * layout, display-order placement, celebration-gift layout and add-flow structure.
+ * Card shell, closed summary hierarchy and open/close interaction are shared
+ * with Q4 through ui-accordion-card.css. This file owns Q3-specific labels,
+ * expanded-row layout, display-order placement, celebration-gift layout and
+ * add-flow structure.
  */
 
 .life-event-add-toggle {
@@ -91,16 +92,6 @@
   }
 
   /* Q3 keeps only its own expanded-row information layout here. */
-  .life-event-step .life-event-mobile-summary-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .life-event-step .life-event-mobile-accordion-item:not(.is-expanded) > .life-event-table-row {
-    display: none;
-  }
-
   .life-event-step .life-event-mobile-accordion-item > .life-event-table-row,
   .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(odd),
   .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(even) {
