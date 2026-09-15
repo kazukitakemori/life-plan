@@ -4,6 +4,7 @@
  * Q3 life events and Q4 living schedules share the same closed-card hierarchy,
  * open/close affordance, surface, border, spacing and interaction states.
  * Screen-specific files own only the fields inside the expanded body.
+ * Typography follows the canonical tokens in ui-typography-unification.css.
  */
 
 :is(
@@ -94,7 +95,7 @@
   overflow: hidden;
   min-width: 0;
   color: var(--ui-text);
-  font-size: 16px;
+  font-size: var(--ui-type-card-title);
   font-weight: 700;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -107,7 +108,7 @@
   border-radius: 999px;
   background: var(--ui-bg-muted, var(--ui-bg-subtle));
   color: var(--ui-text-muted);
-  font-size: 12px;
+  font-size: var(--ui-type-helper);
   font-weight: 700;
   line-height: 1.35;
   white-space: nowrap;
@@ -120,7 +121,7 @@
   overflow: hidden;
   min-width: 0;
   color: var(--ui-text-subtle);
-  font-size: 13px;
+  font-size: var(--ui-type-helper);
   line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -143,7 +144,7 @@
 .life-event-step .life-event-mobile-summary-action,
 .living-step .living-schedule-card > .ui-disclosure-summary::after {
   color: var(--ui-brand);
-  font-size: 13px;
+  font-size: var(--ui-type-helper);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -194,14 +195,14 @@
       .life-event-step .life-event-mobile-summary-title,
       .living-step .ui-disclosure-title
     ) {
-    font-size: 15px;
+    font-size: var(--ui-type-body);
   }
 
   .life-event-step .life-event-mobile-summary-type {
     padding: 0;
     border-radius: 0;
     background: transparent;
-    font-size: 13px;
+    font-size: var(--ui-type-helper);
     font-weight: 400;
   }
 
@@ -209,12 +210,12 @@
       .life-event-step .life-event-mobile-summary-meta,
       .living-step .ui-disclosure-meta
     ) {
-    font-size: 12px;
+    font-size: var(--ui-type-helper);
   }
 
   .life-event-step .life-event-mobile-summary-action,
   .living-step .living-schedule-card > .ui-disclosure-summary::after {
-    font-size: 13px;
+    font-size: var(--ui-type-helper);
   }
 }
 
