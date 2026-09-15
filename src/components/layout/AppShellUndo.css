@@ -1,71 +1,105 @@
-.shell-undo-bar {
-  display: flex;
+.shell-top-region {
+  position: relative;
   flex: 0 0 auto;
-  align-items: center;
-  gap: 4px;
-  min-height: 40px;
-  padding: 5px 24px;
-  border-bottom: 1px solid var(--ui-border, var(--color-border));
-  background: var(--ui-bg-surface, #fff);
+  z-index: 30;
 }
 
-.shell-undo-button {
+.shell-top-region .top-header {
+  z-index: 1;
+}
+
+.shell-history-controls {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 24px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 30px;
-  padding: 4px 10px;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+.shell-history-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: var(--ui-radius-control, 8px);
   background: transparent;
   color: var(--ui-text-muted, var(--color-muted));
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1;
+  transition:
+    border-color var(--ui-transition-fast, 140ms ease),
+    background var(--ui-transition-fast, 140ms ease),
+    color var(--ui-transition-fast, 140ms ease);
 }
 
-.shell-undo-button:hover:not(:disabled) {
+.shell-history-button:hover:not(:disabled) {
   border-color: var(--ui-border, var(--color-border));
   background: var(--ui-bg-hover, var(--color-soft));
   color: var(--ui-text, var(--color-ink));
 }
 
-.shell-undo-button:focus-visible {
+.shell-history-button:focus-visible {
   outline: 2px solid var(--ui-brand, var(--color-brand));
   outline-offset: 2px;
 }
 
-.shell-undo-button:disabled {
+.shell-history-button:disabled {
   cursor: default;
-  opacity: 0.42;
+  opacity: 0.34;
 }
 
-.shell-undo-icon {
-  flex: 0 0 auto;
-  font-size: 17px;
+.shell-history-icon {
+  display: block;
+  font-size: 20px;
   line-height: 1;
+  transform: translateY(-1px);
 }
 
-.shell-undo-shortcut {
-  color: var(--ui-text-subtle, var(--color-faint));
-  font-size: 12px;
-  font-weight: 600;
+@media (min-width: 1025px) {
+  .shell-top-region .top-header-primary-right {
+    padding-right: 76px;
+  }
 }
 
 @media (max-width: 1024px) {
-  .shell-undo-bar {
-    min-height: 38px;
-    padding: 4px 10px;
+  .shell-history-controls {
+    top: 23px;
+    right: 52px;
+    gap: 2px;
+    transform: translateY(-50%);
   }
 
-  .shell-undo-button {
-    min-height: 30px;
-    padding: 4px 8px;
-    font-size: 13px;
+  .shell-history-button {
+    width: 34px;
+    height: 34px;
   }
 
-  .shell-undo-shortcut {
-    display: none;
+  .shell-top-region .top-header-mobile-current {
+    padding-right: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell-history-controls {
+    top: 22px;
+    right: 48px;
+  }
+
+  .shell-history-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .shell-history-icon {
+    font-size: 19px;
+  }
+
+  .shell-top-region .top-header-mobile-current {
+    padding-right: 68px;
   }
 }
