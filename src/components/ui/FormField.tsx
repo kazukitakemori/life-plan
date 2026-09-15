@@ -1,4 +1,8 @@
 import type { ReactNode } from 'react';
+import {
+  getFormControlWidthClassName,
+  type FormControlWidth,
+} from './controlWidth';
 
 interface FormFieldProps {
   label?: string;
@@ -6,6 +10,7 @@ interface FormFieldProps {
   hint?: string;
   children: ReactNode;
   className?: string;
+  controlWidth?: FormControlWidth;
 }
 
 export function FormField({
@@ -14,6 +19,7 @@ export function FormField({
   hint,
   children,
   className,
+  controlWidth,
 }: FormFieldProps) {
   return (
     <div className={['ui-field', className].filter(Boolean).join(' ')}>
@@ -22,7 +28,16 @@ export function FormField({
           {label}
         </label>
       ) : null}
-      <div className="ui-field-controls">{children}</div>
+      <div
+        className={[
+          'ui-field-controls',
+          getFormControlWidthClassName(controlWidth),
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {children}
+      </div>
       {hint ? <p className="ui-field-hint">{hint}</p> : null}
     </div>
   );
