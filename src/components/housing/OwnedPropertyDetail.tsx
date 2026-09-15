@@ -43,6 +43,7 @@ import { buildAcquisitionFeeBreakdownFromProperty } from '../../lib/housingAcqui
 import { isPairLoanEntry } from '../../lib/pairLoanShare';
 import { HousingManInput } from './HousingManInput';
 import { HousingOwnedDetailFold } from './HousingOwnedDetailFold';
+import { OwnedPropertyAcquisitionSection } from './OwnedPropertyAcquisitionSection';
 import { OwnedPropertyMaintenanceSection } from './OwnedPropertyMaintenanceSection';
 import { OwnedPropertyTargetSection } from './OwnedPropertyTargetSection';
 
@@ -499,242 +500,121 @@ export function OwnedPropertyDetail({
 
       {!isSimpleMode && (
         <>
-      <OwnedPropertyTargetSection
-        property={property}
-        member={member}
-        members={members}
-        referenceDate={referenceDate}
-        sectionNumber={targetSectionNumber}
-        onChange={onChange}
-      />
+          <OwnedPropertyTargetSection
+            property={property}
+            member={member}
+            members={members}
+            referenceDate={referenceDate}
+            sectionNumber={targetSectionNumber}
+            onChange={onChange}
+          />
 
-      {showAcquisitionSection && (
-      <section className="housing-owned-detail-section">
-        <h4 className="housing-owned-detail-title">({acquisitionSectionNumber}) 取得価格</h4>
-        <div className="housing-owned-acquisition-total">
-          <span className="housing-owned-acquisition-total-label">取得価格</span>
-          <strong className="housing-owned-acquisition-total-amount">
-            {acquisitionTotal}
-          </strong>
-          <span className="housing-owned-acquisition-note">
-            ※ 建物 + 土地 + 仲介手数料から自動計算
-          </span>
-        </div>
-        {isCurrentlyOccupied && (
-          <p className="housing-owned-loan-existing-note">
-            居住中でも、当時の取得価格・諸費用を入力してください。ローン借入額はこれらと「諸費用のローン組み込み」から計算します。過去の購入時現金支出はキャッシュフローには含めません。
-          </p>
-        )}
-
-        <div className="housing-rental-card">
-          <div
-            className={[
-              'housing-rental-table',
-              'housing-rental-table--owned-acquisition',
-              showBuildingField ? '' : 'housing-rental-table--owned-acquisition-land',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <div className="housing-rental-table-header">
-              {showBuildingField && (
-                <div className="housing-table-header-cell housing-col-amount">
-                  建物
-                </div>
-              )}
-              <div className="housing-table-header-cell housing-col-amount">土地</div>
-              <div className="housing-table-header-cell housing-col-amount housing-col-fetch">
-                費用取得
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                仲介手数料
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                登記手数料
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                不動産取得税
-              </div>
-            </div>
-
-            <div className="housing-rental-table-body">
-              <div className="housing-rental-table-row">
-                {showBuildingField && (
-                  <div className="housing-table-cell housing-col-amount">
-                    <HousingManInput
-                      compact
-                      value={property.buildingMan}
-                      onChange={(buildingMan) => update({ buildingMan })}
-                    />
-                  </div>
-                )}
-                <div className="housing-table-cell housing-col-amount">
-                  <HousingManInput
-                    compact
-                    value={property.landMan}
-                    onChange={(landMan) => update({ landMan })}
-                  />
-                </div>
-                <div className="housing-table-cell housing-col-amount housing-col-fetch">
-                  <div className="housing-fetch-field">
-                    <button
-                      type="button"
-                      className="education-fetch-btn"
-                      disabled={!canFetchAcquisitionFees}
-                      onClick={handleFetchAcquisitionFees}
-                    >
-                      参考
-                    </button>
-                  </div>
-                </div>
-                <div className="housing-table-cell housing-col-amount housing-table-cell--stacked">
-                  <HousingManInput
-                    compact
-                    value={property.brokerageFeeMan}
-                    onChange={(brokerageFeeMan) => update({ brokerageFeeMan })}
-                  />
-                  {acqBreakdown && (
-                    <button
-                      type="button"
-                      className="education-fetch-detail-link"
-                      onClick={() => setAcqRefSection('brokerage')}
-                    >
-                      詳細
-                    </button>
-                  )}
-                </div>
-                <div className="housing-table-cell housing-col-amount housing-table-cell--stacked">
-                  <HousingManInput
-                    compact
-                    value={property.registrationFeeMan}
-                    onChange={(registrationFeeMan) =>
-                      update({ registrationFeeMan })
-                    }
-                  />
-                  {acqBreakdown && (
-                    <button
-                      type="button"
-                      className="education-fetch-detail-link"
-                      onClick={() => setAcqRefSection('registration')}
-                    >
-                      詳細
-                    </button>
-                  )}
-                </div>
-                <div className="housing-table-cell housing-col-amount housing-table-cell--stacked">
-                  <HousingManInput
-                    compact
-                    value={property.acquisitionTaxMan}
-                    onChange={(acquisitionTaxMan) =>
-                      update({ acquisitionTaxMan })
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="education-fetch-detail-link"
-                    disabled={!canFetchAcquisitionFees}
-                    onClick={() => setAcqDetailOpen(true)}
-                  >
-                    詳細計算
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      )}
-
-      <AcquisitionReferenceModal
-        open={acqRefSection !== null}
-        section={acqRefSection ?? 'brokerage'}
-        breakdown={acqBreakdown}
-        onClose={() => setAcqRefSection(null)}
-      />
-
-      <AcquisitionTaxDetailModal
-        open={acqDetailOpen}
-        property={property}
-        referenceYear={referenceDate.getFullYear()}
-        onClose={() => setAcqDetailOpen(false)}
-        onConfirm={(patch) => {
-          update(patch);
-          if (acqBreakdown) {
-            const nextProperty = { ...property, ...patch };
-            const breakdown = buildAcquisitionFeeBreakdownFromProperty(
-              nextProperty,
-              patch.acquisitionTaxYear,
-              patch.acquisitionTaxMonth,
-              { hasPairLoan },
-            );
-            setAcqBreakdown(breakdown);
-          }
-        }}
-      />
-
-      <HousingOwnedDetailFold
-        title={`(${paymentSectionNumber}) ${isCurrentlyOccupied ? 'ローン' : '支払い方法'}`}
-        summary={loanSummary}
-      >
-        {!isCurrentlyOccupied && (
-          <div className="housing-owned-payment-options" role="radiogroup" aria-label="支払い方法">
-            {PAYMENT_METHODS.map((method) => (
-              <label key={method} className="housing-owned-payment-option">
-                <input
-                  type="radio"
-                  name={`owned-payment-${property.id}`}
-                  checked={property.paymentMethod === method}
-                  onChange={() => update({ paymentMethod: method })}
-                />
-                <span>{OWNED_PROPERTY_LOAN_PAYMENT_LABELS[method]}</span>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {property.paymentMethod === 'loan' && onUpdateLoan ? (
-          <>
-            {isCurrentlyOccupied && (
-              <p className="housing-owned-loan-existing-note">
-                契約済みローンの条件（金利・返済年数・開始年月）と、諸費用のローン組み込みを設定してください。
-              </p>
-            )}
-            <HousingLoanLinks
-              propertyName={property.name}
-              loans={linkedLoans}
-              contractorMembers={contractorMembers}
-              hasSpouse={hasSpouse}
-              members={members}
-              loanState={loanState}
-              housingState={housingState}
-              vehicleState={vehicleState}
-              referenceDate={referenceDate}
-              addLoanEnabled={canAddLoan && hasAcquisitionAmount}
-              onAddLoan={onAddLoan}
-              onUpdateLoan={onUpdateLoan}
-              onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
-              onPairShareChange={onPairShareChange}
-              onJointDebtShareChange={onJointDebtShareChange}
-              onPropertyFeeChange={onLoanPropertyFeeChange}
-              onRemoveLoan={onRemoveLoan}
+          {showAcquisitionSection && acquisitionSectionNumber !== null ? (
+            <OwnedPropertyAcquisitionSection
+              sectionNumber={acquisitionSectionNumber}
+              property={property}
+              acquisitionTotal={acquisitionTotal}
+              showBuildingField={showBuildingField}
+              isCurrentlyOccupied={isCurrentlyOccupied}
+              canFetchAcquisitionFees={canFetchAcquisitionFees}
+              breakdown={acqBreakdown}
+              onChange={update}
+              onFetchReference={handleFetchAcquisitionFees}
+              onOpenReference={setAcqRefSection}
+              onOpenTaxDetail={() => setAcqDetailOpen(true)}
             />
-          </>
-        ) : null}
-      </HousingOwnedDetailFold>
+          ) : null}
 
-      {insuranceSection}
+          <AcquisitionReferenceModal
+            open={acqRefSection !== null}
+            section={acqRefSection ?? 'brokerage'}
+            breakdown={acqBreakdown}
+            onClose={() => setAcqRefSection(null)}
+          />
 
-      <HousingOwnedDetailFold
-        title={`(${maintenanceSectionNumber}) 保守設定`}
-        summary="管理費・修繕・固定資産税など"
-      >
-        <OwnedPropertyMaintenanceSection
-          property={property}
-          member={member}
-          referenceDate={referenceDate}
-          onChange={onChange}
-        />
-      </HousingOwnedDetailFold>
+          <AcquisitionTaxDetailModal
+            open={acqDetailOpen}
+            property={property}
+            referenceYear={referenceDate.getFullYear()}
+            onClose={() => setAcqDetailOpen(false)}
+            onConfirm={(patch) => {
+              update(patch);
+              if (acqBreakdown) {
+                const nextProperty = { ...property, ...patch };
+                const breakdown = buildAcquisitionFeeBreakdownFromProperty(
+                  nextProperty,
+                  patch.acquisitionTaxYear,
+                  patch.acquisitionTaxMonth,
+                  { hasPairLoan },
+                );
+                setAcqBreakdown(breakdown);
+              }
+            }}
+          />
+
+          <HousingOwnedDetailFold
+            title={`(${paymentSectionNumber}) ${isCurrentlyOccupied ? 'ローン' : '支払い方法'}`}
+            summary={loanSummary}
+          >
+            {!isCurrentlyOccupied && (
+              <div className="housing-owned-payment-options" role="radiogroup" aria-label="支払い方法">
+                {PAYMENT_METHODS.map((method) => (
+                  <label key={method} className="housing-owned-payment-option">
+                    <input
+                      type="radio"
+                      name={`owned-payment-${property.id}`}
+                      checked={property.paymentMethod === method}
+                      onChange={() => update({ paymentMethod: method })}
+                    />
+                    <span>{OWNED_PROPERTY_LOAN_PAYMENT_LABELS[method]}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {property.paymentMethod === 'loan' && onUpdateLoan ? (
+              <>
+                {isCurrentlyOccupied && (
+                  <p className="housing-owned-loan-existing-note">
+                    契約済みローンの条件（金利・返済年数・開始年月）と、諸費用のローン組み込みを設定してください。
+                  </p>
+                )}
+                <HousingLoanLinks
+                  propertyName={property.name}
+                  loans={linkedLoans}
+                  contractorMembers={contractorMembers}
+                  hasSpouse={hasSpouse}
+                  members={members}
+                  loanState={loanState}
+                  housingState={housingState}
+                  vehicleState={vehicleState}
+                  referenceDate={referenceDate}
+                  addLoanEnabled={canAddLoan && hasAcquisitionAmount}
+                  onAddLoan={onAddLoan}
+                  onUpdateLoan={onUpdateLoan}
+                  onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
+                  onPairShareChange={onPairShareChange}
+                  onJointDebtShareChange={onJointDebtShareChange}
+                  onPropertyFeeChange={onLoanPropertyFeeChange}
+                  onRemoveLoan={onRemoveLoan}
+                />
+              </>
+            ) : null}
+          </HousingOwnedDetailFold>
+
+          {insuranceSection}
+
+          <HousingOwnedDetailFold
+            title={`(${maintenanceSectionNumber}) 保守設定`}
+            summary="管理費・修繕・固定資産税など"
+          >
+            <OwnedPropertyMaintenanceSection
+              property={property}
+              member={member}
+              referenceDate={referenceDate}
+              onChange={onChange}
+            />
+          </HousingOwnedDetailFold>
         </>
       )}
     </div>
