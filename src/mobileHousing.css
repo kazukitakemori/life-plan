@@ -199,6 +199,47 @@
     white-space: nowrap;
   }
 
+  .housing-step .housing-linked-overview {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .housing-step .housing-linked-overview-main {
+    width: 100%;
+  }
+
+  .housing-step .housing-linked-overview-note {
+    margin: 0;
+  }
+
+  .housing-step .housing-linked-add-area {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    width: 100%;
+  }
+
+  .housing-step .housing-linked-add-area .housing-owned-loan-add-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .housing-step .loan-structure-picker-actions--footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .housing-step .loan-structure-picker-actions--footer > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
   /* 賃貸物件: PCと同じ意味のまとまりを1列へ並べ替える */
   .housing-step .housing-rental-card {
     overflow: hidden;
