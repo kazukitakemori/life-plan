@@ -36,7 +36,9 @@ import './education-tuition-link.css';
 import './step-guidance.css';
 import './life-event-mobile-ui.css';
 import './ui-mobile-accordion.css';
+import './life-event-ui.css';
 import './ui-form-units.css';
+import './ui-action-integrity.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {

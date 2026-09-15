@@ -43,14 +43,17 @@
   --ui-danger: var(--color-danger);
   --ui-danger-soft: var(--color-danger-soft);
 
-  /* Typography token still shared by the entry-card delete action. */
+  /* Typography token shared by compact action labels. */
   --ui-font-label: var(--text-sm);
 
-  /* Shape */
+  /* Shape / elevation */
   --ui-radius-control: var(--radius-sm);
   --ui-radius-card: var(--radius-md);
   --ui-shadow-subtle: 0 1px 2px rgb(38 50 56 / 5%);
+  --ui-shadow-button: 0 1px 2px rgb(38 50 56 / 4%);
 
+  /* Shared line icon. Keep destructive controls independent from platform glyphs. */
+  --ui-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16'/%3E%3Cpath d='M9 7V4h6v3'/%3E%3Cpath d='M7 7l1 13h8l1-13'/%3E%3Cpath d='M10 11v5M14 11v5'/%3E%3C/svg%3E");
 }
 
 body {
@@ -85,28 +88,277 @@ body {
   color: var(--ui-text-subtle);
 }
 
+/* Shared button language ------------------------------------------------ */
 :is(.ui-btn, .ui-copy-bar-button, .ui-member-tabs-summary-toggle, .ui-segmented-button) {
   border-radius: var(--ui-radius-control);
   font-family: inherit;
+}
+
+.ui-btn {
+  gap: 6px;
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+  box-shadow: var(--ui-shadow-button);
+  white-space: nowrap;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
 }
 
 .ui-btn:not(.ui-btn--compact) {
   min-height: var(--ui-control-min-height);
 }
 
+.ui-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-brand) 68%, var(--ui-border));
+  background: var(--ui-bg-hover);
+}
+
+.ui-btn:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+.ui-btn:disabled {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-subtle);
+  box-shadow: none;
+}
+
+.ui-btn--primary {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand);
+  color: #fff;
+  box-shadow: none;
+}
+
+.ui-btn--primary:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: color-mix(in srgb, var(--ui-brand) 92%, black);
+  color: #fff;
+}
+
 .ui-btn--secondary {
-  border-color: var(--ui-border-strong);
+  border-color: color-mix(in srgb, var(--ui-brand) 42%, var(--ui-border));
   background: var(--ui-bg-surface);
-  color: var(--ui-text);
+  color: var(--ui-brand);
 }
 
 .ui-btn--secondary:hover:not(:disabled) {
   border-color: var(--ui-brand);
   background: var(--ui-bg-hover);
+  color: var(--ui-brand);
 }
 
-:is(.ui-btn--danger, .danger-button, .delete-button, .ui-entry-delete-button) {
+.ui-btn--ghost {
+  border-color: var(--ui-border);
+  background: transparent;
+  color: var(--ui-brand);
+  box-shadow: none;
+}
+
+.ui-btn--ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-brand) 48%, var(--ui-border));
+  background: var(--ui-bg-hover);
+  color: var(--ui-brand);
+}
+
+.ui-copy-bar-button {
+  border: 1px solid color-mix(in srgb, var(--ui-brand) 36%, var(--ui-border));
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+  box-shadow: var(--ui-shadow-button);
+}
+
+.ui-copy-bar-button:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+/* Destructive actions use one quiet, explicit language. */
+:is(
+    .ui-delete-button,
+    .ui-btn--danger,
+    .danger-button,
+    .delete-button,
+    .ui-entry-delete-button,
+    .living-schedule-remove-btn,
+    .residence-remove-btn,
+    .plan-open-item-delete,
+    .life-event-row-remove
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  min-width: 64px;
+  height: auto;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
   color: var(--ui-danger);
+  box-shadow: none;
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+
+:is(
+    .ui-delete-button,
+    .ui-btn--danger,
+    .danger-button,
+    .delete-button,
+    .ui-entry-delete-button,
+    .living-schedule-remove-btn,
+    .residence-remove-btn,
+    .plan-open-item-delete,
+    .life-event-row-remove
+  )::before {
+  content: '';
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+:is(
+    .ui-delete-button,
+    .ui-btn--danger,
+    .danger-button,
+    .delete-button,
+    .ui-entry-delete-button,
+    .living-schedule-remove-btn,
+    .residence-remove-btn,
+    .plan-open-item-delete,
+    .life-event-row-remove
+  ):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 64%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+:is(
+    .ui-delete-button,
+    .ui-btn--danger,
+    .danger-button,
+    .delete-button,
+    .ui-entry-delete-button,
+    .living-schedule-remove-btn,
+    .residence-remove-btn,
+    .plan-open-item-delete,
+    .life-event-row-remove
+  ):active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Q3/Q6 used a circular minus sign for deleting an entire entry. */
+.life-event-row-remove {
+  font-size: 0;
+}
+
+.life-event-row-remove::after {
+  content: '削除';
+  font-size: var(--ui-font-label);
+}
+
+/* Dense row removals use the same trash icon without a text label. */
+:is(
+    .remove-member-btn,
+    .bonus-remove-btn,
+    .remove-period-btn,
+    .education-other-remove,
+    .education-row-remove,
+    .housing-row-remove:not(.ui-entry-delete-button),
+    .housing-insurance-remove,
+    .vehicle-loan-remove,
+    .vehicle-insurance-remove
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 26%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+  font-size: 0;
+  line-height: 1;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+
+:is(
+    .remove-member-btn,
+    .bonus-remove-btn,
+    .remove-period-btn,
+    .education-other-remove,
+    .education-row-remove,
+    .housing-row-remove:not(.ui-entry-delete-button),
+    .housing-insurance-remove,
+    .vehicle-loan-remove,
+    .vehicle-insurance-remove
+  )::before {
+  content: '';
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+:is(
+    .remove-member-btn,
+    .bonus-remove-btn,
+    .remove-period-btn,
+    .education-other-remove,
+    .education-row-remove,
+    .housing-row-remove:not(.ui-entry-delete-button),
+    .housing-insurance-remove,
+    .vehicle-loan-remove,
+    .vehicle-insurance-remove
+  ):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+:is(
+    .remove-member-btn,
+    .bonus-remove-btn,
+    .remove-period-btn,
+    .education-other-remove,
+    .education-row-remove,
+    .housing-row-remove:not(.ui-entry-delete-button),
+    .housing-insurance-remove,
+    .vehicle-loan-remove,
+    .vehicle-insurance-remove
+  ):active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 /* Q9-Q11 list cards share one interaction language. */
@@ -119,14 +371,24 @@ body {
 }
 
 :is(.loan-entry-open-btn, .insurance-entry-open-btn, .savings-entry-open-btn) {
-  border-color: var(--ui-brand);
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-brand) 42%, var(--ui-border));
   border-radius: var(--ui-radius-control);
   background: var(--ui-bg-surface);
   color: var(--ui-brand);
-  font-weight: 700;
+  box-shadow: var(--ui-shadow-button);
+  font-weight: 600;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
 }
 
 :is(.loan-entry-open-btn, .insurance-entry-open-btn, .savings-entry-open-btn):hover:not(:disabled) {
+  border-color: var(--ui-brand);
   background: var(--ui-bg-hover);
 }
 
@@ -136,8 +398,13 @@ body {
     .savings-entry-open-btn--active
   ) {
   border-color: var(--ui-brand);
-  background: var(--ui-brand);
-  color: #fff;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  box-shadow: none;
+}
+
+:is(.loan-entry-open-btn, .insurance-entry-open-btn, .savings-entry-open-btn):active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 :is(
@@ -153,30 +420,6 @@ body {
   color: var(--ui-brand);
   font-weight: 700;
   line-height: 1.2;
-}
-
-.ui-entry-delete-button,
-:is(.loan-entry-card, .insurance-entry-card, .savings-entry-card) > .ui-entry-delete-button {
-  width: auto;
-  min-width: 64px;
-  height: 40px;
-  min-height: 40px;
-  margin-left: 0;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--ui-danger) 32%, white);
-  border-radius: var(--ui-radius-control);
-  background: var(--ui-bg-surface);
-  color: var(--ui-danger);
-  font-size: var(--ui-font-label);
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.ui-entry-delete-button:hover:not(:disabled) {
-  border-color: var(--ui-danger);
-  background: var(--ui-danger-soft);
-  color: var(--ui-danger);
 }
 
 /* Shared card language. */
@@ -238,9 +481,35 @@ body {
 }
 
 @media (max-width: 768px) {
-  .ui-entry-delete-button,
-  :is(.loan-entry-card, .insurance-entry-card, .savings-entry-card) > .ui-entry-delete-button {
-    height: 44px;
+  :is(
+      .ui-delete-button,
+      .ui-btn--danger,
+      .danger-button,
+      .delete-button,
+      .ui-entry-delete-button,
+      .living-schedule-remove-btn,
+      .residence-remove-btn,
+      .plan-open-item-delete,
+      .life-event-row-remove
+    ) {
     min-height: 44px;
+  }
+
+  :is(
+      .remove-member-btn,
+      .bonus-remove-btn,
+      .remove-period-btn,
+      .education-other-remove,
+      .education-row-remove,
+      .housing-row-remove:not(.ui-entry-delete-button),
+      .housing-insurance-remove,
+      .vehicle-loan-remove,
+      .vehicle-insurance-remove
+    ) {
+    flex-basis: 36px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
   }
 }

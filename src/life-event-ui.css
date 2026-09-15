@@ -1,0 +1,316 @@
+/*
+ * Q3 life-event desktop composition.
+ *
+ * A life event is easier to scan as one meaningful unit than as one row in a
+ * wide spreadsheet. The desktop view therefore uses the same summary/detail
+ * model already used on phones, while keeping Q3-specific editing fields in a
+ * two-row form layout. Data fields and calculation behavior are unchanged.
+ */
+
+@media (min-width: 769px) {
+  .life-event-step {
+    width: 100%;
+    max-width: 1100px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .life-event-step .life-event-table-card {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .life-event-step .life-event-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .life-event-step .life-event-table-header {
+    display: none;
+  }
+
+  .life-event-step .life-event-table-body {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-top: 3px solid var(--ui-brand);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .life-event-step .life-event-mobile-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    min-height: 74px;
+    padding: 14px 18px;
+    border: 0;
+    background: var(--ui-bg-surface);
+    color: var(--ui-text);
+    text-align: left;
+  }
+
+  .life-event-step .life-event-mobile-summary:hover {
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-mobile-summary:focus-visible {
+    outline: 2px solid var(--ui-brand);
+    outline-offset: -2px;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item.is-expanded > .life-event-mobile-summary {
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-mobile-summary-copy {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 5px 10px;
+    min-width: 0;
+  }
+
+  .life-event-step .life-event-mobile-summary-title {
+    overflow: hidden;
+    color: var(--ui-text);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-mobile-summary-type {
+    justify-self: start;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--ui-bg-muted, var(--ui-bg-subtle));
+    color: var(--ui-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-mobile-summary-meta {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    color: var(--ui-text-subtle);
+    font-size: 13px;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-mobile-summary-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    color: var(--ui-brand);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item:not(.is-expanded) > .life-event-table-row {
+    display: none;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row,
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(odd),
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(even) {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: var(--ui-bg-surface);
+    box-shadow: none;
+  }
+
+  .life-event-step .life-event-table-cell {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 15px 16px;
+    border: 0;
+    background: transparent;
+  }
+
+  .life-event-step .life-event-table-cell::before {
+    display: block;
+    margin: 0 0 8px;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-col-drag {
+    display: none;
+  }
+
+  .life-event-step .life-event-col-summary {
+    grid-column: 1 / 7;
+    grid-row: 1;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .life-event-step .life-event-col-summary::before {
+    content: 'イベント名';
+  }
+
+  .life-event-step .life-event-col-type {
+    grid-column: 7 / 10;
+    grid-row: 1;
+    border-bottom: 1px solid var(--ui-border);
+    border-left: 1px solid var(--ui-border);
+  }
+
+  .life-event-step .life-event-col-type::before {
+    content: '種類';
+  }
+
+  .life-event-step .life-event-col-amount {
+    grid-column: 10 / 13;
+    grid-row: 1;
+    border-bottom: 1px solid var(--ui-border);
+    border-left: 1px solid var(--ui-border);
+  }
+
+  .life-event-step .life-event-col-amount::before {
+    content: '1回の金額';
+  }
+
+  .life-event-step .life-event-col-period {
+    grid-column: 1 / 7;
+    grid-row: 2;
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-col-period::before {
+    content: '実施期間';
+  }
+
+  .life-event-step .life-event-col-cycle {
+    grid-column: 7 / 10;
+    grid-row: 2;
+    border-left: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-col-cycle::before {
+    content: '繰り返し';
+  }
+
+  .life-event-step .life-event-col-rate {
+    grid-column: 10 / 13;
+    grid-row: 2;
+    border-left: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-col-rate::before {
+    content: '毎年の上昇率';
+  }
+
+  .life-event-step .life-event-col-action {
+    grid-column: 1 / 13;
+    grid-row: 3;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    padding-bottom: 11px;
+    border-top: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .life-event-step .life-event-col-action::before {
+    display: none;
+  }
+
+  .life-event-step :where(
+      .life-event-text-input,
+      .life-event-select,
+      .life-event-period-block,
+      .life-event-cycle-field,
+      .life-event-amount-field,
+      .life-event-rate-field
+    ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .life-event-step .life-event-text-input,
+  .life-event-step .life-event-select {
+    width: 100%;
+  }
+
+  .life-event-step .life-event-period-block {
+    width: 100%;
+  }
+
+  .life-event-step .life-event-sort-tools {
+    margin-bottom: 12px;
+  }
+
+  .life-event-step .life-event-add-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: end;
+    margin-top: 18px;
+  }
+
+  .life-event-step .life-event-add-title {
+    display: none;
+  }
+
+  .life-event-step .life-event-add-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .life-event-step .life-event-add-grid {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-add-section.is-open .life-event-add-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .life-event-step .life-event-add-grid > .life-event-add-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

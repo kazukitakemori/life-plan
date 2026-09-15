@@ -243,14 +243,16 @@ export function LifeEventTable({
                       </span>
                     </button>
 
-                    <LifeEventRow
-                      entry={entry}
-                      member={member}
-                      referenceDate={referenceDate}
-                      canRemove
-                      onChange={(updated) => updateEntry(entry.id, updated)}
-                      onRemove={() => removeEntry(entry.id)}
-                    />
+                    {expanded ? (
+                      <LifeEventRow
+                        entry={entry}
+                        member={member}
+                        referenceDate={referenceDate}
+                        canRemove
+                        onChange={(updated) => updateEntry(entry.id, updated)}
+                        onRemove={() => removeEntry(entry.id)}
+                      />
+                    ) : null}
                   </div>
                 );
               })}

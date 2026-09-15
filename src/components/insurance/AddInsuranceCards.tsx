@@ -5,6 +5,7 @@ import {
   INSURANCE_SECTOR_LABELS,
 } from '../../lib/insuranceLabels';
 import type { InsuranceCategory } from '../../types/insurance';
+import { AddDisclosure } from '../ui';
 
 interface AddInsuranceCardsProps {
   onAdd: (category: InsuranceCategory) => void;
@@ -52,34 +53,43 @@ function CategoryGrid({
 
 export function AddInsuranceCards({ onAdd }: AddInsuranceCardsProps) {
   return (
-    <section className="insurance-add-section" aria-label="保険を追加">
-      <h3 className="insurance-add-title">保険を追加</h3>
+    <AddDisclosure label="保険を追加" className="insurance-add-section">
+      {(close) => {
+        const handleAdd = (category: InsuranceCategory) => {
+          onAdd(category);
+          close();
+        };
 
-      <div className="insurance-add-group">
-        <div className="insurance-add-group-header">
-          <h4 className="insurance-add-group-title">
-            {INSURANCE_SECTOR_LABELS.nonlife}
-          </h4>
-          <p className="insurance-add-group-desc">火災・自動車など</p>
-        </div>
-        <CategoryGrid
-          categories={INSURANCE_NONLIFE_ADD_CATEGORIES}
-          onAdd={onAdd}
-        />
-      </div>
+        return (
+          <>
+            <div className="insurance-add-group">
+              <div className="insurance-add-group-header">
+                <h4 className="insurance-add-group-title">
+                  {INSURANCE_SECTOR_LABELS.nonlife}
+                </h4>
+                <p className="insurance-add-group-desc">火災・自動車など</p>
+              </div>
+              <CategoryGrid
+                categories={INSURANCE_NONLIFE_ADD_CATEGORIES}
+                onAdd={handleAdd}
+              />
+            </div>
 
-      <div className="insurance-add-group">
-        <div className="insurance-add-group-header">
-          <h4 className="insurance-add-group-title">
-            {INSURANCE_SECTOR_LABELS.life}
-          </h4>
-          <p className="insurance-add-group-desc">死亡・医療・老後など</p>
-        </div>
-        <CategoryGrid
-          categories={INSURANCE_LIFE_ADD_CATEGORIES}
-          onAdd={onAdd}
-        />
-      </div>
-    </section>
+            <div className="insurance-add-group">
+              <div className="insurance-add-group-header">
+                <h4 className="insurance-add-group-title">
+                  {INSURANCE_SECTOR_LABELS.life}
+                </h4>
+                <p className="insurance-add-group-desc">死亡・医療・老後など</p>
+              </div>
+              <CategoryGrid
+                categories={INSURANCE_LIFE_ADD_CATEGORIES}
+                onAdd={handleAdd}
+              />
+            </div>
+          </>
+        );
+      }}
+    </AddDisclosure>
   );
 }
