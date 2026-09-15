@@ -1,10 +1,9 @@
 /*
- * Q3 life-event desktop composition.
+ * Q3 life-event desktop expanded-body composition.
  *
- * A life event is easier to scan as one meaningful unit than as one row in a
- * wide spreadsheet. The desktop view therefore uses the same summary/detail
- * model already used on phones, while keeping Q3-specific editing fields in a
- * two-row form layout. Data fields and calculation behavior are unchanged.
+ * Card shell, closed summary hierarchy and open/close interaction are shared
+ * with Q4 through ui-accordion-card.css. This file owns only Q3-specific
+ * expanded editing layout and add/sort controls.
  */
 
 @media (min-width: 769px) {
@@ -36,101 +35,6 @@
     display: grid;
     gap: 12px;
     width: 100%;
-  }
-
-  .life-event-step .life-event-mobile-accordion-item {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid var(--ui-border);
-    border-top: 3px solid var(--ui-brand);
-    border-radius: var(--ui-radius-card);
-    background: var(--ui-bg-surface);
-    box-shadow: var(--ui-shadow-subtle);
-  }
-
-  .life-event-step .life-event-mobile-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    width: 100%;
-    min-height: 74px;
-    padding: 14px 18px;
-    border: 0;
-    background: var(--ui-bg-surface);
-    color: var(--ui-text);
-    text-align: left;
-  }
-
-  .life-event-step .life-event-mobile-summary:hover {
-    background: var(--ui-bg-subtle);
-  }
-
-  .life-event-step .life-event-mobile-summary:focus-visible {
-    outline: 2px solid var(--ui-brand);
-    outline-offset: -2px;
-  }
-
-  .life-event-step .life-event-mobile-accordion-item.is-expanded > .life-event-mobile-summary {
-    border-bottom: 1px solid var(--ui-border);
-    background: var(--ui-bg-subtle);
-  }
-
-  .life-event-step .life-event-mobile-summary-copy {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 5px 10px;
-    min-width: 0;
-  }
-
-  .life-event-step .life-event-mobile-summary-title {
-    overflow: hidden;
-    color: var(--ui-text);
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.35;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .life-event-step .life-event-mobile-summary-type {
-    justify-self: start;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: var(--ui-bg-muted, var(--ui-bg-subtle));
-    color: var(--ui-text-muted);
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.35;
-    white-space: nowrap;
-  }
-
-  .life-event-step .life-event-mobile-summary-meta {
-    grid-column: 1 / -1;
-    overflow: hidden;
-    color: var(--ui-text-subtle);
-    font-size: 13px;
-    line-height: 1.45;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .life-event-step .life-event-mobile-summary-action {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 8px;
-    color: var(--ui-brand);
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .life-event-step .life-event-mobile-accordion-item:not(.is-expanded) > .life-event-table-row {
-    display: none;
   }
 
   .life-event-step .life-event-mobile-accordion-item > .life-event-table-row,
