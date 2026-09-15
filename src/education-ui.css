@@ -6,12 +6,6 @@
  * typography continue to come from the common UI layers.
  */
 
-.education-step .education-toolbar {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
 .education-step .education-table-card {
   width: 100%;
   max-width: none;
@@ -465,11 +459,6 @@
 }
 
 @media (max-width: 768px) {
-  .education-step .education-toolbar {
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
   .education-step .education-school-fields {
     grid-template-columns: minmax(0, 1fr);
   }
