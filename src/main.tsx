@@ -39,6 +39,7 @@ import './ui-mobile-accordion.css';
 import './life-event-ui.css';
 import './ui-form-units.css';
 import './ui-action-integrity.css';
+import './living-ui.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
