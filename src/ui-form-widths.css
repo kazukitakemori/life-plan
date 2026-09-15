@@ -1,0 +1,63 @@
+/*
+ * Shared form width system
+ *
+ * Page width and form-control width are intentionally separate concerns.
+ * Charts, tables and multi-column layouts may use the full page container,
+ * while ordinary inputs stay close to the amount of information they hold.
+ */
+
+:root {
+  --ui-field-width-short: 10rem;
+  --ui-field-width-medium: 18rem;
+  --ui-field-width-long: 32rem;
+}
+
+/* Sensible defaults for ordinary shared controls. */
+.ui-input {
+  max-inline-size: var(--ui-field-width-long);
+}
+
+.ui-select {
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+/* Existing variants remain compatible with the semantic width scale. */
+.ui-input--title {
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+.ui-input--amount,
+.ui-select--compact {
+  max-inline-size: var(--ui-field-width-short);
+}
+
+.ui-select--wide {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+/* Explicit semantic widths. These can be used by any shared form control. */
+.ui-control-width--short {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-short);
+}
+
+.ui-control-width--medium {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+.ui-control-width--long {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-long);
+}
+
+.ui-control-width--full {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+/* Never let a constrained control force a narrow parent to overflow. */
+:is(.ui-input, .ui-select, .ui-control-width--short, .ui-control-width--medium, .ui-control-width--long, .ui-control-width--full) {
+  min-inline-size: 0;
+}
