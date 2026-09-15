@@ -4,6 +4,7 @@ import {
   LIFE_EVENT_PRESETS,
 } from '../../lib/lifeEventDefaults';
 import type { FamilyMember } from '../../types/family';
+import { AddDisclosure } from '../ui';
 
 interface AddLifeEventCardsProps {
   activeMember: FamilyMember;
@@ -31,39 +32,33 @@ export function AddLifeEventCards({
   );
 
   return (
-    <section
-      className={`life-event-add-section${isOpen ? ' is-open' : ''}`}
-      aria-label="ライフイベントを追加"
+    <AddDisclosure
+      label="ライフイベントを追加"
+      className="life-event-add-section"
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen !== isOpen) onToggle();
+      }}
     >
-      <h3 className="life-event-add-title">ライフイベントを追加</h3>
-
-      <button
-        type="button"
-        className="ui-btn ui-btn--ghost life-event-add-toggle"
-        aria-expanded={isOpen}
-        aria-controls="life-event-add-panel"
-        onClick={onToggle}
-      >
-        ＋ ライフイベントを追加
-      </button>
-
-      <div id="life-event-add-panel" className="life-event-add-grid ui-add-card-grid">
-        {presets.map((preset) => (
-          <button
-            key={preset.id}
-            type="button"
-            className="life-event-add-card ui-add-card"
-            onClick={() => onAdd(preset.id)}
-          >
-            <span className="life-event-add-card-title ui-add-card__title">
-              {preset.title}
-            </span>
-            <span className="life-event-add-card-desc ui-add-card__description">
-              {ADD_DESCRIPTIONS[preset.id] ?? preset.description}
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
+      {() => (
+        <div className="life-event-add-grid ui-add-card-grid">
+          {presets.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className="life-event-add-card ui-add-card"
+              onClick={() => onAdd(preset.id)}
+            >
+              <span className="life-event-add-card-title ui-add-card__title">
+                {preset.title}
+              </span>
+              <span className="life-event-add-card-desc ui-add-card__description">
+                {ADD_DESCRIPTIONS[preset.id] ?? preset.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </AddDisclosure>
   );
 }
