@@ -79,6 +79,17 @@ export function LivingScheduleCard({
       ? schedule.simpleMonthlyExpenseMan
       : detailMonthlyTotal;
   const detailRateItem = hasSummary ? schedule.items[0] : detailItems[0];
+  const simpleAmountUnset =
+    schedule.simpleMonthlyExpenseMan === 0 &&
+    schedule.items.length === 1 &&
+    schedule.items[0]?.label.trim() === '';
+  const detailAmountUnset =
+    detailItems.length > 0 &&
+    detailItems.every(
+      (item) => item.label.trim() === '' && item.amountMan === 0,
+    );
+  const amountUnset =
+    schedule.inputMode === 'simple' ? simpleAmountUnset : detailAmountUnset;
 
   const commit = (
     next: LivingExpenseSchedule,
@@ -203,8 +214,12 @@ export function LivingScheduleCard({
   }`;
   const cardSummary =
     schedule.inputMode === 'simple'
-      ? `月額換算 ${formatManAmount(monthlyTotal)} ・ まとめて入力`
-      : `月額換算 ${formatManAmount(monthlyTotal)} ・ 内訳${detailItems.length}項目`;
+      ? amountUnset
+        ? '未入力 ・ まとめて入力'
+        : `月額換算 ${formatManAmount(monthlyTotal)} ・ まとめて入力`
+      : amountUnset
+        ? `未入力 ・ 内訳${detailItems.length}項目`
+        : `月額換算 ${formatManAmount(monthlyTotal)} ・ 内訳${detailItems.length}項目`;
 
   const schedulePeriodFields = (
     <div className="living-schedule-inputs">
@@ -377,9 +392,12 @@ export function LivingScheduleCard({
                   <input
                     type="number"
                     className="amount-input"
-                    value={schedule.simpleMonthlyExpenseMan}
+                    value={
+                      simpleAmountUnset ? '' : schedule.simpleMonthlyExpenseMan
+                    }
                     min={0}
                     step={0.1}
+                    placeholder="未入力"
                     onChange={(e) =>
                       commit(
                         {
@@ -429,7 +447,9 @@ export function LivingScheduleCard({
             <div className="living-detail-heading-row">
               <h3 className="living-card-section-title">生活費の内訳</h3>
               <span className="living-detail-heading-total">
-                月額換算 {formatManAmount(detailMonthlyTotal)}
+                {amountUnset
+                  ? '月額換算 未入力'
+                  : `月額換算 ${formatManAmount(detailMonthlyTotal)}`}
               </span>
             </div>
 
@@ -537,9 +557,14 @@ export function LivingScheduleCard({
                       <input
                         type="number"
                         className="amount-input"
-                        value={item.amountMan}
+                        value={
+                          item.amountMan === 0 && item.label.trim() === ''
+                            ? ''
+                            : item.amountMan
+                        }
                         min={0}
                         step={0.1}
+                        placeholder="未入力"
                         onChange={(e) =>
                           updateItem(item.id, {
                             ...item,
@@ -607,7 +632,7 @@ export function LivingScheduleCard({
         <div className="living-summary-row">
           <span className="living-summary-label">生活費合計（月額換算）</span>
           <span className="living-summary-amount">
-            {formatManAmount(monthlyTotal)}
+            {amountUnset ? '未入力' : formatManAmount(monthlyTotal)}
           </span>
         </div>
 
