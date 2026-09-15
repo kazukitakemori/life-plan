@@ -1,42 +1,11 @@
-/* Q4 living expenses: phone-specific composition only.
+/* Q4 living expenses: phone-specific expanded-body composition only.
+ * Accordion card shell / summary / open-close UI are owned by ui-accordion-card.css.
  * The same schedule data / input modes are used on desktop and mobile.
  */
 
 @media (max-width: 768px) {
   .living-step .living-schedules {
     gap: 12px;
-  }
-
-  .living-step .living-schedule-card > .ui-disclosure-summary {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 10px;
-    min-height: 72px;
-    padding: 12px 12px 12px 14px;
-  }
-
-  .living-step .ui-disclosure-title {
-    font-size: var(--text-sm);
-  }
-
-  .living-step .ui-disclosure-meta {
-    grid-column: 1 / 2;
-    grid-row: 2;
-    overflow: hidden;
-    font-size: var(--text-xs);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .living-step .living-schedule-card > .ui-disclosure-summary::after {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    align-self: center;
-    min-width: 56px;
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 9px;
   }
 
   .living-step .living-card-section {
