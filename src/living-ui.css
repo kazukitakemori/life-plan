@@ -1,0 +1,226 @@
+/* Q4 生活費: PC向けの情報構造整理。
+ * 保存データ・計算ロジック・共通入力部品は変更せず、
+ * 「期間 → 内訳 → 月額換算合計」の順に読みやすく再構成する。
+ */
+
+@media (min-width: 769px) {
+  .living-step .living-schedules {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .living-step .living-schedule-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .living-step .living-table {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    --living-detail-cols: minmax(240px, 2fr) minmax(150px, 1.2fr)
+      minmax(150px, 1fr) minmax(130px, 0.9fr) 48px;
+  }
+
+  .living-step .living-table-body {
+    display: contents;
+  }
+
+  /* 期間は内訳表の1列ではなく、カード冒頭の設定として独立させる。 */
+  .living-step .living-schedule-cell {
+    order: 1;
+    display: block;
+    grid-row: auto;
+    width: 100%;
+    min-width: 0;
+    padding: 16px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .living-step .living-schedule-cell::before {
+    content: '生活費の期間';
+    display: block;
+    margin-bottom: 9px;
+    color: var(--ui-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+  }
+
+  .living-step .living-schedule-inputs {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .living-step .living-schedule-side,
+  .living-step .living-schedule-fields {
+    min-width: 0;
+  }
+
+  .living-step .living-schedule-fields {
+    display: flex;
+    gap: 6px;
+  }
+
+  .living-step .living-schedule-arrow {
+    flex: 0 0 auto;
+    margin-top: 9px;
+    color: var(--ui-text-subtle);
+  }
+
+  .living-step :where(.period-start-label, .period-end-label) {
+    margin-top: 5px;
+    color: var(--ui-text-subtle);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  /* 内訳表は期間列を外し、生活費の入力内容だけに集中させる。 */
+  .living-step .living-table-header {
+    order: 2;
+    display: grid;
+    grid-template-columns: var(--living-detail-cols);
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .living-step .living-table-header .living-col-schedule {
+    display: none;
+  }
+
+  .living-step .living-item-row {
+    order: 3;
+    display: grid;
+    grid-template-columns: var(--living-detail-cols);
+    width: 100%;
+    min-width: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .living-step .living-item-row--summary {
+    background: var(--ui-bg-subtle);
+  }
+
+  .living-step .living-item-row > .living-table-cell {
+    min-width: 0;
+    border-bottom: 0;
+  }
+
+  .living-step .living-item-row > .living-col-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .living-step .living-add-item-row {
+    order: 4;
+    grid-column: auto;
+    width: 100%;
+    padding: 11px 14px;
+    border-bottom: 0;
+    background: var(--ui-bg-surface);
+  }
+
+  .living-step .living-summary-row {
+    order: 5;
+    grid-column: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+    width: 100%;
+    padding: 14px 18px;
+    border-top: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .living-step .living-summary-label {
+    display: flex;
+    align-items: center;
+    grid-column: auto;
+    padding: 0;
+    color: var(--ui-text-muted);
+    font-size: 0;
+    font-weight: 700;
+  }
+
+  .living-step .living-summary-label::before {
+    content: '生活費合計（月額換算）';
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  .living-step .living-help-icon {
+    display: none;
+  }
+
+  .living-step .living-summary-amount {
+    grid-column: auto;
+    padding: 0;
+    color: var(--ui-brand);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* 項目削除とスケジュール削除を視覚的に分離する。 */
+  .living-step
+    .living-item-row:has(.remove-member-btn[aria-label='スケジュールを削除'])
+    > .living-col-action {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    padding: 10px 14px 12px;
+    border-top: 1px solid var(--ui-border);
+  }
+
+  .living-step .remove-member-btn[aria-label='スケジュールを削除'] {
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    padding: 5px 10px;
+    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, white);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-bg-surface);
+    color: var(--ui-danger);
+    font-size: 0;
+    white-space: nowrap;
+  }
+
+  .living-step .remove-member-btn[aria-label='スケジュールを削除']::after {
+    content: 'このスケジュールを削除';
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .living-step .living-schedule-remove {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 14px 14px;
+    border-top: 0;
+    background: var(--ui-bg-surface);
+  }
+
+  .living-step .living-schedule-remove-btn {
+    min-height: 34px;
+    padding: 5px 10px;
+    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, white);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-bg-surface);
+    color: var(--ui-danger);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
