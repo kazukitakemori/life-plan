@@ -1,4 +1,8 @@
 import type { SelectHTMLAttributes } from 'react';
+import {
+  getFormControlWidthClassName,
+  type FormControlWidth,
+} from './controlWidth';
 
 export interface FormSelectOption {
   value: number | string;
@@ -11,6 +15,7 @@ interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   emptyLabel?: string;
   compact?: boolean;
   wide?: boolean;
+  controlWidth?: FormControlWidth;
   onValueChange?: (value: string) => void;
 }
 
@@ -20,6 +25,7 @@ export function FormSelect({
   emptyLabel = '選択',
   compact = false,
   wide = false,
+  controlWidth,
   className,
   value,
   onValueChange,
@@ -30,6 +36,7 @@ export function FormSelect({
     'ui-select',
     compact ? 'ui-select--compact' : '',
     wide ? 'ui-select--wide' : '',
+    getFormControlWidthClassName(controlWidth),
     className ?? '',
   ]
     .filter(Boolean)

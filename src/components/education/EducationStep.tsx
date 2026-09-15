@@ -147,7 +147,25 @@ export function EducationStep({
           })
         : createEducationExpenseEntry({ schoolCategory });
 
-    persistEntries(resolvedActiveId, [...entries, nextEntry]);
+    const targetOrder = SCHOOL_CATEGORY_OPTIONS.findIndex(
+      (option) => option.value === schoolCategory,
+    );
+    const insertionIndex = entries.findIndex((entry) => {
+      const entryOrder = SCHOOL_CATEGORY_OPTIONS.findIndex(
+        (option) => option.value === entry.schoolCategory,
+      );
+      return entryOrder > targetOrder;
+    });
+    const updatedEntries =
+      insertionIndex === -1
+        ? [...entries, nextEntry]
+        : [
+            ...entries.slice(0, insertionIndex),
+            nextEntry,
+            ...entries.slice(insertionIndex),
+          ];
+
+    persistEntries(resolvedActiveId, updatedEntries);
     setAutoExpandEntryId(nextEntry.id);
     setAddMenuOpen(false);
   };

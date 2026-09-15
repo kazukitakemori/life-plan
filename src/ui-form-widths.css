@@ -1,0 +1,173 @@
+/*
+ * Shared form width system
+ *
+ * Page width and form-control width are intentionally separate concerns.
+ * Charts, tables and multi-column layouts may use the full page container,
+ * while ordinary inputs stay close to the amount of information they hold.
+ */
+
+:root {
+  --ui-field-width-short: 10rem;
+  --ui-field-width-medium: 18rem;
+  --ui-field-width-long: 32rem;
+  --ui-field-unit-gap: 4px;
+}
+
+/* Sensible defaults for ordinary shared controls. */
+.ui-input {
+  max-inline-size: var(--ui-field-width-long);
+}
+
+.ui-select {
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+/* Existing variants remain compatible with the semantic width scale. */
+.ui-input--title {
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+.ui-input--amount,
+.ui-select--compact {
+  max-inline-size: var(--ui-field-width-short);
+}
+
+.ui-select--wide {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+/*
+ * Legacy Q1-Q12 controls are mapped by information density rather than by
+ * screen. This keeps older implementations visually aligned with the shared
+ * components while they are gradually migrated.
+ */
+.step-page :is(
+    .residence-age-select,
+    .education-yen-field,
+    .life-event-cycle-input,
+    .life-event-inflation-input,
+    .celebration-gift-amount-input,
+    .amount-input,
+    .rate-input,
+    .rate-end-input,
+    .living-cycle-input,
+    .second-life-age-input
+  ) {
+  max-inline-size: var(--ui-field-width-short);
+}
+
+.step-page :is(
+    .residence-prefecture-select,
+    .education-select,
+    .life-event-select,
+    .celebration-gift-select,
+    .select-input,
+    .select-input--schedule,
+    .select-input--cycle,
+    .housing-occupancy-select,
+    .housing-rental-payer-select,
+    .housing-owned-usage-select,
+    .vehicle-annual-cycle-select,
+    .pension-field-input,
+    .pension-field-select,
+    .required-coverage-medical-preset-select,
+    .required-coverage-medical-employment-select,
+    .insurance-premium-mode-select,
+    .second-life-priority-select
+  ) {
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+.step-page :is(
+    .education-text-input,
+    .life-event-text-input,
+    .living-content-input,
+    .housing-text-input,
+    .housing-owned-name-input,
+    .loan-entry-name-input,
+    .insurance-entry-name-input,
+    .loan-entry-note-input,
+    .savings-entry-name-input
+  ) {
+  max-inline-size: var(--ui-field-width-long);
+}
+
+/*
+ * Input + unit is one visual group. A wider parent column must never create
+ * extra distance between the editable value and its unit (万円 / 円 / % / 年 / 歳 etc.).
+ */
+.ui-input-unit-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-field-unit-gap);
+  width: fit-content;
+  max-width: 100%;
+}
+
+:is(
+    .ui-amount,
+    .education-yen-input,
+    .housing-yen-input,
+    .housing-man-input--inline,
+    .celebration-gift-amount-field,
+    .life-event-amount-field,
+    .life-event-rate-field,
+    .living-amount-field,
+    .living-rate-field,
+    .rate-field-controls,
+    .teikibin-period-cell,
+    .bonus-row
+  ) {
+  column-gap: var(--ui-field-unit-gap);
+}
+
+:is(
+    .ui-amount-unit,
+    .amount-unit,
+    .rate-unit,
+    .pension-field-unit,
+    .education-yen-unit,
+    .housing-yen-unit,
+    .teikibin-monthly-date-unit
+  ) {
+  flex: 0 0 auto;
+  margin-inline: 0;
+  white-space: nowrap;
+}
+
+/* Explicit semantic widths. These can be used by any shared form control. */
+.ui-control-width--short {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-short);
+}
+
+.ui-control-width--medium {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-medium);
+}
+
+.ui-control-width--long {
+  inline-size: 100%;
+  max-inline-size: var(--ui-field-width-long);
+}
+
+.ui-control-width--full {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+/* Never let a constrained control force a narrow parent to overflow. */
+:is(
+    .ui-input,
+    .ui-select,
+    .ui-control-width--short,
+    .ui-control-width--medium,
+    .ui-control-width--long,
+    .ui-control-width--full,
+    .step-page input,
+    .step-page select,
+    .step-page textarea
+  ) {
+  min-inline-size: 0;
+}

@@ -1,0 +1,88 @@
+/*
+ * Shared input + unit proximity rules.
+ *
+ * Screen-specific mobile layouts may widen form rows for readability, but a
+ * numeric value and its unit are one visual control. Keep the unit adjacent to
+ * the editable value on every viewport instead of letting a wide card/grid push
+ * the unit to the far edge.
+ */
+
+@media (max-width: 768px) {
+  .step-page :is(
+      .ui-amount,
+      .education-yen-input,
+      .housing-yen-input,
+      .housing-man-input,
+      .housing-man-input--inline,
+      .celebration-gift-amount-field,
+      .life-event-amount-field,
+      .life-event-rate-field,
+      .living-amount-field,
+      .living-rate-field,
+      .rate-field-controls,
+      .teikibin-period-cell
+    ) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--ui-field-unit-gap);
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .step-page :is(
+      .ui-amount,
+      .education-yen-input,
+      .housing-yen-input,
+      .housing-man-input,
+      .housing-man-input--inline,
+      .celebration-gift-amount-field,
+      .life-event-amount-field,
+      .life-event-rate-field,
+      .living-amount-field,
+      .living-rate-field,
+      .rate-field-controls,
+      .teikibin-period-cell
+    ) > :is(input, select) {
+    flex: 0 1 var(--ui-field-width-short);
+    width: min(100%, var(--ui-field-width-short));
+    max-width: var(--ui-field-width-short);
+    min-width: 0;
+  }
+
+  .step-page :is(
+      .ui-amount-unit,
+      .amount-unit,
+      .rate-unit,
+      .pension-field-unit,
+      .education-yen-unit,
+      .housing-yen-unit,
+      .teikibin-monthly-date-unit
+    ) {
+    flex: 0 0 auto;
+    margin-inline: 0;
+    white-space: nowrap;
+  }
+
+  /* Pension manual amount rows include value + unit + help icon. */
+  .pension-step .benefit-amount-option-manual {
+    grid-template-columns: minmax(0, var(--ui-field-width-short)) auto auto;
+    justify-content: start;
+    column-gap: var(--ui-field-unit-gap);
+  }
+
+  .pension-step :is(
+      .pension-field-input--benefit,
+      .pension-field-input--benefit-wide
+    ) {
+    width: 100%;
+    max-width: var(--ui-field-width-short);
+  }
+}
+
+@media (max-width: 430px) {
+  .pension-step .benefit-amount-option-manual {
+    grid-template-columns: minmax(0, var(--ui-field-width-short)) auto;
+  }
+}

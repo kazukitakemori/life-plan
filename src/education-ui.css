@@ -235,6 +235,18 @@
   min-width: 0;
 }
 
+.education-step .education-other-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.education-step .education-other-label-input {
+  order: -1;
+  width: 100%;
+  margin: 0 0 8px;
+}
+
 .education-step .education-add-other-btn {
   justify-self: start;
 }
@@ -269,6 +281,13 @@
 
 .education-step .education-chart-card {
   margin-top: 24px;
+}
+
+@media (min-width: 769px) {
+  .education-step .ui-member-tabs-actions {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 980px) {
