@@ -14,6 +14,16 @@
   margin: 0 auto 18px;
 }
 
+.education-step .ui-member-tabs-block,
+.education-step .ui-member-tabs-row {
+  width: 100%;
+  max-width: none;
+}
+
+.education-step .ui-member-tabs-list {
+  flex: 1 1 auto;
+}
+
 .education-step .education-table-card {
   width: 100%;
   max-width: var(--step-width-standard);
