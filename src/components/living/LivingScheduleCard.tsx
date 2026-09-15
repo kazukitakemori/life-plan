@@ -148,10 +148,16 @@ export function LivingScheduleCard({
         sameIncreaseRateAsFirst: true,
       }),
     );
+    const hasBlankPlaceholder =
+      schedule.items.length === 1 &&
+      schedule.items[0].label.trim() === '' &&
+      schedule.items[0].amountMan === 0;
     commit({
       ...schedule,
       inputMode: 'detail',
-      items: [...schedule.items, ...newItems],
+      items: hasBlankPlaceholder
+        ? newItems
+        : [...schedule.items, ...newItems],
     });
   };
 
@@ -193,7 +199,10 @@ export function LivingScheduleCard({
           increaseRate: schedule.simpleIncreaseRate,
         }),
       ];
-    } else if (items.length === 1 && items[0].label.trim() === '生活費') {
+    } else if (
+      items.length === 1 &&
+      (items[0].label.trim() === '生活費' || items[0].label.trim() === '')
+    ) {
       items = [
         {
           ...items[0],
