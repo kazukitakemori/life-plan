@@ -24,6 +24,7 @@ interface OwnedPropertyTargetSectionProps {
   member: FamilyMember;
   members: FamilyMember[];
   referenceDate: Date;
+  sectionNumber?: number;
   onChange: (property: OwnedProperty) => void;
 }
 
@@ -37,6 +38,7 @@ export function OwnedPropertyTargetSection({
   member,
   members,
   referenceDate,
+  sectionNumber,
   onChange,
 }: OwnedPropertyTargetSectionProps) {
   if (property.type === 'land') {
@@ -65,6 +67,7 @@ export function OwnedPropertyTargetSection({
     deductionCategory,
     isNewConstruction,
   )}`;
+  const titlePrefix = sectionNumber == null ? '' : `(${sectionNumber}) `;
 
   const updateLoanTarget = (
     patch: Partial<
@@ -86,7 +89,7 @@ export function OwnedPropertyTargetSection({
 
   return (
     <HousingOwnedDetailFold
-      title="住宅区分・住宅ローン控除"
+      title={`${titlePrefix}住宅区分・住宅ローン控除`}
       summary={targetSummary}
     >
       <div className="housing-owned-target">
