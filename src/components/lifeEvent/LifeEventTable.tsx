@@ -179,7 +179,6 @@ export function LifeEventTable({
             <div className="life-event-sort-tools">
               <SegmentedControl
                 className="life-event-sort-control"
-                label="表示順"
                 ariaLabel="ライフイベントの表示順"
                 value={sortMode}
                 options={SORT_OPTIONS}
