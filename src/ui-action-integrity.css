@@ -15,15 +15,25 @@
  * Converge those actions here instead of reproducing visual rules per screen.
  */
 :is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
     .living-step .inline-add-btn,
     .housing-owned-loan-add-btn,
     .housing-owned-open-btn,
     .housing-owned-loan-open-btn,
     .housing-owned-insurance-open-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
     .loan-entry-open-btn,
     .insurance-entry-open-btn,
     .savings-entry-open-btn,
-    .vehicle-duplicate-btn
+    .vehicle-duplicate-btn,
+    .second-life-step .second-life-guide-nav-btn
   ) {
   display: inline-flex;
   align-items: center;
@@ -50,15 +60,25 @@
 }
 
 :is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
     .living-step .inline-add-btn,
     .housing-owned-loan-add-btn,
     .housing-owned-open-btn,
     .housing-owned-loan-open-btn,
     .housing-owned-insurance-open-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
     .loan-entry-open-btn,
     .insurance-entry-open-btn,
     .savings-entry-open-btn,
-    .vehicle-duplicate-btn
+    .vehicle-duplicate-btn,
+    .second-life-step .second-life-guide-nav-btn
   ):hover:not(:disabled) {
   border-color: var(--ui-brand);
   background: var(--ui-bg-hover);
@@ -66,15 +86,25 @@
 }
 
 :is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
     .living-step .inline-add-btn,
     .housing-owned-loan-add-btn,
     .housing-owned-open-btn,
     .housing-owned-loan-open-btn,
     .housing-owned-insurance-open-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
     .loan-entry-open-btn,
     .insurance-entry-open-btn,
     .savings-entry-open-btn,
-    .vehicle-duplicate-btn
+    .vehicle-duplicate-btn,
+    .second-life-step .second-life-guide-nav-btn
   ):active:not(:disabled) {
   box-shadow: none;
   transform: translateY(1px);
@@ -95,15 +125,25 @@
 }
 
 :is(
+    .family-step .residence-add-btn,
+    .education-step .education-fetch-btn,
+    .education-step .education-add-other-btn,
+    .education-step .education-copy-btn,
+    .life-event-step .life-event-copy-btn,
+    .living-step .living-copy-btn,
     .living-step .inline-add-btn,
     .housing-owned-loan-add-btn,
     .housing-owned-open-btn,
     .housing-owned-loan-open-btn,
     .housing-owned-insurance-open-btn,
+    .housing-step .housing-insurance-action,
+    .housing-step .housing-reference-btn,
+    .housing-step .housing-fetch-btn,
     .loan-entry-open-btn,
     .insurance-entry-open-btn,
     .savings-entry-open-btn,
-    .vehicle-duplicate-btn
+    .vehicle-duplicate-btn,
+    .second-life-step .second-life-guide-nav-btn
   ):disabled {
   border-color: var(--ui-border);
   background: var(--ui-bg-subtle);
@@ -426,15 +466,25 @@
 
   /* Legacy secondary actions remain easy to tap on phones. */
   :is(
+      .family-step .residence-add-btn,
+      .education-step .education-fetch-btn,
+      .education-step .education-add-other-btn,
+      .education-step .education-copy-btn,
+      .life-event-step .life-event-copy-btn,
+      .living-step .living-copy-btn,
       .living-step .inline-add-btn,
       .housing-owned-loan-add-btn,
       .housing-owned-open-btn,
       .housing-owned-loan-open-btn,
       .housing-owned-insurance-open-btn,
+      .housing-step .housing-insurance-action,
+      .housing-step .housing-reference-btn,
+      .housing-step .housing-fetch-btn,
       .loan-entry-open-btn,
       .insurance-entry-open-btn,
       .savings-entry-open-btn,
-      .vehicle-duplicate-btn
+      .vehicle-duplicate-btn,
+      .second-life-step .second-life-guide-nav-btn
     ) {
     min-height: 44px;
   }
