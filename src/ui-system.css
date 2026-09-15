@@ -4,6 +4,10 @@
   --step-width-standard: 920px;
   --step-width-wide: 1100px;
 
+  /* Desktop input-shell geometry used by full-width shared actions. */
+  --ui-shell-sidebar-width: 200px;
+  --ui-shell-main-padding-inline: 24px;
+
   /* Structural interaction tokens. Visual tokens live in ui-unification.css. */
   --ui-control-min-height: 40px;
   --ui-transition-fast: 140ms ease;
@@ -149,6 +153,7 @@
 /* Shared person tabs ---------------------------------------------------- */
 
 .ui-member-tabs-block {
+  width: 100%;
   min-width: 0;
   margin-bottom: 20px;
 }
@@ -440,6 +445,32 @@ button.ui-member-tab--add {
 
 :is(.loan-empty, .insurance-empty, .savings-empty, .living-empty, .income-empty) p {
   margin: 0;
+}
+
+/* Desktop shared member-tab geometry ----------------------------------- */
+
+@media (min-width: 769px) {
+  .ui-member-tabs-actions {
+    width: calc(
+      100vw - var(--ui-shell-sidebar-width) - var(--ui-shell-main-padding-inline) -
+        var(--ui-shell-main-padding-inline)
+    );
+    margin-left: calc(
+      (
+          100% -
+            (
+              100vw - var(--ui-shell-sidebar-width) -
+                var(--ui-shell-main-padding-inline) -
+                var(--ui-shell-main-padding-inline)
+            )
+        ) / 2
+    );
+  }
+
+  button.ui-member-tab--add {
+    align-items: flex-start;
+    padding-top: 20px;
+  }
 }
 
 /* Responsive shared controls ------------------------------------------- */
