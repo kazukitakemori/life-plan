@@ -145,6 +145,21 @@
   background: var(--ui-bg-subtle);
 }
 
+.housing-rental-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: max-content;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--ui-radius-control);
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .housing-rental-empty {
   padding: 28px 20px;
   border: 1px dashed var(--ui-border);
