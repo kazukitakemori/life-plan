@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('desktop') !== '1') return
+
+        const viewport = document.querySelector('meta[name="viewport"]')
+        viewport?.setAttribute('content', 'width=1200')
+        document.documentElement.dataset.previewViewport = 'desktop'
+      })()
+    </script>
     <title>ライフプラン キャッシュフローシミュレーション</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
