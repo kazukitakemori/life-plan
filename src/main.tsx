@@ -33,6 +33,8 @@ import './education-ui.css';
 import './education-mobile-ui.css';
 import './education-tuition-link.css';
 import './step-guidance.css';
+import './life-event-mobile-ui.css';
+import './ui-mobile-accordion.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
