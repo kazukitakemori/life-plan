@@ -9,12 +9,15 @@
 .education-step .education-toolbar {
   display: grid;
   gap: 12px;
-  margin-bottom: 18px;
+  width: 100%;
+  max-width: var(--step-width-standard);
+  margin: 0 auto 18px;
 }
 
 .education-step .education-table-card {
   width: 100%;
-  max-width: none;
+  max-width: var(--step-width-standard);
+  margin-inline: auto;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -266,7 +269,9 @@
 .education-step .education-footer-actions {
   display: flex;
   justify-content: flex-start;
-  margin-top: 14px;
+  width: 100%;
+  max-width: var(--step-width-standard);
+  margin: 14px auto 0;
 }
 
 .education-step .education-empty {
