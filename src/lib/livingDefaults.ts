@@ -125,10 +125,10 @@ export function createLivingExpenseItem(
 ): LivingExpenseItem {
   const item: LivingExpenseItem = {
     id: createId(),
-    label: '生活費',
+    label: '',
     cycleInterval: 1,
     cycleUnit: 'month',
-    amountMan: 30,
+    amountMan: 0,
     increaseRate: null,
     sameIncreaseRateAsFirst: false,
     ...overrides,
@@ -153,7 +153,7 @@ export function createLivingExpenseSchedule(
     endAge: 90,
     endMonth: 12,
     inputMode: 'simple',
-    simpleMonthlyExpenseMan: 30,
+    simpleMonthlyExpenseMan: 0,
     simpleIncreaseRate: null,
     items: [createLivingExpenseItem()],
     ...overrides,
