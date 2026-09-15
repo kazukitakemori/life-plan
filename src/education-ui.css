@@ -288,6 +288,51 @@
     width: 100%;
     margin-left: 0;
   }
+
+  .education-step .education-other-item-top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .education-step .education-other-year-select {
+    flex: 0 0 96px;
+    width: 96px;
+    min-width: 96px;
+    padding-right: 30px;
+  }
+
+  .education-step .education-other-cycle-select {
+    flex: 0 0 88px;
+    width: 88px;
+    min-width: 88px;
+    padding-right: 30px;
+  }
+
+  .education-step .education-other-item-top .education-yen-input {
+    flex: 0 1 220px;
+    width: 220px;
+  }
+
+  .education-step .education-other-remove {
+    width: auto;
+    min-width: 104px;
+    height: 40px;
+    min-height: 40px;
+    margin-left: 4px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-row-remove {
+    width: auto;
+    min-width: 168px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 980px) {
