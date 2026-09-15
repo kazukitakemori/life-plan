@@ -1,0 +1,126 @@
+/*
+ * #FAFAFA shell experiment
+ *
+ * Keep cards and form surfaces white while softening the page chrome.
+ * Loaded last so this visual experiment is isolated and easy to revert.
+ */
+
+:root {
+  --color-page: #fafafa;
+  --ui-bg-page: #fafafa;
+}
+
+body,
+.shell-main {
+  background: #fafafa;
+}
+
+/* Desktop header -------------------------------------------------------- */
+
+.top-header-primary {
+  background: #fafafa;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.top-header-title,
+.top-header-customer {
+  color: var(--ui-text);
+}
+
+.top-header-hint,
+.top-header-autosave,
+.top-header-autosave--saved {
+  color: var(--ui-text-subtle);
+}
+
+.top-header-autosave--pending {
+  color: #946200;
+}
+
+.top-header-autosave--saving {
+  color: var(--color-accent);
+}
+
+.top-header-autosave--error {
+  color: var(--ui-danger);
+}
+
+.top-header-status-badge {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.top-header-status-badge--in_progress {
+  border-color: #d7e3ea;
+  background: #eef4f7;
+  color: #476a7d;
+}
+
+.top-header-status-badge--simulated,
+.top-header-status-badge--completed {
+  border-color: #cfe3da;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.top-header-status-badge--draft {
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+}
+
+.top-header-status-badge--archived {
+  border-color: #ded4e6;
+  background: #f4eff7;
+  color: #725b82;
+}
+
+.top-header-fullscreen-btn {
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text-muted);
+}
+
+.top-header-fullscreen-btn:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+  color: var(--ui-brand);
+}
+
+.top-header-fullscreen-btn.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+}
+
+.top-header-nav-item {
+  color: var(--ui-text-muted);
+}
+
+.top-header-nav-item:hover:not(:disabled):not(.active) {
+  background: var(--ui-bg-hover);
+  color: var(--ui-text);
+}
+
+.top-header-nav-item:focus-visible {
+  outline-color: var(--ui-brand);
+}
+
+.top-header-nav-item.active {
+  color: var(--ui-brand);
+}
+
+.top-header-nav-item.active::after {
+  background: var(--ui-brand);
+}
+
+.top-header-nav-item:disabled:hover {
+  background: transparent;
+  color: var(--ui-text-muted);
+}
+
+/* Mobile already uses a light header; align it with the experiment. */
+@media (max-width: 1024px) {
+  .top-header-mobile-bar {
+    background: #fafafa;
+  }
+}

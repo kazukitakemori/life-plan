@@ -176,55 +176,55 @@ function AppShellFrame(props: AppShellProps) {
       ref={shellRef}
       className={`shell ${mobileSidebarOpen ? 'mobile-sidebar-open' : ''}`}
     >
-      <TopHeader
-        activeTab={activeHeaderTab}
-        onTabChange={(tab) => {
-          setMobileSidebarOpen(false);
-          onHeaderTabChange(tab);
-        }}
-        analysisUnlocked={analysisUnlocked}
-        requiredCoverageUnlocked={requiredCoverageUnlocked}
-        requiredCoverageRiskKinds={requiredCoverageRiskKinds}
-        hasOpenPlan={hasOpenPlan}
-        customerName={customerName}
-        planStatus={planStatus}
-        autosaveStatus={autosaveStatus}
-        showHonorific={showHonorific}
-        isLicensed={isLicensed}
-        adminTab={adminTab}
-        onAdminTabChange={onAdminTabChange}
-        assetBuildingTab={assetBuildingTab}
-        onAssetBuildingTabChange={onAssetBuildingTabChange}
-        requiredCoverageRiskKind={requiredCoverageRiskKind}
-        onRequiredCoverageRiskKindChange={onRequiredCoverageRiskKindChange}
-      />
-      <div className="shell-undo-bar" aria-label="操作履歴">
-        <button
-          type="button"
-          className="shell-undo-button"
-          onClick={requestUndo}
-          disabled={!undoAvailable || historyWaiting}
-          aria-label="直前の操作を元に戻す"
-          aria-keyshortcuts="Control+Z Meta+Z"
-          title="直前の操作を元に戻す（Ctrl/⌘ + Z）"
-        >
-          <span className="shell-undo-icon" aria-hidden="true">↶</span>
-          <span>{undoQueued ? '待機中…' : '元に戻す'}</span>
-          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Z</span>
-        </button>
-        <button
-          type="button"
-          className="shell-undo-button"
-          onClick={requestRedo}
-          disabled={!redoAvailable || historyWaiting}
-          aria-label="元に戻した操作をやり直す"
-          aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z"
-          title="元に戻した操作をやり直す（Ctrl/⌘ + Shift + Z）"
-        >
-          <span className="shell-undo-icon" aria-hidden="true">↷</span>
-          <span>{redoQueued ? '待機中…' : 'やり直す'}</span>
-          <span className="shell-undo-shortcut" aria-hidden="true">Ctrl+Shift+Z</span>
-        </button>
+      <div className="shell-top-region">
+        <TopHeader
+          activeTab={activeHeaderTab}
+          onTabChange={(tab) => {
+            setMobileSidebarOpen(false);
+            onHeaderTabChange(tab);
+          }}
+          analysisUnlocked={analysisUnlocked}
+          requiredCoverageUnlocked={requiredCoverageUnlocked}
+          requiredCoverageRiskKinds={requiredCoverageRiskKinds}
+          hasOpenPlan={hasOpenPlan}
+          customerName={customerName}
+          planStatus={planStatus}
+          autosaveStatus={autosaveStatus}
+          showHonorific={showHonorific}
+          isLicensed={isLicensed}
+          adminTab={adminTab}
+          onAdminTabChange={onAdminTabChange}
+          assetBuildingTab={assetBuildingTab}
+          onAssetBuildingTabChange={onAssetBuildingTabChange}
+          requiredCoverageRiskKind={requiredCoverageRiskKind}
+          onRequiredCoverageRiskKindChange={onRequiredCoverageRiskKindChange}
+        />
+        <div className="shell-history-controls" aria-label="操作履歴">
+          <button
+            type="button"
+            className="shell-history-button"
+            onClick={requestUndo}
+            disabled={!undoAvailable || historyWaiting}
+            aria-label={undoQueued ? '保存後に元に戻します' : '直前の操作を元に戻す'}
+            aria-keyshortcuts="Control+Z Meta+Z"
+            aria-busy={undoQueued || undefined}
+            title={undoQueued ? '保存後に元に戻します' : '元に戻す（Ctrl/⌘ + Z）'}
+          >
+            <span className="shell-history-icon" aria-hidden="true">↶</span>
+          </button>
+          <button
+            type="button"
+            className="shell-history-button"
+            onClick={requestRedo}
+            disabled={!redoAvailable || historyWaiting}
+            aria-label={redoQueued ? '保存後にやり直します' : '元に戻した操作をやり直す'}
+            aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z"
+            aria-busy={redoQueued || undefined}
+            title={redoQueued ? '保存後にやり直します' : 'やり直す（Ctrl/⌘ + Shift + Z）'}
+          >
+            <span className="shell-history-icon" aria-hidden="true">↷</span>
+          </button>
+        </div>
       </div>
       <div className="shell-body">
         {showSidebar && (
