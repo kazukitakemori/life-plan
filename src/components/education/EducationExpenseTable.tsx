@@ -125,7 +125,9 @@ export function EducationExpenseTable({
                 entry.schoolCategory,
                 entry.schoolType,
               );
-              const title = `${SCHOOL_CATEGORY_LABELS[entry.schoolCategory]}・${SCHOOL_TYPE_LABELS[schoolType]}`;
+              const categoryLabel = SCHOOL_CATEGORY_LABELS[entry.schoolCategory];
+              const schoolTypeLabel = SCHOOL_TYPE_LABELS[schoolType];
+              const title = `${categoryLabel}・${schoolTypeLabel}`;
               const period = `${entry.startAge}歳${entry.startMonth}月〜${entry.endAge}歳${entry.endMonth}月`;
               const tuition =
                 entry.tuitionAnnual > 0
@@ -137,6 +139,23 @@ export function EducationExpenseTable({
                   key={entry.id}
                   className={`education-mobile-accordion-item${expanded ? ' is-expanded' : ''}`}
                 >
+                  <div className="education-school-card-header">
+                    <div className="education-school-card-heading">
+                      <span className="education-school-card-title">
+                        {categoryLabel}
+                      </span>
+                      <span className="education-school-card-type">
+                        {schoolTypeLabel}
+                      </span>
+                      {entry.schoolName ? (
+                        <span className="education-school-card-name">
+                          {entry.schoolName}
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="education-school-card-period">{period}</span>
+                  </div>
+
                   <button
                     type="button"
                     className="education-mobile-summary"

@@ -189,30 +189,28 @@ export function VehicleStep({
         </p>
       ) : null}
 
-      <div className="vehicle-toolbar">
-        <MemberIncomeTabs
-          members={visibleMembers}
-          activeMemberId={resolvedActiveId}
-          entryCounts={entryCounts}
-          referenceDate={referenceDate}
-          onSelect={setActiveMemberId}
-          addableMembers={addableMembers}
-          onAddMemberTab={handleAddMemberTab}
-          removableMemberIds={removableMemberIds}
-          onRemoveMemberTab={handleRemoveMemberTab}
-        />
+      <MemberIncomeTabs
+        members={visibleMembers}
+        activeMemberId={resolvedActiveId}
+        entryCounts={entryCounts}
+        referenceDate={referenceDate}
+        onSelect={setActiveMemberId}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddMemberTab}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
+      />
 
-        <CopySettingsBar
-          value={copySourceId}
-          options={copySourceOptions}
-          onChange={setCopySourceId}
-          onCopy={copySettingsFrom}
-          disabled={
-            copySourceId === resolvedActiveId ||
-            (vehicleState.byMember[copySourceId]?.length ?? 0) === 0
-          }
-        />
-      </div>
+      <CopySettingsBar
+        value={copySourceId}
+        options={copySourceOptions}
+        onChange={setCopySourceId}
+        onCopy={copySettingsFrom}
+        disabled={
+          copySourceId === resolvedActiveId ||
+          (vehicleState.byMember[copySourceId]?.length ?? 0) === 0
+        }
+      />
 
       <VehicleTable
         entries={entries}

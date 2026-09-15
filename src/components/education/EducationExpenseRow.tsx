@@ -22,6 +22,7 @@ import {
   GRADUATE_PROGRAM_TYPE_OPTIONS,
   UNIVERSITY_HOUSING_TYPE_OPTIONS,
   SCHOOL_CATEGORY_OPTIONS,
+  SCHOOL_CATEGORY_LABELS,
 } from '../../lib/educationLabels';
 import {
   applyGraduateProgramTypeChange,
@@ -79,6 +80,7 @@ export function EducationExpenseRow({
   const periodAlerts = getEducationPeriodAlerts(entry);
   const canFetchCosts = isEducationCostFetchAvailable(entry);
   const tuitionMonthly = tuitionAnnualToMonthly(entry.tuitionAnnual);
+  const educationDeleteLabel = `${SCHOOL_CATEGORY_LABELS[entry.schoolCategory]}の教育費を削除`;
 
   const handleFetchCosts = () => {
     const costs = fetchEducationCosts({
@@ -478,13 +480,13 @@ export function EducationExpenseRow({
           className="ui-btn ui-btn--danger ui-btn--compact education-row-remove"
           onClick={onRemove}
           disabled={!canRemove}
-          aria-label="教育費を削除"
-          title="教育費を削除"
+          aria-label={educationDeleteLabel}
+          title={educationDeleteLabel}
         >
           <span className="education-remove-icon" aria-hidden>
             ×
           </span>
-          <span className="education-remove-label">削除</span>
+          <span className="education-remove-label">{educationDeleteLabel}</span>
         </button>
       </div>
     </div>

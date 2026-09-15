@@ -316,9 +316,25 @@ button.ui-member-tab--add {
 }
 
 .ui-member-tab-add-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
   color: var(--ui-brand);
   font-size: 1.25rem;
   font-weight: 600;
+  line-height: 1;
+}
+
+button.ui-member-tab--add .ui-member-tab-info {
+  min-height: 24px;
+  justify-content: center;
+}
+
+button.ui-member-tab--add .ui-member-tab-name {
+  line-height: 24px;
 }
 
 .ui-member-tab-menu {

@@ -176,29 +176,25 @@ export function LifeEventStep({
         </p>
       ) : null}
 
-      <div className="life-event-toolbar">
-        <MemberLifeEventTabs
-          members={visibleMembers}
-          activeMemberId={resolvedActiveId}
-          entryCounts={entryCounts}
-          referenceDate={referenceDate}
-          onSelect={handleSelectMember}
-          addableMembers={addableMembers}
-          onAddMemberTab={handleAddLifeEventMember}
-          removableMemberIds={removableMemberIds}
-          onRemoveMemberTab={handleRemoveMemberTab}
-        />
+      <MemberLifeEventTabs
+        members={visibleMembers}
+        activeMemberId={resolvedActiveId}
+        entryCounts={entryCounts}
+        referenceDate={referenceDate}
+        onSelect={handleSelectMember}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddLifeEventMember}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
+      />
 
-        <CopySettingsBar
-          value={copySourceId}
-          options={copySourceOptions}
-          onChange={setCopySourceId}
-          onCopy={copySettingsFrom}
-          disabled={
-            copySourceId === resolvedActiveId || copySourceManualCount === 0
-          }
-        />
-      </div>
+      <CopySettingsBar
+        value={copySourceId}
+        options={copySourceOptions}
+        onChange={setCopySourceId}
+        onCopy={copySettingsFrom}
+        disabled={copySourceId === resolvedActiveId || copySourceManualCount === 0}
+      />
 
       <LifeEventTable
         entries={entries}

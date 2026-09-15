@@ -39,6 +39,10 @@
   width: 100%;
 }
 
+.education-step .education-school-card-header {
+  display: none;
+}
+
 .education-step .education-table-row,
 .education-step .education-table-row:nth-child(odd),
 .education-step .education-table-row:nth-child(even) {
@@ -287,6 +291,149 @@
   .education-step .ui-member-tabs-actions {
     width: 100%;
     margin-left: 0;
+  }
+
+  /* PCも1学校=1カード。スマホのアコーディオン操作は変更しない。 */
+  .education-step .education-mobile-accordion-item {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-top: 3px solid var(--ui-brand);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .education-step .education-school-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  .education-step .education-school-card-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    min-width: 0;
+  }
+
+  .education-step .education-school-card-title {
+    color: var(--ui-text);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .education-step .education-school-card-type {
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--ui-brand-soft);
+    color: var(--ui-brand);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .education-step .education-school-card-name {
+    overflow: hidden;
+    max-width: 28rem;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .education-step .education-school-card-period {
+    flex: 0 0 auto;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .education-step .education-mobile-accordion-item > .education-table-row {
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* その他費用も1項目=1サブカード。入力操作は既存のまま。 */
+  .education-step .education-other-list {
+    gap: 12px;
+  }
+
+  .education-step .education-other-item {
+    padding: 12px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  .education-step .education-other-label-input {
+    width: min(100%, var(--ui-field-width-long));
+    margin-bottom: 10px;
+  }
+
+  .education-step .education-other-item-top {
+    display: grid;
+    grid-template-columns: 128px 104px 220px max-content;
+    align-items: center;
+    justify-content: start;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .education-step .education-other-year-select {
+    width: 128px;
+    min-width: 128px;
+    padding-right: 34px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-other-cycle-select {
+    width: 104px;
+    min-width: 104px;
+    padding-right: 34px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-other-item-top .education-yen-input {
+    width: 220px;
+    min-width: 0;
+  }
+
+  .education-step .education-other-remove {
+    width: auto;
+    min-width: 104px;
+    height: 40px;
+    min-height: 40px;
+    margin-left: 0;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .education-step .education-row-remove {
+    width: auto;
+    min-width: 168px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 12px;
+    white-space: nowrap;
   }
 }
 

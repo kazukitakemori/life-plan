@@ -220,42 +220,40 @@ export function EducationStep({
         </p>
       ) : null}
 
-      <div className="education-toolbar">
-        <MemberEducationTabs
-          members={visibleMembers}
-          activeMemberId={resolvedActiveId}
-          entryCounts={entryCounts}
-          referenceDate={referenceDate}
-          onSelect={handleSelectMember}
-          addableMembers={addableMembers}
-          onAddMemberTab={handleAddEducationMember}
-          removableMemberIds={removableMemberIds}
-          onRemoveMemberTab={handleRemoveMemberTab}
-          summaryAction={{
-            active: showAllMembers,
-            onToggle: () => {
-              setAddMenuOpen(false);
-              setShowAllMembers((prev) => !prev);
-            },
-            showLabel: '全員まとめて表示',
-            hideLabel: '個人ごとに表示',
-            ariaLabel: '教育費の表示を切り替え',
-          }}
-        />
+      <MemberEducationTabs
+        members={visibleMembers}
+        activeMemberId={resolvedActiveId}
+        entryCounts={entryCounts}
+        referenceDate={referenceDate}
+        onSelect={handleSelectMember}
+        addableMembers={addableMembers}
+        onAddMemberTab={handleAddEducationMember}
+        removableMemberIds={removableMemberIds}
+        onRemoveMemberTab={handleRemoveMemberTab}
+        summaryAction={{
+          active: showAllMembers,
+          onToggle: () => {
+            setAddMenuOpen(false);
+            setShowAllMembers((prev) => !prev);
+          },
+          showLabel: '全員まとめて表示',
+          hideLabel: '個人ごとに表示',
+          ariaLabel: '教育費の表示を切り替え',
+        }}
+      />
 
-        {!showAllMembers && activeMember ? (
-          <CopySettingsBar
-            value={copySourceId}
-            options={copySourceOptions}
-            onChange={setCopySourceId}
-            onCopy={copySettingsFrom}
-            disabled={
-              copySourceId === resolvedActiveId ||
-              (educationByMember[copySourceId]?.length ?? 0) === 0
-            }
-          />
-        ) : null}
-      </div>
+      {!showAllMembers && activeMember ? (
+        <CopySettingsBar
+          value={copySourceId}
+          options={copySourceOptions}
+          onChange={setCopySourceId}
+          onCopy={copySettingsFrom}
+          disabled={
+            copySourceId === resolvedActiveId ||
+            (educationByMember[copySourceId]?.length ?? 0) === 0
+          }
+        />
+      ) : null}
 
       {showAllMembers ? (
         <>

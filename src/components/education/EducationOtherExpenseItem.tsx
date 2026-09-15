@@ -90,7 +90,7 @@ export function EducationOtherExpenseItem({
           <span className="education-remove-icon" aria-hidden>
             ×
           </span>
-          <span className="education-remove-label">削除</span>
+          <span className="education-remove-label">項目を削除</span>
         </button>
       </div>
       <input

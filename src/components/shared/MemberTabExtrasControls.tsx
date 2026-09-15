@@ -149,7 +149,7 @@ export function MemberTabAddInBar({
         onClick={() => setPickerOpen((open) => !open)}
       >
         <span className="ui-member-tab-add-plus" aria-hidden>
-          ＋
+          +
         </span>
         <div className="ui-member-tab-info">
           <span className="ui-member-tab-name">入力する人を追加</span>
