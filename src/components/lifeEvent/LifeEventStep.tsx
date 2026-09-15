@@ -1,7 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  createLifeEventEntryFromPreset,
-} from '../../lib/lifeEventDefaults';
+import { createLifeEventEntryFromPreset } from '../../lib/lifeEventDefaults';
 import { isSecondLifeManagedLifeEvent } from '../../lib/lifeEventSource';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { memberHasLifeEventData } from '../../lib/memberTabVisibility';
@@ -40,6 +38,8 @@ export function LifeEventStep({
   const headMember = members.find((m) => m.role === 'head');
   const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
   const [copySourceId, setCopySourceId] = useState(headMember?.id ?? '');
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [autoExpandEntryId, setAutoExpandEntryId] = useState<string | null>(null);
 
   const memberHasData = useCallback(
     (memberId: string) => memberHasLifeEventData(lifeEventState, memberId),
@@ -116,6 +116,8 @@ export function LifeEventStep({
       members,
     );
     persistEntries(resolvedActiveId, [...entries, nextEntry]);
+    setAutoExpandEntryId(nextEntry.id);
+    setAddMenuOpen(false);
   };
 
   const copySettingsFrom = () => {
@@ -135,6 +137,19 @@ export function LifeEventStep({
 
     if (clonedManual.length === 0) return;
     persistEntries(resolvedActiveId, [...destinationManaged, ...clonedManual]);
+    setAutoExpandEntryId(null);
+  };
+
+  const handleSelectMember = (memberId: string) => {
+    setAddMenuOpen(false);
+    setAutoExpandEntryId(null);
+    setActiveMemberId(memberId);
+  };
+
+  const handleAddLifeEventMember = (memberId: string) => {
+    setAddMenuOpen(false);
+    setAutoExpandEntryId(null);
+    handleAddMemberTab(memberId);
   };
 
   if (!headMember || !activeMember) {
@@ -152,7 +167,7 @@ export function LifeEventStep({
       <StepHeading
         number={3}
         title="ライフイベント"
-        subtitle="結婚・夢・医療・介護など"
+        subtitle="旅行・家電・祝い金・夢など"
       />
 
       {purposeNote ? (
@@ -167,9 +182,9 @@ export function LifeEventStep({
           activeMemberId={resolvedActiveId}
           entryCounts={entryCounts}
           referenceDate={referenceDate}
-          onSelect={setActiveMemberId}
+          onSelect={handleSelectMember}
           addableMembers={addableMembers}
-          onAddMemberTab={handleAddMemberTab}
+          onAddMemberTab={handleAddLifeEventMember}
           removableMemberIds={removableMemberIds}
           onRemoveMemberTab={handleRemoveMemberTab}
         />
@@ -190,10 +205,16 @@ export function LifeEventStep({
         member={activeMember}
         familyMembers={members}
         referenceDate={referenceDate}
+        autoExpandEntryId={autoExpandEntryId}
         onChange={(updated) => persistEntries(resolvedActiveId, updated)}
       />
 
-      <AddLifeEventCards activeMember={activeMember} onAdd={addEntryFromPreset} />
+      <AddLifeEventCards
+        activeMember={activeMember}
+        isOpen={addMenuOpen}
+        onToggle={() => setAddMenuOpen((open) => !open)}
+        onAdd={addEntryFromPreset}
+      />
     </div>
   );
 }

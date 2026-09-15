@@ -1,0 +1,218 @@
+/*
+ * Q3 life-event mobile information architecture.
+ *
+ * The shared accordion-card shell and summary presentation live in
+ * ui-mobile-accordion.css. This file owns Q3-specific labels, expanded-row
+ * layout, display-order placement, celebration-gift layout and add-flow structure.
+ */
+
+.life-event-add-toggle {
+  display: none;
+}
+
+/* 手動並べ替えは廃止。既存テーブルの先頭列は構造互換のため0幅にする。 */
+.life-event-step .life-event-table {
+  --life-event-cols:
+    0 minmax(120px, 1fr) minmax(132px, 1fr) minmax(300px, 2.2fr)
+    minmax(124px, 1fr) minmax(132px, 1fr) minmax(88px, 0.7fr)
+    40px;
+}
+
+.life-event-step .life-event-col-drag {
+  overflow: hidden;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.life-event-sort-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 10px;
+}
+
+.life-event-step .life-event-sort-control {
+  margin-left: auto;
+}
+
+@media (max-width: 768px) {
+  .life-event-step .life-event-toolbar {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  /* Use plain-language labels on phones while leaving the desktop table untouched. */
+  .life-event-step .life-event-col-summary::before {
+    content: 'イベント名';
+  }
+
+  .life-event-step .life-event-col-type::before {
+    content: '種類';
+  }
+
+  .life-event-step .life-event-col-period::before {
+    content: '期間';
+  }
+
+  .life-event-step .life-event-col-cycle::before {
+    content: '繰り返し';
+  }
+
+  .life-event-step .life-event-col-amount::before {
+    content: '1回の金額';
+  }
+
+  .life-event-step .life-event-col-rate::before {
+    content: '毎年の上昇率';
+  }
+
+  .life-event-step .life-event-table-body {
+    gap: 14px;
+  }
+
+  .life-event-step .life-event-sort-tools {
+    justify-content: stretch;
+    padding: 0 2px;
+  }
+
+  .life-event-step .life-event-sort-control {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .life-event-step .life-event-sort-control .ui-segmented-options {
+    flex: 1 1 auto;
+  }
+
+  .life-event-step .life-event-sort-control .ui-segmented-button {
+    min-height: 44px;
+  }
+
+  /* Q3 keeps only its own expanded-row information layout here. */
+  .life-event-step .life-event-mobile-summary-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item:not(.is-expanded) > .life-event-table-row {
+    display: none;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row,
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(odd),
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row:nth-child(even) {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: var(--ui-bg-surface);
+    box-shadow: none;
+  }
+
+  .life-event-step .life-event-mobile-accordion-item > .life-event-table-row .life-event-col-summary {
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-mobile-accordion-item .life-event-col-drag {
+    display: none;
+  }
+
+  /* Celebration gifts are a special input block: on phones, one person = one vertical card. */
+  .life-event-step .celebration-gift-table-body {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .life-event-step .celebration-gift-table-row,
+  .life-event-step .celebration-gift-table-row:nth-child(odd),
+  .life-event-step .celebration-gift-table-row:nth-child(even) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+  }
+
+  .life-event-step .celebration-gift-table-cell {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+  }
+
+  .life-event-step .celebration-gift-table-cell:last-child {
+    border-bottom: 0;
+  }
+
+  .life-event-step .celebration-gift-col-name {
+    grid-column: auto;
+    background: var(--ui-bg-subtle);
+    color: var(--ui-text);
+    font-weight: 700;
+  }
+
+  .life-event-step .celebration-gift-table-cell::before {
+    margin-bottom: 7px;
+  }
+
+  .life-event-step :where(.celebration-gift-select, .celebration-gift-amount-input) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  .life-event-step .celebration-gift-amount-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Q2-style collapsed add flow. Desktop keeps the existing card list. */
+  .life-event-step .life-event-add-section {
+    margin-top: 16px;
+  }
+
+  .life-event-step .life-event-add-title {
+    display: none;
+  }
+
+  .life-event-step .life-event-add-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .life-event-step .life-event-add-grid {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-subtle);
+  }
+
+  .life-event-step .life-event-add-section.is-open .life-event-add-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .life-event-step .life-event-add-grid > .life-event-add-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

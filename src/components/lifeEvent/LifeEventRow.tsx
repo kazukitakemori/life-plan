@@ -28,12 +28,8 @@ interface LifeEventRowProps {
   member: FamilyMember;
   referenceDate: Date;
   canRemove: boolean;
-  isDragging: boolean;
   onChange: (entry: LifeEventEntry) => void;
   onRemove: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDropOn: (fromId: string) => void;
 }
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -44,12 +40,8 @@ export function LifeEventRow({
   member,
   referenceDate,
   canRemove,
-  isDragging,
   onChange,
   onRemove,
-  onDragStart,
-  onDragEnd,
-  onDropOn,
 }: LifeEventRowProps) {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const ageOptions = getLifeEventAgeOptions(member);
@@ -82,30 +74,8 @@ export function LifeEventRow({
   }, [simStart.age, simStart.month]);
 
   return (
-    <div
-      className={`life-event-table-row ${isDragging ? 'life-event-table-row--dragging' : ''}`}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        const fromId = e.dataTransfer.getData('text/plain');
-        if (fromId) onDropOn(fromId);
-      }}
-    >
-      <div className="life-event-table-cell life-event-col-drag">
-        <button
-          type="button"
-          className="life-event-drag-handle"
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('text/plain', entry.id);
-            onDragStart();
-          }}
-          onDragEnd={onDragEnd}
-          aria-label="並べ替え"
-        >
-          ⠿
-        </button>
-      </div>
+    <div className="life-event-table-row">
+      <div className="life-event-table-cell life-event-col-drag" aria-hidden />
 
       <div className="life-event-table-cell life-event-col-summary">
         <DebouncedTextInput

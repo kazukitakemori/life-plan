@@ -96,6 +96,7 @@ const PRESET_DEFAULTS: Record<
   },
 };
 
+/** Q3でユーザーが新規追加できるライフイベント。医療・介護・ふるさと納税は追加候補に出さない。 */
 export const LIFE_EVENT_PRESETS: ReadonlyArray<{
   id: LifeEventPresetId;
   icon: string;
@@ -113,24 +114,6 @@ export const LIFE_EVENT_PRESETS: ReadonlyArray<{
     icon: '🎁',
     title: '家電・家具',
     description: '買い替えや大型購入',
-  },
-  {
-    id: 'medical',
-    icon: '💓',
-    title: '医療費',
-    description: '通院や治療費など',
-  },
-  {
-    id: 'nursing',
-    icon: '🤲',
-    title: '介護費',
-    description: '在宅・施設介護など',
-  },
-  {
-    id: 'hometown_tax',
-    icon: '🏛️',
-    title: 'ふるさと納税',
-    description: '寄付金控除の見込み',
   },
   {
     id: 'celebration_gift',

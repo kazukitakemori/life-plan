@@ -1,0 +1,139 @@
+/*
+ * Shared mobile accordion-card presentation.
+ *
+ * Q2 education and Q3 life events use the same card shell, summary hierarchy,
+ * open/close affordance and responsive spacing. Screen-specific files keep only
+ * their own information layout inside the expanded card.
+ */
+
+:is(.education-mobile-accordion-item, .life-event-mobile-accordion-item) {
+  display: contents;
+}
+
+:is(.education-mobile-summary, .life-event-mobile-summary) {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  :is(
+      .education-step .education-mobile-accordion-item,
+      .life-event-step .life-event-mobile-accordion-item
+    ) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-top: 4px solid var(--ui-brand);
+    border-radius: var(--ui-radius-card);
+    background: var(--ui-bg-surface);
+    box-shadow: var(--ui-shadow-subtle);
+  }
+
+  :is(
+      .education-step .education-mobile-summary,
+      .life-event-step .life-event-mobile-summary
+    ) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: 100%;
+    min-height: 72px;
+    padding: 14px;
+    border: 0;
+    background: var(--ui-bg-surface);
+    color: var(--ui-text);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  :is(
+      .education-step .education-mobile-accordion-item.is-expanded .education-mobile-summary,
+      .life-event-step .life-event-mobile-accordion-item.is-expanded .life-event-mobile-summary
+    ) {
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-subtle);
+  }
+
+  :is(
+      .education-step .education-mobile-summary-copy,
+      .life-event-step .life-event-mobile-summary-copy
+    ) {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  :is(
+      .education-step .education-mobile-summary-title,
+      .life-event-step .life-event-mobile-summary-title
+    ) {
+    color: var(--ui-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  :is(
+      .education-step .education-mobile-summary-school-name,
+      .life-event-step .life-event-mobile-summary-type
+    ) {
+    overflow: hidden;
+    color: var(--ui-text-muted);
+    font-size: 13px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :is(
+      .education-step .education-mobile-summary-meta,
+      .life-event-step .life-event-mobile-summary-meta
+    ) {
+    color: var(--ui-text-subtle);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  :is(
+      .education-step .education-mobile-summary-action,
+      .life-event-step .life-event-mobile-summary-action
+    ) {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    color: var(--ui-brand);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  :is(
+      .education-step .education-mobile-summary,
+      .life-event-step .life-event-mobile-summary
+    ):focus-visible {
+    outline: 2px solid var(--ui-brand);
+    outline-offset: -2px;
+  }
+}
+
+@media (max-width: 430px) {
+  :is(
+      .education-step .education-mobile-summary,
+      .life-event-step .life-event-mobile-summary
+    ) {
+    align-items: flex-start;
+    gap: 10px;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  :is(
+      .education-step .education-mobile-summary-meta,
+      .life-event-step .life-event-mobile-summary-meta
+    ) {
+    white-space: normal;
+  }
+}

@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { isCelebrationGiftLifeEventType } from '../../lib/lifeEventLabels';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  isCelebrationGiftLifeEventType,
+  LIFE_EVENT_TYPE_LABELS,
+} from '../../lib/lifeEventLabels';
+import {
+  sortLifeEventEntries,
+  type LifeEventSortMode,
+} from '../../lib/lifeEventOrder';
 import {
   getSecondLifeManagedLifeEventSource,
   getSecondLifeManagedLifeEventSourceLabel,
@@ -7,6 +14,7 @@ import {
 } from '../../lib/lifeEventSource';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventEntry } from '../../types/lifeEvent';
+import { SegmentedControl } from '../ui';
 import { CelebrationGiftBlock } from './CelebrationGiftBlock';
 import { LifeEventRow } from './LifeEventRow';
 
@@ -15,7 +23,24 @@ interface LifeEventTableProps {
   member: FamilyMember;
   familyMembers: FamilyMember[];
   referenceDate: Date;
+  autoExpandEntryId?: string | null;
   onChange: (entries: LifeEventEntry[]) => void;
+}
+
+const AMOUNT_FORMATTER = new Intl.NumberFormat('ja-JP', {
+  maximumFractionDigits: 1,
+});
+
+const SORT_OPTIONS = [
+  { value: 'time', label: '時期順' },
+  { value: 'genre', label: 'ジャンル順' },
+] as const;
+
+function formatLifeEventPeriod(entry: LifeEventEntry): string {
+  const start = `${entry.startAge}歳${entry.startMonth}月`;
+  if (entry.endMode === 'once') return `${start}・1回限り`;
+  if (entry.endMode === 'lifetime') return `${start}〜生涯`;
+  return `${start}〜${entry.endAge}歳${entry.endMonth}月`;
 }
 
 export function LifeEventTable({
@@ -23,21 +48,60 @@ export function LifeEventTable({
   member,
   familyMembers,
   referenceDate,
+  autoExpandEntryId,
   onChange,
 }: LifeEventTableProps) {
-  const [dragEntryId, setDragEntryId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<LifeEventSortMode>('time');
+  const [expandedEntryIds, setExpandedEntryIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
-  const managedEntries = entries.filter(isSecondLifeManagedLifeEvent);
-  const celebrationEntries = entries.filter(
-    (entry) =>
-      !isSecondLifeManagedLifeEvent(entry) &&
-      isCelebrationGiftLifeEventType(entry.type),
+  const { managedEntries, celebrationEntries, regularEntries } = useMemo(() => {
+    const managed: LifeEventEntry[] = [];
+    const celebration: LifeEventEntry[] = [];
+    const regular: LifeEventEntry[] = [];
+
+    for (const entry of entries) {
+      if (isSecondLifeManagedLifeEvent(entry)) {
+        managed.push(entry);
+      } else if (isCelebrationGiftLifeEventType(entry.type)) {
+        celebration.push(entry);
+      } else {
+        regular.push(entry);
+      }
+    }
+
+    return {
+      managedEntries: managed,
+      celebrationEntries: celebration,
+      regularEntries: sortLifeEventEntries(regular, sortMode),
+    };
+  }, [entries, sortMode]);
+
+  const regularEntryIds = useMemo(
+    () => new Set(regularEntries.map((entry) => entry.id)),
+    [regularEntries],
   );
-  const regularEntries = entries.filter(
-    (entry) =>
-      !isSecondLifeManagedLifeEvent(entry) &&
-      !isCelebrationGiftLifeEventType(entry.type),
-  );
+
+  useEffect(() => {
+    if (!autoExpandEntryId || !regularEntryIds.has(autoExpandEntryId)) return;
+    setExpandedEntryIds((current) => {
+      if (current.has(autoExpandEntryId)) return current;
+      const next = new Set(current);
+      next.add(autoExpandEntryId);
+      return next;
+    });
+  }, [autoExpandEntryId, regularEntryIds]);
+
+  useEffect(() => {
+    setExpandedEntryIds((current) => {
+      const next = new Set(
+        [...current].filter((entryId) => regularEntryIds.has(entryId)),
+      );
+      if (next.size === current.size) return current;
+      return next;
+    });
+  }, [regularEntryIds]);
 
   const updateEntry = (entryId: string, updated: LifeEventEntry) => {
     onChange(entries.map((entry) => (entry.id === entryId ? updated : entry)));
@@ -47,24 +111,22 @@ export function LifeEventTable({
     onChange(entries.filter((entry) => entry.id !== entryId));
   };
 
-  const reorderEntries = (fromId: string, toId: string) => {
-    if (fromId === toId) return;
-    const fromIndex = regularEntries.findIndex((entry) => entry.id === fromId);
-    const toIndex = regularEntries.findIndex((entry) => entry.id === toId);
-    if (fromIndex < 0 || toIndex < 0) return;
-
-    const nextRegular = [...regularEntries];
-    const [moved] = nextRegular.splice(fromIndex, 1);
-    nextRegular.splice(toIndex, 0, moved);
-    onChange([...managedEntries, ...celebrationEntries, ...nextRegular]);
+  const toggleEntry = (entryId: string) => {
+    setExpandedEntryIds((current) => {
+      const next = new Set(current);
+      if (next.has(entryId)) {
+        next.delete(entryId);
+      } else {
+        next.add(entryId);
+      }
+      return next;
+    });
   };
 
   if (entries.length === 0) {
     return (
       <div className="life-event-table-empty">
-        <p>
-          ライフイベントが登録されていません。下のカードから追加してください。
-        </p>
+        <p>ライフイベントが登録されていません。下のボタンから追加してください。</p>
       </div>
     );
   }
@@ -113,6 +175,18 @@ export function LifeEventTable({
 
       {regularEntries.length > 0 && (
         <div className="life-event-table-card">
+          {regularEntries.length > 1 ? (
+            <div className="life-event-sort-tools">
+              <SegmentedControl
+                className="life-event-sort-control"
+                ariaLabel="ライフイベントの表示順"
+                value={sortMode}
+                options={SORT_OPTIONS}
+                onChange={(value) => setSortMode(value as LifeEventSortMode)}
+              />
+            </div>
+          ) : null}
+
           <div className="life-event-table">
             <div className="life-event-table-header">
               <div className="life-event-header-cell life-event-col-drag" />
@@ -138,24 +212,48 @@ export function LifeEventTable({
             </div>
 
             <div className="life-event-table-body">
-              {regularEntries.map((entry) => (
-                <LifeEventRow
-                  key={entry.id}
-                  entry={entry}
-                  member={member}
-                  referenceDate={referenceDate}
-                  canRemove
-                  isDragging={dragEntryId === entry.id}
-                  onChange={(updated) => updateEntry(entry.id, updated)}
-                  onRemove={() => removeEntry(entry.id)}
-                  onDragStart={() => setDragEntryId(entry.id)}
-                  onDragEnd={() => setDragEntryId(null)}
-                  onDropOn={(fromId) => {
-                    reorderEntries(fromId, entry.id);
-                    setDragEntryId(null);
-                  }}
-                />
-              ))}
+              {regularEntries.map((entry) => {
+                const expanded = expandedEntryIds.has(entry.id);
+                const typeLabel = LIFE_EVENT_TYPE_LABELS[entry.type];
+                const title = entry.label.trim() || typeLabel;
+                const period = formatLifeEventPeriod(entry);
+                const amount = `1回 ${AMOUNT_FORMATTER.format(entry.amountMan)}万円`;
+
+                return (
+                  <div
+                    key={entry.id}
+                    className={`life-event-mobile-accordion-item${expanded ? ' is-expanded' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="life-event-mobile-summary"
+                      aria-expanded={expanded}
+                      onClick={() => toggleEntry(entry.id)}
+                    >
+                      <span className="life-event-mobile-summary-copy">
+                        <span className="life-event-mobile-summary-title">{title}</span>
+                        <span className="life-event-mobile-summary-type">{typeLabel}</span>
+                        <span className="life-event-mobile-summary-meta">
+                          {period} ・ {amount}
+                        </span>
+                      </span>
+                      <span className="life-event-mobile-summary-action">
+                        <span>{expanded ? '閉じる' : '詳細を開く'}</span>
+                        <span aria-hidden>{expanded ? '−' : '＋'}</span>
+                      </span>
+                    </button>
+
+                    <LifeEventRow
+                      entry={entry}
+                      member={member}
+                      referenceDate={referenceDate}
+                      canRemove
+                      onChange={(updated) => updateEntry(entry.id, updated)}
+                      onRemove={() => removeEntry(entry.id)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
