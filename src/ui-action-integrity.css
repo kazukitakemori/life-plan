@@ -1,0 +1,186 @@
+/*
+ * Final shared action-role integrity layer.
+ *
+ * Screen-specific CSS owns placement and composition. This file is loaded after
+ * those layers so destructive controls keep one semantic language even when
+ * legacy screen rules still contain fixed widths or old glyph treatments.
+ */
+
+/* Whole-entry deletion: quiet explicit action = trash icon + 「削除」. */
+:is(
+    .education-step .education-row-remove,
+    .housing-step .housing-owned-card > .housing-row-remove
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  width: auto;
+  min-width: 72px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+  font-size: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+:is(
+    .education-step .education-row-remove,
+    .housing-step .housing-owned-card > .housing-row-remove
+  )::before {
+  content: '';
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+:is(
+    .education-step .education-row-remove,
+    .housing-step .housing-owned-card > .housing-row-remove
+  )::after {
+  content: '削除';
+  font-size: var(--ui-font-label);
+  font-weight: 600;
+  line-height: 1;
+}
+
+:is(
+    .education-step .education-row-remove,
+    .housing-step .housing-owned-card > .housing-row-remove
+  ):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 64%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+/* Legacy education markup still contains × and a contextual long label.
+ * Keep the contextual wording in aria-label/title, not in the visible button.
+ */
+.education-step .education-row-remove :is(.education-remove-icon, .education-remove-label) {
+  display: none;
+}
+
+/* Dense nested deletion: same trash icon, icon-only. */
+:is(
+    .education-step .education-other-remove,
+    .income-step .income-bonus-row > .ui-btn--ghost
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-danger) 26%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+  font-size: 0;
+  line-height: 1;
+}
+
+:is(
+    .education-step .education-other-remove,
+    .income-step .income-bonus-row > .ui-btn--ghost
+  )::before {
+  content: '';
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+:is(
+    .education-step .education-other-remove,
+    .income-step .income-bonus-row > .ui-btn--ghost
+  ):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+.education-step .education-other-remove :is(.education-remove-icon, .education-remove-label) {
+  display: none;
+}
+
+/* A removable income period is a destructive text action, not a teal ghost action. */
+.income-step .income-period-card-identity > .ui-btn--ghost {
+  gap: 6px;
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  background: transparent;
+  color: var(--ui-danger);
+  box-shadow: none;
+}
+
+.income-step .income-period-card-identity > .ui-btn--ghost::before {
+  content: '';
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+  mask: var(--ui-icon-trash) center / contain no-repeat;
+}
+
+.income-step .income-period-card-identity > .ui-btn--ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 64%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+/* Existing nested loan deletes already use text labels; align their destructive tone. */
+:is(.loan-prepayment-remove, .loan-rate-period-remove) {
+  border-color: color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: transparent;
+  color: var(--ui-danger);
+}
+
+:is(.loan-prepayment-remove, .loan-rate-period-remove):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ui-danger) 58%, var(--ui-border));
+  background: var(--ui-danger-soft);
+  color: var(--ui-danger);
+}
+
+@media (max-width: 768px) {
+  /* Whole-card delete actions remain easy to tap and never compress their label. */
+  :is(
+      .education-step .education-row-remove,
+      .housing-step .housing-owned-card > .housing-row-remove
+    ) {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  /* Nested icon actions get a mobile-safe target without exposing long labels. */
+  :is(
+      .education-step .education-other-remove,
+      .income-step .income-bonus-row > .ui-btn--ghost
+    ) {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
