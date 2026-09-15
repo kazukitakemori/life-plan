@@ -1,8 +1,6 @@
 import { resolveMemberAge, resolveMemberBirthMonth } from '../../lib/familyDefaults';
 import { getOwnershipStartCalendar } from '../../lib/housingLoanAmortization';
-import {
-  resolveHousingLoanDeductionHouseholdType,
-} from '../../lib/housingLoanDeductionHousehold';
+import { resolveHousingLoanDeductionHouseholdType } from '../../lib/housingLoanDeductionHousehold';
 import {
   getNewConstructionHousingLoanDeductionTableRows,
   getUsedHousingLoanDeductionTableRows,
@@ -19,13 +17,13 @@ import type {
   OwnedProperty,
   OwnedPropertyLoanSettings,
 } from '../../types/housing';
+import { HousingOwnedDetailFold } from './HousingOwnedDetailFold';
 
 interface OwnedPropertyTargetSectionProps {
   property: OwnedProperty;
   member: FamilyMember;
   members: FamilyMember[];
   referenceDate: Date;
-  sectionNumber: number;
   onChange: (property: OwnedProperty) => void;
 }
 
@@ -39,7 +37,6 @@ export function OwnedPropertyTargetSection({
   member,
   members,
   referenceDate,
-  sectionNumber,
   onChange,
 }: OwnedPropertyTargetSectionProps) {
   if (property.type === 'land') {
@@ -64,6 +61,10 @@ export function OwnedPropertyTargetSection({
     referenceDate,
     occupancyYear,
   );
+  const targetSummary = `${isNewConstruction ? '新築' : '中古'}・${getOwnedPropertyTargetCategoryLabel(
+    deductionCategory,
+    isNewConstruction,
+  )}`;
 
   const updateLoanTarget = (
     patch: Partial<
@@ -84,9 +85,10 @@ export function OwnedPropertyTargetSection({
   };
 
   return (
-    <section className="housing-owned-detail-section">
-      <h4 className="housing-owned-detail-title">({sectionNumber}) 対象物件</h4>
-
+    <HousingOwnedDetailFold
+      title="住宅区分・住宅ローン控除"
+      summary={targetSummary}
+    >
       <div className="housing-owned-target">
         <div
           className="housing-owned-payment-options"
@@ -144,63 +146,61 @@ export function OwnedPropertyTargetSection({
           </p>
 
           {isNewConstruction ? (
-            <>
-              <table className="education-ref-data-table housing-owned-deduction-table">
-                <thead>
-                  <tr>
-                    <th scope="col">住宅の省エネ性能</th>
-                    <th scope="col">子育て・若者夫婦世帯の控除限度額</th>
-                    <th scope="col">その他の世帯の控除限度額</th>
-                    <th scope="col">控除期間</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getNewConstructionHousingLoanDeductionTableRows().map((row) => {
-                    const isSelected = row.category === deductionCategory;
+            <table className="education-ref-data-table housing-owned-deduction-table">
+              <thead>
+                <tr>
+                  <th scope="col">住宅の省エネ性能</th>
+                  <th scope="col">子育て・若者夫婦世帯の控除限度額</th>
+                  <th scope="col">その他の世帯の控除限度額</th>
+                  <th scope="col">控除期間</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getNewConstructionHousingLoanDeductionTableRows().map((row) => {
+                  const isSelected = row.category === deductionCategory;
 
-                    return (
-                      <tr
-                        key={row.category}
+                  return (
+                    <tr
+                      key={row.category}
+                      className={
+                        isSelected
+                          ? 'housing-owned-deduction-row--selected'
+                          : undefined
+                      }
+                    >
+                      <th scope="row">
+                        {getOwnedPropertyTargetCategoryLabel(row.category, true)}
+                      </th>
+                      <td
                         className={
+                          householdType === 'child_rearing_young_couple' &&
                           isSelected
-                            ? 'housing-owned-deduction-row--selected'
+                            ? 'housing-owned-deduction-cell--applicable'
                             : undefined
                         }
                       >
-                        <th scope="row">
-                          {getOwnedPropertyTargetCategoryLabel(row.category, true)}
-                        </th>
-                        <td
-                          className={
-                            householdType === 'child_rearing_young_couple' &&
-                            isSelected
-                              ? 'housing-owned-deduction-cell--applicable'
-                              : undefined
-                          }
-                        >
-                          {formatLimitMan(row.childRearingYoungLimitMan)}
-                        </td>
-                        <td
-                          className={
-                            householdType === 'other' && isSelected
-                              ? 'housing-owned-deduction-cell--applicable'
-                              : undefined
-                          }
-                        >
-                          {formatLimitMan(row.otherLimitMan)}
-                        </td>
-                        <td>
-                          {row.childRearingYoungLimitMan <= 0 &&
-                          row.otherLimitMan <= 0
-                            ? 'ー'
-                            : `${row.years}年`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </>
+                        {formatLimitMan(row.childRearingYoungLimitMan)}
+                      </td>
+                      <td
+                        className={
+                          householdType === 'other' && isSelected
+                            ? 'housing-owned-deduction-cell--applicable'
+                            : undefined
+                        }
+                      >
+                        {formatLimitMan(row.otherLimitMan)}
+                      </td>
+                      <td>
+                        {row.childRearingYoungLimitMan <= 0 &&
+                        row.otherLimitMan <= 0
+                          ? 'ー'
+                          : `${row.years}年`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           ) : (
             <>
               <table className="education-ref-data-table housing-owned-deduction-table">
@@ -242,6 +242,6 @@ export function OwnedPropertyTargetSection({
           )}
         </div>
       </div>
-    </section>
+    </HousingOwnedDetailFold>
   );
 }
