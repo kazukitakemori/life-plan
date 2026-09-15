@@ -1,0 +1,15 @@
+/* Shared smartphone geometry for ordinary form controls.
+ * Single-line inputs and selects use the same outer height so paired controls
+ * do not look misaligned across Q1-Q12. Textareas remain content-driven.
+ */
+
+@media (max-width: 768px) {
+  .step-page :is(
+      input:not([type='checkbox']):not([type='radio']):not([type='range']),
+      select
+    ) {
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+  }
+}

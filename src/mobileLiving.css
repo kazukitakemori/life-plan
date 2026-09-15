@@ -1,288 +1,261 @@
-/* Q4 living expenses: phone-specific composition only.
- * Shared member tabs, copy UI, controls and text-integrity stay in common layers.
+/* Q4 living expenses: phone-specific expanded-body composition only.
+ * Accordion card shell / summary / open-close UI are owned by ui-accordion-card.css.
+ * Shared input sizing / value-unit proximity stay owned by ui-form-widths.css and
+ * ui-form-units.css. This file changes only the mobile information layout.
  */
 
 @media (max-width: 768px) {
   .living-step .living-schedules {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-    width: 100%;
-    min-width: 0;
+    gap: 12px;
   }
 
-  .living-step .living-schedule-card {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    border-color: var(--ui-border);
-    border-radius: var(--ui-radius-card);
-    background: var(--ui-bg-surface);
-    box-shadow: var(--ui-shadow-subtle);
+  .living-step .living-card-section {
+    padding: 14px 13px;
   }
 
-  .living-step .living-table {
-    width: 100%;
-    min-width: 0 !important;
-    max-width: 100%;
+  .living-step .living-card-section-title {
+    margin: 0 0 10px;
+    font-size: var(--ui-type-label);
+    line-height: 1.45;
   }
 
-  .living-step .living-table-header {
-    display: none;
-  }
-
-  .living-step .living-table-body {
-    display: block;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .living-step .living-schedule-cell {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 14px;
-    border: 0;
-    border-bottom: 1px solid var(--ui-border);
-    background: var(--ui-bg-surface);
-  }
-
-  .living-step .living-schedule-cell::before {
-    content: 'スケジュール';
-    display: block;
-    margin-bottom: 8px;
-    color: var(--ui-text-muted);
-    font-size: 13px;
-    font-weight: 700;
-    line-height: var(--leading-tight);
-  }
-
+  /* Period: stack start/end as two compact rows instead of shrinking PC columns. */
   .living-step .living-schedule-inputs {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: start;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .living-step .living-schedule-side {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 8px;
     width: 100%;
     min-width: 0;
   }
 
-  .living-step .living-schedule-side,
-  .living-step .living-schedule-fields {
-    min-width: 0;
+  .living-step .living-schedule-side > .living-field-label {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
   }
 
-  .living-step .living-schedule-side:first-child::before,
-  .living-step .living-schedule-side:last-child::before {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--ui-text-subtle);
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .living-step .living-schedule-side:first-child::before { content: '開始'; }
-  .living-step .living-schedule-side:last-child::before { content: '終了'; }
-
   .living-step .living-schedule-fields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
     gap: 6px;
     width: 100%;
+    min-width: 0;
   }
 
-  .living-step .living-schedule-arrow {
-    align-self: center;
-    margin-top: 25px;
-    color: var(--ui-text-subtle);
+  .living-step .living-schedule-fields > .select-input--schedule {
+    flex: 1 1 0;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 44px;
   }
 
   .living-step :where(.period-start-label, .period-end-label) {
-    margin-top: 5px;
-    color: var(--ui-text-subtle);
-    font-size: 13px;
-    line-height: 1.4;
+    grid-column: 2;
+    margin: 0;
   }
 
-  .living-step .living-item-row,
-  .living-step .living-item-row--summary {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-    padding: 14px;
-    border-bottom: 1px solid var(--ui-border);
-    background: var(--ui-bg-surface);
-  }
-
-  .living-step .living-item-row--summary {
-    background: var(--ui-bg-subtle);
-  }
-
-  .living-step .living-item-row > .living-table-cell {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .living-step .living-item-row > .living-table-cell::before {
-    display: block;
-    margin-bottom: 6px;
-    color: var(--ui-text-muted);
-    font-size: 13px;
-    font-weight: 700;
-    line-height: var(--leading-tight);
-  }
-
-  .living-step .living-item-row > .living-col-content { grid-column: 1 / -1; }
-  .living-step .living-item-row > .living-col-content::before { content: '内容'; }
-  .living-step .living-item-row > .living-col-cycle::before { content: '周期'; }
-  .living-step .living-item-row > .living-col-amount::before { content: '金額（税込）'; }
-  .living-step .living-item-row > .living-col-rate::before { content: '上昇率'; }
-
-  .living-step .living-item-row > .living-col-action {
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-  }
-
-  .living-step .living-item-row > .living-col-action::before {
+  .living-step .living-schedule-arrow {
     display: none;
   }
 
-  .living-step :where(
-      .living-content-input,
-      .living-cycle-input,
-      .select-input--cycle,
-      .select-input--schedule,
-      .amount-input,
-      .rate-input
-    ) {
+  /* Input mode stays the shared segmented control, only expanded to phone width. */
+  .living-step .living-input-mode-control,
+  .living-step .living-input-mode-control .ui-segmented-options {
     width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    min-height: 44px;
-    border-color: var(--ui-border);
-    border-radius: var(--ui-radius-control);
-    background: var(--ui-bg-surface);
   }
 
-  .living-step .living-content-field {
+  .living-step .living-input-mode-control .ui-segmented-button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+
+  /* Simple input: label + control per row keeps units close without wasted width. */
+  .living-step .living-simple-fields {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .living-step .living-simple-field {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     width: 100%;
     min-width: 0;
   }
 
-  .living-step .living-content-field:not(:has(.living-drag-handle)) {
-    grid-template-columns: minmax(0, 1fr);
+  .living-step .living-simple-field > .living-field-label {
+    margin: 0;
   }
 
-  .living-step .living-drag-handle {
-    min-width: 44px;
+  .living-step .living-simple-field :where(.amount-input, .rate-input) {
     min-height: 44px;
+  }
+
+  /* Detail input: each expense item becomes one self-contained edit card. */
+  .living-step .living-detail-heading-row {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-bottom: 10px;
+  }
+
+  .living-step .living-detail-heading-total {
+    margin-left: auto;
+    font-size: var(--ui-type-helper);
+  }
+
+  .living-step .living-detail-table {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .living-step .living-detail-header {
+    display: none;
+  }
+
+  .living-step .living-detail-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    margin-top: 10px;
+    padding: 12px;
     border: 1px solid var(--ui-border);
     border-radius: var(--ui-radius-control);
     background: var(--ui-bg-surface);
+  }
+
+  .living-step .living-detail-row:first-of-type {
+    margin-top: 0;
+  }
+
+  .living-step .living-detail-cell {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .living-step .living-detail-content,
+  .living-step .living-detail-cell:nth-child(2),
+  .living-step .living-detail-action {
+    grid-column: 1 / -1;
+  }
+
+  .living-step .living-mobile-label {
+    display: block;
+    margin-bottom: 5px;
     color: var(--ui-text-muted);
+    font-size: var(--ui-type-helper);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .living-step .living-content-field {
+    gap: 7px;
+  }
+
+  .living-step .living-drag-handle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-control);
+    background: var(--ui-bg-surface);
+  }
+
+  .living-step .living-content-input,
+  .living-step .living-cycle-input,
+  .living-step .select-input--cycle,
+  .living-step .living-detail-cell .amount-input,
+  .living-step .living-detail-cell .rate-input {
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .living-step .living-content-input,
+  .living-step .select-input--cycle {
+    width: 100%;
+    max-width: none;
   }
 
   .living-step .living-cycle-field {
     display: grid;
-    grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1.2fr);
-    gap: 8px;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 6px;
     width: 100%;
+    min-width: 0;
   }
 
-  .living-step :where(.living-amount-field, .living-rate-field) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
+  .living-step .living-cycle-input {
+    width: 72px;
+    max-width: 72px;
   }
 
-  .living-step .remove-member-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+  .living-step .living-detail-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .living-step .living-detail-action:not(:has(.living-item-remove-btn)) {
+    display: none;
+  }
+
+  .living-step .living-item-remove-btn {
+    width: auto;
+    min-width: 96px;
     min-height: 44px;
-    padding: 0 12px;
-    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, white);
-    border-radius: var(--ui-radius-control);
-    background: var(--ui-bg-surface);
-    color: var(--ui-danger);
-    font-size: 0;
-    font-weight: 600;
-  }
-
-  .living-step .remove-member-btn::after {
-    content: '削除';
-    font-size: var(--text-sm);
-    white-space: nowrap;
   }
 
   .living-step .living-add-item-row {
-    display: block;
-    width: 100%;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--ui-border);
+    margin-top: 10px;
   }
 
   .living-step .inline-add-btn {
     width: 100%;
     min-height: 44px;
-    border-color: var(--ui-brand);
-    border-radius: var(--ui-radius-control);
-    background: var(--ui-bg-surface);
-    color: var(--ui-brand);
-    font-weight: 600;
   }
 
   .living-step .living-summary-row {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    padding: 12px 14px;
-    border-top: 0;
-    background: var(--ui-bg-subtle);
+    gap: 10px;
+    padding: 13px;
   }
 
-  .living-step .living-summary-label,
-  .living-step .living-summary-amount {
-    min-width: 0;
+  .living-step .living-summary-label {
+    font-size: var(--ui-type-helper);
+    white-space: normal;
   }
 
   .living-step .living-summary-amount {
     flex: 0 0 auto;
-    font-weight: 700;
-    color: var(--ui-brand);
-    white-space: nowrap;
+    font-size: var(--ui-type-card-title);
   }
 
   .living-step .living-schedule-remove {
-    padding: 12px 14px;
-    border-top: 1px solid var(--ui-border);
+    padding: 12px 13px 14px;
   }
 
   .living-step .living-schedule-remove-btn {
     width: 100%;
     min-height: 44px;
-    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, white);
-    border-radius: var(--ui-radius-control);
-    background: var(--ui-bg-surface);
-    color: var(--ui-danger);
-    font-weight: 600;
-    white-space: nowrap;
   }
 
   .living-step .living-footer-actions {
@@ -295,27 +268,103 @@
     width: 100%;
     min-height: 44px;
   }
+
+  /* Q4 item picker must also be usable without desktop-sized modal geometry. */
+  .living-modal-overlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .living-modal {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 20px 16px 16px;
+    border-radius: var(--ui-radius-card);
+  }
+
+  .living-modal-close {
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .living-modal-title {
+    margin: 0 40px 14px 0;
+    font-size: var(--ui-type-body);
+    line-height: 1.45;
+  }
+
+  .living-modal-check-all {
+    min-height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .living-modal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+    margin-bottom: 14px;
+  }
+
+  .living-modal-option {
+    min-width: 0;
+    min-height: 40px;
+    padding: 6px 4px;
+    font-size: var(--ui-type-label);
+    white-space: normal;
+  }
+
+  .living-modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .living-modal-add-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .living-modal-note {
+    font-size: var(--ui-type-helper);
+    line-height: 1.5;
+  }
 }
 
-@media (max-width: 430px) {
-  .living-step .living-schedule-inputs {
+@media (max-width: 360px) {
+  .living-step .living-card-section {
+    padding-inline: 11px;
+  }
+
+  .living-step .living-schedule-side {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap-inline: 6px;
+  }
+
+  .living-step .living-simple-field {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .living-step .living-detail-cell:nth-child(3),
+  .living-step .living-detail-cell:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .living-step .living-detail-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .living-step .living-detail-heading-total {
+    margin-left: 0;
+  }
+
+  .living-modal-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .living-step .living-schedule-arrow {
-    margin: 0;
-    transform: rotate(90deg);
-    justify-self: center;
-  }
-
-  .living-step .living-item-row,
-  .living-step .living-item-row--summary {
-    grid-template-columns: minmax(0, 1fr);
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .living-step .living-item-row > .living-col-content {
-    grid-column: auto;
   }
 }

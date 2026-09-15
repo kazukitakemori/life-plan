@@ -17,7 +17,6 @@ import './mobileCompact.css';
 import './mobileSteps.css';
 import './mobileEducation.css';
 import './mobileLifeEvent.css';
-import './mobileLiving.css';
 import './mobileHousing.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
@@ -29,6 +28,7 @@ import './ui-unification.css';
 import './ui-unification-screens.css';
 import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
+import './ui-mobile-control-geometry.css';
 import './ui-add-cards.css';
 import './education-ui.css';
 import './education-mobile-ui.css';
@@ -36,9 +36,13 @@ import './education-tuition-link.css';
 import './step-guidance.css';
 import './life-event-mobile-ui.css';
 import './ui-mobile-accordion.css';
+import './ui-accordion-card.css';
 import './life-event-ui.css';
 import './ui-form-units.css';
 import './ui-action-integrity.css';
+import './living-ui.css';
+import './mobileLiving.css';
+import './living-mobile-touch.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {

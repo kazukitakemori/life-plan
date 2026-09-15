@@ -52,23 +52,18 @@ export function migrateLivingExpenseSchedule(
     schedule.simpleIncreaseRate !== undefined
       ? schedule.simpleIncreaseRate
       : (items[0]?.increaseRate ?? null);
+  const inputMode: LivingExpenseInputMode = schedule.inputMode ?? 'detail';
 
-  // 旧・簡単入力は詳細UI（生活費1行）へ統合
-  let inputMode: LivingExpenseInputMode = schedule.inputMode ?? 'detail';
-  if (inputMode === 'simple') {
+  if (items.length === 0) {
     items = [
       createLivingExpenseItem({
         amountMan: simpleMonthlyExpenseMan,
         increaseRate: simpleIncreaseRate,
       }),
     ];
-    inputMode = 'detail';
-  }
-  if (items.length === 0) {
-    items = [createLivingExpenseItem()];
   }
 
-  return syncLivingDetailSummary({
+  const migrated: LivingExpenseSchedule = {
     id: schedule.id,
     startAge: schedule.startAge ?? 40,
     startMonth: schedule.startMonth ?? 1,
@@ -81,7 +76,11 @@ export function migrateLivingExpenseSchedule(
     ),
     simpleIncreaseRate,
     items,
-  });
+  };
+
+  return inputMode === 'detail'
+    ? syncLivingDetailSummary(migrated)
+    : migrated;
 }
 
 export function migrateLivingExpenseState(
@@ -153,10 +152,15 @@ export function createLivingExpenseSchedule(
     endMode: 'lifetime',
     endAge: 90,
     endMonth: 12,
-    inputMode: 'detail',
-    simpleMonthlyExpenseMan: 30,
+    inputMode: 'simple',
+    simpleMonthlyExpenseMan: 0,
     simpleIncreaseRate: null,
-    items: [createLivingExpenseItem()],
+    items: [
+      createLivingExpenseItem({
+        label: '',
+        amountMan: 0,
+      }),
+    ],
     ...overrides,
   };
 }
@@ -182,6 +186,7 @@ export function getLivingScheduleBillableItems(
 
 /**
  * 詳細入力かつ項目が複数のとき、先頭「生活費」に下位項目の月額換算合計を反映する。
+ * まとめ入力では内訳を保持したまま触らない。
  * 生活費の金額は万円表示のまま0.1万円（1,000円）単位へ正規化する。
  * 先頭が生活費でない場合は合計行を先頭に追加する。
  */
@@ -201,7 +206,10 @@ export function syncLivingDetailSummary(
     ? { ...schedule, items: normalizedItems }
     : schedule;
 
-  if (normalizedSchedule.items.length <= 1) {
+  if (
+    normalizedSchedule.inputMode === 'simple' ||
+    normalizedSchedule.items.length <= 1
+  ) {
     return normalizedSchedule;
   }
 
@@ -255,9 +263,13 @@ export function createFollowUpLivingSchedule(
 ): LivingExpenseSchedule {
   if (prev.endMode !== 'until') {
     return createLivingExpenseSchedule(memberAge, referenceMonth, {
-      inputMode: 'detail',
+      inputMode: prev.inputMode,
       simpleMonthlyExpenseMan: prev.simpleMonthlyExpenseMan,
       simpleIncreaseRate: prev.simpleIncreaseRate,
+      items: prev.items.map((item) => ({
+        ...item,
+        id: createId(),
+      })),
     });
   }
 
@@ -272,7 +284,7 @@ export function createFollowUpLivingSchedule(
     endMode: 'lifetime',
     endAge: maxEndAge,
     endMonth: 12,
-    inputMode: 'detail',
+    inputMode: prev.inputMode,
     simpleMonthlyExpenseMan: prev.simpleMonthlyExpenseMan,
     simpleIncreaseRate: prev.simpleIncreaseRate,
     items: prev.items.map((item) => ({

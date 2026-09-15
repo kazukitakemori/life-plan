@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   calcBirthYear,
@@ -25,11 +24,13 @@ import {
 import type { FamilyMember } from '../../types/family';
 import type {
   LivingCycleUnit,
+  LivingExpenseInputMode,
   LivingExpenseItem,
   LivingExpenseSchedule,
 } from '../../types/living';
-import { AddLivingItemModal } from './AddLivingItemModal';
 import { DebouncedTextInput } from '../shared/DebouncedTextInput';
+import { DisclosureSection, SegmentedControl } from '../ui';
+import { AddLivingItemModal } from './AddLivingItemModal';
 
 interface LivingScheduleCardProps {
   schedule: LivingExpenseSchedule;
@@ -42,6 +43,10 @@ interface LivingScheduleCardProps {
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const END_AGES = Array.from({ length: 101 }, (_, i) => i);
+const INPUT_MODE_OPTIONS = [
+  { value: 'simple', label: 'まとめて入力' },
+  { value: 'detail', label: '内訳から入力' },
+] as const;
 
 export function LivingScheduleCard({
   schedule,
@@ -67,10 +72,24 @@ export function LivingScheduleCard({
     MONTHS,
   );
   const hasSummary = hasLivingDetailSummary(schedule);
-  const billableItems = getLivingScheduleBillableItems(schedule);
-  const monthlyTotal = calcMonthlyEquivalentMan(billableItems);
-  const itemCount = Math.max(1, schedule.items.length);
-  const firstItem = schedule.items[0];
+  const detailItems = getLivingScheduleBillableItems(schedule);
+  const detailMonthlyTotal = calcMonthlyEquivalentMan(detailItems);
+  const monthlyTotal =
+    schedule.inputMode === 'simple'
+      ? schedule.simpleMonthlyExpenseMan
+      : detailMonthlyTotal;
+  const detailRateItem = hasSummary ? schedule.items[0] : detailItems[0];
+  const simpleAmountUnset =
+    schedule.simpleMonthlyExpenseMan === 0 &&
+    schedule.items.length === 1 &&
+    schedule.items[0]?.label.trim() === '';
+  const detailAmountUnset =
+    detailItems.length > 0 &&
+    detailItems.every(
+      (item) => item.label.trim() === '' && item.amountMan === 0,
+    );
+  const amountUnset =
+    schedule.inputMode === 'simple' ? simpleAmountUnset : detailAmountUnset;
 
   const commit = (
     next: LivingExpenseSchedule,
@@ -108,14 +127,13 @@ export function LivingScheduleCard({
     commit(next, options?.syncSummary !== false);
   };
 
-  const updateFirstItemRate = (increaseRate: number | null) => {
-    if (!firstItem) return;
-    updateItem(firstItem.id, { ...firstItem, increaseRate });
+  const updateDetailRate = (increaseRate: number | null) => {
+    if (!detailRateItem) return;
+    updateItem(detailRateItem.id, { ...detailRateItem, increaseRate });
   };
 
   const removeItem = (itemId: string) => {
-    if (schedule.items.length <= 1) return;
-    if (hasSummary && firstItem && itemId === firstItem.id) return;
+    if (detailItems.length <= 1) return;
     commit({
       ...schedule,
       items: schedule.items.filter((item) => item.id !== itemId),
@@ -130,9 +148,16 @@ export function LivingScheduleCard({
         sameIncreaseRateAsFirst: true,
       }),
     );
+    const hasBlankPlaceholder =
+      schedule.items.length === 1 &&
+      schedule.items[0].label.trim() === '' &&
+      schedule.items[0].amountMan === 0;
     commit({
       ...schedule,
-      items: [...schedule.items, ...newItems],
+      inputMode: 'detail',
+      items: hasBlankPlaceholder
+        ? newItems
+        : [...schedule.items, ...newItems],
     });
   };
 
@@ -140,8 +165,8 @@ export function LivingScheduleCard({
     if (fromId === toId) return;
     const fromIndex = schedule.items.findIndex((i) => i.id === fromId);
     const toIndex = schedule.items.findIndex((i) => i.id === toId);
-    // 先頭の生活費（合計行）は並べ替え対象外
-    if (fromIndex <= 0 || toIndex <= 0) return;
+    const firstMovableIndex = hasSummary ? 1 : 0;
+    if (fromIndex < firstMovableIndex || toIndex < firstMovableIndex) return;
 
     const items = [...schedule.items];
     const [moved] = items.splice(fromIndex, 1);
@@ -149,11 +174,66 @@ export function LivingScheduleCard({
     commit({ ...schedule, items });
   };
 
-  const existingLabels = schedule.items.map((item) => item.label);
+  const changeInputMode = (value: string) => {
+    const inputMode = value as LivingExpenseInputMode;
+    if (inputMode === schedule.inputMode) return;
+
+    if (inputMode === 'simple') {
+      commit(
+        {
+          ...schedule,
+          inputMode: 'simple',
+          simpleMonthlyExpenseMan: detailMonthlyTotal,
+          simpleIncreaseRate: detailRateItem?.increaseRate ?? null,
+        },
+        false,
+      );
+      return;
+    }
+
+    let items = schedule.items;
+    if (items.length === 0) {
+      items = [
+        createLivingExpenseItem({
+          amountMan: schedule.simpleMonthlyExpenseMan,
+          increaseRate: schedule.simpleIncreaseRate,
+        }),
+      ];
+    } else if (
+      items.length === 1 &&
+      (items[0].label.trim() === '生活費' || items[0].label.trim() === '')
+    ) {
+      items = [
+        {
+          ...items[0],
+          amountMan: schedule.simpleMonthlyExpenseMan,
+          increaseRate: schedule.simpleIncreaseRate,
+        },
+      ];
+    }
+
+    commit({ ...schedule, inputMode: 'detail', items });
+  };
+
+  const existingLabels = detailItems.map((item) => item.label);
+  const periodLabel = `${schedule.startAge}才${schedule.startMonth}月 〜 ${
+    schedule.endMode === 'lifetime'
+      ? '生涯'
+      : `${schedule.endAge}才${schedule.endMonth}月`
+  }`;
+  const cardSummary =
+    schedule.inputMode === 'simple'
+      ? amountUnset
+        ? '未入力 ・ まとめて入力'
+        : `月額換算 ${formatManAmount(monthlyTotal)} ・ まとめて入力`
+      : amountUnset
+        ? `未入力 ・ 内訳${detailItems.length}項目`
+        : `月額換算 ${formatManAmount(monthlyTotal)} ・ 内訳${detailItems.length}項目`;
 
   const schedulePeriodFields = (
     <div className="living-schedule-inputs">
       <div className="living-schedule-side">
+        <span className="living-field-label">開始</span>
         <div className="living-schedule-fields">
           <select
             className="select-input select-input--compact select-input--schedule"
@@ -203,6 +283,7 @@ export function LivingScheduleCard({
       </span>
 
       <div className="living-schedule-side">
+        <span className="living-field-label">終了</span>
         <div className="living-schedule-fields">
           {schedule.endMode === 'lifetime' ? (
             <select
@@ -288,85 +369,159 @@ export function LivingScheduleCard({
   );
 
   return (
-    <div className="living-schedule-card">
-      <div className="living-table">
-        <div className="living-table-header">
-          <div className="living-table-header-cell living-col-schedule">
-            スケジュール
-          </div>
-          <div className="living-table-header-cell living-col-content">
-            内容
-          </div>
-          <div className="living-table-header-cell living-col-cycle">周期</div>
-          <div className="living-table-header-cell living-col-amount">
-            金額（税込）
-          </div>
-          <div className="living-table-header-cell living-col-rate">上昇率</div>
-          <div className="living-table-header-cell living-col-action" />
-        </div>
+    <DisclosureSection
+      title={periodLabel}
+      summary={cardSummary}
+      className="living-schedule-card"
+    >
+      <div className="living-schedule-content">
+        <section className="living-card-section">
+          <h3 className="living-card-section-title">生活費の期間</h3>
+          {schedulePeriodFields}
+        </section>
 
-        <div
-          className="living-table-body"
-          style={{ '--living-item-count': itemCount } as CSSProperties}
-        >
-          <div className="living-table-cell living-col-schedule living-schedule-cell">
-            {schedulePeriodFields}
-          </div>
+        <section className="living-card-section living-input-mode-section">
+          <h3 className="living-card-section-title">入力方法</h3>
+          <SegmentedControl
+            value={schedule.inputMode}
+            options={INPUT_MODE_OPTIONS}
+            onChange={changeInputMode}
+            ariaLabel="生活費の入力方法"
+            className="living-input-mode-control"
+          />
+        </section>
 
-          {schedule.items.map((item, index) => {
-            const isSummaryRow = hasSummary && index === 0;
-            return (
-              <div
-                key={item.id}
-                className={`living-item-row${isSummaryRow ? ' living-item-row--summary' : ''}${dragItemId === item.id ? ' living-item-row--dragging' : ''}`}
-                onDragOver={(e) => {
-                  if (index === 0) return;
-                  e.preventDefault();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const fromId = e.dataTransfer.getData('text/plain');
-                  if (fromId) reorderItems(fromId, item.id);
-                  setDragItemId(null);
-                }}
-              >
-                <div className="living-table-cell living-col-content">
-                  <div className="living-content-field">
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        className="living-drag-handle"
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('text/plain', item.id);
-                          setDragItemId(item.id);
-                        }}
-                        onDragEnd={() => setDragItemId(null)}
-                        aria-label="並べ替え"
-                      >
-                        ⠿
-                      </button>
-                    )}
-                    <DebouncedTextInput
-                      className="living-content-input"
-                      value={item.label}
-                      placeholder={index > 0 ? '項目名' : undefined}
-                      readOnly={isSummaryRow}
-                      onChange={(label) =>
-                        updateItem(
-                          item.id,
-                          { ...item, label },
-                          { syncSummary: false },
-                        )
-                      }
-                    />
+        {schedule.inputMode === 'simple' ? (
+          <section className="living-card-section">
+            <h3 className="living-card-section-title">毎月の生活費</h3>
+            <div className="living-simple-fields">
+              <label className="living-simple-field">
+                <span className="living-field-label">月額</span>
+                <span className="living-amount-field">
+                  <input
+                    type="number"
+                    className="amount-input"
+                    value={
+                      simpleAmountUnset ? '' : schedule.simpleMonthlyExpenseMan
+                    }
+                    min={0}
+                    step={0.1}
+                    placeholder="未入力"
+                    onChange={(e) =>
+                      commit(
+                        {
+                          ...schedule,
+                          simpleMonthlyExpenseMan: Math.max(
+                            0,
+                            Number(e.target.value) || 0,
+                          ),
+                        },
+                        false,
+                      )
+                    }
+                  />
+                  <span className="amount-unit">万円</span>
+                </span>
+              </label>
+
+              <label className="living-simple-field">
+                <span className="living-field-label">上昇率</span>
+                <span className="living-rate-field">
+                  <input
+                    type="number"
+                    className="rate-input"
+                    value={schedule.simpleIncreaseRate ?? ''}
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    onChange={(e) =>
+                      commit(
+                        {
+                          ...schedule,
+                          simpleIncreaseRate: e.target.value
+                            ? Number(e.target.value)
+                            : null,
+                        },
+                        false,
+                      )
+                    }
+                  />
+                  <span className="rate-unit">%/年</span>
+                </span>
+              </label>
+            </div>
+          </section>
+        ) : (
+          <section className="living-card-section living-detail-section">
+            <div className="living-detail-heading-row">
+              <h3 className="living-card-section-title">生活費の内訳</h3>
+              <span className="living-detail-heading-total">
+                {amountUnset
+                  ? '月額換算 未入力'
+                  : `月額換算 ${formatManAmount(detailMonthlyTotal)}`}
+              </span>
+            </div>
+
+            <div className="living-detail-table">
+              <div className="living-detail-header" aria-hidden="true">
+                <span>内容</span>
+                <span>周期</span>
+                <span>金額（税込）</span>
+                <span>上昇率</span>
+                <span>操作</span>
+              </div>
+
+              {detailItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`living-detail-row${
+                    dragItemId === item.id ? ' living-detail-row--dragging' : ''
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const fromId = e.dataTransfer.getData('text/plain');
+                    if (fromId) reorderItems(fromId, item.id);
+                    setDragItemId(null);
+                  }}
+                >
+                  <div className="living-detail-cell living-detail-content">
+                    <span className="living-mobile-label">内容</span>
+                    <div className="living-content-field">
+                      {detailItems.length > 1 ? (
+                        <button
+                          type="button"
+                          className="living-drag-handle"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', item.id);
+                            setDragItemId(item.id);
+                          }}
+                          onDragEnd={() => setDragItemId(null)}
+                          aria-label={`${item.label || '項目'}を並べ替え`}
+                        >
+                          ⠿
+                        </button>
+                      ) : null}
+                      <DebouncedTextInput
+                        className="living-content-input"
+                        value={item.label}
+                        placeholder="項目名"
+                        onChange={(label) =>
+                          updateItem(
+                            item.id,
+                            { ...item, label },
+                            { syncSummary: false },
+                          )
+                        }
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="living-table-cell living-col-cycle">
-                  {isSummaryRow ? (
-                    <span className="living-summary-auto">1ヶ月ごと</span>
-                  ) : (
+                  <div className="living-detail-cell">
+                    <span className="living-mobile-label">周期</span>
                     <div className="living-cycle-field">
                       <input
                         type="number"
@@ -403,116 +558,105 @@ export function LivingScheduleCard({
                         <option value="year">年ごと</option>
                       </select>
                     </div>
-                  )}
-                </div>
-
-                <div className="living-table-cell living-col-amount">
-                  <div className="living-amount-field">
-                    <input
-                      type="number"
-                      className="amount-input"
-                      value={item.amountMan}
-                      min={0}
-                      step={0.1}
-                      readOnly={isSummaryRow}
-                      onChange={(e) =>
-                        updateItem(item.id, {
-                          ...item,
-                          amountMan: Number(e.target.value) || 0,
-                        })
-                      }
-                    />
-                    <span className="amount-unit">万円</span>
                   </div>
-                </div>
 
-                <div className="living-table-cell living-col-rate">
-                  {index === 0 ? (
-                    <div className="living-rate-field">
+                  <div className="living-detail-cell">
+                    <span className="living-mobile-label">金額（税込）</span>
+                    <div className="living-amount-field">
                       <input
                         type="number"
-                        className="rate-input"
-                        value={item.increaseRate ?? ''}
+                        className="amount-input"
+                        value={
+                          item.amountMan === 0 && item.label.trim() === ''
+                            ? ''
+                            : item.amountMan
+                        }
                         min={0}
-                        max={100}
                         step={0.1}
+                        placeholder="未入力"
                         onChange={(e) =>
-                          updateFirstItemRate(
-                            e.target.value ? Number(e.target.value) : null,
-                          )
+                          updateItem(item.id, {
+                            ...item,
+                            amountMan: Number(e.target.value) || 0,
+                          })
                         }
                       />
-                      <span className="rate-unit">%/年</span>
+                      <span className="amount-unit">万円</span>
                     </div>
-                  ) : (
-                    <span className="living-rate-same">同上</span>
-                  )}
-                </div>
+                  </div>
 
-                <div className="living-table-cell living-col-action">
-                  {schedule.items.length > 1 ? (
-                    isSummaryRow ? null : (
+                  <div className="living-detail-cell">
+                    <span className="living-mobile-label">上昇率</span>
+                    {index === 0 ? (
+                      <div className="living-rate-field">
+                        <input
+                          type="number"
+                          className="rate-input"
+                          value={detailRateItem?.increaseRate ?? ''}
+                          min={0}
+                          max={100}
+                          step={0.1}
+                          onChange={(e) =>
+                            updateDetailRate(
+                              e.target.value ? Number(e.target.value) : null,
+                            )
+                          }
+                        />
+                        <span className="rate-unit">%/年</span>
+                      </div>
+                    ) : (
+                      <span className="living-rate-same">同上</span>
+                    )}
+                  </div>
+
+                  <div className="living-detail-cell living-detail-action">
+                    <span className="living-mobile-label">操作</span>
+                    {detailItems.length > 1 ? (
                       <button
                         type="button"
-                        className="remove-member-btn"
+                        className="living-item-remove-btn"
                         onClick={() => removeItem(item.id)}
-                        aria-label="項目を削除"
+                        aria-label={`${item.label || '項目'}を削除`}
                       >
-                        −
+                        削除
                       </button>
-                    )
-                  ) : (
-                    canRemoveSchedule && (
-                      <button
-                        type="button"
-                        className="remove-member-btn"
-                        onClick={onRemoveSchedule}
-                        aria-label="スケジュールを削除"
-                      >
-                        −
-                      </button>
-                    )
-                  )}
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
 
-          <div className="living-add-item-row">
+            <div className="living-add-item-row">
+              <button
+                type="button"
+                className="ui-btn ui-btn--ghost inline-add-btn"
+                onClick={() => setModalOpen(true)}
+              >
+                ＋ 項目を追加
+              </button>
+            </div>
+          </section>
+        )}
+
+        <div className="living-summary-row">
+          <span className="living-summary-label">生活費合計（月額換算）</span>
+          <span className="living-summary-amount">
+            {amountUnset ? '未入力' : formatManAmount(monthlyTotal)}
+          </span>
+        </div>
+
+        {canRemoveSchedule ? (
+          <div className="living-schedule-remove">
             <button
               type="button"
-              className="inline-add-btn"
-              onClick={() => setModalOpen(true)}
+              className="living-schedule-remove-btn"
+              onClick={onRemoveSchedule}
             >
-              ＋ 項目を追加
+              この生活費スケジュールを削除
             </button>
           </div>
-
-          <div className="living-summary-row">
-            <div className="living-summary-label">
-              毎月の固定費
-              <span className="living-help-icon" title="月額換算の合計">
-                ?
-              </span>
-            </div>
-            <div className="living-summary-amount">
-              {formatManAmount(monthlyTotal)}
-            </div>
-          </div>
-        </div>
+        ) : null}
       </div>
-
-      {canRemoveSchedule && schedule.items.length > 1 && (
-        <div className="living-schedule-remove">
-          <button
-            type="button"
-            className="living-schedule-remove-btn"
-            onClick={onRemoveSchedule}
-          >
-            このスケジュールを削除
-          </button>
-        </div>
-      )}
 
       <AddLivingItemModal
         open={modalOpen}
@@ -520,6 +664,6 @@ export function LivingScheduleCard({
         onClose={() => setModalOpen(false)}
         onAdd={addItemsFromModal}
       />
-    </div>
+    </DisclosureSection>
   );
 }
