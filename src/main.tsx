@@ -42,7 +42,6 @@ import './ui-form-units.css';
 import './ui-action-integrity.css';
 import './living-ui.css';
 import './mobileLiving.css';
-import './living-mobile-touch.css';
 import './ui-fafafa-shell.css';
 
 async function bootstrap(): Promise<void> {

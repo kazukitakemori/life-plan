@@ -154,6 +154,8 @@
 
   .living-step .living-detail-content,
   .living-step .living-detail-cell:nth-child(2),
+  .living-step .living-detail-cell:nth-child(3),
+  .living-step .living-detail-cell:nth-child(4),
   .living-step .living-detail-action {
     grid-column: 1 / -1;
   }
@@ -168,16 +170,11 @@
   }
 
   .living-step .living-content-field {
-    gap: 7px;
+    gap: 0;
   }
 
   .living-step .living-drag-handle {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius-control);
-    background: var(--ui-bg-surface);
+    display: none;
   }
 
   .living-step .living-content-input,
@@ -206,6 +203,20 @@
   .living-step .living-cycle-input {
     width: 72px;
     max-width: 72px;
+  }
+
+  .living-step .living-detail-cell :where(.living-amount-field, .living-rate-field) {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--ui-field-unit-gap);
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .living-step .living-detail-cell :where(.amount-unit, .rate-unit) {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .living-step .living-detail-action {
@@ -348,11 +359,6 @@
   .living-step .living-simple-field {
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 6px;
-  }
-
-  .living-step .living-detail-cell:nth-child(3),
-  .living-step .living-detail-cell:nth-child(4) {
-    grid-column: 1 / -1;
   }
 
   .living-step .living-detail-heading-row {
