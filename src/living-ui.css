@@ -7,7 +7,7 @@
   .living-step .living-schedules {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 18px;
+    gap: 24px;
   }
 
   .living-step .living-schedule-card {
@@ -24,8 +24,8 @@
     flex-direction: column;
     width: 100%;
     min-width: 0;
-    --living-detail-cols: minmax(240px, 2fr) minmax(150px, 1.2fr)
-      minmax(150px, 1fr) minmax(130px, 0.9fr) 48px;
+    --living-detail-cols: minmax(220px, 2fr) minmax(145px, 1.15fr)
+      minmax(145px, 1fr) minmax(125px, 0.9fr) 96px;
   }
 
   .living-step .living-table-body {
@@ -39,18 +39,19 @@
     grid-row: auto;
     width: 100%;
     min-width: 0;
-    padding: 16px 18px;
+    padding: 17px 18px 18px 22px;
     border-right: 0;
     border-bottom: 1px solid var(--ui-border);
+    border-left: 4px solid var(--ui-brand);
     background: var(--ui-bg-subtle);
   }
 
   .living-step .living-schedule-cell::before {
     content: '生活費の期間';
     display: block;
-    margin-bottom: 9px;
-    color: var(--ui-text-muted);
-    font-size: var(--text-sm);
+    margin-bottom: 11px;
+    color: var(--ui-text);
+    font-size: var(--text-base);
     font-weight: 700;
     line-height: var(--leading-tight);
   }
@@ -95,8 +96,25 @@
     background: var(--ui-bg-subtle);
   }
 
+  .living-step .living-table-header::before {
+    content: '生活費の内訳';
+    grid-column: 1 / -1;
+    display: block;
+    padding: 15px 18px 10px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
+    color: var(--ui-text);
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+  }
+
   .living-step .living-table-header .living-col-schedule {
     display: none;
+  }
+
+  .living-step .living-table-header .living-table-header-cell {
+    background: var(--ui-bg-subtle);
   }
 
   .living-step .living-item-row {
@@ -122,13 +140,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 96px;
+    overflow: visible;
+  }
+
+  .living-step .living-item-row > .living-col-action .remove-member-btn {
+    max-width: 100%;
+    white-space: nowrap;
   }
 
   .living-step .living-add-item-row {
     order: 4;
     grid-column: auto;
     width: 100%;
-    padding: 11px 14px;
+    padding: 12px 14px;
     border-bottom: 0;
     background: var(--ui-bg-surface);
   }
@@ -141,9 +166,9 @@
     justify-content: flex-end;
     gap: 24px;
     width: 100%;
-    padding: 14px 18px;
+    padding: 16px 18px;
     border-top: 1px solid var(--ui-border);
-    background: var(--ui-bg-subtle);
+    background: color-mix(in srgb, var(--ui-brand) 7%, var(--ui-bg-surface));
   }
 
   .living-step .living-summary-label {
@@ -181,8 +206,11 @@
     > .living-col-action {
     grid-column: 1 / -1;
     justify-content: flex-end;
-    padding: 10px 14px 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
     border-top: 1px solid var(--ui-border);
+    background: var(--ui-bg-surface);
   }
 
   .living-step .remove-member-btn[aria-label='スケジュールを削除'] {
@@ -207,8 +235,8 @@
   .living-step .living-schedule-remove {
     display: flex;
     justify-content: flex-end;
-    padding: 10px 14px 14px;
-    border-top: 0;
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--ui-border);
     background: var(--ui-bg-surface);
   }
 
