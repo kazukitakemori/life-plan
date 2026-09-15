@@ -8,6 +8,7 @@ import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } f
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
+import { AddDisclosure } from '../ui';
 import { OwnedPropertyCard } from './OwnedPropertyCard';
 
 interface OwnedPropertySectionProps {
@@ -162,27 +163,30 @@ export function OwnedPropertySection({
         </div>
       )}
 
-      <div className="housing-owned-add-panel">
-        <p className="housing-owned-add-label">所有物件を追加</p>
-
-        <div className="housing-owned-add-options ui-add-card-grid">
-          {ADD_OPTIONS.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className="housing-owned-add-option ui-add-card"
-              onClick={() => onAddProperty(type)}
-            >
-              <span className="housing-owned-add-title ui-add-card__title">
-                {OWNED_PROPERTY_TYPE_LABELS[type]}
-              </span>
-              <span className="housing-owned-add-desc ui-add-card__description">
-                {ADD_DESCRIPTIONS[type]}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+      <AddDisclosure label="所有物件を追加" className="housing-owned-add-panel">
+        {(close) => (
+          <div className="housing-owned-add-options ui-add-card-grid">
+            {ADD_OPTIONS.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className="housing-owned-add-option ui-add-card"
+                onClick={() => {
+                  onAddProperty(type);
+                  close();
+                }}
+              >
+                <span className="housing-owned-add-title ui-add-card__title">
+                  {OWNED_PROPERTY_TYPE_LABELS[type]}
+                </span>
+                <span className="housing-owned-add-desc ui-add-card__description">
+                  {ADD_DESCRIPTIONS[type]}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </AddDisclosure>
     </section>
   );
 }
