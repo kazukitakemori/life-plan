@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { calcLoanEntryAmountMan, calcVehicleLoanEntryAmountMan } from '../../lib/loanResolution';
 import { getPairSideLabel } from '../../lib/groupCreditLife';
 import { normalizeOwnedPropertyLoanSettings } from '../../lib/loanInterestRatePeriod';
@@ -204,10 +203,7 @@ export function LoanEntryDetail({
   const referenceMonth = referenceDate.getMonth() + 1;
   const monthlyPeriod = resolveLoanMonthlyRepaymentPeriod(entry, referenceDate);
 
-  const toCurrentMonthlyEntry = (
-    target: LoanEntry,
-    monthlyRepaymentMan = target.monthlyRepaymentMan,
-  ): LoanEntry => {
+  const toCurrentMonthlyEntry = (target: LoanEntry): LoanEntry => {
     const period = resolveLoanMonthlyRepaymentPeriod(
       {
         ...target,
@@ -220,43 +216,19 @@ export function LoanEntryDetail({
     return {
       ...target,
       paymentMode: 'monthlyRepayment',
-      monthlyRepaymentMan,
       repaymentStartYear: referenceYear,
       repaymentStartMonth: referenceMonth,
       repaymentEndYear: period.endYear,
       repaymentEndMonth: period.endMonth,
       settingsConfigured:
-        monthlyRepaymentMan > 0 || Boolean(target.settingsConfigured),
+        target.monthlyRepaymentMan > 0 || Boolean(target.settingsConfigured),
     };
   };
-
-  // 明示的に未設定として作られた居住中ローンだけ月額返済へ寄せる。
-  // 旧データで settingsConfigured が存在しない詳細ローンは勝手に切り替えない。
-  useEffect(() => {
-    if (
-      !isCurrentHousingLinked ||
-      isMonthlyRepayment ||
-      entry.settingsConfigured !== false ||
-      entry.monthlyRepaymentMan > 0
-    ) {
-      return;
-    }
-
-    onChange(toCurrentMonthlyEntry(entry));
-    if (pairPartner && onPairPartnerChange) {
-      onPairPartnerChange(toCurrentMonthlyEntry(pairPartner, 0));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entry.id, isCurrentHousingLinked]);
 
   const handlePaymentModeChange = (mode: LoanPaymentMode) => {
     if (mode === 'monthlyRepayment') {
       if (isCurrentHousingLinked) {
-        const next = toCurrentMonthlyEntry(entry);
-        onChange(next);
-        if (pairPartner && onPairPartnerChange) {
-          onPairPartnerChange(toCurrentMonthlyEntry(pairPartner, 0));
-        }
+        onChange(toCurrentMonthlyEntry(entry));
         return;
       }
 
@@ -280,9 +252,6 @@ export function LoanEntryDetail({
     }
 
     update({ paymentMode: mode });
-    if (pairPartner && onPairPartnerChange) {
-      onPairPartnerChange({ ...pairPartner, paymentMode: mode });
-    }
   };
 
   const handleMonthlyEndChange = (
@@ -295,15 +264,6 @@ export function LoanEntryDetail({
       settingsConfigured:
         entry.monthlyRepaymentMan > 0 || entry.settingsConfigured,
     });
-    if (isCurrentHousingLinked && pairPartner && onPairPartnerChange) {
-      onPairPartnerChange({
-        ...pairPartner,
-        repaymentStartYear: referenceYear,
-        repaymentStartMonth: referenceMonth,
-        repaymentEndYear,
-        repaymentEndMonth,
-      });
-    }
   };
 
   return (
