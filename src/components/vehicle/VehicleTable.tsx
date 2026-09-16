@@ -94,8 +94,8 @@ export function VehicleTable({
 
   if (entries.length === 0) {
     return (
-      <div className="life-event-table-empty">
-        <p>乗り物が登録されていません。下のカードから追加してください。</p>
+      <div className="life-event-table-empty vehicle-empty-state">
+        <p>乗り物が登録されていません。「乗り物を追加」から登録してください。</p>
       </div>
     );
   }
