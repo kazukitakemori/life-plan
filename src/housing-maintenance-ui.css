@@ -174,6 +174,25 @@
   white-space: nowrap;
 }
 
+/* 旧UIの年入力に残っていた黄色背景を、共通フォームの表現へ戻す。 */
+.housing-maint-year-field .housing-year-input {
+  border-color: var(--ui-border);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+/* 年間CFでは同一年内の計上月で年額が変わらないため、保守・改良は年だけ入力する。 */
+.housing-maint-entry-grid--repair .housing-renewal-date .housing-renewal-slash,
+.housing-maint-entry-grid--repair
+  .housing-renewal-date
+  .select-input:not(.housing-renewal-year-select),
+.housing-maint-entry-grid--improvement .housing-renewal-date .housing-renewal-slash,
+.housing-maint-entry-grid--improvement
+  .housing-renewal-date
+  .select-input:not(.housing-renewal-year-select) {
+  display: none;
+}
+
 .housing-maint-static-value {
   display: inline-flex;
   align-items: center;
