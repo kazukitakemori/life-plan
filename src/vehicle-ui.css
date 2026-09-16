@@ -1,6 +1,6 @@
-/* Q6 vehicle: desktop information architecture.
- * Keep data/logic unchanged and replace the very wide table presentation
- * with one card per vehicle. Mobile composition remains in mobileVehicle.css.
+/* Q6 vehicle: master-detail desktop layout.
+ * The vehicle list and the selected vehicle editor are separated so users
+ * can focus on one vehicle at a time. Data and calculation logic are unchanged.
  */
 
 .vehicle-step {
@@ -18,25 +18,143 @@
 }
 
 @media (min-width: 769px) {
-  .vehicle-step .vehicle-table-card {
+  .vehicle-workspace {
+    display: grid;
+    grid-template-columns: 224px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .vehicle-master-panel {
+    position: sticky;
+    top: 16px;
+    overflow: hidden;
+    border: 1px solid var(--ui-border, #dfe5e1);
+    border-radius: var(--ui-radius-card, 12px);
+    background: var(--ui-bg-surface, #fff);
+    box-shadow: var(--ui-shadow-card, 0 1px 2px rgb(0 0 0 / 4%));
+  }
+
+  .vehicle-master-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-subtle, #f7f9f8);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 700;
+  }
+
+  .vehicle-master-count {
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-list {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .vehicle-master-item {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 9px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ui-text, #26322c);
+    text-align: left;
+  }
+
+  .vehicle-master-item:hover {
+    background: var(--ui-bg-subtle, #f7f9f8);
+  }
+
+  .vehicle-master-item.is-active {
+    border-color: color-mix(in srgb, var(--ui-brand, #2f6f4e) 24%, transparent);
+    background: var(--ui-brand-soft, #e7f1eb);
+  }
+
+  .vehicle-master-item.is-dragging {
+    opacity: 0.5;
+  }
+
+  .vehicle-master-order {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--ui-bg-subtle, #f0f2f1);
+    color: var(--ui-text-muted, #65726b);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .vehicle-master-item.is-active .vehicle-master-order {
+    background: var(--ui-brand, #2f6f4e);
+    color: #fff;
+  }
+
+  .vehicle-master-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .vehicle-master-name {
+    overflow: hidden;
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-meta {
+    color: var(--ui-text-muted, #65726b);
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-arrow {
+    color: var(--ui-text-muted, #65726b);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .vehicle-detail-panel {
     overflow: visible;
+    min-width: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
   }
 
   .vehicle-step .vehicle-table {
-    min-width: 0;
     width: 100%;
+    min-width: 0;
   }
 
   .vehicle-step .life-event-table-header {
     display: none;
   }
 
-  .vehicle-step .life-event-table-body {
-    display: grid;
-    gap: 16px;
+  .vehicle-detail-entry {
+    display: none;
+  }
+
+  .vehicle-detail-entry.is-active {
+    display: block;
   }
 
   .vehicle-step .vehicle-entry-block {
@@ -48,54 +166,28 @@
     box-shadow: var(--ui-shadow-card, 0 1px 2px rgb(0 0 0 / 4%));
   }
 
-  .vehicle-step .vehicle-entry-block + .vehicle-entry-block {
-    margin-top: 0;
-  }
-
-  .vehicle-step .vehicle-entry-block--dragging {
-    opacity: 0.58;
-  }
-
   .vehicle-step .life-event-table-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: block;
     min-width: 0;
     border: 0;
     background: var(--ui-bg-surface, #fff);
   }
 
   .vehicle-step .life-event-table-row > .life-event-table-cell {
-    display: block;
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
     min-width: 0;
-    padding: 16px 18px;
+    padding: 15px 18px;
     border: 0;
     border-bottom: 1px solid var(--ui-border, #dfe5e1);
     background: transparent;
   }
 
   .vehicle-step .life-event-table-row > .vehicle-col-summary,
-  .vehicle-step .life-event-table-row > .vehicle-col-period,
-  .vehicle-step .life-event-table-row > .vehicle-col-monthly {
-    border-right: 1px solid var(--ui-border, #dfe5e1);
-  }
-
-  .vehicle-step .life-event-table-row > .vehicle-col-summary,
   .vehicle-step .life-event-table-row > .vehicle-col-type {
-    padding-top: 18px;
-    padding-bottom: 18px;
     background: var(--ui-bg-subtle, #f7f9f8);
-  }
-
-  .vehicle-step .life-event-table-row > .vehicle-col-summary {
-    padding-left: 60px;
-  }
-
-  .vehicle-step .life-event-table-row > .vehicle-col-type {
-    padding-right: 60px;
-  }
-
-  .vehicle-step .life-event-table-row > .vehicle-col-replace {
-    grid-column: 1 / -1;
   }
 
   .vehicle-step .life-event-table-row > :where(
@@ -108,7 +200,7 @@
       .vehicle-col-replace
     )::before {
     display: block;
-    margin-bottom: 8px;
+    padding-top: 8px;
     color: var(--ui-text-muted, #65726b);
     font-size: var(--text-xs, 0.8125rem);
     font-weight: 700;
@@ -129,45 +221,44 @@
   }
 
   .vehicle-step .vehicle-col-purchase::before {
-    content: '購入費・返済額';
+    content: '購入・返済';
   }
 
   .vehicle-step .vehicle-col-monthly::before {
-    content: '月次維持費';
+    content: '毎月の維持費';
   }
 
   .vehicle-step .vehicle-col-annual::before {
-    content: '税金・メンテナンス費';
+    content: '税金・メンテナンス';
   }
 
   .vehicle-step .vehicle-col-replace::before {
     content: '買い替え';
   }
 
-  .vehicle-step .life-event-col-drag,
+  .vehicle-step .life-event-col-drag {
+    display: none !important;
+  }
+
   .vehicle-step .life-event-col-action {
     position: absolute;
     z-index: 2;
+    top: 12px;
+    right: 14px;
+    display: block !important;
     width: auto;
-    padding: 0;
-    border: 0;
-    background: transparent;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
   }
 
-  .vehicle-step .life-event-col-drag {
-    top: 18px;
-    left: 16px;
-  }
-
-  .vehicle-step .life-event-col-action {
-    top: 16px;
-    right: 16px;
-  }
-
-  .vehicle-step .life-event-drag-handle,
   .vehicle-step .life-event-row-remove {
     min-width: 34px;
     min-height: 34px;
+  }
+
+  .vehicle-step .vehicle-col-summary {
+    padding-right: 62px !important;
   }
 
   .vehicle-step .vehicle-col-summary .life-event-text-input {
@@ -177,12 +268,12 @@
 
   .vehicle-step .vehicle-col-type .life-event-select {
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
   }
 
   .vehicle-step .vehicle-type-stack {
     width: 100%;
-    max-width: 360px;
+    max-width: 420px;
   }
 
   .vehicle-step .vehicle-col-period .life-event-period-block,
@@ -212,7 +303,7 @@
 
   .vehicle-step .vehicle-table-group {
     display: grid;
-    grid-template-columns: 132px minmax(0, 1fr);
+    grid-template-columns: 170px minmax(0, 1fr);
     min-width: 0;
     border: 0;
     border-top: 1px solid var(--ui-border, #dfe5e1);
@@ -224,11 +315,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 15px 18px;
+    padding: 17px 18px;
     border: 0;
     border-right: 1px solid var(--ui-border, #dfe5e1);
     background: var(--ui-bg-subtle, #f7f9f8);
-    color: var(--ui-text, #26322c);
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
     font-weight: 700;
   }
 
@@ -251,37 +343,36 @@
   }
 }
 
-@media (min-width: 769px) and (max-width: 1180px) {
-  .vehicle-step .life-event-table-row {
+@media (min-width: 769px) and (max-width: 980px) {
+  .vehicle-workspace {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .vehicle-step .life-event-table-row > .life-event-table-cell {
-    border-right: 0;
+  .vehicle-master-panel {
+    position: static;
   }
 
-  .vehicle-step .life-event-table-row > .vehicle-col-summary,
-  .vehicle-step .life-event-table-row > .vehicle-col-type {
-    padding-right: 60px;
-    padding-left: 60px;
+  .vehicle-master-list {
+    display: flex;
+    overflow-x: auto;
   }
 
-  .vehicle-step .life-event-table-row > .vehicle-col-replace {
-    grid-column: auto;
+  .vehicle-master-item {
+    flex: 0 0 210px;
   }
 
+  .vehicle-step .life-event-table-row > .life-event-table-cell,
   .vehicle-step .vehicle-table-group {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .vehicle-master-panel {
+    display: none;
   }
 
-  .vehicle-step .vehicle-table-group-label,
-  .vehicle-step .vehicle-table-group-body {
-    grid-column: 1;
-  }
-
-  .vehicle-step .vehicle-table-group-label {
-    padding: 11px 16px;
-    border-right: 0;
-    border-bottom: 1px solid var(--ui-border, #dfe5e1);
+  .vehicle-detail-entry {
+    display: block;
   }
 }
