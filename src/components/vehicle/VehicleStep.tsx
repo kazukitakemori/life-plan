@@ -180,7 +180,7 @@ export function VehicleStep({
       <StepHeading
         number={6}
         title="乗り物"
-        subtitle="自動車・バイク・自転車などの購入と維持"
+        lead="保有中・購入予定の乗り物と、購入費・維持費・買い替えを登録します。"
       />
 
       {purposeNote ? (
@@ -212,6 +212,8 @@ export function VehicleStep({
         }
       />
 
+      <AddVehicleCards onAdd={addEntryFromPreset} />
+
       <VehicleTable
         entries={entries}
         member={activeMember}
@@ -235,8 +237,6 @@ export function VehicleStep({
         onUpdateInsurance={onUpdateInsurance}
         onRemoveInsurance={onRemoveInsurance}
       />
-
-      <AddVehicleCards onAdd={addEntryFromPreset} />
     </div>
   );
 }
