@@ -1,5 +1,6 @@
 import type { OwnedProperty } from '../../types/housing';
 import { HousingManInput } from './HousingManInput';
+import { HousingOwnedDetailFold } from './HousingOwnedDetailFold';
 import type {
   AcquisitionFeeBreakdown,
   AcquisitionReferenceSection,
@@ -32,10 +33,8 @@ export function OwnedPropertyAcquisitionSection({
   onOpenReference,
   onOpenTaxDetail,
 }: OwnedPropertyAcquisitionSectionProps) {
-  return (
-    <section className="housing-owned-detail-section">
-      <h4 className="housing-owned-detail-title">({sectionNumber}) 取得価格</h4>
-
+  const content = (
+    <>
       <div className="housing-owned-acquisition-total">
         <div className="housing-owned-acquisition-total-main">
           <span className="housing-owned-acquisition-total-label">取得価格</span>
@@ -50,7 +49,7 @@ export function OwnedPropertyAcquisitionSection({
 
       {isCurrentlyOccupied ? (
         <p className="housing-owned-loan-existing-note">
-          居住中でも、当時の取得価格・諸費用を入力してください。ローン借入額はこれらと「諸費用のローン組み込み」から計算します。過去の購入時現金支出はキャッシュフローには含めません。
+          月々の返済額だけを入力する場合、取得価格の入力は不要です。借入条件から詳しく計算する場合や、購入時の諸費用・税金を入力する場合に使用します。過去の購入時現金支出はキャッシュフローには含めません。
         </p>
       ) : null}
 
@@ -175,6 +174,24 @@ export function OwnedPropertyAcquisitionSection({
           </div>
         </section>
       </div>
+    </>
+  );
+
+  if (isCurrentlyOccupied) {
+    return (
+      <HousingOwnedDetailFold
+        title={`(${sectionNumber}) 取得価格・購入時費用`}
+        summary="月々の返済額だけなら入力不要"
+      >
+        {content}
+      </HousingOwnedDetailFold>
+    );
+  }
+
+  return (
+    <section className="housing-owned-detail-section">
+      <h4 className="housing-owned-detail-title">({sectionNumber}) 取得価格</h4>
+      {content}
     </section>
   );
 }
