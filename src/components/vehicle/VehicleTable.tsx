@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FamilyMember } from '../../types/family';
 import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
@@ -47,6 +47,17 @@ export function VehicleTable({
   onRemoveInsurance,
 }: VehicleTableProps) {
   const [dragEntryId, setDragEntryId] = useState<string | null>(null);
+  const [activeEntryId, setActiveEntryId] = useState(entries[0]?.id ?? '');
+
+  useEffect(() => {
+    if (entries.length === 0) {
+      setActiveEntryId('');
+      return;
+    }
+    if (!entries.some((entry) => entry.id === activeEntryId)) {
+      setActiveEntryId(entries[0].id);
+    }
+  }, [entries, activeEntryId]);
 
   const updateEntry = (entryId: string, updated: VehicleEntry) => {
     onChange(entries.map((entry) => (entry.id === entryId ? updated : entry)));
@@ -61,7 +72,12 @@ export function VehicleTable({
     for (const insurance of linkedInsurances) {
       onRemoveInsurance?.(insurance.id);
     }
-    onChange(entries.filter((entry) => entry.id !== entryId));
+
+    const remaining = entries.filter((entry) => entry.id !== entryId);
+    if (activeEntryId === entryId) {
+      setActiveEntryId(remaining[0]?.id ?? '');
+    }
+    onChange(remaining);
   };
 
   const reorderEntries = (fromId: string, toId: string) => {
@@ -89,6 +105,7 @@ export function VehicleTable({
     const next = [...entries];
     next[index] = updatedSource;
     next.splice(index + 1, 0, duplicate);
+    setActiveEntryId(duplicate.id);
     onChange(next);
   };
 
@@ -101,77 +118,110 @@ export function VehicleTable({
   }
 
   return (
-    <div className="life-event-table-card vehicle-table-card">
-      <div className="life-event-table vehicle-table">
-        <div className="life-event-table-header">
-          <div className="life-event-header-cell life-event-col-drag" />
-          <div className="life-event-header-cell vehicle-col-summary">名称</div>
-          <div className="life-event-header-cell vehicle-col-type">種類</div>
-          <div className="life-event-header-cell vehicle-col-period">
-            利用期間
-            <span
-              className="housing-help-icon"
-              title="この1台をいつからいつまで使うかです"
-            >
-              ?
-            </span>
-          </div>
-          <div className="life-event-header-cell vehicle-col-purchase">
-            購入費・返済額
-          </div>
-          <div className="life-event-header-cell vehicle-col-monthly">
-            月次維持費
-          </div>
-          <div className="life-event-header-cell vehicle-col-annual">
-            税金・メンテナンス費
-          </div>
-          <div className="life-event-header-cell vehicle-col-replace">
-            買い替え
-            <span
-              className="housing-help-icon"
-              title="自動車・バイクは新車/中古、自転車・その他はあり/なしで指定します。利用期間の終わりの翌月から同条件で次の台を追加します。ローン・保険は複製されません"
-            >
-              ?
-            </span>
-          </div>
-          <div className="life-event-header-cell life-event-col-action" />
+    <div className="vehicle-workspace">
+      <aside className="vehicle-master-panel" aria-label="登録中の乗り物一覧">
+        <div className="vehicle-master-heading">
+          <span>登録中の乗り物</span>
+          <span className="vehicle-master-count">{entries.length}台</span>
         </div>
+        <div className="vehicle-master-list">
+          {entries.map((entry, index) => {
+            const active = entry.id === activeEntryId;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                className={`vehicle-master-item${active ? ' is-active' : ''}${
+                  dragEntryId === entry.id ? ' is-dragging' : ''
+                }`}
+                onClick={() => setActiveEntryId(entry.id)}
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.setData('text/plain', entry.id);
+                  setDragEntryId(entry.id);
+                }}
+                onDragEnd={() => setDragEntryId(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const fromId = event.dataTransfer.getData('text/plain');
+                  if (fromId) reorderEntries(fromId, entry.id);
+                  setDragEntryId(null);
+                }}
+                aria-pressed={active}
+              >
+                <span className="vehicle-master-order">{index + 1}</span>
+                <span className="vehicle-master-copy">
+                  <span className="vehicle-master-name">
+                    {entry.label.trim() || `乗り物 ${index + 1}`}
+                  </span>
+                  <span className="vehicle-master-meta">ドラッグで並べ替え</span>
+                </span>
+                <span className="vehicle-master-arrow" aria-hidden>
+                  ›
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
 
-        <div className="life-event-table-body">
-          {entries.map((entry) => (
-            <VehicleRow
-              key={entry.id}
-              entry={entry}
-              member={member}
-              members={members}
-              referenceDate={referenceDate}
-              linkedLoans={linkedLoansByVehicleId[entry.id] ?? []}
-              linkedInsurances={linkedInsurancesByVehicleId[entry.id] ?? []}
-              insuranceState={insuranceState}
-              loanState={loanState}
-              housingState={housingState}
-              vehicleState={vehicleState}
-              canRemove
-              isDragging={dragEntryId === entry.id}
-              onChange={(updated) => updateEntry(entry.id, updated)}
-              onDuplicate={(options) => duplicateEntry(entry.id, options)}
-              onRemove={() => removeEntry(entry.id)}
-              onAddLoan={() => onAddLoan(entry)}
-              onRemoveLoan={onRemoveLoan}
-              onUpdateLoan={onUpdateLoan}
-              onAddInsurance={
-                onAddInsurance ? () => onAddInsurance(entry) : undefined
-              }
-              onUpdateInsurance={onUpdateInsurance}
-              onRemoveInsurance={onRemoveInsurance}
-              onDragStart={() => setDragEntryId(entry.id)}
-              onDragEnd={() => setDragEntryId(null)}
-              onDropOn={(fromId) => {
-                reorderEntries(fromId, entry.id);
-                setDragEntryId(null);
-              }}
-            />
-          ))}
+      <div className="life-event-table-card vehicle-table-card vehicle-detail-panel">
+        <div className="life-event-table vehicle-table">
+          <div className="life-event-table-header">
+            <div className="life-event-header-cell life-event-col-drag" />
+            <div className="life-event-header-cell vehicle-col-summary">名称</div>
+            <div className="life-event-header-cell vehicle-col-type">種類</div>
+            <div className="life-event-header-cell vehicle-col-period">利用期間</div>
+            <div className="life-event-header-cell vehicle-col-purchase">購入費・返済額</div>
+            <div className="life-event-header-cell vehicle-col-monthly">月次維持費</div>
+            <div className="life-event-header-cell vehicle-col-annual">税金・メンテナンス費</div>
+            <div className="life-event-header-cell vehicle-col-replace">買い替え</div>
+            <div className="life-event-header-cell life-event-col-action" />
+          </div>
+
+          <div className="life-event-table-body">
+            {entries.map((entry) => (
+              <div
+                key={entry.id}
+                className={`vehicle-detail-entry${
+                  entry.id === activeEntryId ? ' is-active' : ''
+                }`}
+              >
+                <VehicleRow
+                  entry={entry}
+                  member={member}
+                  members={members}
+                  referenceDate={referenceDate}
+                  linkedLoans={linkedLoansByVehicleId[entry.id] ?? []}
+                  linkedInsurances={linkedInsurancesByVehicleId[entry.id] ?? []}
+                  insuranceState={insuranceState}
+                  loanState={loanState}
+                  housingState={housingState}
+                  vehicleState={vehicleState}
+                  canRemove
+                  isDragging={dragEntryId === entry.id}
+                  onChange={(updated) => updateEntry(entry.id, updated)}
+                  onDuplicate={(options) => duplicateEntry(entry.id, options)}
+                  onRemove={() => removeEntry(entry.id)}
+                  onAddLoan={() => onAddLoan(entry)}
+                  onRemoveLoan={onRemoveLoan}
+                  onUpdateLoan={onUpdateLoan}
+                  onAddInsurance={
+                    onAddInsurance ? () => onAddInsurance(entry) : undefined
+                  }
+                  onUpdateInsurance={onUpdateInsurance}
+                  onRemoveInsurance={onRemoveInsurance}
+                  onDragStart={() => setDragEntryId(entry.id)}
+                  onDragEnd={() => setDragEntryId(null)}
+                  onDropOn={(fromId) => {
+                    reorderEntries(fromId, entry.id);
+                    setDragEntryId(null);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
