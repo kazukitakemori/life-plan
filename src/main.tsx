@@ -26,6 +26,7 @@ import './mobileInsurance.css';
 import './mobileSavings.css';
 import './mobileSecondLife.css';
 import './ui-unification.css';
+import './ui-workspace-tabs.css';
 import './ui-unification-screens.css';
 import './ui-unification-shell-analysis.css';
 import './ui-typography-unification.css';
