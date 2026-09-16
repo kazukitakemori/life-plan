@@ -454,12 +454,6 @@ export function OwnedPropertyDetail({
                     </select>
                   </>
                 )}
-                <span
-                  className="housing-help-icon"
-                  title="所有期間の終了は、売却や用途変更の予定がある場合に設定します"
-                >
-                  ?
-                </span>
               </div>
               {property.endMode === 'until' && (
                 <p className="period-end-label">
