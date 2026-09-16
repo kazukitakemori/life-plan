@@ -1,15 +1,17 @@
 /*
- * Shared accordion-card shell for repeated editable entries.
+ * Shared repeated-entry card shell.
  *
- * Q3 life events and Q4 living schedules share the same closed-card hierarchy,
- * open/close affordance, surface, border, spacing and interaction states.
- * Screen-specific files own only the fields inside the expanded body.
+ * Q3 life events, Q4 living schedules and Q5 housing entries share the same
+ * surface, border, radius, subtle elevation and brand accent. Screen-specific
+ * files own only the fields and internal layout inside each card.
  * Typography follows the canonical tokens in ui-typography-unification.css.
  */
 
 :is(
     .life-event-step .life-event-mobile-accordion-item,
-    .living-step .living-schedule-card
+    .living-step .living-schedule-card,
+    .housing-step .housing-rental-card,
+    .housing-step .housing-owned-card-wrap
   ) {
   display: block;
   width: 100%;
@@ -20,6 +22,28 @@
   border-radius: var(--ui-radius-card);
   background: var(--ui-bg-surface);
   box-shadow: var(--ui-shadow-subtle);
+}
+
+/* Q5 uses the same card chrome while keeping its housing-specific field layout. */
+:is(
+    .housing-step .housing-rental-card-header,
+    .housing-step .housing-owned-card
+  ) {
+  padding: 16px 18px;
+  border-radius: 0;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.housing-step .housing-owned-card-wrap--expanded > .housing-owned-card {
+  background: var(--ui-bg-subtle);
+}
+
+.housing-step .housing-owned-type {
+  color: var(--ui-text);
+  font-size: var(--ui-type-card-title);
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 :is(
@@ -170,7 +194,9 @@
 @media (max-width: 768px) {
   :is(
       .life-event-step .life-event-mobile-accordion-item,
-      .living-step .living-schedule-card
+      .living-step .living-schedule-card,
+      .housing-step .housing-rental-card,
+      .housing-step .housing-owned-card-wrap
     ) {
     border-top-width: 4px;
   }
@@ -180,6 +206,13 @@
       .living-step .living-schedule-card > .ui-disclosure-summary
     ) {
     min-height: 72px;
+    padding: 14px;
+  }
+
+  :is(
+      .housing-step .housing-rental-card-header,
+      .housing-step .housing-owned-card
+    ) {
     padding: 14px;
   }
 
@@ -195,6 +228,10 @@
       .life-event-step .life-event-mobile-summary-title,
       .living-step .ui-disclosure-title
     ) {
+    font-size: var(--ui-type-body);
+  }
+
+  .housing-step .housing-owned-type {
     font-size: var(--ui-type-body);
   }
 
