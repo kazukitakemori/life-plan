@@ -98,23 +98,30 @@ export function vehicleTypeHasKind(
   return type === 'car' || type === 'motorcycle';
 }
 
+/** 計算境界では未入力を 0 として扱うが、保存値自体は未入力のまま保持する。 */
 export function getVehicleMonthlyMaintCostMan(entry: VehicleEntry): number {
   if (vehicleTypeHasKind(entry.type)) {
     const gasoline = entry.gasolineCostMan ?? entry.monthlyCostMan ?? 0;
     const parking = entry.parkingCostMan ?? 0;
     return gasoline + parking;
   }
-  return entry.monthlyCostMan;
+  return entry.monthlyCostMan ?? 0;
 }
 
-export function getVehicleGasolineCostMan(entry: VehicleEntry): number {
-  if (!vehicleTypeHasKind(entry.type)) return 0;
-  return entry.gasolineCostMan ?? entry.monthlyCostMan ?? 0;
+/** 入力UI向け。未入力は undefined のまま返す。 */
+export function getVehicleGasolineCostMan(
+  entry: VehicleEntry,
+): number | undefined {
+  if (!vehicleTypeHasKind(entry.type)) return undefined;
+  return entry.gasolineCostMan ?? entry.monthlyCostMan;
 }
 
-export function getVehicleParkingCostMan(entry: VehicleEntry): number {
-  if (!vehicleTypeHasKind(entry.type)) return 0;
-  return entry.parkingCostMan ?? 0;
+/** 入力UI向け。未入力は undefined のまま返す。 */
+export function getVehicleParkingCostMan(
+  entry: VehicleEntry,
+): number | undefined {
+  if (!vehicleTypeHasKind(entry.type)) return undefined;
+  return entry.parkingCostMan;
 }
 
 /** 税金・メンテナンス費の計上周期（1〜6年）。未設定時は1年 */
