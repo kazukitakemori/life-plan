@@ -11,6 +11,11 @@
       .housing-owned-card,
       .housing-owned-detail,
       .housing-owned-detail-section,
+      .housing-owned-acquisition-panel,
+      .housing-owned-acquisition-group,
+      .housing-owned-acquisition-price-grid,
+      .housing-owned-acquisition-fee-grid,
+      .housing-owned-acquisition-tax-row,
       .housing-rental-card,
       .housing-rental-card-header,
       .housing-rental-card-body,
@@ -171,13 +176,69 @@
 
   .housing-step .housing-owned-acquisition-total {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 5px 10px;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    align-items: start;
+    padding: 11px 12px;
+  }
+
+  .housing-step .housing-owned-acquisition-total-main {
+    justify-content: space-between;
+    width: 100%;
   }
 
   .housing-step .housing-owned-acquisition-note {
-    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .housing-step .housing-owned-acquisition-group {
+    padding: 14px;
+  }
+
+  .housing-step .housing-owned-acquisition-price-grid,
+  .housing-step .housing-owned-acquisition-fee-grid,
+  .housing-step .housing-owned-acquisition-tax-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .housing-step .housing-owned-acquisition-cost-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .housing-step .housing-owned-acquisition-reference-action {
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .housing-step .housing-owned-acquisition-reference-action .ui-btn,
+  .housing-step .housing-owned-acquisition-detail-action,
+  .housing-step .housing-owned-acquisition-tax-action .ui-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .housing-step .housing-owned-acquisition-reference-note {
+    text-align: left;
+  }
+
+  .housing-step .housing-owned-acquisition-fee-grid {
+    margin-top: 16px;
+  }
+
+  .housing-step .housing-owned-acquisition-tax-row {
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+
+  .housing-step .housing-owned-acquisition-tax-action {
+    width: 100%;
   }
 
   .housing-step :where(
@@ -340,110 +401,6 @@
     color: var(--ui-danger);
   }
 
-  /* 所有物件の取得価格は横長表のままなので、スマホではカード化する */
-  .housing-step .housing-rental-table--owned-acquisition {
-    overflow: visible;
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition .housing-rental-table-header {
-    display: none;
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition .housing-rental-table-body,
-  .housing-step .housing-rental-table--owned-acquisition .housing-rental-table-row {
-    display: block;
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition .housing-table-cell {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 13px 14px;
-    border: 0;
-    border-bottom: 1px solid var(--ui-border);
-    background: var(--ui-bg-surface);
-    box-sizing: border-box;
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition .housing-table-cell:last-child {
-    border-bottom: 0;
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition .housing-table-cell::before {
-    display: block;
-    margin: 0 0 8px;
-    color: var(--ui-text-muted);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    line-height: var(--leading-tight);
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(1)::before {
-    content: '建物';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(2)::before {
-    content: '土地';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(3)::before {
-    content: '費用取得';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(4)::before {
-    content: '仲介手数料';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(5)::before {
-    content: '登記手数料';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(6)::before {
-    content: '不動産取得税';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition-land
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(1)::before {
-    content: '土地';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition-land
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(2)::before {
-    content: '費用取得';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition-land
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(3)::before {
-    content: '仲介手数料';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition-land
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(4)::before {
-    content: '登記手数料';
-  }
-
-  .housing-step .housing-rental-table--owned-acquisition-land
-    .housing-rental-table-row
-    > .housing-table-cell:nth-child(5)::before {
-    content: '不動産取得税';
-  }
-
   /* ローン・保険の補助UI */
   .housing-step :where(
       .housing-owned-loan-card-wrap,
@@ -474,13 +431,17 @@
 }
 
 @media (max-width: 430px) {
-  .housing-step .housing-owned-card,
-  .housing-step .housing-rental-table--owned-acquisition .housing-table-cell {
+  .housing-step .housing-owned-card {
     padding-right: 12px;
     padding-left: 12px;
   }
 
   .housing-step .housing-owned-detail {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .housing-step .housing-owned-acquisition-group {
     padding-right: 12px;
     padding-left: 12px;
   }
