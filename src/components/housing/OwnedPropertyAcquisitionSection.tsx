@@ -37,10 +37,12 @@ export function OwnedPropertyAcquisitionSection({
       <h4 className="housing-owned-detail-title">({sectionNumber}) 取得価格</h4>
 
       <div className="housing-owned-acquisition-total">
-        <span className="housing-owned-acquisition-total-label">取得価格</span>
-        <strong className="housing-owned-acquisition-total-amount">
-          {acquisitionTotal}
-        </strong>
+        <div className="housing-owned-acquisition-total-main">
+          <span className="housing-owned-acquisition-total-label">取得価格</span>
+          <strong className="housing-owned-acquisition-total-amount">
+            {acquisitionTotal}
+          </strong>
+        </div>
         <span className="housing-owned-acquisition-note">
           建物 + 土地 + 仲介手数料
         </span>
@@ -52,39 +54,50 @@ export function OwnedPropertyAcquisitionSection({
         </p>
       ) : null}
 
-      <div className="housing-rental-card housing-owned-acquisition-card">
-        <div className="housing-rental-card-body">
-          <section className="housing-rental-block">
-            <h5 className="housing-rental-block-title">物件価格</h5>
-            <div className="housing-rental-cost-grid housing-rental-cost-grid--two">
-              {showBuildingField ? (
-                <label className="housing-rental-field">
-                  <span className="housing-rental-field-label">建物</span>
-                  <HousingManInput
-                    compact
-                    value={property.buildingMan}
-                    onChange={(buildingMan) => onChange({ buildingMan })}
-                  />
-                </label>
-              ) : null}
+      <div className="housing-owned-acquisition-panel">
+        <section className="housing-owned-acquisition-group">
+          <div className="housing-owned-acquisition-group-header">
+            <h5 className="housing-owned-acquisition-group-title">物件価格</h5>
+            <p className="housing-owned-acquisition-group-note">
+              建物・土地の内訳は、登記手数料や不動産取得税の試算に使います。
+            </p>
+          </div>
 
+          <div className="housing-owned-acquisition-price-grid">
+            {showBuildingField ? (
               <label className="housing-rental-field">
-                <span className="housing-rental-field-label">土地</span>
+                <span className="housing-rental-field-label">建物</span>
                 <HousingManInput
                   compact
-                  value={property.landMan}
-                  onChange={(landMan) => onChange({ landMan })}
+                  value={property.buildingMan}
+                  onChange={(buildingMan) => onChange({ buildingMan })}
                 />
               </label>
-            </div>
-          </section>
+            ) : null}
 
-          <section className="housing-rental-block">
-            <h5 className="housing-rental-block-title">取得時の諸費用</h5>
-            <p className="housing-linked-overview-note">
-              建物・土地の金額をもとに、仲介手数料・登記手数料・不動産取得税の参考額をまとめて計算できます。
-            </p>
-            <div className="housing-linked-add-area">
+            <label className="housing-rental-field">
+              <span className="housing-rental-field-label">土地</span>
+              <HousingManInput
+                compact
+                value={property.landMan}
+                onChange={(landMan) => onChange({ landMan })}
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="housing-owned-acquisition-group">
+          <div className="housing-owned-acquisition-cost-header">
+            <div className="housing-owned-acquisition-group-header">
+              <h5 className="housing-owned-acquisition-group-title">
+                諸費用・税金
+              </h5>
+              <p className="housing-owned-acquisition-group-note">
+                物件価格をもとに、購入時にかかる費用の参考額をまとめて試算できます。
+              </p>
+            </div>
+
+            <div className="housing-owned-acquisition-reference-action">
               <button
                 type="button"
                 className="ui-btn ui-btn--ghost"
@@ -93,77 +106,80 @@ export function OwnedPropertyAcquisitionSection({
               >
                 諸費用の参考額を計算
               </button>
-              {!canFetchAcquisitionFees ? (
-                <p className="housing-linked-add-note">
-                  建物または土地の金額を入力すると計算できます。
-                </p>
-              ) : (
-                <p className="housing-linked-add-note">
-                  3項目を参考額で更新します。計算後も手入力で変更できます。
-                </p>
-              )}
+              <p className="housing-owned-acquisition-reference-note">
+                {canFetchAcquisitionFees
+                  ? '仲介・登記・取得税を参考額で更新します。あとから手入力で変更できます。'
+                  : '建物または土地の金額を入力すると計算できます。'}
+              </p>
             </div>
+          </div>
 
-            <div className="housing-rental-cost-grid housing-rental-cost-grid--two">
-              <div className="housing-rental-field">
-                <span className="housing-rental-field-label">仲介手数料</span>
-                <HousingManInput
-                  compact
-                  value={property.brokerageFeeMan}
-                  onChange={(brokerageFeeMan) => onChange({ brokerageFeeMan })}
-                />
-                {breakdown ? (
-                  <button
-                    type="button"
-                    className="ui-btn ui-btn--ghost"
-                    onClick={() => onOpenReference('brokerage')}
-                  >
-                    計算根拠を見る
-                  </button>
-                ) : null}
-              </div>
-
-              <div className="housing-rental-field">
-                <span className="housing-rental-field-label">登記手数料</span>
-                <HousingManInput
-                  compact
-                  value={property.registrationFeeMan}
-                  onChange={(registrationFeeMan) =>
-                    onChange({ registrationFeeMan })
-                  }
-                />
-                {breakdown ? (
-                  <button
-                    type="button"
-                    className="ui-btn ui-btn--ghost"
-                    onClick={() => onOpenReference('registration')}
-                  >
-                    計算根拠を見る
-                  </button>
-                ) : null}
-              </div>
-
-              <div className="housing-rental-field">
-                <span className="housing-rental-field-label">不動産取得税</span>
-                <HousingManInput
-                  compact
-                  value={property.acquisitionTaxMan}
-                  onChange={(acquisitionTaxMan) =>
-                    onChange({ acquisitionTaxMan })
-                  }
-                />
+          <div className="housing-owned-acquisition-fee-grid">
+            <div className="housing-rental-field">
+              <span className="housing-rental-field-label">仲介手数料</span>
+              <HousingManInput
+                compact
+                value={property.brokerageFeeMan}
+                onChange={(brokerageFeeMan) => onChange({ brokerageFeeMan })}
+              />
+              {breakdown ? (
                 <button
                   type="button"
-                  className="ui-btn ui-btn--ghost"
-                  disabled={!canFetchAcquisitionFees}
-                  onClick={onOpenTaxDetail}
+                  className="ui-btn ui-btn--ghost housing-owned-acquisition-detail-action"
+                  onClick={() => onOpenReference('brokerage')}
                 >
-                  詳細条件で計算
+                  計算根拠を見る
                 </button>
-              </div>
+              ) : null}
             </div>
-          </section>
-        </div>
+
+            <div className="housing-rental-field">
+              <span className="housing-rental-field-label">登記手数料</span>
+              <HousingManInput
+                compact
+                value={property.registrationFeeMan}
+                onChange={(registrationFeeMan) =>
+                  onChange({ registrationFeeMan })
+                }
+              />
+              {breakdown ? (
+                <button
+                  type="button"
+                  className="ui-btn ui-btn--ghost housing-owned-acquisition-detail-action"
+                  onClick={() => onOpenReference('registration')}
+                >
+                  計算根拠を見る
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="housing-owned-acquisition-tax-row">
+            <div className="housing-rental-field">
+              <span className="housing-rental-field-label">不動産取得税</span>
+              <HousingManInput
+                compact
+                value={property.acquisitionTaxMan}
+                onChange={(acquisitionTaxMan) =>
+                  onChange({ acquisitionTaxMan })
+                }
+              />
+            </div>
+            <div className="housing-owned-acquisition-tax-action">
+              <p className="housing-owned-acquisition-tax-note">
+                面積・築年数・納付時期まで指定する場合は、詳細条件から調整できます。
+              </p>
+              <button
+                type="button"
+                className="ui-btn ui-btn--ghost"
+                disabled={!canFetchAcquisitionFees}
+                onClick={onOpenTaxDetail}
+              >
+                詳細条件で計算
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   );
