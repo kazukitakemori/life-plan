@@ -1,0 +1,273 @@
+/* Q5 owned-property maintenance: screen-specific information layout only.
+ * Common buttons, controls, colors and card tokens come from the shared UI system.
+ */
+
+.housing-maint-layout--cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.housing-maint-panel {
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-surface);
+}
+
+.housing-maint-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px 24px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-bg-subtle);
+}
+
+.housing-maint-panel-header--action {
+  align-items: center;
+}
+
+.housing-maint-panel-title {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.housing-maint-panel-note,
+.housing-maint-subsection-note {
+  margin: 5px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.housing-maint-panel-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.housing-maint-subsection {
+  padding: 18px;
+}
+
+.housing-maint-subsection + .housing-maint-subsection {
+  border-top: 1px solid var(--ui-border);
+}
+
+.housing-maint-subsection-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+}
+
+.housing-maint-subsection-title {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.housing-maint-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.housing-maint-entry-card {
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+}
+
+.housing-maint-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.housing-maint-entry-title {
+  min-width: 0;
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.housing-maint-entry-delete {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: max-content;
+  min-height: 36px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.housing-maint-entry-grid {
+  display: grid;
+  gap: 14px 22px;
+  align-items: end;
+}
+
+.housing-maint-entry-grid--monthly {
+  grid-template-columns: minmax(360px, 1fr) minmax(180px, 220px);
+}
+
+.housing-maint-entry-grid--repair {
+  grid-template-columns: minmax(180px, 220px) minmax(250px, 320px) minmax(180px, 220px);
+}
+
+.housing-maint-entry-grid--improvement {
+  grid-template-columns: minmax(250px, 320px) minmax(180px, 220px);
+}
+
+.housing-maint-entry-grid--tax {
+  grid-template-columns: minmax(140px, 180px) repeat(2, minmax(180px, 220px));
+}
+
+.housing-maint-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.housing-maint-field-label {
+  color: var(--ui-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.housing-maint-field .housing-man-input {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.housing-maint-period-fields {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.housing-maint-period-sep {
+  flex: 0 0 auto;
+  color: var(--ui-text-muted);
+  white-space: nowrap;
+}
+
+.housing-maint-year-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.housing-maint-static-value {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height-sm);
+  color: var(--ui-text);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}
+
+.housing-maint-add-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.housing-maint-add-row .ui-btn,
+.housing-maint-road-price-link {
+  width: fit-content;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.housing-maint-road-price-link {
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+@media (max-width: 980px) and (min-width: 769px) {
+  .housing-maint-entry-grid--monthly,
+  .housing-maint-entry-grid--repair,
+  .housing-maint-entry-grid--tax {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .housing-maint-entry-grid--improvement {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .housing-maint-layout--cards {
+    gap: 12px;
+  }
+
+  .housing-maint-panel-header,
+  .housing-maint-panel-header--action {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px;
+  }
+
+  .housing-maint-subsection {
+    padding: 14px;
+  }
+
+  .housing-maint-subsection-header {
+    margin-bottom: 10px;
+  }
+
+  .housing-maint-entry-card {
+    padding: 12px;
+  }
+
+  .housing-maint-entry-header {
+    align-items: flex-start;
+  }
+
+  .housing-maint-entry-grid--monthly,
+  .housing-maint-entry-grid--repair,
+  .housing-maint-entry-grid--improvement,
+  .housing-maint-entry-grid--tax {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .housing-maint-period-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .housing-maint-period-fields .select-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .housing-maint-field .housing-renewal-date {
+    max-width: 100%;
+  }
+
+  .housing-maint-road-price-link {
+    align-self: flex-start;
+  }
+
+  .housing-maint-add-row .ui-btn {
+    max-width: 100%;
+  }
+}
