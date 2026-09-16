@@ -93,9 +93,6 @@ export function OwnedPropertySection({
     <section className="housing-section" id="housing-owned-section">
       <div className="housing-section-header">
         <h3 className="housing-section-title">所有物件</h3>
-        <p className="housing-section-desc">
-          物件ごとに、所有期間・購入費・ローン・保険・維持費を入力します。
-        </p>
       </div>
 
       {ownedViews.length > 0 ? (
