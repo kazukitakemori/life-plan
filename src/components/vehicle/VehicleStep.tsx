@@ -180,7 +180,7 @@ export function VehicleStep({
       <StepHeading
         number={6}
         title="乗り物"
-        lead="保有中・購入予定の乗り物と、購入費・維持費・買い替えを登録します。"
+        lead="自動車・バイク・自転車などを登録します。複数台ある場合は一覧から選び、1台ずつ購入・維持・買い替えを設定します。"
       />
 
       {purposeNote ? (
