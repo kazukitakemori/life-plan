@@ -91,10 +91,6 @@ export function OwnedPropertySection({
 }: OwnedPropertySectionProps) {
   return (
     <section className="housing-section" id="housing-owned-section">
-      <div className="housing-section-header">
-        <h3 className="housing-section-title">所有物件</h3>
-      </div>
-
       {ownedViews.length > 0 ? (
         <div className="housing-owned-list">
           {ownedViews.map((view) => {
