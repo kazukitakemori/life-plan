@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { calcLoanEntryAmountMan, calcVehicleLoanEntryAmountMan } from '../../lib/loanResolution';
 import { getPairSideLabel } from '../../lib/groupCreditLife';
 import { normalizeOwnedPropertyLoanSettings } from '../../lib/loanInterestRatePeriod';
@@ -161,6 +162,13 @@ export function LoanEntryDetail({
 
   const isHousingLinked = entry.category === 'housing' && linkedHousingProperty;
   const isVehicleLinked = entry.category === 'vehicle' && linkedVehicle;
+  const isCurrentHousingLinked =
+    Boolean(isHousingLinked) && linkedHousingProperty?.usage === 'current';
+  const hasLinkedHousingAcquisitionAmount =
+    Boolean(linkedHousingProperty) &&
+    (linkedHousingProperty?.buildingMan ?? 0) +
+      (linkedHousingProperty?.landMan ?? 0) >
+      0;
   const isMonthlyRepayment = isLoanMonthlyRepaymentMode(entry);
   const pairPartner =
     entry.structureType === 'pair' && loanState
@@ -193,10 +201,65 @@ export function LoanEntryDetail({
       : { ...entry.settings, repaymentMethod: 'equal_payment' as const };
 
   const referenceYear = referenceDate.getFullYear();
+  const referenceMonth = referenceDate.getMonth() + 1;
   const monthlyPeriod = resolveLoanMonthlyRepaymentPeriod(entry, referenceDate);
+
+  const toCurrentMonthlyEntry = (
+    target: LoanEntry,
+    monthlyRepaymentMan = target.monthlyRepaymentMan,
+  ): LoanEntry => {
+    const period = resolveLoanMonthlyRepaymentPeriod(
+      {
+        ...target,
+        paymentMode: 'monthlyRepayment',
+        repaymentStartYear: referenceYear,
+        repaymentStartMonth: referenceMonth,
+      },
+      referenceDate,
+    );
+    return {
+      ...target,
+      paymentMode: 'monthlyRepayment',
+      monthlyRepaymentMan,
+      repaymentStartYear: referenceYear,
+      repaymentStartMonth: referenceMonth,
+      repaymentEndYear: period.endYear,
+      repaymentEndMonth: period.endMonth,
+      settingsConfigured:
+        monthlyRepaymentMan > 0 || Boolean(target.settingsConfigured),
+    };
+  };
+
+  // 居住中の新規・未設定ローンは、取得価格がなくても入力できる月額返済を初期経路にする。
+  // 既に設定済みの詳細ローンは勝手に切り替えない。
+  useEffect(() => {
+    if (
+      !isCurrentHousingLinked ||
+      isMonthlyRepayment ||
+      entry.settingsConfigured ||
+      entry.monthlyRepaymentMan > 0
+    ) {
+      return;
+    }
+
+    onChange(toCurrentMonthlyEntry(entry));
+    if (pairPartner && onPairPartnerChange) {
+      onPairPartnerChange(toCurrentMonthlyEntry(pairPartner, 0));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry.id, isCurrentHousingLinked]);
 
   const handlePaymentModeChange = (mode: LoanPaymentMode) => {
     if (mode === 'monthlyRepayment') {
+      if (isCurrentHousingLinked) {
+        const next = toCurrentMonthlyEntry(entry);
+        onChange(next);
+        if (pairPartner && onPairPartnerChange) {
+          onPairPartnerChange(toCurrentMonthlyEntry(pairPartner, 0));
+        }
+        return;
+      }
+
       const period = resolveLoanMonthlyRepaymentPeriod(
         { ...entry, paymentMode: 'monthlyRepayment' },
         referenceDate,
@@ -211,7 +274,36 @@ export function LoanEntryDetail({
       });
       return;
     }
+
+    if (isCurrentHousingLinked && !hasLinkedHousingAcquisitionAmount) {
+      return;
+    }
+
     update({ paymentMode: mode });
+    if (pairPartner && onPairPartnerChange) {
+      onPairPartnerChange({ ...pairPartner, paymentMode: mode });
+    }
+  };
+
+  const handleMonthlyEndChange = (
+    repaymentEndYear: number,
+    repaymentEndMonth: number,
+  ) => {
+    update({
+      repaymentEndYear,
+      repaymentEndMonth,
+      settingsConfigured:
+        entry.monthlyRepaymentMan > 0 || entry.settingsConfigured,
+    });
+    if (isCurrentHousingLinked && pairPartner && onPairPartnerChange) {
+      onPairPartnerChange({
+        ...pairPartner,
+        repaymentStartYear: referenceYear,
+        repaymentStartMonth: referenceMonth,
+        repaymentEndYear,
+        repaymentEndMonth,
+      });
+    }
   };
 
   return (
@@ -235,22 +327,42 @@ export function LoanEntryDetail({
         role="radiogroup"
         aria-label="ローンの入力方法"
       >
-        {LOAN_PAYMENT_MODE_OPTIONS.map((mode) => (
-          <label key={mode} className="loan-payment-mode-option">
-            <input
-              type="radio"
-              name={`loan-payment-mode-${entry.id}`}
-              checked={
-                mode === 'monthlyRepayment'
-                  ? isMonthlyRepayment
-                  : !isMonthlyRepayment
-              }
-              onChange={() => handlePaymentModeChange(mode)}
-            />
-            <span>{LOAN_PAYMENT_MODE_LABELS[mode]}</span>
-          </label>
-        ))}
+        {LOAN_PAYMENT_MODE_OPTIONS.map((mode) => {
+          const detailedDisabled =
+            isCurrentHousingLinked &&
+            mode === 'loanSettings' &&
+            isMonthlyRepayment &&
+            !hasLinkedHousingAcquisitionAmount;
+          const label = isCurrentHousingLinked
+            ? mode === 'monthlyRepayment'
+              ? '月々の返済額だけ入力'
+              : '借入条件から詳しく計算'
+            : LOAN_PAYMENT_MODE_LABELS[mode];
+
+          return (
+            <label key={mode} className="loan-payment-mode-option">
+              <input
+                type="radio"
+                name={`loan-payment-mode-${entry.id}`}
+                checked={
+                  mode === 'monthlyRepayment'
+                    ? isMonthlyRepayment
+                    : !isMonthlyRepayment
+                }
+                disabled={detailedDisabled}
+                onChange={() => handlePaymentModeChange(mode)}
+              />
+              <span>{label}</span>
+            </label>
+          );
+        })}
       </div>
+
+      {isCurrentHousingLinked && !hasLinkedHousingAcquisitionAmount ? (
+        <p className="housing-owned-loan-existing-note">
+          借入条件から詳しく計算する場合は、取得価格（建物・土地）を入力してください。
+        </p>
+      ) : null}
 
       {isMonthlyRepayment ? (
         <section className="loan-detail-subsection">
@@ -258,7 +370,11 @@ export function LoanEntryDetail({
           <div className="housing-rental-card loan-settings-table-card">
             <div className="loan-settings-form-table">
               <LoanSettingsField
-                label="月々の返済額"
+                label={
+                  isCurrentHousingLinked && entry.structureType === 'pair'
+                    ? '月々の返済額（世帯合計）'
+                    : '月々の返済額'
+                }
                 labelFor={`${entry.id}-monthly-repayment`}
                 cellClassName="loan-settings-form-value--loan-amount"
               >
@@ -276,39 +392,37 @@ export function LoanEntryDetail({
                 />
               </LoanSettingsField>
 
-              <LoanSettingsField label="返済開始">
-                <HousingRenewalDateFields
-                  year={monthlyPeriod.startYear}
-                  month={monthlyPeriod.startMonth}
-                  referenceYear={referenceYear}
-                  minYear={referenceYear - 40}
-                  onChange={(repaymentStartYear, repaymentStartMonth) =>
-                    update({
-                      repaymentStartYear,
-                      repaymentStartMonth,
-                      settingsConfigured:
-                        entry.monthlyRepaymentMan > 0 ||
-                        entry.settingsConfigured,
-                    })
-                  }
-                />
-              </LoanSettingsField>
+              {!isCurrentHousingLinked ? (
+                <LoanSettingsField label="返済開始">
+                  <HousingRenewalDateFields
+                    year={monthlyPeriod.startYear}
+                    month={monthlyPeriod.startMonth}
+                    referenceYear={referenceYear}
+                    minYear={referenceYear - 40}
+                    onChange={(repaymentStartYear, repaymentStartMonth) =>
+                      update({
+                        repaymentStartYear,
+                        repaymentStartMonth,
+                        settingsConfigured:
+                          entry.monthlyRepaymentMan > 0 ||
+                          entry.settingsConfigured,
+                      })
+                    }
+                  />
+                </LoanSettingsField>
+              ) : null}
 
               <LoanSettingsField label="返済終了">
                 <HousingRenewalDateFields
                   year={monthlyPeriod.endYear}
                   month={monthlyPeriod.endMonth}
                   referenceYear={referenceYear}
-                  minYear={monthlyPeriod.startYear}
-                  onChange={(repaymentEndYear, repaymentEndMonth) =>
-                    update({
-                      repaymentEndYear,
-                      repaymentEndMonth,
-                      settingsConfigured:
-                        entry.monthlyRepaymentMan > 0 ||
-                        entry.settingsConfigured,
-                    })
+                  minYear={
+                    isCurrentHousingLinked
+                      ? referenceYear
+                      : monthlyPeriod.startYear
                   }
+                  onChange={handleMonthlyEndChange}
                 />
               </LoanSettingsField>
             </div>
