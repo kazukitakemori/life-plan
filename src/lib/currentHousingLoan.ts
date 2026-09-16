@@ -1,4 +1,5 @@
 import {
+  addCalendarMonths,
   calcLoanRepaymentBalanceAfterMonthYen,
   calcLoanRepaymentMonthYen,
   calcRepaymentMonthIndex,
@@ -37,6 +38,70 @@ export function resolveCurrentHousingLoanSchedule(
     },
     totalMonths: period.totalMonths,
   };
+}
+
+/**
+ * 既存の住宅ローン償却ロジックへ現在残高方式の期間を渡すため、
+ * settings 側の開始時期・返済月数も現在基準へ同期する。
+ * 所有開始や取得価格そのものは変更しない。
+ */
+export function syncCurrentBalanceLoanSchedule(
+  entry: LoanEntry,
+  referenceDate: Date,
+): LoanEntry {
+  const schedule = resolveCurrentHousingLoanSchedule(entry, referenceDate);
+  const ownershipStart = addCalendarMonths(schedule.repaymentStart, -1);
+  return {
+    ...entry,
+    settings: {
+      ...entry.settings,
+      startYear: ownershipStart.year,
+      startMonth: ownershipStart.month,
+      years: schedule.totalMonths / 12,
+      repaymentCount: undefined,
+    },
+  };
+}
+
+/**
+ * 従来の購入時条件から「現在残高から計算」へ明示的に切り替える。
+ * 旧 settings.amountMan や物件取得価格は残し、現在残高は別フィールドで新規入力する。
+ * 過去起点の金利期間・繰上げ返済は現在基準へ持ち越さない。
+ */
+export function prepareCurrentBalanceLoanEntry(
+  entry: LoanEntry,
+  referenceDate: Date,
+): LoanEntry {
+  const referenceYear = referenceDate.getFullYear();
+  const referenceMonth = referenceDate.getMonth() + 1;
+  const seed: LoanEntry = {
+    ...entry,
+    paymentMode: 'currentBalance',
+    currentBalanceMan:
+      entry.paymentMode === 'currentBalance' ? entry.currentBalanceMan : 0,
+    repaymentStartYear: referenceYear,
+    repaymentStartMonth: referenceMonth,
+    settingsConfigured:
+      entry.paymentMode === 'currentBalance' && entry.currentBalanceMan > 0,
+    settings: {
+      ...entry.settings,
+      interestRatePeriods: entry.settings.interestRatePeriods.slice(0, 1).map(
+        (period) => ({
+          ...period,
+          startYear: 0,
+          startMonth: 0,
+          endYear: 0,
+          endMonth: 0,
+        }),
+      ),
+      groupCreditLifeSurchargeRatePct: 0,
+      bonusRepaymentEnabled: false,
+      prepaymentEnabled: false,
+      prepayments: [],
+      lumpSumRepaymentEnabled: false,
+    },
+  };
+  return syncCurrentBalanceLoanSchedule(seed, referenceDate);
 }
 
 /**
