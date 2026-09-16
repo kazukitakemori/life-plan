@@ -351,36 +351,11 @@
   max-width: 100%;
 }
 
-.housing-owned-acquisition-cost-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px 28px;
-}
-
-.housing-owned-acquisition-reference-action {
-  display: flex;
-  flex: 0 1 360px;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  max-width: 360px;
-}
-
-.housing-owned-acquisition-reference-action .ui-btn,
 .housing-owned-acquisition-detail-action,
 .housing-owned-acquisition-tax-action .ui-btn {
   width: fit-content;
   min-width: max-content;
   white-space: nowrap;
-}
-
-.housing-owned-acquisition-reference-note {
-  margin: 0;
-  color: var(--ui-text-muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-normal);
-  text-align: right;
 }
 
 .housing-owned-acquisition-fee-grid {
@@ -555,18 +530,5 @@
 
   .housing-owned-card-actions {
     grid-column: 1 / -1;
-  }
-
-  .housing-owned-acquisition-cost-header {
-    flex-direction: column;
-  }
-
-  .housing-owned-acquisition-reference-action {
-    align-items: flex-start;
-    max-width: 100%;
-  }
-
-  .housing-owned-acquisition-reference-note {
-    text-align: left;
   }
 }
