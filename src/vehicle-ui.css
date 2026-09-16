@@ -13,8 +13,22 @@
   margin-top: 14px;
 }
 
-.vehicle-empty-stack .vehicle-add-section {
-  margin-top: 16px;
+.vehicle-page-add {
+  margin-top: 18px;
+}
+
+.vehicle-page-add .vehicle-add-section {
+  margin: 0;
+}
+
+@media (min-width: 981px) {
+  .vehicle-page-add {
+    width: calc(100% - 242px);
+  }
+
+  .vehicle-empty-stack .vehicle-page-add {
+    width: 100%;
+  }
 }
 
 @media (min-width: 769px) {
@@ -130,24 +144,6 @@
     color: var(--ui-text-muted, #65726b);
     font-size: 20px;
     line-height: 1;
-  }
-
-  .vehicle-master-add {
-    padding: 8px;
-    border-top: 1px solid var(--ui-border, #dfe5e1);
-    background: var(--ui-bg-surface, #fff);
-  }
-
-  .vehicle-master-add .vehicle-add-section {
-    margin: 0;
-  }
-
-  .vehicle-master-add .vehicle-add-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .vehicle-mobile-add {
-    display: none;
   }
 
   .vehicle-detail-panel {
@@ -319,6 +315,68 @@
     min-width: 0;
   }
 
+  .vehicle-step .vehicle-col-monthly .vehicle-monthly-stack,
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+
+  .vehicle-step .vehicle-col-monthly .vehicle-monthly-item {
+    display: grid;
+    grid-template-columns: 112px max-content;
+    gap: 12px;
+    align-items: center;
+    justify-content: start;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:first-child > .vehicle-monthly-label {
+    display: none;
+  }
+
+  .vehicle-step .vehicle-annual-cost-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-annual-cycle-select {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 104px;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 7px 12px;
+    align-items: center;
+    justify-content: start;
+    width: 100%;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) > .vehicle-monthly-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) > :not(.vehicle-monthly-label) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .vehicle-step .vehicle-col-annual :where(
+      .period-start-label,
+      .vehicle-inspection-hint
+    ) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   .vehicle-step .vehicle-table-group {
     display: grid;
     grid-template-columns: 170px minmax(0, 1fr);
@@ -359,6 +417,15 @@
     max-width: none;
     margin: 0;
   }
+
+  .vehicle-step .vehicle-table-group-body .housing-owned-loan-add-btn {
+    align-self: flex-start;
+    width: auto;
+    min-width: 190px;
+    max-width: 100%;
+    padding-right: 24px;
+    padding-left: 24px;
+  }
 }
 
 @media (min-width: 769px) and (max-width: 980px) {
@@ -379,10 +446,6 @@
     flex: 0 0 210px;
   }
 
-  .vehicle-master-add .vehicle-add-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .vehicle-step .life-event-table-row > .life-event-table-cell,
   .vehicle-step .vehicle-table-group {
     grid-template-columns: 140px minmax(0, 1fr);
@@ -398,8 +461,7 @@
     display: block;
   }
 
-  .vehicle-mobile-add {
-    display: block;
+  .vehicle-page-add {
     margin-top: 18px;
   }
 }
