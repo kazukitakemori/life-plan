@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { formatHousingLoanName } from '../../lib/loanLabels';
 import { resolveLoanMonthlyRepaymentPeriod } from '../../lib/loanPaymentMode';
+import { buildHousingLoanLinkDisplayRows } from '../../lib/pairLoanShare';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import type { FamilyMember } from '../../types/family';
 import type { HousingState, OwnedProperty } from '../../types/housing';
@@ -81,15 +82,26 @@ export function HousingLoanLinks({
 
   useEffect(() => {
     const knownLoanIds = knownLoanIdsRef.current;
-    const addedLoans = loans.filter((loan) => !knownLoanIds.has(loan.entry.id));
+    const addedLoanIds = new Set(
+      loans
+        .filter((loan) => !knownLoanIds.has(loan.entry.id))
+        .map((loan) => loan.entry.id),
+    );
     knownLoanIdsRef.current = new Set(loans.map((loan) => loan.entry.id));
 
-    if (!preferMonthlyRepayment || addedLoans.length === 0) return;
+    if (!preferMonthlyRepayment || addedLoanIds.size === 0) return;
 
+    const displayRows = buildHousingLoanLinkDisplayRows(loans);
+    const monthlyEntryIds = new Set(
+      displayRows
+        .filter((row) => addedLoanIds.has(row.editEntryId))
+        .map((row) => row.editEntryId),
+    );
     const referenceYear = referenceDate.getFullYear();
     const referenceMonth = referenceDate.getMonth() + 1;
 
-    for (const loan of addedLoans) {
+    for (const loan of loans) {
+      if (!monthlyEntryIds.has(loan.entry.id)) continue;
       if (loan.entry.paymentMode === 'monthlyRepayment') continue;
       const monthlyEntry: LoanEntry = {
         ...loan.entry,
