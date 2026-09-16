@@ -230,13 +230,13 @@ export function LoanEntryDetail({
     };
   };
 
-  // 居住中の新規・未設定ローンは、取得価格がなくても入力できる月額返済を初期経路にする。
-  // 既に設定済みの詳細ローンは勝手に切り替えない。
+  // 明示的に未設定として作られた居住中ローンだけ月額返済へ寄せる。
+  // 旧データで settingsConfigured が存在しない詳細ローンは勝手に切り替えない。
   useEffect(() => {
     if (
       !isCurrentHousingLinked ||
       isMonthlyRepayment ||
-      entry.settingsConfigured ||
+      entry.settingsConfigured !== false ||
       entry.monthlyRepaymentMan > 0
     ) {
       return;
