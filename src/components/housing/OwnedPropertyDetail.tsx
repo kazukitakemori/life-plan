@@ -148,18 +148,23 @@ export function OwnedPropertyDetail({
     : isCurrentlyOccupied && !isSimpleMode
       ? filterMonthsAtOrBefore(property.startAge, refNow, MONTHS)
       : MONTHS;
-  const showAcquisitionSection = !isSimpleMode;
+  // 居住中は過去の取得価格を通常入力させない。保存済みデータは保持する。
+  const showAcquisitionSection = !isSimpleMode && !isCurrentlyOccupied;
   const hasAcquisitionAmount = property.buildingMan + property.landMan > 0;
   const simpleExpenseSectionNumber = 2;
-  const targetSectionNumber = isCurrentDetailedMode ? 4 : 2;
+  const targetSectionNumber = isCurrentDetailedMode ? 3 : 2;
   const acquisitionSectionNumber = showAcquisitionSection ? 3 : null;
   const paymentSectionNumber = isCurrentDetailedMode
     ? 2
     : showAcquisitionSection
       ? 4
       : 3;
-  const insuranceSectionNumber = isSimpleMode ? 3 : 5;
-  const maintenanceSectionNumber = 6;
+  const insuranceSectionNumber = isSimpleMode
+    ? 3
+    : isCurrentDetailedMode
+      ? 4
+      : 5;
+  const maintenanceSectionNumber = isCurrentDetailedMode ? 5 : 6;
   const [acqRefSection, setAcqRefSection] =
     useState<AcquisitionReferenceSection | null>(null);
   const [acqDetailOpen, setAcqDetailOpen] = useState(false);
@@ -315,7 +320,7 @@ export function OwnedPropertyDetail({
   ) : null;
 
   const acquisitionSection =
-    !isSimpleMode && showAcquisitionSection && acquisitionSectionNumber !== null ? (
+    showAcquisitionSection && acquisitionSectionNumber !== null ? (
       <OwnedPropertyAcquisitionSection
         sectionNumber={acquisitionSectionNumber}
         property={property}
@@ -362,7 +367,7 @@ export function OwnedPropertyDetail({
         <>
           {isCurrentlyOccupied ? (
             <p className="housing-owned-loan-existing-note">
-              月々の返済額だけを入力する場合、取得価格は不要です。借入条件から詳しく計算する場合のみ、取得価格・購入時費用を入力してください。
+              居住中の住宅ローンは、取得価格ではなく「月々の返済額」または「現在残高」から入力します。
             </p>
           ) : null}
           <HousingLoanLinks
@@ -612,7 +617,6 @@ export function OwnedPropertyDetail({
           {isCurrentlyOccupied ? (
             <>
               {paymentSection}
-              {acquisitionSection}
               {targetSection}
             </>
           ) : (
@@ -623,32 +627,36 @@ export function OwnedPropertyDetail({
             </>
           )}
 
-          <AcquisitionReferenceModal
-            open={acqRefSection !== null}
-            section={acqRefSection ?? 'brokerage'}
-            breakdown={acqBreakdown}
-            onClose={() => setAcqRefSection(null)}
-          />
+          {showAcquisitionSection ? (
+            <>
+              <AcquisitionReferenceModal
+                open={acqRefSection !== null}
+                section={acqRefSection ?? 'brokerage'}
+                breakdown={acqBreakdown}
+                onClose={() => setAcqRefSection(null)}
+              />
 
-          <AcquisitionTaxDetailModal
-            open={acqDetailOpen}
-            property={property}
-            referenceYear={referenceDate.getFullYear()}
-            onClose={() => setAcqDetailOpen(false)}
-            onConfirm={(patch) => {
-              update(patch);
-              if (acqBreakdown) {
-                const nextProperty = { ...property, ...patch };
-                const breakdown = buildAcquisitionFeeBreakdownFromProperty(
-                  nextProperty,
-                  patch.acquisitionTaxYear,
-                  patch.acquisitionTaxMonth,
-                  { hasPairLoan },
-                );
-                setAcqBreakdown(breakdown);
-              }
-            }}
-          />
+              <AcquisitionTaxDetailModal
+                open={acqDetailOpen}
+                property={property}
+                referenceYear={referenceDate.getFullYear()}
+                onClose={() => setAcqDetailOpen(false)}
+                onConfirm={(patch) => {
+                  update(patch);
+                  if (acqBreakdown) {
+                    const nextProperty = { ...property, ...patch };
+                    const breakdown = buildAcquisitionFeeBreakdownFromProperty(
+                      nextProperty,
+                      patch.acquisitionTaxYear,
+                      patch.acquisitionTaxMonth,
+                      { hasPairLoan },
+                    );
+                    setAcqBreakdown(breakdown);
+                  }
+                }}
+              />
+            </>
+          ) : null}
 
           {insuranceSection}
 
