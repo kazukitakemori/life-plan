@@ -51,9 +51,6 @@ export function RentalPropertySection({
     <section className="housing-section" id="housing-rental-section">
       <div className="housing-section-header">
         <h3 className="housing-section-title">賃貸物件</h3>
-        <p className="housing-section-desc">
-          家賃と契約期間を基本に、必要に応じて入居・退去費用、更新、保険を入力します。
-        </p>
       </div>
 
       <div className="housing-rental-schedules">
