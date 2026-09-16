@@ -57,6 +57,7 @@
 .housing-rental-card-body {
   display: flex;
   flex-direction: column;
+  counter-reset: housing-rental-section;
 }
 
 .housing-rental-block {
@@ -70,6 +71,11 @@
   font-size: var(--text-md);
   font-weight: 700;
   line-height: var(--leading-tight);
+  counter-increment: housing-rental-section;
+}
+
+.housing-rental-block-title::before {
+  content: '(' counter(housing-rental-section) ') ';
 }
 
 .housing-rental-basic-grid {
