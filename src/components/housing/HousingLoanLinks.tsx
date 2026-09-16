@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { formatHousingLoanName } from '../../lib/loanLabels';
+import { resolveLoanMonthlyRepaymentPeriod } from '../../lib/loanPaymentMode';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import type { FamilyMember } from '../../types/family';
 import type { HousingState, OwnedProperty } from '../../types/housing';
@@ -24,6 +25,8 @@ interface HousingLoanLinksProps {
   housingState: HousingState;
   vehicleState: VehicleState;
   referenceDate: Date;
+  /** 居住中の物件では、新しく追加したローンを月々返済額入力から開始する */
+  preferMonthlyRepayment?: boolean;
   /** false のとき「ローンを追加」をプレースホルダー表示（取得価格未入力など） */
   addLoanEnabled?: boolean;
   onAddLoan: (
@@ -51,6 +54,7 @@ export function HousingLoanLinks({
   housingState,
   vehicleState,
   referenceDate,
+  preferMonthlyRepayment = false,
   addLoanEnabled = true,
   onAddLoan,
   onUpdateLoan,
@@ -64,6 +68,9 @@ export function HousingLoanLinks({
   const [pickingContractor, setPickingContractor] = useState(false);
   const [pendingStructureType, setPendingStructureType] =
     useState<LoanStructureType | null>(null);
+  const knownLoanIdsRef = useRef(
+    new Set(loans.map((loan) => loan.entry.id)),
+  );
 
   const loanLabel = formatHousingLoanName(propertyName);
   const canAddLoan = addLoanEnabled && contractorMembers.length > 0;
@@ -71,6 +78,38 @@ export function HousingLoanLinks({
 
   const headMember = contractorMembers.find((member) => member.role === 'head');
   const spouseMember = contractorMembers.find((member) => member.role === 'spouse');
+
+  useEffect(() => {
+    const knownLoanIds = knownLoanIdsRef.current;
+    const addedLoans = loans.filter((loan) => !knownLoanIds.has(loan.entry.id));
+    knownLoanIdsRef.current = new Set(loans.map((loan) => loan.entry.id));
+
+    if (!preferMonthlyRepayment || addedLoans.length === 0) return;
+
+    const referenceYear = referenceDate.getFullYear();
+    const referenceMonth = referenceDate.getMonth() + 1;
+
+    for (const loan of addedLoans) {
+      if (loan.entry.paymentMode === 'monthlyRepayment') continue;
+      const monthlyEntry: LoanEntry = {
+        ...loan.entry,
+        paymentMode: 'monthlyRepayment',
+        monthlyRepaymentMan: 0,
+        repaymentStartYear: referenceYear,
+        repaymentStartMonth: referenceMonth,
+        settingsConfigured: false,
+      };
+      const period = resolveLoanMonthlyRepaymentPeriod(
+        monthlyEntry,
+        referenceDate,
+      );
+      onUpdateLoan({
+        ...monthlyEntry,
+        repaymentEndYear: period.endYear,
+        repaymentEndMonth: period.endMonth,
+      });
+    }
+  }, [loans, onUpdateLoan, preferMonthlyRepayment, referenceDate]);
 
   const handleAddClick = () => {
     if (!canAddLoan) return;
