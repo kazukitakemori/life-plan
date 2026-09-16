@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   countHousingItems,
   createOwnedProperty,
@@ -46,27 +46,9 @@ import type {
   LoanStructureType,
 } from '../../types/loan';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
-import { SecondLifeHousingSection } from '../secondLife/SecondLifeHousingSection';
-import { SecondLifeRefinePanel } from '../shared/SecondLifeRefinePanel';
 import { StepHeading } from '../ui';
 import { OwnedPropertySection } from './OwnedPropertySection';
 import { RentalPropertySection } from './RentalPropertySection';
-import { HousingSecondLifeApplyConfirmModal } from './HousingSecondLifeApplyConfirmModal';
-import {
-  getHousingApplyHighlightSets,
-  housingPropertyElementId,
-  HousingSecondLifeApplySummary,
-  resolveHousingDomainFilterFromApplyChanges,
-  type HousingSecondLifeApplyFeedback,
-} from './HousingSecondLifeApplySummary';
-import {
-  formatSecondLifeHousingApplyPreviewLines,
-  getSecondLifeHousingApplyWarnings,
-} from '../../lib/secondLifeHousingApplySummary';
-import type { SecondLifeState } from '../../types/secondLife';
-import { getSecondLifeHousingDesignSummary } from '../../lib/secondLifeLabels';
-import type { SecondLifeHousingApplyResult } from '../../lib/secondLifeTemplates';
-import type { StepId } from '../../types/steps';
 
 type HousingDomainFilter = 'rental' | 'owned';
 
@@ -78,13 +60,6 @@ const HOUSING_DOMAIN_FILTERS: {
   { id: 'owned', label: '所有' },
 ];
 
-function scrollToHousingElement(id: string) {
-  document.getElementById(id)?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
-  });
-}
-
 interface HousingStepProps {
   members: FamilyMember[];
   housingState: HousingState;
@@ -94,7 +69,6 @@ interface HousingStepProps {
   referenceDate: Date;
   memberTabExtras: MemberTabExtras;
   onMemberTabExtrasChange: (extras: MemberTabExtras) => void;
-  secondLifeState?: SecondLifeState;
   purposeNote?: string;
   onChange: (state: HousingState) => void;
   onHousingBundleChange?: (bundle: {
@@ -102,11 +76,6 @@ interface HousingStepProps {
     loanState: LoanState;
     insuranceState?: InsuranceState;
   }) => void;
-  onSecondLifeChange?: (state: SecondLifeState) => void;
-  onApplySecondLifeHousing?: () => SecondLifeHousingApplyResult | void;
-  /** 反映前プレビュー用。状態は更新しない */
-  onPreviewSecondLifeHousing?: () => SecondLifeHousingApplyResult | void;
-  onNavigateToStep?: (stepId: StepId) => void;
   onAddHousingLoan: (
     targetId: string,
     property: OwnedProperty,
@@ -141,14 +110,9 @@ export function HousingStep({
   referenceDate,
   memberTabExtras,
   onMemberTabExtrasChange,
-  secondLifeState,
   purposeNote,
   onChange,
   onHousingBundleChange,
-  onSecondLifeChange,
-  onApplySecondLifeHousing,
-  onPreviewSecondLifeHousing,
-  onNavigateToStep,
   onAddHousingLoan,
   onRemoveHousingLoan,
   onUpdateLoan,
@@ -173,91 +137,6 @@ export function HousingStep({
 
   const [activeTargetId, setActiveTargetId] = useState(headMember?.id ?? '');
   const [domainFilter, setDomainFilter] = useState<HousingDomainFilter>('rental');
-  const [refineOpen, setRefineOpen] = useState(false);
-  const [applyFeedback, setApplyFeedback] =
-    useState<HousingSecondLifeApplyFeedback | null>(null);
-  const [applyConfirm, setApplyConfirm] = useState<{
-    previewLines: string[];
-    warnings: string[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (!applyFeedback) return;
-    scrollToHousingElement('housing-second-life-apply-summary');
-  }, [applyFeedback?.id]);
-
-  const commitApplySecondLifeHousing = useCallback(() => {
-    const result = onApplySecondLifeHousing?.();
-    if (!result) return;
-
-    setRefineOpen(false);
-    setDomainFilter(resolveHousingDomainFilterFromApplyChanges(result.changes));
-    setApplyFeedback({
-      id: Date.now(),
-      kind: result.kind,
-      changeLines: result.changeLines,
-      changes: result.changes,
-    });
-  }, [onApplySecondLifeHousing]);
-
-  const applyHighlight = useMemo(() => {
-    if (!applyFeedback) {
-      return {
-        highlightTokenById: undefined as Map<string, number> | undefined,
-        endedPropertyIds: undefined as Set<string> | undefined,
-      };
-    }
-    const { highlightedIds, endedIds } = getHousingApplyHighlightSets(
-      applyFeedback.changes,
-    );
-    const highlightTokenById = new Map<string, number>();
-    for (const id of highlightedIds) {
-      highlightTokenById.set(id, applyFeedback.id);
-    }
-    return {
-      highlightTokenById,
-      endedPropertyIds: endedIds,
-    };
-  }, [applyFeedback]);
-
-  const scrollToApplyProperty = useCallback(
-    (kind: 'rental' | 'owned') => {
-      if (!applyFeedback) {
-        scrollToHousingElement(
-          kind === 'rental' ? 'housing-rental-section' : 'housing-owned-section',
-        );
-        return;
-      }
-      const { highlightedIds, endedIds } = getHousingApplyHighlightSets(
-        applyFeedback.changes,
-      );
-      const preferredId =
-        [...highlightedIds].find((id) =>
-          applyFeedback.changes.some(
-            (change) =>
-              change.type === 'added' &&
-              change.propertyKind === kind &&
-              change.id === id,
-          ),
-        ) ??
-        [...endedIds].find((id) =>
-          applyFeedback.changes.some(
-            (change) =>
-              change.type === 'ended' &&
-              change.propertyKind === kind &&
-              change.id === id,
-          ),
-        );
-      if (preferredId) {
-        scrollToHousingElement(housingPropertyElementId(kind, preferredId));
-        return;
-      }
-      scrollToHousingElement(
-        kind === 'rental' ? 'housing-rental-section' : 'housing-owned-section',
-      );
-    },
-    [applyFeedback],
-  );
 
   const memberHasData = useCallback(
     (memberId: string) =>
@@ -372,30 +251,6 @@ export function HousingStep({
     return map;
   }, [insuranceState, rentalViews]);
 
-  const handleRequestApplySecondLifeHousing = useCallback(() => {
-    const preview = onPreviewSecondLifeHousing?.();
-    if (!preview) {
-      commitApplySecondLifeHousing();
-      return;
-    }
-
-    setApplyConfirm({
-      previewLines: formatSecondLifeHousingApplyPreviewLines(preview.changes),
-      warnings: secondLifeState
-        ? getSecondLifeHousingApplyWarnings({
-            secondLifeState,
-            existingHousingCount: rentalViews.length + ownedViews.length,
-          })
-        : [],
-    });
-  }, [
-    onPreviewSecondLifeHousing,
-    commitApplySecondLifeHousing,
-    rentalViews.length,
-    ownedViews.length,
-    secondLifeState,
-  ]);
-
   const itemCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const [targetId, data] of Object.entries(housingState.byTarget)) {
@@ -452,7 +307,7 @@ export function HousingStep({
       <StepHeading
         number={5}
         title="住まい"
-        lead="物件は負担する人のタブへ。賃貸は負担者を選べ、持ち家はローン契約者に連動します。"
+        lead="現在とこれからの住まいを登録します。まず入力する人を選び、賃貸または所有から物件を追加してください。"
       />
 
       {purposeNote ? (
@@ -501,238 +356,168 @@ export function HousingStep({
             );
           })}
         </div>
-        {secondLifeState && onSecondLifeChange ? (
-          <button
-            type="button"
-            className="housing-domain-filter-jump"
-            onClick={() => {
-              document
-                .getElementById('housing-second-life')
-                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-          >
-            セカンドライフへ
-          </button>
-        ) : null}
       </div>
 
-      {applyFeedback ? (
-        <HousingSecondLifeApplySummary
-          feedback={applyFeedback}
-          onDismiss={() => setApplyFeedback(null)}
-          onShowRental={() => {
-            setDomainFilter('rental');
-            requestAnimationFrame(() => scrollToApplyProperty('rental'));
+      {domainFilter === 'rental' ? (
+        <RentalPropertySection
+          rentalViews={rentalViews}
+          member={contextMember}
+          members={members}
+          referenceDate={referenceDate}
+          linkedInsurancesByPropertyId={linkedInsurancesByRentalId}
+          insuranceState={insuranceState}
+          housingState={housingState}
+          vehicleState={vehicleState}
+          hasSpouse={Boolean(spouseMember)}
+          onAdd={() => {
+            const payerMode = defaultPayerModeForTarget(
+              resolvedTargetId,
+              headMember.id,
+              spouseMember?.id,
+            );
+            const rental = createRentalProperty(
+              contextMember,
+              referenceDate.getMonth() + 1,
+              referenceDate.getFullYear(),
+              { payerMode },
+              { rentals: targetData.rentals, owned: targetData.owned },
+            );
+            persistHousing(
+              addRentalToTarget(housingState, resolvedTargetId, rental),
+            );
           }}
-          onShowOwned={() => {
-            setDomainFilter('owned');
-            requestAnimationFrame(() => scrollToApplyProperty('owned'));
+          onChangeRental={(storageTargetId, rental) => {
+            persistHousing(
+              updateStoredRental(housingState, storageTargetId, rental),
+            );
           }}
-          onOpenLifeEvent={
-            onNavigateToStep
-              ? () => onNavigateToStep('life-event')
+          onRemoveRental={(storageTargetId, rentalId) => {
+            persistHousing(
+              removeStoredRental(housingState, storageTargetId, rentalId),
+            );
+          }}
+          onPayerModeChange={(storageTargetId, rentalId, payerMode) => {
+            const result = applyRentalPayerModeChange({
+              housingState,
+              loanState,
+              insuranceState,
+              storageTargetId,
+              rentalId,
+              payerMode,
+              headId: headMember.id,
+              spouseId: spouseMember?.id,
+            });
+            if (onHousingBundleChange) {
+              onHousingBundleChange({
+                housingState: result.housingState,
+                loanState: result.loanState,
+                insuranceState: result.insuranceState,
+              });
+            } else {
+              persistHousing(result.housingState);
+            }
+            if (
+              payerMode === 'spouse' &&
+              spouseMember &&
+              resolvedTargetId !== spouseMember.id
+            ) {
+              setActiveTargetId(spouseMember.id);
+            }
+            if (
+              (payerMode === 'head' || payerMode === 'both') &&
+              resolvedTargetId !== headMember.id &&
+              storageTargetId !== headMember.id
+            ) {
+              setActiveTargetId(headMember.id);
+            }
+          }}
+          onAddInsurance={
+            onAddFireInsurance
+              ? (storageTargetId, rental) =>
+                  onAddFireInsurance(
+                    storageTargetId,
+                    rental,
+                    'rental',
+                    storageTargetId,
+                  )
               : undefined
           }
+          onUpdateInsurance={onUpdateInsurance}
+          onRemoveInsurance={onRemoveInsurance}
         />
       ) : null}
 
-      {domainFilter === 'rental' ? (
-      <RentalPropertySection
-        rentalViews={rentalViews}
-        member={contextMember}
-        members={members}
-        referenceDate={referenceDate}
-        linkedInsurancesByPropertyId={linkedInsurancesByRentalId}
-        insuranceState={insuranceState}
-        housingState={housingState}
-        vehicleState={vehicleState}
-        hasSpouse={Boolean(spouseMember)}
-        highlightTokenById={applyHighlight.highlightTokenById}
-        endedPropertyIds={applyHighlight.endedPropertyIds}
-        onAdd={() => {
-          const payerMode = defaultPayerModeForTarget(
-            resolvedTargetId,
-            headMember.id,
-            spouseMember?.id,
-          );
-          const rental = createRentalProperty(
-            contextMember,
-            referenceDate.getMonth() + 1,
-            referenceDate.getFullYear(),
-            { payerMode },
-            { rentals: targetData.rentals, owned: targetData.owned },
-          );
-          persistHousing(
-            addRentalToTarget(housingState, resolvedTargetId, rental),
-          );
-        }}
-        onChangeRental={(storageTargetId, rental) => {
-          persistHousing(
-            updateStoredRental(housingState, storageTargetId, rental),
-          );
-        }}
-        onRemoveRental={(storageTargetId, rentalId) => {
-          persistHousing(
-            removeStoredRental(housingState, storageTargetId, rentalId),
-          );
-        }}
-        onPayerModeChange={(storageTargetId, rentalId, payerMode) => {
-          const result = applyRentalPayerModeChange({
-            housingState,
-            loanState,
-            insuranceState,
-            storageTargetId,
-            rentalId,
-            payerMode,
-            headId: headMember.id,
-            spouseId: spouseMember?.id,
-          });
-          if (onHousingBundleChange) {
-            onHousingBundleChange({
-              housingState: result.housingState,
-              loanState: result.loanState,
-              insuranceState: result.insuranceState,
-            });
-          } else {
-            persistHousing(result.housingState);
-          }
-          if (
-            payerMode === 'spouse' &&
-            spouseMember &&
-            resolvedTargetId !== spouseMember.id
-          ) {
-            setActiveTargetId(spouseMember.id);
-          }
-          if (
-            (payerMode === 'head' || payerMode === 'both') &&
-            resolvedTargetId !== headMember.id &&
-            storageTargetId !== headMember.id
-          ) {
-            setActiveTargetId(headMember.id);
-          }
-        }}
-        onAddInsurance={
-          onAddFireInsurance
-            ? (storageTargetId, rental) =>
-                onAddFireInsurance(
-                  storageTargetId,
-                  rental,
-                  'rental',
-                  storageTargetId,
-                )
-            : undefined
-        }
-        onUpdateInsurance={onUpdateInsurance}
-        onRemoveInsurance={onRemoveInsurance}
-      />
-      ) : null}
-
       {domainFilter === 'owned' ? (
-      <OwnedPropertySection
-        ownedViews={ownedViews}
-        member={contextMember}
-        members={members}
-        referenceDate={referenceDate}
-        linkedLoansByPropertyId={linkedLoansByPropertyId}
-        linkedInsurancesByPropertyId={linkedInsurancesByOwnedId}
-        insuranceState={insuranceState}
-        loanState={loanState}
-        housingState={housingState}
-        vehicleState={vehicleState}
-        contractorMembers={contractorMembers}
-        hasSpouse={hasSpouse}
-        highlightTokenById={applyHighlight.highlightTokenById}
-        endedPropertyIds={applyHighlight.endedPropertyIds}
-        onAddProperty={(type: OwnedPropertyType) => {
-          const property = createOwnedProperty(
-            type,
-            contextMember,
-            referenceDate.getMonth() + 1,
-            referenceDate.getFullYear(),
-            {},
-            { rentals: targetData.rentals, owned: targetData.owned },
-          );
-          persistHousing(
-            addOwnedToTarget(housingState, resolvedTargetId, property),
-          );
-        }}
-        onChangeProperty={(storageTargetId, property) => {
-          persistHousing(
-            updateStoredOwned(housingState, storageTargetId, property),
-          );
-        }}
-        onRemoveProperty={(storageTargetId, propertyId) => {
-          persistHousing(
-            removeStoredOwned(housingState, storageTargetId, propertyId),
-          );
-        }}
-        onAddHousingLoan={(
-          storageTargetId,
-          property,
-          structureType,
-          contractorMemberIds,
-        ) =>
-          onAddHousingLoan(
+        <OwnedPropertySection
+          ownedViews={ownedViews}
+          member={contextMember}
+          members={members}
+          referenceDate={referenceDate}
+          linkedLoansByPropertyId={linkedLoansByPropertyId}
+          linkedInsurancesByPropertyId={linkedInsurancesByOwnedId}
+          insuranceState={insuranceState}
+          loanState={loanState}
+          housingState={housingState}
+          vehicleState={vehicleState}
+          contractorMembers={contractorMembers}
+          hasSpouse={hasSpouse}
+          onAddProperty={(type: OwnedPropertyType) => {
+            const property = createOwnedProperty(
+              type,
+              contextMember,
+              referenceDate.getMonth() + 1,
+              referenceDate.getFullYear(),
+              {},
+              { rentals: targetData.rentals, owned: targetData.owned },
+            );
+            persistHousing(
+              addOwnedToTarget(housingState, resolvedTargetId, property),
+            );
+          }}
+          onChangeProperty={(storageTargetId, property) => {
+            persistHousing(
+              updateStoredOwned(housingState, storageTargetId, property),
+            );
+          }}
+          onRemoveProperty={(storageTargetId, propertyId) => {
+            persistHousing(
+              removeStoredOwned(housingState, storageTargetId, propertyId),
+            );
+          }}
+          onAddHousingLoan={(
             storageTargetId,
             property,
             structureType,
             contractorMemberIds,
-          )
-        }
-        onRemoveHousingLoan={onRemoveHousingLoan}
-        onUpdateLoan={onUpdateLoan}
-        onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
-        onPairShareChange={onPairShareChange}
-        onJointDebtShareChange={onJointDebtShareChange}
-        onLoanPropertyFeeChange={onLoanPropertyFeeChange}
-        onAddInsurance={
-          onAddFireInsurance
-            ? (storageTargetId, property) =>
-                onAddFireInsurance(
-                  storageTargetId,
-                  property,
-                  'owned',
-                  storageTargetId,
-                )
-            : undefined
-        }
-        onUpdateInsurance={onUpdateInsurance}
-        onRemoveInsurance={onRemoveInsurance}
-      />
+          ) =>
+            onAddHousingLoan(
+              storageTargetId,
+              property,
+              structureType,
+              contractorMemberIds,
+            )
+          }
+          onRemoveHousingLoan={onRemoveHousingLoan}
+          onUpdateLoan={onUpdateLoan}
+          onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
+          onPairShareChange={onPairShareChange}
+          onJointDebtShareChange={onJointDebtShareChange}
+          onLoanPropertyFeeChange={onLoanPropertyFeeChange}
+          onAddInsurance={
+            onAddFireInsurance
+              ? (storageTargetId, property) =>
+                  onAddFireInsurance(
+                    storageTargetId,
+                    property,
+                    'owned',
+                    storageTargetId,
+                  )
+              : undefined
+          }
+          onUpdateInsurance={onUpdateInsurance}
+          onRemoveInsurance={onRemoveInsurance}
+        />
       ) : null}
-
-      {secondLifeState && onSecondLifeChange ? (
-        <div id="housing-second-life" className="housing-second-life-anchor">
-          <SecondLifeRefinePanel
-            title="セカンドライフの住まいを具体化する"
-            summary={getSecondLifeHousingDesignSummary(secondLifeState)}
-            open={refineOpen}
-            onOpenChange={setRefineOpen}
-          >
-            <SecondLifeHousingSection
-              state={secondLifeState}
-              onChange={(patch) =>
-                onSecondLifeChange({
-                  ...secondLifeState,
-                  ...patch,
-                })
-              }
-              onApply={handleRequestApplySecondLifeHousing}
-            />
-          </SecondLifeRefinePanel>
-        </div>
-      ) : null}
-
-      <HousingSecondLifeApplyConfirmModal
-        open={applyConfirm != null}
-        previewLines={applyConfirm?.previewLines ?? []}
-        warnings={applyConfirm?.warnings ?? []}
-        onClose={() => setApplyConfirm(null)}
-        onConfirm={() => {
-          setApplyConfirm(null);
-          commitApplySecondLifeHousing();
-        }}
-      />
     </div>
   );
 }

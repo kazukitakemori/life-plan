@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { formatHousingLoanName } from '../../lib/loanLabels';
+import { resolveLoanMonthlyRepaymentPeriod } from '../../lib/loanPaymentMode';
+import { buildHousingLoanLinkDisplayRows } from '../../lib/pairLoanShare';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import type { FamilyMember } from '../../types/family';
-import type { HousingState } from '../../types/housing';
+import type { HousingState, OwnedProperty } from '../../types/housing';
 import type {
   HousingLinkedLoanView,
   LoanEntry,
   LoanState,
   LoanStructureType,
 } from '../../types/loan';
-import type { OwnedProperty } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
 import { HousingLinkedLoanList } from '../loan/LinkedLoanList';
 import { HousingLoanStructurePicker } from '../loan/HousingLoanStructurePicker';
@@ -25,6 +26,8 @@ interface HousingLoanLinksProps {
   housingState: HousingState;
   vehicleState: VehicleState;
   referenceDate: Date;
+  /** 居住中の物件では、新しく追加したローンを月々返済額入力から開始する */
+  preferMonthlyRepayment?: boolean;
   /** false のとき「ローンを追加」をプレースホルダー表示（取得価格未入力など） */
   addLoanEnabled?: boolean;
   onAddLoan: (
@@ -52,6 +55,7 @@ export function HousingLoanLinks({
   housingState,
   vehicleState,
   referenceDate,
+  preferMonthlyRepayment = false,
   addLoanEnabled = true,
   onAddLoan,
   onUpdateLoan,
@@ -65,6 +69,9 @@ export function HousingLoanLinks({
   const [pickingContractor, setPickingContractor] = useState(false);
   const [pendingStructureType, setPendingStructureType] =
     useState<LoanStructureType | null>(null);
+  const knownLoanIdsRef = useRef(
+    new Set(loans.map((loan) => loan.entry.id)),
+  );
 
   const loanLabel = formatHousingLoanName(propertyName);
   const canAddLoan = addLoanEnabled && contractorMembers.length > 0;
@@ -72,6 +79,49 @@ export function HousingLoanLinks({
 
   const headMember = contractorMembers.find((member) => member.role === 'head');
   const spouseMember = contractorMembers.find((member) => member.role === 'spouse');
+
+  useEffect(() => {
+    const knownLoanIds = knownLoanIdsRef.current;
+    const addedLoanIds = new Set(
+      loans
+        .filter((loan) => !knownLoanIds.has(loan.entry.id))
+        .map((loan) => loan.entry.id),
+    );
+    knownLoanIdsRef.current = new Set(loans.map((loan) => loan.entry.id));
+
+    if (!preferMonthlyRepayment || addedLoanIds.size === 0) return;
+
+    const displayRows = buildHousingLoanLinkDisplayRows(loans);
+    const monthlyEntryIds = new Set(
+      displayRows
+        .filter((row) => addedLoanIds.has(row.editEntryId))
+        .map((row) => row.editEntryId),
+    );
+    const referenceYear = referenceDate.getFullYear();
+    const referenceMonth = referenceDate.getMonth() + 1;
+
+    for (const loan of loans) {
+      if (!monthlyEntryIds.has(loan.entry.id)) continue;
+      if (loan.entry.paymentMode === 'monthlyRepayment') continue;
+      const monthlyEntry: LoanEntry = {
+        ...loan.entry,
+        paymentMode: 'monthlyRepayment',
+        monthlyRepaymentMan: 0,
+        repaymentStartYear: referenceYear,
+        repaymentStartMonth: referenceMonth,
+        settingsConfigured: false,
+      };
+      const period = resolveLoanMonthlyRepaymentPeriod(
+        monthlyEntry,
+        referenceDate,
+      );
+      onUpdateLoan({
+        ...monthlyEntry,
+        repaymentEndYear: period.endYear,
+        repaymentEndMonth: period.endMonth,
+      });
+    }
+  }, [loans, onUpdateLoan, preferMonthlyRepayment, referenceDate]);
 
   const handleAddClick = () => {
     if (!canAddLoan) return;
@@ -120,32 +170,48 @@ export function HousingLoanLinks({
 
   return (
     <div className="housing-owned-loan-links">
-      <HousingLinkedLoanList
-        loans={loans}
-        itemLabel={loanLabel}
-        layout="card"
-        members={members}
-        loanState={loanState}
-        housingState={housingState}
-        vehicleState={vehicleState}
-        referenceDate={referenceDate}
-        housingPropertyName={propertyName}
-        rowClassName="housing-loan-item"
-        itemClassName="housing-owned-loan-card-wrap"
-        nameClassName="housing-loan-item-name"
-        removeClassName="housing-row-remove"
-        onUpdateLoan={onUpdateLoan}
-        onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
-        onPairShareChange={onPairShareChange}
-        onJointDebtShareChange={onJointDebtShareChange}
-        onPropertyFeeChange={onPropertyFeeChange}
-        onRemoveLoan={onRemoveLoan}
-      />
+      <div className="housing-linked-overview">
+        <div className="housing-linked-overview-main">
+          <strong className="housing-linked-overview-title">住宅ローン</strong>
+          <span className="housing-linked-overview-status">
+            {loans.length > 0 ? `${loans.length}件登録済み` : '未登録'}
+          </span>
+        </div>
+        <p className="housing-linked-overview-note">
+          この物件に連動するローンを登録・編集します。
+        </p>
+      </div>
+
+      {loans.length > 0 ? (
+        <HousingLinkedLoanList
+          loans={loans}
+          itemLabel={loanLabel}
+          layout="card"
+          members={members}
+          loanState={loanState}
+          housingState={housingState}
+          vehicleState={vehicleState}
+          referenceDate={referenceDate}
+          housingPropertyName={propertyName}
+          rowClassName="housing-loan-item"
+          itemClassName="housing-owned-loan-card-wrap"
+          nameClassName="housing-loan-item-name"
+          removeClassName="housing-row-remove"
+          onUpdateLoan={onUpdateLoan}
+          onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
+          onPairShareChange={onPairShareChange}
+          onJointDebtShareChange={onJointDebtShareChange}
+          onPropertyFeeChange={onPropertyFeeChange}
+          onRemoveLoan={onRemoveLoan}
+        />
+      ) : (
+        <div className="housing-linked-empty">住宅ローンはまだ登録されていません。</div>
+      )}
 
       {showStructurePicker ? (
         <HousingLoanStructurePicker
           hasSpouse={hasSpouse}
-          confirmLabel="この形態でローンを追加"
+          confirmLabel="この形態で住宅ローンを追加"
           onConfirm={handleStructureConfirm}
           onCancel={handleStructureCancel}
         />
@@ -173,25 +239,36 @@ export function HousingLoanLinks({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          className={[
-            'housing-owned-loan-add-btn',
-            addLoanPlaceholder ? 'housing-owned-loan-add-btn--placeholder' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          onClick={handleAddClick}
-          disabled={!canAddLoan}
-          title={
-            addLoanPlaceholder
-              ? '取得価格（建物・土地）を入力するとローンを追加できます'
-              : undefined
-          }
-          aria-disabled={addLoanPlaceholder || undefined}
-        >
-          ＋ ローンを追加
-        </button>
+        <div className="housing-linked-add-area">
+          <button
+            type="button"
+            className={[
+              'housing-owned-loan-add-btn',
+              addLoanPlaceholder ? 'housing-owned-loan-add-btn--placeholder' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            onClick={handleAddClick}
+            disabled={!canAddLoan}
+            title={
+              addLoanPlaceholder
+                ? '取得価格（建物・土地）を入力すると住宅ローンを追加できます'
+                : undefined
+            }
+            aria-disabled={addLoanPlaceholder || undefined}
+          >
+            ＋ 住宅ローンを追加
+          </button>
+          {!addLoanEnabled ? (
+            <p className="housing-linked-add-note">
+              取得価格（建物・土地）を入力すると追加できます。
+            </p>
+          ) : contractorMembers.length === 0 ? (
+            <p className="housing-linked-add-note">
+              ローン契約者にできる人物を登録すると追加できます。
+            </p>
+          ) : null}
+        </div>
       )}
     </div>
   );

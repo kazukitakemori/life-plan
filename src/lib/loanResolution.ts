@@ -32,6 +32,10 @@ import {
 import { applyPairLinkedFeeInclusionSettings } from "./housingLoanFeeInclusion";
 
 import { formatHousingLoanName, formatVehicleLoanName } from "./loanLabels";
+import {
+  isLoanCurrentBalanceMode,
+  isLoanMonthlyRepaymentMode,
+} from "./loanPaymentMode";
 
 import { getMemberTabLabel } from "./memberDisplay";
 
@@ -186,16 +190,49 @@ export function removeHousingLoanEntry(
 
 /**
  * 物件に紐づく融資契約（CF・借入合計の対象）。
- * ペア・非ペアを問わずリンク済みをすべて含める（1本目だけに落とさない）。
+ * 通常のペアローンは夫婦2本を含める。
+ * 月々返済額の簡易入力に切り替えたペアローンだけは、表示側の1本を
+ * 世帯合計として扱い、もう1本の詳細設定は保存したまま計算対象から休眠させる。
  */
 export function resolveHousingPropertyFinanceLoans(
   linked: LoanEntry[],
 ): LoanEntry[] {
-  return linked;
+  const monthlyPairGroupIds = new Set(
+    linked
+      .filter(
+        (entry) =>
+          isPairLoanEntry(entry) &&
+          entry.pairGroupId &&
+          isLoanMonthlyRepaymentMode(entry),
+      )
+      .map((entry) => entry.pairGroupId as string),
+  );
+  const keptMonthlyPairGroupIds = new Set<string>();
+
+  return linked.filter((entry) => {
+    if (
+      !isPairLoanEntry(entry) ||
+      !entry.pairGroupId ||
+      !monthlyPairGroupIds.has(entry.pairGroupId)
+    ) {
+      return true;
+    }
+
+    if (!isLoanMonthlyRepaymentMode(entry)) {
+      return false;
+    }
+
+    if (keptMonthlyPairGroupIds.has(entry.pairGroupId)) {
+      return false;
+    }
+    keptMonthlyPairGroupIds.add(entry.pairGroupId);
+    return true;
+  });
 }
 
 /**
  * 物件価格から借入額を算出するか、契約の amountMan を使うか。
+ * - 現在残高入力: 取得価格を使わず currentBalanceMan を使う
  * - ペア契約: 常に物件×分担
  * - 非ペアが物件に1本だけ: 物件価格ベース
  * - 非ペアが2本以上、またはペアと併存: 明示の amountMan（二重計上防止）
@@ -204,6 +241,7 @@ export function usesPropertyDerivedLoanAmount(
   entry: LoanEntry,
   financeLoans: LoanEntry[],
 ): boolean {
+  if (isLoanCurrentBalanceMode(entry)) return false;
   if (isPairLoanEntry(entry)) return true;
   const nonPairCount = financeLoans.filter((e) => !isPairLoanEntry(e)).length;
   const pairCount = financeLoans.filter((e) => isPairLoanEntry(e)).length;
@@ -222,6 +260,9 @@ export function calcLoanEntryAmountMan(
   entry: LoanEntry,
   financeLoans?: LoanEntry[],
 ): number {
+  if (isLoanCurrentBalanceMode(entry)) {
+    return Math.max(0, roundLoanAmountMan(entry.currentBalanceMan ?? 0));
+  }
   const all = financeLoans ?? [entry];
   if (!usesPropertyDerivedLoanAmount(entry, all)) {
     return Math.max(0, roundLoanAmountMan(entry.settings.amountMan ?? 0));
@@ -391,7 +432,7 @@ function syncEntryAmountFromAcquisition(
   entry: LoanEntry,
   financeLoans: LoanEntry[],
 ): LoanEntry {
-  // 複数非ペアなど明示額モードでは amountMan を上書きしない
+  // 現在残高入力・複数非ペアなど明示額モードでは amountMan を上書きしない
   if (!usesPropertyDerivedLoanAmount(entry, financeLoans)) {
     return {
       ...entry,

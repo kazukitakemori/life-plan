@@ -1,9 +1,9 @@
+import type { RentalTabView } from '../../lib/housingRentalPayer';
 import type { FamilyMember } from '../../types/family';
 import type { RentalPayerMode, RentalProperty } from '../../types/housing';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
-import type { RentalTabView } from '../../lib/housingRentalPayer';
 import { RentalPropertyCard } from './RentalPropertyCard';
 
 interface RentalPropertySectionProps {
@@ -16,8 +16,6 @@ interface RentalPropertySectionProps {
   housingState: HousingState;
   vehicleState: VehicleState;
   hasSpouse: boolean;
-  highlightTokenById?: ReadonlyMap<string, number>;
-  endedPropertyIds?: ReadonlySet<string>;
   onAdd: () => void;
   onChangeRental: (storageTargetId: string, rental: RentalProperty) => void;
   onRemoveRental: (storageTargetId: string, rentalId: string) => void;
@@ -41,8 +39,6 @@ export function RentalPropertySection({
   housingState,
   vehicleState,
   hasSpouse,
-  highlightTokenById,
-  endedPropertyIds,
   onAdd,
   onChangeRental,
   onRemoveRental,
@@ -53,13 +49,6 @@ export function RentalPropertySection({
 }: RentalPropertySectionProps) {
   return (
     <section className="housing-section" id="housing-rental-section">
-      <div className="housing-section-header">
-        <h3 className="housing-section-title">賃貸物件</h3>
-        <p className="housing-section-desc">
-          家賃・初期費用など。負担者はこのタブで選べます。
-        </p>
-      </div>
-
       <div className="housing-rental-schedules">
         {rentalViews.length === 0 ? (
           <div className="housing-rental-empty">
@@ -86,8 +75,6 @@ export function RentalPropertySection({
                 housingState={housingState}
                 vehicleState={vehicleState}
                 hasSpouse={hasSpouse}
-                highlightToken={highlightTokenById?.get(view.rental.id)}
-                endedBySecondLife={endedPropertyIds?.has(view.rental.id)}
                 onChange={(updated) =>
                   onChangeRental(view.storageTargetId, updated)
                 }

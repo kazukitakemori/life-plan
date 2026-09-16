@@ -1,15 +1,17 @@
 /*
- * Shared accordion-card shell for repeated editable entries.
+ * Shared repeated-entry card shell.
  *
- * Q3 life events and Q4 living schedules share the same closed-card hierarchy,
- * open/close affordance, surface, border, spacing and interaction states.
- * Screen-specific files own only the fields inside the expanded body.
+ * Q3 life events, Q4 living schedules and Q5 housing entries share the same
+ * surface, border, radius, subtle elevation and brand accent. Screen-specific
+ * files own only the fields and internal layout inside each card.
  * Typography follows the canonical tokens in ui-typography-unification.css.
  */
 
 :is(
     .life-event-step .life-event-mobile-accordion-item,
-    .living-step .living-schedule-card
+    .living-step .living-schedule-card,
+    .housing-step .housing-rental-card,
+    .housing-step .housing-owned-card-wrap
   ) {
   display: block;
   width: 100%;
@@ -20,6 +22,103 @@
   border-radius: var(--ui-radius-card);
   background: var(--ui-bg-surface);
   box-shadow: var(--ui-shadow-subtle);
+}
+
+/* Q5 uses the same card chrome while keeping its housing-specific field layout. */
+:is(
+    .housing-step .housing-rental-card-header,
+    .housing-step .housing-owned-card
+  ) {
+  padding: 16px 18px;
+  border-radius: 0;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text);
+}
+
+.housing-step .housing-rental-card:not(.housing-rental-card--expanded)
+  > .housing-rental-card-header {
+  border-bottom: 0;
+}
+
+:is(
+    .housing-step .housing-owned-card-wrap--expanded > .housing-owned-card,
+    .housing-step .housing-rental-card--expanded > .housing-rental-card-header
+  ) {
+  background: var(--ui-bg-subtle);
+}
+
+.ui-entry-type-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  font-size: var(--ui-type-label);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ui-entry-disclosure-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  min-width: max-content;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ui-brand) 42%, var(--ui-border));
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+  box-shadow: var(--ui-shadow-button);
+  font-size: var(--ui-type-label);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    border-color var(--ui-transition-fast),
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast),
+    transform var(--ui-transition-fast);
+}
+
+.ui-entry-disclosure-btn:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-bg-hover);
+}
+
+.ui-entry-disclosure-btn.is-active {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  box-shadow: none;
+}
+
+.ui-entry-disclosure-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+:is(
+    .housing-step .housing-owned-card-actions,
+    .housing-step .housing-rental-card-actions
+  ) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.housing-step .housing-owned-type {
+  min-width: 0;
 }
 
 :is(
@@ -167,10 +266,18 @@
   content: '閉じる  −';
 }
 
+@media (max-width: 980px) and (min-width: 769px) {
+  .housing-step .housing-rental-card-actions {
+    align-self: flex-start;
+  }
+}
+
 @media (max-width: 768px) {
   :is(
       .life-event-step .life-event-mobile-accordion-item,
-      .living-step .living-schedule-card
+      .living-step .living-schedule-card,
+      .housing-step .housing-rental-card,
+      .housing-step .housing-owned-card-wrap
     ) {
     border-top-width: 4px;
   }
@@ -180,6 +287,13 @@
       .living-step .living-schedule-card > .ui-disclosure-summary
     ) {
     min-height: 72px;
+    padding: 14px;
+  }
+
+  :is(
+      .housing-step .housing-rental-card-header,
+      .housing-step .housing-owned-card
+    ) {
     padding: 14px;
   }
 
@@ -196,6 +310,32 @@
       .living-step .ui-disclosure-title
     ) {
     font-size: var(--ui-type-body);
+  }
+
+  .ui-entry-type-badge {
+    min-height: 26px;
+    padding: 3px 9px;
+    font-size: var(--ui-type-helper);
+  }
+
+  :is(
+      .housing-step .housing-owned-card-actions,
+      .housing-step .housing-rental-card-actions
+    ) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  :is(
+      .housing-step .housing-owned-card-actions,
+      .housing-step .housing-rental-card-actions
+    ) > :is(.ui-entry-disclosure-btn, .ui-entry-delete-button) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
   }
 
   .life-event-step .life-event-mobile-summary-type {
@@ -236,6 +376,13 @@
   .living-step .living-schedule-card > .ui-disclosure-summary {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 4px 10px;
+  }
+
+  :is(
+      .housing-step .housing-owned-card-actions,
+      .housing-step .housing-rental-card-actions
+    ) {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   :is(

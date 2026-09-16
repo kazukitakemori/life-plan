@@ -68,8 +68,13 @@ export const LOAN_ADD_CATEGORIES: LoanCategory[] = [
 export const LOAN_PAYMENT_MODE_LABELS: Record<LoanPaymentMode, string> = {
   loanSettings: 'ローン条件を入力',
   monthlyRepayment: '月々の返済額を入力',
+  currentBalance: '現在残高から計算',
 };
 
+/**
+ * 汎用ローン画面では従来の2方式を表示する。
+ * currentBalance は「居住中の住宅ローン」専用なので Q5 側で明示的に追加する。
+ */
 export const LOAN_PAYMENT_MODE_OPTIONS: LoanPaymentMode[] = [
   'loanSettings',
   'monthlyRepayment',

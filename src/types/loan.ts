@@ -6,9 +6,13 @@ export type LoanCategory = 'housing' | 'vehicle' | 'education' | 'free';
 /**
  * ローン返済の入力方法。
  * loanSettings = 借入額・金利・期間などから返済額を試算 /
- * monthlyRepayment = 月々の返済額を直接入力（償却試算はしない）
+ * monthlyRepayment = 月々の返済額を直接入力（償却試算はしない） /
+ * currentBalance = 居住中の住宅ローンを現在残高・現在金利・返済終了から試算
  */
-export type LoanPaymentMode = 'loanSettings' | 'monthlyRepayment';
+export type LoanPaymentMode =
+  | 'loanSettings'
+  | 'monthlyRepayment'
+  | 'currentBalance';
 
 /** 住宅ローンの借入形態（Q9 追加時に選択） */
 export type LoanStructureType =
@@ -38,13 +42,15 @@ export interface LoanEntry {
   paymentMode: LoanPaymentMode;
   /** paymentMode === 'monthlyRepayment' のときの月々返済額（万円） */
   monthlyRepaymentMan: number;
-  /** paymentMode === 'monthlyRepayment' のときの返済開始年（西暦）。0 なら設定値・基準日から解決 */
+  /** paymentMode === 'currentBalance' のときの基準日時点の残高（万円） */
+  currentBalanceMan: number;
+  /** 月額入力・現在残高入力の返済開始年（西暦）。0 なら基準日から解決 */
   repaymentStartYear: number;
-  /** paymentMode === 'monthlyRepayment' のときの返済開始月。0 なら設定値・基準日から解決 */
+  /** 月額入力・現在残高入力の返済開始月。0 なら基準日から解決 */
   repaymentStartMonth: number;
-  /** paymentMode === 'monthlyRepayment' のときの返済終了年（西暦）。0 なら期間から推定 */
+  /** 月額入力・現在残高入力の返済終了年（西暦）。0 なら期間から推定 */
   repaymentEndYear: number;
-  /** paymentMode === 'monthlyRepayment' のときの返済終了月。0 なら期間から推定 */
+  /** 月額入力・現在残高入力の返済終了月。0 なら期間から推定 */
   repaymentEndMonth: number;
   housingLink?: HousingLoanLink;
   vehicleLink?: VehicleLoanLink;
@@ -74,4 +80,3 @@ export interface HousingLinkedLoanView {
 
 /** Q6 乗り物に紐づくローンの表示用 */
 export type VehicleLinkedLoanView = HousingLinkedLoanView;
-

@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  OWNED_PROPERTY_TYPE_ICONS,
   OWNED_PROPERTY_TYPE_LABELS,
   OWNED_PROPERTY_USAGE_LABELS,
 } from '../../lib/housingLabels';
 import type { FamilyMember } from '../../types/family';
 import type { OwnedProperty, OwnedPropertyUsage } from '../../types/housing';
-import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } from '../../types/loan';
+import type {
+  HousingLinkedLoanView,
+  LoanEntry,
+  LoanState,
+  LoanStructureType,
+} from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
 import { OwnedPropertyDetail } from './OwnedPropertyDetail';
-import { housingPropertyElementId } from './HousingSecondLifeApplySummary';
-import { useHousingApplyFlash } from './useHousingApplyFlash';
 
 interface OwnedPropertyCardProps {
   property: OwnedProperty;
@@ -30,10 +32,6 @@ interface OwnedPropertyCardProps {
   viewRole?: 'owner' | 'linked';
   canRemove: boolean;
   canAddLoan?: boolean;
-  /** セカンドライフ反映で追加されたときのフラッシュ用トークン */
-  highlightToken?: number;
-  /** セカンドライフ反映で終了された */
-  endedBySecondLife?: boolean;
   onChange: (property: OwnedProperty) => void;
   onRemove: () => void;
   onAddLoan: (
@@ -74,8 +72,6 @@ export function OwnedPropertyCard({
   viewRole = 'owner',
   canRemove,
   canAddLoan = true,
-  highlightToken,
-  endedBySecondLife = false,
   onChange,
   onRemove,
   onAddLoan,
@@ -89,83 +85,78 @@ export function OwnedPropertyCard({
   onUpdateInsurance,
   onRemoveInsurance,
 }: OwnedPropertyCardProps) {
-  const flashing = useHousingApplyFlash(highlightToken);
-  const [expanded, setExpanded] = useState(highlightToken != null);
-  const icon = OWNED_PROPERTY_TYPE_ICONS[property.type];
+  const [expanded, setExpanded] = useState(false);
   const typeLabel = OWNED_PROPERTY_TYPE_LABELS[property.type];
-
-  useEffect(() => {
-    if (highlightToken != null) {
-      setExpanded(true);
-    }
-  }, [highlightToken]);
 
   return (
     <div
-      id={housingPropertyElementId('owned', property.id)}
       className={[
         'housing-owned-card-wrap',
         expanded ? 'housing-owned-card-wrap--expanded' : '',
-        flashing ? 'is-flash' : '',
-        endedBySecondLife ? 'is-ended-by-second-life' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {endedBySecondLife ? (
-        <div className="housing-second-life-ended-banner">
-          セカンドライフ反映で終了
-        </div>
-      ) : null}
       <div className="housing-owned-card">
-        <span className="housing-owned-icon" aria-hidden>
-          {icon}
-        </span>
-        <span className="housing-owned-type">{typeLabel}</span>
-        {viewRole === 'linked' ? (
-          <span className="housing-owned-linked-badge">ローン契約に連動</span>
-        ) : null}
-        <input
-          type="text"
-          className="housing-owned-name-input"
-          value={property.name}
-          onChange={(e) => onChange({ ...property, name: e.target.value })}
-        />
-        <select
-          className="select-input select-input--compact housing-owned-usage-select"
-          value={property.usage}
-          onChange={(e) =>
-            onChange({
-              ...property,
-              usage: e.target.value as OwnedPropertyUsage,
-            })
-          }
-          aria-label="入居状況"
-        >
-          {USAGE_OPTIONS.map((usage) => (
-            <option key={usage} value={usage}>
-              {OWNED_PROPERTY_USAGE_LABELS[usage]}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className={`housing-owned-open-btn${expanded ? ' housing-owned-open-btn--active' : ''}`}
-          onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
-        >
-          <span aria-hidden>{expanded ? '∧' : '›'}</span>
-          {expanded ? '閉じる' : '開く'}
-        </button>
-        <button
-          type="button"
-          className="housing-row-remove"
-          onClick={onRemove}
-          disabled={!canRemove}
-          aria-label="所有物件を削除"
-        >
-          −
-        </button>
+        <div className="housing-owned-card-identity">
+          <span className="ui-entry-type-badge housing-owned-type">{typeLabel}</span>
+          {viewRole === 'linked' ? (
+            <span className="housing-owned-linked-badge">ローン契約に連動</span>
+          ) : null}
+        </div>
+
+        <label className="housing-owned-card-field housing-owned-card-name-field">
+          <span className="housing-owned-card-field-label">物件名</span>
+          <input
+            type="text"
+            className="housing-owned-name-input"
+            value={property.name}
+            onChange={(e) => onChange({ ...property, name: e.target.value })}
+          />
+        </label>
+
+        <label className="housing-owned-card-field housing-owned-card-usage-field">
+          <span className="housing-owned-card-field-label">入居状況</span>
+          <select
+            className="select-input select-input--compact housing-owned-usage-select"
+            value={property.usage}
+            onChange={(e) =>
+              onChange({
+                ...property,
+                usage: e.target.value as OwnedPropertyUsage,
+              })
+            }
+          >
+            {USAGE_OPTIONS.map((usage) => (
+              <option key={usage} value={usage}>
+                {OWNED_PROPERTY_USAGE_LABELS[usage]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="housing-owned-card-actions">
+          <button
+            type="button"
+            className={`ui-entry-disclosure-btn${expanded ? ' is-active' : ''}`}
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+          >
+            <span aria-hidden>{expanded ? '−' : '＋'}</span>
+            {expanded ? '詳細を閉じる' : '詳細を入力'}
+          </button>
+
+          {canRemove ? (
+            <button
+              type="button"
+              className="ui-entry-delete-button housing-owned-remove-btn"
+              onClick={onRemove}
+              aria-label="所有物件を削除"
+            >
+              削除
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {expanded && (
