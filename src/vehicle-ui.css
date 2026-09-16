@@ -1,6 +1,6 @@
 /* Q6 vehicle: master-detail desktop layout.
- * The vehicle list and the selected vehicle editor are separated so users
- * can focus on one vehicle at a time. Data and calculation logic are unchanged.
+ * The selected vehicle editor stays primary on the left, while the vehicle list
+ * works as secondary navigation on the right. Data and calculation logic are unchanged.
  */
 
 .vehicle-step {
@@ -9,18 +9,18 @@
   margin-left: auto;
 }
 
-.vehicle-step .vehicle-add-section {
-  margin-bottom: 18px;
-}
-
 .vehicle-step .vehicle-empty-state {
   margin-top: 14px;
+}
+
+.vehicle-empty-stack .vehicle-add-section {
+  margin-top: 16px;
 }
 
 @media (min-width: 769px) {
   .vehicle-workspace {
     display: grid;
-    grid-template-columns: 224px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 224px;
     gap: 18px;
     align-items: start;
   }
@@ -130,6 +130,24 @@
     color: var(--ui-text-muted, #65726b);
     font-size: 20px;
     line-height: 1;
+  }
+
+  .vehicle-master-add {
+    padding: 8px;
+    border-top: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-master-add .vehicle-add-section {
+    margin: 0;
+  }
+
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vehicle-mobile-add {
+    display: none;
   }
 
   .vehicle-detail-panel {
@@ -361,6 +379,10 @@
     flex: 0 0 210px;
   }
 
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .vehicle-step .life-event-table-row > .life-event-table-cell,
   .vehicle-step .vehicle-table-group {
     grid-template-columns: 140px minmax(0, 1fr);
@@ -374,5 +396,10 @@
 
   .vehicle-detail-entry {
     display: block;
+  }
+
+  .vehicle-mobile-add {
+    display: block;
+    margin-top: 18px;
   }
 }
