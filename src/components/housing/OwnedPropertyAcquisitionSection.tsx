@@ -94,7 +94,7 @@ export function OwnedPropertyAcquisitionSection({
             <div className="housing-owned-acquisition-group-note">
               <button
                 type="button"
-                className="ui-btn ui-btn--ghost"
+                className="ui-btn ui-btn--secondary"
                 disabled={!canFetchAcquisitionFees}
                 onClick={onFetchReference}
               >
@@ -165,7 +165,7 @@ export function OwnedPropertyAcquisitionSection({
               </p>
               <button
                 type="button"
-                className="ui-btn ui-btn--ghost"
+                className="ui-btn ui-btn--secondary"
                 disabled={!canFetchAcquisitionFees}
                 onClick={onOpenTaxDetail}
               >
