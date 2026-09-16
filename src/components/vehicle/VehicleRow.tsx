@@ -18,9 +18,7 @@ import {
   resolveSimulationStartAgeMonth,
 } from '../../lib/periodTimingBounds';
 import { getVehicleAgeOptions } from '../../lib/vehicleDefaults';
-import {
-  type DuplicateVehicleOptions,
-} from '../../lib/vehicleDuplicate';
+import { type DuplicateVehicleOptions } from '../../lib/vehicleDuplicate';
 import {
   buildInspectionYearOptions,
   getInspectionPeriodHint,
@@ -54,7 +52,12 @@ import type { FamilyMember } from '../../types/family';
 import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
-import type { VehicleEntry, VehiclePaymentMode, VehicleReplacementCondition, VehicleState } from '../../types/vehicle';
+import type {
+  VehicleEntry,
+  VehiclePaymentMode,
+  VehicleReplacementCondition,
+  VehicleState,
+} from '../../types/vehicle';
 import { VehicleInsuranceLinks } from './VehicleInsuranceLinks';
 import { VehicleLoanLinks } from './VehicleLoanLinks';
 
@@ -91,6 +94,12 @@ const OWNED_VEHICLE_PAYMENT_MODES: VehiclePaymentMode[] = [
   'monthlyRepayment',
   'alreadyOwned',
 ];
+
+function parseOptionalAmount(value: string): number | undefined {
+  if (value.trim() === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 export function VehicleRow({
   entry,
@@ -157,10 +166,7 @@ export function VehicleRow({
   );
   const inspectionYearOptions = (() => {
     const options = buildInspectionYearOptions(startCalendarYear);
-    if (
-      nextInspection &&
-      !options.includes(nextInspection.year)
-    ) {
+    if (nextInspection && !options.includes(nextInspection.year)) {
       return [...options, nextInspection.year].sort((a, b) => a - b);
     }
     return options;
@@ -200,10 +206,10 @@ export function VehicleRow({
   const isPurchaseAmount = entry.paymentMode === 'purchaseAmount';
   const isCash = entry.paymentMode === 'cash';
   const showsPurchaseAmountInput = isPurchaseAmount || isCash;
+  const purchaseAmountMan = entry.purchaseAmountMan ?? 0;
   const purchaseLoanMissing =
-    isPurchaseAmount &&
-    (entry.purchaseAmountMan <= 0 || linkedLoans.length === 0);
-  const cashPurchaseMissing = isCash && entry.purchaseAmountMan <= 0;
+    isPurchaseAmount && (purchaseAmountMan <= 0 || linkedLoans.length === 0);
+  const cashPurchaseMissing = isCash && purchaseAmountMan <= 0;
 
   const repaymentEndYear = entry.repaymentEndYear || startCalendarYear + 5;
   const repaymentEndMonth = entry.repaymentEndMonth || entry.startMonth;
@@ -246,7 +252,11 @@ export function VehicleRow({
     ) {
       return;
     }
-    onChange({ ...entry, paymentMode: 'alreadyOwned', purchaseAmountMan: 0 });
+    onChange({
+      ...entry,
+      paymentMode: 'alreadyOwned',
+      purchaseAmountMan: undefined,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOwnedVehicle, entry.paymentMode]);
 
@@ -263,7 +273,11 @@ export function VehicleRow({
     ) {
       return next;
     }
-    return { ...next, paymentMode: 'alreadyOwned', purchaseAmountMan: 0 };
+    return {
+      ...next,
+      paymentMode: 'alreadyOwned',
+      purchaseAmountMan: undefined,
+    };
   };
 
   return (
@@ -276,501 +290,401 @@ export function VehicleRow({
         if (fromId) onDropOn(fromId);
       }}
     >
-    <div
-      className={`life-event-table-row${isDragging ? ' life-event-table-row--dragging' : ''}`}
-    >
-      <div className="life-event-table-cell life-event-col-drag">
-        <button
-          type="button"
-          className="life-event-drag-handle"
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('text/plain', entry.id);
-            onDragStart();
-          }}
-          onDragEnd={onDragEnd}
-          aria-label="並べ替え"
-        >
-          ⠿
-        </button>
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-summary">
-        <input
-          type="text"
-          className="life-event-text-input"
-          value={entry.label}
-          placeholder="名称"
-          onChange={(e) => onChange({ ...entry, label: e.target.value })}
-        />
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-type">
-        <div className="vehicle-type-cell">
-        {entry.type === 'car' && resolvedKind ? (
-          <select
-            className="select-input life-event-select"
-            value={resolvedKind}
-            onChange={(e) => {
-              const condition = parseVehicleCondition(e.target.value);
-              onChange(
-                withOwnedPaymentGuard(
-                  applyAutoInspection({
-                    ...entry,
-                    kind: condition,
-                    condition,
-                  }),
-                ),
-              );
+      <div
+        className={`life-event-table-row${isDragging ? ' life-event-table-row--dragging' : ''}`}
+      >
+        <div className="life-event-table-cell life-event-col-drag">
+          <button
+            type="button"
+            className="life-event-drag-handle"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/plain', entry.id);
+              onDragStart();
             }}
+            onDragEnd={onDragEnd}
+            aria-label="並べ替え"
           >
-            {CAR_VEHICLE_KIND_OPTIONS.map((kind) => (
-              <option key={kind} value={kind}>
-                {CAR_VEHICLE_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </select>
-        ) : entry.type === 'motorcycle' && resolvedKind ? (
-          <div className="vehicle-type-stack">
-            <select
-              className="select-input life-event-select"
-              value={resolvedCondition}
-              onChange={(e) =>
-                onChange(
-                  withOwnedPaymentGuard(
-                    applyAutoInspection({
-                      ...entry,
-                      condition: parseVehicleCondition(e.target.value),
-                    }),
-                  ),
-                )
-              }
-              aria-label="新車・中古・既に保有"
-            >
-              {VEHICLE_CONDITION_OPTIONS.map((condition) => (
-                <option key={condition} value={condition}>
-                  {VEHICLE_CONDITION_LABELS[condition]}
-                </option>
-              ))}
-            </select>
-            <select
-              className="select-input life-event-select"
-              value={resolvedKind}
-              onChange={(e) =>
-                onChange(
-                  applyAutoInspection({
-                    ...entry,
-                    kind: resolveVehicleKind(
-                      entry.type,
-                      e.target.value as VehicleEntry['kind'],
-                    ),
-                  }),
-                )
-              }
-              aria-label="排気量区分"
-            >
-              {MOTORCYCLE_VEHICLE_KIND_OPTIONS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {MOTORCYCLE_VEHICLE_KIND_LABELS[kind]}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <select
-            className="select-input life-event-select"
-            value={resolvedCondition === 'owned' ? 'owned' : 'new'}
-            onChange={(e) =>
-              onChange(
-                withOwnedPaymentGuard(
-                  applyAutoInspection({
-                    ...entry,
-                    condition: parseVehicleCondition(e.target.value),
-                  }),
-                ),
-              )
-            }
-            aria-label="購入区分"
-          >
-            <option value="new">
-              {entry.type === 'bicycle' ? '自転車' : 'その他'}
-            </option>
-            <option value="owned">既に保有</option>
-          </select>
-        )}
+            ⠿
+          </button>
         </div>
-      </div>
 
-      <div className="life-event-table-cell vehicle-col-period">
-        <div className="life-event-period-block">
-          <div className="life-event-period-side">
-            <div className="life-event-period-fields">
-              <select
-                className="select-input select-input--compact select-input--schedule"
-                value={entry.startAge}
-                onChange={(e) =>
-                  commitVehicle({
-                    ...entry,
-                    startAge: Number(e.target.value),
-                  })
-                }
-              >
-                {startAgeOptions.map((age) => (
-                  <option key={age} value={age}>
-                    {age}才
-                  </option>
-                ))}
-              </select>
-              <select
-                className="select-input select-input--compact select-input--schedule"
-                value={entry.startMonth}
-                onChange={(e) =>
-                  commitVehicle({
-                    ...entry,
-                    startMonth: Number(e.target.value),
-                  })
-                }
-              >
-                {startMonthOptions.map((month) => (
-                  <option key={month} value={month}>
-                    {month}月
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="period-start-label">
-              {formatYearAtAgeLabel(
-                entry.startAge,
-                entry.startMonth,
-                birthYear,
-                member.birthMonth,
-              )}
-            </p>
-          </div>
+        <div className="life-event-table-cell vehicle-col-summary">
+          <input
+            type="text"
+            className="life-event-text-input"
+            value={entry.label}
+            placeholder="名称"
+            onChange={(e) => onChange({ ...entry, label: e.target.value })}
+          />
+        </div>
 
-          <span className="life-event-period-arrow" aria-hidden>
-            →
-          </span>
-
-          <div className="life-event-period-side">
-            <div className="life-event-period-fields">
+        <div className="life-event-table-cell vehicle-col-type">
+          <div className="vehicle-type-cell">
+            {entry.type === 'car' && resolvedKind ? (
               <select
-                className="select-input select-input--compact select-input--schedule"
-                value={entry.endMode === 'lifetime' ? 'lifetime' : String(entry.endAge)}
+                className="select-input life-event-select"
+                value={resolvedKind}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === 'lifetime') {
-                    onChange({ ...entry, endMode: 'lifetime' });
-                    return;
-                  }
-
-                  const selectedEndAge = Number(value);
-                  const resolvedEndAge =
-                    entry.endMode === 'lifetime'
-                      ? Math.max(entry.startAge + 1, selectedEndAge)
-                      : selectedEndAge;
-                  onChange({
-                    ...entry,
-                    endMode: 'until',
-                    endAge: resolvedEndAge,
-                  });
+                  const condition = parseVehicleCondition(e.target.value);
+                  onChange(
+                    withOwnedPaymentGuard(
+                      applyAutoInspection({
+                        ...entry,
+                        kind: condition,
+                        condition,
+                      }),
+                    ),
+                  );
                 }}
               >
-                <option value="lifetime">生涯</option>
-                {END_AGES.filter((age) => age >= entry.startAge).map((age) => (
-                  <option key={age} value={age}>
-                    {age}才
+                {CAR_VEHICLE_KIND_OPTIONS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {CAR_VEHICLE_KIND_LABELS[kind]}
                   </option>
                 ))}
               </select>
-
-              {entry.endMode === 'until' && (
-                <>
-                  <select
-                    className="select-input select-input--compact select-input--schedule"
-                    value={entry.endMonth}
-                    onChange={(e) =>
-                      onChange({
+            ) : entry.type === 'motorcycle' && resolvedKind ? (
+              <div className="vehicle-type-stack">
+                <select
+                  className="select-input life-event-select"
+                  value={resolvedCondition}
+                  onChange={(e) =>
+                    onChange(
+                      withOwnedPaymentGuard(
+                        applyAutoInspection({
+                          ...entry,
+                          condition: parseVehicleCondition(e.target.value),
+                        }),
+                      ),
+                    )
+                  }
+                  aria-label="新車・中古・既に保有"
+                >
+                  {VEHICLE_CONDITION_OPTIONS.map((condition) => (
+                    <option key={condition} value={condition}>
+                      {VEHICLE_CONDITION_LABELS[condition]}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="select-input life-event-select"
+                  value={resolvedKind}
+                  onChange={(e) =>
+                    onChange(
+                      applyAutoInspection({
                         ...entry,
-                        endMonth: Number(e.target.value),
-                      })
-                    }
-                  >
-                    {MONTHS.map((month) => (
-                      <option key={month} value={month}>
-                        {month}月
-                      </option>
-                    ))}
-                  </select>
-                  <span className="period-until-suffix">まで</span>
-                </>
-              )}
-            </div>
-            {entry.endMode === 'until' ? (
-              <p className="period-end-label">
-                {formatEndYearLabel(
-                  entry.endAge,
-                  entry.endMonth,
+                        kind: resolveVehicleKind(
+                          entry.type,
+                          e.target.value as VehicleEntry['kind'],
+                        ),
+                      }),
+                    )
+                  }
+                  aria-label="排気量区分"
+                >
+                  {MOTORCYCLE_VEHICLE_KIND_OPTIONS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {MOTORCYCLE_VEHICLE_KIND_LABELS[kind]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <select
+                className="select-input life-event-select"
+                value={resolvedCondition === 'owned' ? 'owned' : 'new'}
+                onChange={(e) =>
+                  onChange(
+                    withOwnedPaymentGuard(
+                      applyAutoInspection({
+                        ...entry,
+                        condition: parseVehicleCondition(e.target.value),
+                      }),
+                    ),
+                  )
+                }
+                aria-label="購入区分"
+              >
+                <option value="new">
+                  {entry.type === 'bicycle' ? '自転車' : 'その他'}
+                </option>
+                <option value="owned">既に保有</option>
+              </select>
+            )}
+          </div>
+        </div>
+
+        <div className="life-event-table-cell vehicle-col-period">
+          <div className="life-event-period-block">
+            <div className="life-event-period-side">
+              <div className="life-event-period-fields">
+                <select
+                  className="select-input select-input--compact select-input--schedule"
+                  value={entry.startAge}
+                  onChange={(e) =>
+                    commitVehicle({
+                      ...entry,
+                      startAge: Number(e.target.value),
+                    })
+                  }
+                >
+                  {startAgeOptions.map((age) => (
+                    <option key={age} value={age}>
+                      {age}才
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="select-input select-input--compact select-input--schedule"
+                  value={entry.startMonth}
+                  onChange={(e) =>
+                    commitVehicle({
+                      ...entry,
+                      startMonth: Number(e.target.value),
+                    })
+                  }
+                >
+                  {startMonthOptions.map((month) => (
+                    <option key={month} value={month}>
+                      {month}月
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="period-start-label">
+                {formatYearAtAgeLabel(
+                  entry.startAge,
+                  entry.startMonth,
                   birthYear,
                   member.birthMonth,
                 )}
               </p>
-            ) : (
-              <p className="period-end-label">
-                {formatVehicleUsagePeriodHint(entry)}
-              </p>
-            )}
+            </div>
+
+            <span className="life-event-period-arrow" aria-hidden>
+              →
+            </span>
+
+            <div className="life-event-period-side">
+              <div className="life-event-period-fields">
+                <select
+                  className="select-input select-input--compact select-input--schedule"
+                  value={
+                    entry.endMode === 'lifetime'
+                      ? 'lifetime'
+                      : String(entry.endAge)
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'lifetime') {
+                      onChange({ ...entry, endMode: 'lifetime' });
+                      return;
+                    }
+
+                    const selectedEndAge = Number(value);
+                    const resolvedEndAge =
+                      entry.endMode === 'lifetime'
+                        ? Math.max(entry.startAge + 1, selectedEndAge)
+                        : selectedEndAge;
+                    onChange({
+                      ...entry,
+                      endMode: 'until',
+                      endAge: resolvedEndAge,
+                    });
+                  }}
+                >
+                  <option value="lifetime">生涯</option>
+                  {END_AGES.filter((age) => age >= entry.startAge).map((age) => (
+                    <option key={age} value={age}>
+                      {age}才
+                    </option>
+                  ))}
+                </select>
+
+                {entry.endMode === 'until' && (
+                  <>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={entry.endMonth}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          endMonth: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={month} value={month}>
+                          {month}月
+                        </option>
+                      ))}
+                    </select>
+                    <span className="period-until-suffix">まで</span>
+                  </>
+                )}
+              </div>
+              {entry.endMode === 'until' ? (
+                <p className="period-end-label">
+                  {formatEndYearLabel(
+                    entry.endAge,
+                    entry.endMonth,
+                    birthYear,
+                    member.birthMonth,
+                  )}
+                </p>
+              ) : (
+                <p className="period-end-label">
+                  {formatVehicleUsagePeriodHint(entry)}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="life-event-table-cell vehicle-col-purchase">
-        <div className="vehicle-owned-payment-cell">
-          <div
-            className="vehicle-owned-payment-toggle"
-            role="radiogroup"
-            aria-label="支払い方法の入力方法"
-          >
-            {paymentModeOptions.map((mode) => (
-              <label
-                key={mode}
-                className={[
-                  'vehicle-owned-payment-toggle-option',
-                  entry.paymentMode === mode
-                    ? 'vehicle-owned-payment-toggle-option--active'
-                    : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <input
-                  type="radio"
-                  name={`vehicle-payment-mode-${entry.id}`}
-                  checked={entry.paymentMode === mode}
-                  onChange={() => handlePaymentModeChange(mode)}
-                />
-                <span>{VEHICLE_PAYMENT_MODE_LABELS[mode]}</span>
-              </label>
-            ))}
-          </div>
-          {isMonthlyRepayment ? (
-            <div className="vehicle-repayment-inputs">
-              <div className="life-event-amount-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={entry.monthlyRepaymentMan}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      monthlyRepaymentMan: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円/月</span>
-              </div>
-              <div className="vehicle-repayment-term-reveal">
-                <span className="vehicle-monthly-label">返済期間</span>
-                <div className="life-event-period-fields">
-                  <select
-                    className="select-input select-input--compact select-input--schedule"
-                    value={repaymentEndYear}
-                    onChange={(e) =>
-                      onChange({
-                        ...entry,
-                        repaymentEndYear: Number(e.target.value),
-                        repaymentEndMonth: repaymentEndMonth,
-                      })
-                    }
-                    aria-label="返済終了年"
-                  >
-                    {REPAYMENT_END_YEAR_OPTIONS.map((year) => (
-                      <option key={year} value={year}>
-                        {year}年
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="select-input select-input--compact select-input--schedule"
-                    value={repaymentEndMonth}
-                    onChange={(e) =>
-                      onChange({
-                        ...entry,
-                        repaymentEndYear: repaymentEndYear,
-                        repaymentEndMonth: Number(e.target.value),
-                      })
-                    }
-                    aria-label="返済終了月"
-                  >
-                    {MONTHS.map((month) => (
-                      <option key={month} value={month}>
-                        {month}月
-                      </option>
-                    ))}
-                  </select>
-                  <span className="amount-unit">まで</span>
-                </div>
-              </div>
+        <div className="life-event-table-cell vehicle-col-purchase">
+          <div className="vehicle-owned-payment-cell">
+            <div
+              className="vehicle-owned-payment-toggle"
+              role="radiogroup"
+              aria-label="支払い方法の入力方法"
+            >
+              {paymentModeOptions.map((mode) => (
+                <label
+                  key={mode}
+                  className={[
+                    'vehicle-owned-payment-toggle-option',
+                    entry.paymentMode === mode
+                      ? 'vehicle-owned-payment-toggle-option--active'
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <input
+                    type="radio"
+                    name={`vehicle-payment-mode-${entry.id}`}
+                    checked={entry.paymentMode === mode}
+                    onChange={() => handlePaymentModeChange(mode)}
+                  />
+                  <span>{VEHICLE_PAYMENT_MODE_LABELS[mode]}</span>
+                </label>
+              ))}
             </div>
-          ) : isAlreadyOwned ? (
-            <p className="vehicle-already-owned-note">
-              購入費・ローン返済は計上しません
-            </p>
-          ) : showsPurchaseAmountInput ? (
-            <>
-              <div className="life-event-amount-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={entry.purchaseAmountMan}
-                  min={0}
-                  step={1}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      purchaseAmountMan: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円</span>
-              </div>
-              {purchaseLoanMissing ? (
-                <p className="vehicle-payment-error" role="alert">
-                  購入費の入力とローンの追加の両方が必要です
-                </p>
-              ) : null}
-              {cashPurchaseMissing ? (
-                <p className="vehicle-payment-error" role="alert">
-                  購入費を入力してください
-                </p>
-              ) : null}
-            </>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-monthly">
-        {vehicleTypeHasKind(entry.type) ? (
-          <div className="vehicle-monthly-stack">
-            <div className="vehicle-monthly-item">
-              <span className="vehicle-monthly-label">ガソリン代</span>
-              <div className="life-event-amount-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={getVehicleGasolineCostMan(entry)}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      gasolineCostMan: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円</span>
-              </div>
-            </div>
-            <div className="vehicle-monthly-item">
-              <span className="vehicle-monthly-label">駐車場代</span>
-              <div className="life-event-amount-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={getVehicleParkingCostMan(entry)}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      parkingCostMan: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="life-event-amount-field">
-            <input
-              type="number"
-              className="amount-input"
-              value={entry.monthlyCostMan}
-              min={0}
-              step={0.1}
-              onChange={(e) =>
-                onChange({
-                  ...entry,
-                  monthlyCostMan: Number(e.target.value) || 0,
-                })
-              }
-            />
-            <span className="amount-unit">万円</span>
-          </div>
-        )}
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-annual">
-        <div className="vehicle-annual-stack">
-          <div className="vehicle-monthly-item">
-            {vehicleTypeHasKind(entry.type) && (
-              <span className="vehicle-monthly-label">税金・メンテ</span>
-            )}
-            <div className="vehicle-annual-cost-row">
-              <div className="life-event-amount-field">
-                <input
-                  type="number"
-                  className="amount-input"
-                  value={entry.annualCostMan}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      annualCostMan: Number(e.target.value) || 0,
-                    })
-                  }
-                />
-                <span className="amount-unit">万円</span>
-              </div>
-              <select
-                className="select-input select-input--compact select-input--schedule vehicle-annual-cycle-select"
-                value={annualCostCycleYears}
-                onChange={(e) =>
-                  onChange({
-                    ...entry,
-                    annualCostCycleYears: Number(e.target.value),
-                  })
-                }
-                aria-label="税金・メンテナンス費の周期"
-              >
-                {ANNUAL_COST_CYCLE_OPTIONS.map((years) => (
-                  <option key={years} value={years}>
-                    {formatAnnualCostCycleLabel(years)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {requiresInspection && nextInspection ? (
-            <>
-              <div className="vehicle-monthly-item">
-                <span className="vehicle-monthly-label">車検費用</span>
+            {isMonthlyRepayment ? (
+              <div className="vehicle-repayment-inputs">
                 <div className="life-event-amount-field">
                   <input
                     type="number"
                     className="amount-input"
-                    value={entry.inspectionCostMan ?? 0}
+                    value={entry.monthlyRepaymentMan ?? ''}
                     min={0}
                     step={0.1}
                     onChange={(e) =>
                       onChange({
                         ...entry,
-                        inspectionCostMan: Number(e.target.value) || 0,
+                        monthlyRepaymentMan: parseOptionalAmount(e.target.value),
+                      })
+                    }
+                  />
+                  <span className="amount-unit">万円/月</span>
+                </div>
+                <div className="vehicle-repayment-term-reveal">
+                  <span className="vehicle-monthly-label">返済期間</span>
+                  <div className="life-event-period-fields">
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={repaymentEndYear}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          repaymentEndYear: Number(e.target.value),
+                          repaymentEndMonth,
+                        })
+                      }
+                      aria-label="返済終了年"
+                    >
+                      {REPAYMENT_END_YEAR_OPTIONS.map((year) => (
+                        <option key={year} value={year}>
+                          {year}年
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={repaymentEndMonth}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          repaymentEndYear,
+                          repaymentEndMonth: Number(e.target.value),
+                        })
+                      }
+                      aria-label="返済終了月"
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={month} value={month}>
+                          {month}月
+                        </option>
+                      ))}
+                    </select>
+                    <span className="amount-unit">まで</span>
+                  </div>
+                </div>
+              </div>
+            ) : isAlreadyOwned ? (
+              <p className="vehicle-already-owned-note">
+                購入費・ローン返済は計上しません
+              </p>
+            ) : showsPurchaseAmountInput ? (
+              <>
+                <div className="life-event-amount-field">
+                  <input
+                    type="number"
+                    className="amount-input"
+                    value={entry.purchaseAmountMan ?? ''}
+                    min={0}
+                    step={1}
+                    onChange={(e) =>
+                      onChange({
+                        ...entry,
+                        purchaseAmountMan: parseOptionalAmount(e.target.value),
+                      })
+                    }
+                  />
+                  <span className="amount-unit">万円</span>
+                </div>
+                {purchaseLoanMissing ? (
+                  <p className="vehicle-payment-error" role="alert">
+                    購入費の入力とローンの追加の両方が必要です
+                  </p>
+                ) : null}
+                {cashPurchaseMissing ? (
+                  <p className="vehicle-payment-error" role="alert">
+                    購入費を入力してください
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="life-event-table-cell vehicle-col-monthly">
+          {vehicleTypeHasKind(entry.type) ? (
+            <div className="vehicle-monthly-stack">
+              <div className="vehicle-monthly-item">
+                <span className="vehicle-monthly-label">ガソリン代</span>
+                <div className="life-event-amount-field">
+                  <input
+                    type="number"
+                    className="amount-input"
+                    value={getVehicleGasolineCostMan(entry) ?? ''}
+                    min={0}
+                    step={0.1}
+                    onChange={(e) =>
+                      onChange({
+                        ...entry,
+                        gasolineCostMan: parseOptionalAmount(e.target.value),
                       })
                     }
                   />
@@ -778,140 +692,242 @@ export function VehicleRow({
                 </div>
               </div>
               <div className="vehicle-monthly-item">
-                <span className="vehicle-monthly-label">次の車検（いまの車）</span>
-                <div className="life-event-period-fields">
-                  <select
-                    className="select-input select-input--compact select-input--schedule"
-                    value={nextInspection.year}
+                <span className="vehicle-monthly-label">駐車場代</span>
+                <div className="life-event-amount-field">
+                  <input
+                    type="number"
+                    className="amount-input"
+                    value={getVehicleParkingCostMan(entry) ?? ''}
+                    min={0}
+                    step={0.1}
                     onChange={(e) =>
                       onChange({
                         ...entry,
-                        nextInspectionYear: Number(e.target.value),
+                        parkingCostMan: parseOptionalAmount(e.target.value),
                       })
                     }
-                  >
-                    {inspectionYearOptions.map((year) => (
-                      <option key={year} value={year}>
-                        {year}年
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="select-input select-input--compact select-input--schedule"
-                    value={nextInspection.month}
-                    onChange={(e) =>
-                      onChange({
-                        ...entry,
-                        nextInspectionMonth: Number(e.target.value),
-                      })
-                    }
-                  >
-                    {MONTHS.map((month) => (
-                      <option key={month} value={month}>
-                        {month}月
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <span className="amount-unit">万円</span>
                 </div>
-                <p className="period-start-label">
-                  {toJapaneseEra(nextInspection.year, nextInspection.month)}
-                </p>
-                {inspectionHint && (
-                  <p className="vehicle-inspection-hint">{inspectionHint}</p>
-                )}
               </div>
-            </>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="life-event-table-cell vehicle-col-replace">
-        <div className="vehicle-replace-cell">
-          <div className="vehicle-duplicate-controls">
-            <select
-              className="select-input life-event-select"
-              value={
-                needsReplacementCondition
-                  ? duplicateReplacement === 'yes'
-                    ? 'none'
-                    : duplicateReplacement
-                  : duplicateReplacement === 'new' ||
-                      duplicateReplacement === 'used'
-                    ? 'yes'
-                    : duplicateReplacement
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === 'none') {
-                  setDuplicateReplacement('none');
-                  return;
+            </div>
+          ) : (
+            <div className="life-event-amount-field">
+              <input
+                type="number"
+                className="amount-input"
+                value={entry.monthlyCostMan ?? ''}
+                min={0}
+                step={0.1}
+                onChange={(e) =>
+                  onChange({
+                    ...entry,
+                    monthlyCostMan: parseOptionalAmount(e.target.value),
+                  })
                 }
-                if (!needsReplacementCondition) {
-                  setDuplicateReplacement('yes');
-                  return;
-                }
-                setDuplicateReplacement(
-                  value === 'used' ? 'used' : 'new',
-                );
-              }}
-              aria-label="買い替え"
-              disabled={!onDuplicate}
-            >
-              <option value="none">なし</option>
-              {needsReplacementCondition ? (
-                VEHICLE_REPLACEMENT_CONDITION_OPTIONS.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {VEHICLE_REPLACEMENT_CONDITION_LABELS[condition]}
-                  </option>
-                ))
-              ) : (
-                <option value="yes">あり</option>
-              )}
-            </select>
-            {duplicateReplacement !== 'none' && (
-              <button
-                type="button"
-                className="life-event-copy-btn vehicle-duplicate-btn"
-                onClick={() => {
-                  if (!onDuplicate) return;
-                  if (needsReplacementCondition) {
-                    if (
-                      duplicateReplacement !== 'new' &&
-                      duplicateReplacement !== 'used'
-                    ) {
-                      return;
-                    }
-                    onDuplicate({ condition: duplicateReplacement });
-                    return;
-                  }
-                  onDuplicate({});
-                }}
-                disabled={!canDuplicate}
-              >
-                複製
-              </button>
-            )}
-          </div>
-          {duplicateReplacement !== 'none' && (
-            <p className="vehicle-replace-hint">
-              利用期間の終わりの翌月から、同条件で次の台を追加します
-            </p>
+              />
+              <span className="amount-unit">万円</span>
+            </div>
           )}
         </div>
-      </div>
 
-      <div className="life-event-table-cell life-event-col-action">
-        <button
-          type="button"
-          className="life-event-row-remove"
-          onClick={onRemove}
-          disabled={!canRemove}
-          aria-label="削除"
-        >
-          −
-        </button>
+        <div className="life-event-table-cell vehicle-col-annual">
+          <div className="vehicle-annual-stack">
+            <div className="vehicle-monthly-item">
+              {vehicleTypeHasKind(entry.type) && (
+                <span className="vehicle-monthly-label">税金・メンテ</span>
+              )}
+              <div className="vehicle-annual-cost-row">
+                <div className="life-event-amount-field">
+                  <input
+                    type="number"
+                    className="amount-input"
+                    value={entry.annualCostMan ?? ''}
+                    min={0}
+                    step={0.1}
+                    onChange={(e) =>
+                      onChange({
+                        ...entry,
+                        annualCostMan: parseOptionalAmount(e.target.value),
+                      })
+                    }
+                  />
+                  <span className="amount-unit">万円</span>
+                </div>
+                <select
+                  className="select-input select-input--compact select-input--schedule vehicle-annual-cycle-select"
+                  value={annualCostCycleYears}
+                  onChange={(e) =>
+                    onChange({
+                      ...entry,
+                      annualCostCycleYears: Number(e.target.value),
+                    })
+                  }
+                  aria-label="税金・メンテナンス費の周期"
+                >
+                  {ANNUAL_COST_CYCLE_OPTIONS.map((years) => (
+                    <option key={years} value={years}>
+                      {formatAnnualCostCycleLabel(years)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {requiresInspection && nextInspection ? (
+              <>
+                <div className="vehicle-monthly-item">
+                  <span className="vehicle-monthly-label">車検費用</span>
+                  <div className="life-event-amount-field">
+                    <input
+                      type="number"
+                      className="amount-input"
+                      value={entry.inspectionCostMan ?? ''}
+                      min={0}
+                      step={0.1}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          inspectionCostMan: parseOptionalAmount(e.target.value),
+                        })
+                      }
+                    />
+                    <span className="amount-unit">万円</span>
+                  </div>
+                </div>
+                <div className="vehicle-monthly-item">
+                  <span className="vehicle-monthly-label">次の車検（いまの車）</span>
+                  <div className="life-event-period-fields">
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={nextInspection.year}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          nextInspectionYear: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {inspectionYearOptions.map((year) => (
+                        <option key={year} value={year}>
+                          {year}年
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="select-input select-input--compact select-input--schedule"
+                      value={nextInspection.month}
+                      onChange={(e) =>
+                        onChange({
+                          ...entry,
+                          nextInspectionMonth: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {MONTHS.map((month) => (
+                        <option key={month} value={month}>
+                          {month}月
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="period-start-label">
+                    {toJapaneseEra(nextInspection.year, nextInspection.month)}
+                  </p>
+                  {inspectionHint && (
+                    <p className="vehicle-inspection-hint">{inspectionHint}</p>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="life-event-table-cell vehicle-col-replace">
+          <div className="vehicle-replace-cell">
+            <div className="vehicle-duplicate-controls">
+              <select
+                className="select-input life-event-select"
+                value={
+                  needsReplacementCondition
+                    ? duplicateReplacement === 'yes'
+                      ? 'none'
+                      : duplicateReplacement
+                    : duplicateReplacement === 'new' ||
+                        duplicateReplacement === 'used'
+                      ? 'yes'
+                      : duplicateReplacement
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'none') {
+                    setDuplicateReplacement('none');
+                    return;
+                  }
+                  if (!needsReplacementCondition) {
+                    setDuplicateReplacement('yes');
+                    return;
+                  }
+                  setDuplicateReplacement(value === 'used' ? 'used' : 'new');
+                }}
+                aria-label="買い替え"
+                disabled={!onDuplicate}
+              >
+                <option value="none">なし</option>
+                {needsReplacementCondition ? (
+                  VEHICLE_REPLACEMENT_CONDITION_OPTIONS.map((condition) => (
+                    <option key={condition} value={condition}>
+                      {VEHICLE_REPLACEMENT_CONDITION_LABELS[condition]}
+                    </option>
+                  ))
+                ) : (
+                  <option value="yes">あり</option>
+                )}
+              </select>
+              {duplicateReplacement !== 'none' && (
+                <button
+                  type="button"
+                  className="life-event-copy-btn vehicle-duplicate-btn"
+                  onClick={() => {
+                    if (!onDuplicate) return;
+                    if (needsReplacementCondition) {
+                      if (
+                        duplicateReplacement !== 'new' &&
+                        duplicateReplacement !== 'used'
+                      ) {
+                        return;
+                      }
+                      onDuplicate({ condition: duplicateReplacement });
+                      return;
+                    }
+                    onDuplicate({});
+                  }}
+                  disabled={!canDuplicate}
+                >
+                  複製
+                </button>
+              )}
+            </div>
+            {duplicateReplacement !== 'none' && (
+              <p className="vehicle-replace-hint">
+                利用期間の終わりの翌月から、同条件で次の台を追加します
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="life-event-table-cell life-event-col-action">
+          <button
+            type="button"
+            className="life-event-row-remove"
+            onClick={onRemove}
+            disabled={!canRemove}
+            aria-label="削除"
+          >
+            −
+          </button>
+        </div>
       </div>
-    </div>
 
       <div className="vehicle-table-group vehicle-table-insurance">
         <div className="life-event-header-cell vehicle-table-group-label">
@@ -962,7 +978,7 @@ export function VehicleRow({
                 housingState={housingState}
                 vehicleState={vehicleState}
                 referenceDate={referenceDate}
-                addLoanEnabled={entry.purchaseAmountMan > 0}
+                addLoanEnabled={(entry.purchaseAmountMan ?? 0) > 0}
                 onAddLoan={onAddLoan}
                 onUpdateLoan={onUpdateLoan}
                 onRemoveLoan={onRemoveLoan}

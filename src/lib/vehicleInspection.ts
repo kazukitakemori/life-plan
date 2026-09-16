@@ -158,15 +158,13 @@ export function withAutoNextInspection(
   birthMonth: number,
 ): VehicleEntry {
   if (!vehicleRequiresInspection(entry)) {
-    const cleared: VehicleEntry = {
+    return {
       ...entry,
       nextInspectionYear: undefined,
       nextInspectionMonth: undefined,
+      // 車検対象外へ変更した場合は、適用されない金額も未設定へ戻す。
+      inspectionCostMan: undefined,
     };
-    if (entry.type === 'motorcycle') {
-      return { ...cleared, inspectionCostMan: 0 };
-    }
-    return cleared;
   }
   const next = getDefaultNextInspection(
     entry.startAge,
@@ -177,14 +175,8 @@ export function withAutoNextInspection(
   );
   if (!next) return entry;
 
-  let result: VehicleEntry = { ...entry, ...next };
-  if (
-    entry.type === 'motorcycle' &&
-    (result.inspectionCostMan ?? 0) === 0
-  ) {
-    result = { ...result, inspectionCostMan: 3 };
-  }
-  return result;
+  // 車検時期だけを自動設定し、費用は推定値を入れない。
+  return { ...entry, ...next };
 }
 
 export function buildInspectionYearOptions(startYear: number): number[] {

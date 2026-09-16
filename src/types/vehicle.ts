@@ -59,8 +59,8 @@ export interface VehicleEntry {
   condition?: VehicleCondition;
   /** 既定は 'purchaseAmount' */
   paymentMode: VehiclePaymentMode;
-  /** paymentMode === 'monthlyRepayment' のときの月々のローン返済額（万円） */
-  monthlyRepaymentMan: number;
+  /** paymentMode === 'monthlyRepayment' のときの月々のローン返済額（万円）。未入力可 */
+  monthlyRepaymentMan?: number;
   /** paymentMode === 'monthlyRepayment' のときの返済終了年（西暦） */
   repaymentEndYear: number;
   /** paymentMode === 'monthlyRepayment' のときの返済終了月 */
@@ -71,20 +71,20 @@ export interface VehicleEntry {
   endMode: VehicleEndMode;
   endAge: number;
   endMonth: number;
-  /** 購入費用（万円）。ローン未追加時は保有開始月に計上。ローン追加時は借入額の基準 */
-  purchaseAmountMan: number;
-  /** 月次維持費（万円）— 自転車・その他 */
-  monthlyCostMan: number;
-  /** ガソリン代（万円/月）— 自動車・バイク・原付 */
+  /** 購入費用（万円）。未入力可。ローン未追加時は保有開始月に計上。ローン追加時は借入額の基準 */
+  purchaseAmountMan?: number;
+  /** 月次維持費（万円）— 自転車・その他。未入力可 */
+  monthlyCostMan?: number;
+  /** ガソリン代（万円/月）— 自動車・バイク・原付。未入力可 */
   gasolineCostMan?: number;
-  /** 駐車場代（万円/月）— 自動車・バイク・原付 */
+  /** 駐車場代（万円/月）— 自動車・バイク・原付。未入力可 */
   parkingCostMan?: number;
-  /** 税金・メンテナンス費（万円）。周期ごとに保有開始月と同月に計上 */
-  annualCostMan: number;
+  /** 税金・メンテナンス費（万円）。未入力可。周期ごとに保有開始月と同月に計上 */
+  annualCostMan?: number;
   /** 税金・メンテナンス費の計上周期（年）。1〜6、既定は1（毎年） */
   annualCostCycleYears?: number;
-  /** 車検費用（万円）。次回車検月から初回、以後は2年ごと */
-  inspectionCostMan: number;
+  /** 車検費用（万円）。未入力可。次回車検月から初回、以後は2年ごと */
+  inspectionCostMan?: number;
   /** いまの車の次の車検（西暦年）。買い替え後の車両には使わない */
   nextInspectionYear?: number;
   /** いまの車の次の車検（月） */

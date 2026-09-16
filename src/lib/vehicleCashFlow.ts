@@ -214,11 +214,12 @@ function calcEntryMonthlyDetailMan(
   const isCash = entry.paymentMode === 'cash';
 
   let maintenance = getVehicleMonthlyMaintCostMan(entry);
+  const annualCostMan = entry.annualCostMan ?? 0;
 
-  if (entry.annualCostMan > 0) {
+  if (annualCostMan > 0) {
     const cycleMonths = resolveAnnualCostCycleYears(entry) * 12;
     if (monthsFromStart % cycleMonths === 0) {
-      maintenance += entry.annualCostMan;
+      maintenance += annualCostMan;
     }
   }
 
@@ -247,9 +248,10 @@ function calcEntryMonthlyDetailMan(
   //   （誕生日が遅いと期間開始が試算開始より前になり、前者だけでは CF に載らない）
   // 購入費用とローン: 購入費は借入額の基準のみ（CFの購入費行には載せない。返済はローン側）。
   let purchase = 0;
+  const purchaseAmountMan = entry.purchaseAmountMan ?? 0;
   if (
     isCash &&
-    entry.purchaseAmountMan > 0 &&
+    purchaseAmountMan > 0 &&
     resolveVehicleCondition(entry) !== 'owned'
   ) {
     const atPeriodStart = monthsFromStart === 0;
@@ -257,7 +259,7 @@ function calcEntryMonthlyDetailMan(
       ageMonth.age === entry.startAge &&
       ageMonth.month === entry.startMonth;
     if (atPeriodStart || atMemberStartLabel) {
-      purchase = entry.purchaseAmountMan;
+      purchase = purchaseAmountMan;
     }
   }
 
@@ -268,7 +270,7 @@ function calcEntryMonthlyDetailMan(
       calendarYear,
       calendarMonth,
     )
-      ? entry.monthlyRepaymentMan
+      ? (entry.monthlyRepaymentMan ?? 0)
       : 0;
   } else if (entry.paymentMode === 'purchaseAmount' && loanState) {
     const linkedLoans = getLoansForVehicle(loanState, member.id, entry.id);

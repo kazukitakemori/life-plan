@@ -1,0 +1,642 @@
+/* Q6 vehicle: master-detail desktop layout.
+ * The selected vehicle editor stays primary on the left, while the vehicle list
+ * works as secondary navigation on the right. Data and calculation logic are unchanged.
+ */
+
+.vehicle-step {
+  max-width: 1100px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.vehicle-step .vehicle-empty-state {
+  margin-top: 0;
+}
+
+.vehicle-mobile-add {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .vehicle-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 224px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  /* Right side: navigation only. The add disclosure stays below the list. */
+  .vehicle-master-panel {
+    position: sticky;
+    top: 16px;
+    overflow: hidden;
+    min-width: 0;
+    border: 1px solid var(--ui-border, #dfe5e1);
+    border-radius: var(--ui-radius-card, 12px);
+    background: var(--ui-bg-surface, #fff);
+    box-shadow: var(--ui-shadow-card, 0 1px 2px rgb(0 0 0 / 4%));
+  }
+
+  .vehicle-master-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-subtle, #f7f9f8);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 700;
+  }
+
+  .vehicle-master-count {
+    flex: 0 0 auto;
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-list {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 8px;
+  }
+
+  .vehicle-master-empty {
+    margin: 0;
+    padding: 18px 14px;
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .vehicle-master-item {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 9px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ui-text, #26322c);
+    text-align: left;
+  }
+
+  .vehicle-master-item:hover {
+    background: var(--ui-bg-subtle, #f7f9f8);
+  }
+
+  .vehicle-master-item.is-active {
+    border-color: color-mix(in srgb, var(--ui-brand, #2f6f4e) 24%, transparent);
+    background: var(--ui-brand-soft, #e7f1eb);
+  }
+
+  .vehicle-master-item.is-dragging {
+    opacity: 0.5;
+  }
+
+  .vehicle-master-order {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--ui-bg-subtle, #f0f2f1);
+    color: var(--ui-text-muted, #65726b);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .vehicle-master-item.is-active .vehicle-master-order {
+    background: var(--ui-brand, #2f6f4e);
+    color: #fff;
+  }
+
+  .vehicle-master-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .vehicle-master-name {
+    overflow: hidden;
+    min-width: 0;
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-meta {
+    overflow: hidden;
+    color: var(--ui-text-muted, #65726b);
+    font-size: 11px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vehicle-master-arrow {
+    color: var(--ui-text-muted, #65726b);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .vehicle-master-add {
+    min-width: 0;
+    padding: 8px;
+    border-top: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-master-add .vehicle-add-section {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .vehicle-master-add .ui-add-disclosure__actions,
+  .vehicle-master-add .ui-add-disclosure__toggle {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehicle-master-add .ui-add-disclosure__panel {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  /* The narrow master panel keeps the shared add interaction, but uses compact choices. */
+  .vehicle-master-add .vehicle-add-lead {
+    display: none;
+  }
+
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .vehicle-master-add .vehicle-add-grid > .vehicle-add-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 56px;
+    max-height: none;
+    padding: 9px 10px;
+    gap: 2px;
+    border-radius: 9px;
+  }
+
+  .vehicle-master-add .vehicle-add-card-title {
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  .vehicle-master-add .vehicle-add-card-desc {
+    overflow: visible;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  /* Left side: one selected vehicle only. */
+  .vehicle-detail-panel {
+    overflow: visible;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .vehicle-detail-empty {
+    display: grid;
+    place-items: center;
+    min-height: 148px;
+    margin: 0;
+    padding: 24px;
+    border: 1px solid var(--ui-border, #dfe5e1);
+    border-radius: var(--ui-radius-card, 12px);
+    background: var(--ui-bg-surface, #fff);
+    text-align: center;
+  }
+
+  .vehicle-detail-empty p {
+    margin: 0;
+  }
+
+  .vehicle-step .vehicle-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehicle-step .life-event-table-header {
+    display: none;
+  }
+
+  .vehicle-detail-entry {
+    display: none;
+  }
+
+  .vehicle-detail-entry.is-active {
+    display: block;
+  }
+
+  .vehicle-step .vehicle-entry-block {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--ui-border, #dfe5e1);
+    border-radius: var(--ui-radius-card, 12px);
+    background: var(--ui-bg-surface, #fff);
+    box-shadow: var(--ui-shadow-card, 0 1px 2px rgb(0 0 0 / 4%));
+  }
+
+  .vehicle-step .life-event-table-row {
+    display: block;
+    min-width: 0;
+    border: 0;
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-step .life-event-table-row > .life-event-table-cell {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    min-width: 0;
+    padding: 15px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--ui-border, #dfe5e1);
+    background: transparent;
+  }
+
+  .vehicle-step .life-event-table-row > .vehicle-col-summary,
+  .vehicle-step .life-event-table-row > .vehicle-col-type {
+    background: var(--ui-bg-subtle, #f7f9f8);
+  }
+
+  .vehicle-step .life-event-table-row > :where(
+      .vehicle-col-summary,
+      .vehicle-col-type,
+      .vehicle-col-period,
+      .vehicle-col-purchase,
+      .vehicle-col-monthly,
+      .vehicle-col-annual,
+      .vehicle-col-replace
+    )::before {
+    display: block;
+    padding-top: 8px;
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .vehicle-step .vehicle-col-summary::before {
+    content: '名称';
+  }
+
+  .vehicle-step .vehicle-col-type::before {
+    content: '種類・購入区分';
+  }
+
+  .vehicle-step .vehicle-col-period::before {
+    content: '利用期間';
+  }
+
+  .vehicle-step .vehicle-col-purchase::before {
+    content: '購入・返済';
+  }
+
+  .vehicle-step .vehicle-col-monthly::before {
+    content: '毎月の維持費';
+  }
+
+  .vehicle-step .vehicle-col-annual::before {
+    content: '税金・メンテナンス';
+  }
+
+  .vehicle-step .vehicle-col-replace::before {
+    content: '買い替え';
+  }
+
+  .vehicle-step .life-event-col-drag {
+    display: none !important;
+  }
+
+  .vehicle-step .life-event-col-action {
+    position: absolute;
+    z-index: 2;
+    top: 12px;
+    right: 14px;
+    display: block !important;
+    width: auto;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Whole-vehicle deletion must be explicit; a bare minus is not sufficient. */
+  .vehicle-step .life-event-row-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 70px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+    border-radius: var(--ui-radius-control, 8px);
+    background: transparent;
+    color: var(--ui-danger, #b42318);
+    font-size: 0;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .vehicle-step .life-event-row-remove::before {
+    content: '';
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    background: currentColor;
+    -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+    mask: var(--ui-icon-trash) center / contain no-repeat;
+  }
+
+  .vehicle-step .life-event-row-remove::after {
+    content: '削除';
+    font-size: var(--ui-font-label, 14px);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .vehicle-step .life-event-row-remove:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--ui-danger) 60%, var(--ui-border));
+    background: var(--ui-danger-soft, #fef3f2);
+  }
+
+  .vehicle-step .vehicle-col-summary {
+    padding-right: 104px !important;
+  }
+
+  .vehicle-step .vehicle-col-summary .life-event-text-input {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .vehicle-step .vehicle-col-type .life-event-select {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .vehicle-step .vehicle-type-stack {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-side {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-arrow {
+    flex: 0 0 auto;
+    padding-top: 9px;
+  }
+
+  .vehicle-step .vehicle-owned-payment-cell,
+  .vehicle-step .vehicle-monthly-stack,
+  .vehicle-step .vehicle-annual-stack,
+  .vehicle-step .vehicle-replace-cell {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehicle-step .vehicle-col-purchase .vehicle-owned-payment-cell {
+    max-width: 620px;
+  }
+
+  .vehicle-step .vehicle-owned-payment-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-owned-payment-toggle-option {
+    min-height: 38px;
+  }
+
+  .vehicle-step .vehicle-repayment-inputs,
+  .vehicle-step .vehicle-monthly-stack,
+  .vehicle-step .vehicle-annual-stack {
+    min-width: 0;
+  }
+
+  .vehicle-step .vehicle-col-monthly .vehicle-monthly-stack,
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+
+  .vehicle-step .vehicle-col-monthly .vehicle-monthly-item {
+    display: grid;
+    grid-template-columns: 112px max-content;
+    gap: 12px;
+    align-items: center;
+    justify-content: start;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:first-child > .vehicle-monthly-label {
+    display: none;
+  }
+
+  .vehicle-step .vehicle-annual-cost-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-annual-cycle-select {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 104px;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 7px 12px;
+    align-items: center;
+    justify-content: start;
+    width: 100%;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) > .vehicle-monthly-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vehicle-step .vehicle-col-annual .vehicle-annual-stack > .vehicle-monthly-item:not(:first-child) > :not(.vehicle-monthly-label) {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .vehicle-step .vehicle-col-annual :where(
+      .period-start-label,
+      .vehicle-inspection-hint
+    ) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .vehicle-step .vehicle-col-replace .life-event-select {
+    width: auto;
+    min-width: 180px;
+    max-width: 320px;
+  }
+
+  .vehicle-step .vehicle-duplicate-controls {
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-table-group {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    min-width: 0;
+    border: 0;
+    border-top: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-step .vehicle-table-group-label {
+    grid-column: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 17px 18px;
+    border: 0;
+    border-right: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-subtle, #f7f9f8);
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    font-weight: 700;
+  }
+
+  .vehicle-step .vehicle-table-group-body {
+    grid-column: 2;
+    display: block;
+    min-width: 0;
+    padding: 14px 18px;
+    border: 0;
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-step .vehicle-table-group :where(
+      .housing-owned-insurance-links,
+      .housing-owned-loan-links
+    ) {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .vehicle-step .vehicle-table-group-body .housing-owned-loan-add-btn {
+    align-self: flex-start;
+    width: auto;
+    min-width: 190px;
+    max-width: 100%;
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 980px) {
+  .vehicle-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vehicle-master-panel {
+    position: static;
+  }
+
+  .vehicle-master-list {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .vehicle-master-item {
+    flex: 0 0 210px;
+  }
+
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-master-add .vehicle-add-grid > .vehicle-add-card {
+    min-height: 64px;
+  }
+
+  .vehicle-step .life-event-table-row > .life-event-table-cell,
+  .vehicle-step .vehicle-table-group {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .vehicle-master-panel {
+    display: none;
+  }
+
+  .vehicle-detail-entry {
+    display: block;
+  }
+
+  .vehicle-detail-empty {
+    margin: 0;
+  }
+
+  .vehicle-mobile-add {
+    display: block;
+    margin-top: 18px;
+  }
+}

@@ -13,7 +13,6 @@ import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { CopySettingsBar, StepHeading } from '../ui';
-import { AddVehicleCards } from './AddVehicleCards';
 import { VehicleTable } from './VehicleTable';
 
 interface VehicleStepProps {
@@ -177,11 +176,7 @@ export function VehicleStep({
 
   return (
     <div className="step-page vehicle-step">
-      <StepHeading
-        number={6}
-        title="乗り物"
-        subtitle="自動車・バイク・自転車などの購入と維持"
-      />
+      <StepHeading number={6} title="乗り物" />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
@@ -224,6 +219,7 @@ export function VehicleStep({
         housingState={housingState}
         vehicleState={vehicleState}
         onChange={(updated) => persistEntries(resolvedActiveId, updated)}
+        onAdd={addEntryFromPreset}
         onAddLoan={(entry) => onAddVehicleLoan(resolvedActiveId, entry)}
         onRemoveLoan={onRemoveVehicleLoan}
         onUpdateLoan={onUpdateLoan}
@@ -235,8 +231,6 @@ export function VehicleStep({
         onUpdateInsurance={onUpdateInsurance}
         onRemoveInsurance={onRemoveInsurance}
       />
-
-      <AddVehicleCards onAdd={addEntryFromPreset} />
     </div>
   );
 }
