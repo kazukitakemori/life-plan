@@ -176,11 +176,7 @@ export function VehicleStep({
 
   return (
     <div className="step-page vehicle-step">
-      <StepHeading
-        number={6}
-        title="乗り物"
-        lead="自動車・バイク・自転車などを登録します。複数台ある場合は一覧から選び、1台ずつ購入・維持・買い替えを設定します。"
-      />
+      <StepHeading number={6} title="乗り物" />
 
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
