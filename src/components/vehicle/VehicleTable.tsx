@@ -118,7 +118,7 @@ export function VehicleTable({
         <div className="life-event-table-card vehicle-table-card vehicle-detail-panel">
           {entries.length === 0 ? (
             <div className="life-event-table-empty vehicle-empty-state vehicle-detail-empty">
-              <p>乗り物が登録されていません。右側の「乗り物を追加」から登録してください。</p>
+              <p>乗り物が登録されていません。「乗り物を追加」から登録してください。</p>
             </div>
           ) : (
             <div className="life-event-table vehicle-table">
