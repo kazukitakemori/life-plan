@@ -578,21 +578,9 @@ export function OwnedPropertyMaintenanceSection({
             </div>
             <div className="housing-table-header-cell housing-col-amount">
               固定資産税
-              <span
-                className="housing-help-icon"
-                title="固定資産税は毎年4月・5月・6月に納付する地方税です"
-              >
-                ?
-              </span>
             </div>
             <div className="housing-table-header-cell housing-col-amount">
               都市計画税
-              <span
-                className="housing-help-icon"
-                title="都市計画税は固定資産税とあわせて納付する地方税です"
-              >
-                ?
-              </span>
             </div>
             <div className="housing-table-header-cell housing-col-add" />
             <div className="housing-table-header-cell housing-col-action" />
