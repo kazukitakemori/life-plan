@@ -28,7 +28,12 @@ import type {
   OwnedPropertyCurrentExpenseMode,
   OwnedPropertyLoanPaymentType,
 } from '../../types/housing';
-import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } from '../../types/loan';
+import type {
+  HousingLinkedLoanView,
+  LoanEntry,
+  LoanState,
+  LoanStructureType,
+} from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
@@ -122,7 +127,9 @@ export function OwnedPropertyDetail({
   const showBuildingField = property.type !== 'land';
   const isCurrentlyOccupied = property.usage === 'current';
   const isUpcoming = property.usage === 'upcoming';
-  const isSimpleMode = isCurrentlyOccupied && property.currentExpenseMode === 'simple';
+  const isSimpleMode =
+    isCurrentlyOccupied && property.currentExpenseMode === 'simple';
+  const isCurrentDetailedMode = isCurrentlyOccupied && !isSimpleMode;
   const simStart = useMemo(
     () => resolveSimulationStartAgeMonth(member, referenceDate),
     [member, referenceDate],
@@ -144,19 +151,24 @@ export function OwnedPropertyDetail({
   const showAcquisitionSection = !isSimpleMode;
   const hasAcquisitionAmount = property.buildingMan + property.landMan > 0;
   const simpleExpenseSectionNumber = 2;
-  const targetSectionNumber = 2;
+  const targetSectionNumber = isCurrentDetailedMode ? 4 : 2;
   const acquisitionSectionNumber = showAcquisitionSection ? 3 : null;
-  const paymentSectionNumber = showAcquisitionSection ? 4 : 3;
-  const insuranceSectionNumber = isSimpleMode
-    ? 3
+  const paymentSectionNumber = isCurrentDetailedMode
+    ? 2
     : showAcquisitionSection
-      ? 5
-      : 4;
-  const maintenanceSectionNumber = showAcquisitionSection ? 6 : 5;
-  const [acqRefSection, setAcqRefSection] = useState<AcquisitionReferenceSection | null>(null);
+      ? 4
+      : 3;
+  const insuranceSectionNumber = isSimpleMode ? 3 : 5;
+  const maintenanceSectionNumber = 6;
+  const [acqRefSection, setAcqRefSection] =
+    useState<AcquisitionReferenceSection | null>(null);
   const [acqDetailOpen, setAcqDetailOpen] = useState(false);
-  const [acqBreakdown, setAcqBreakdown] = useState<AcquisitionFeeBreakdown | null>(null);
+  const [acqBreakdown, setAcqBreakdown] =
+    useState<AcquisitionFeeBreakdown | null>(null);
   const canFetchAcquisitionFees = property.buildingMan + property.landMan > 0;
+  const hasRegisteredPairLoan = linkedLoans.some((loan) =>
+    isPairLoanEntry(loan.entry),
+  );
   const hasPairLoan =
     linkedLoans.filter((loan) => isPairLoanEntry(loan.entry)).length >= 2;
 
@@ -176,6 +188,15 @@ export function OwnedPropertyDetail({
       next = clampPastInclusiveStartFields(next, refNow);
     }
     onChange(next);
+  };
+
+  const handleCurrentExpenseModeChange = (
+    mode: OwnedPropertyCurrentExpenseMode,
+  ) => {
+    if (mode === 'simple' && hasRegisteredPairLoan) {
+      return;
+    }
+    update({ currentExpenseMode: mode });
   };
 
   useEffect(() => {
@@ -282,27 +303,131 @@ export function OwnedPropertyDetail({
       </HousingOwnedDetailFold>
     ) : null;
 
+  const targetSection = !isSimpleMode ? (
+    <OwnedPropertyTargetSection
+      property={property}
+      member={member}
+      members={members}
+      referenceDate={referenceDate}
+      sectionNumber={targetSectionNumber}
+      onChange={onChange}
+    />
+  ) : null;
+
+  const acquisitionSection =
+    !isSimpleMode && showAcquisitionSection && acquisitionSectionNumber !== null ? (
+      <OwnedPropertyAcquisitionSection
+        sectionNumber={acquisitionSectionNumber}
+        property={property}
+        acquisitionTotal={acquisitionTotal}
+        showBuildingField={showBuildingField}
+        isCurrentlyOccupied={isCurrentlyOccupied}
+        canFetchAcquisitionFees={canFetchAcquisitionFees}
+        breakdown={acqBreakdown}
+        onChange={update}
+        onFetchReference={handleFetchAcquisitionFees}
+        onOpenReference={setAcqRefSection}
+        onOpenTaxDetail={() => setAcqDetailOpen(true)}
+      />
+    ) : null;
+
+  const paymentSection = !isSimpleMode ? (
+    <HousingOwnedDetailFold
+      title={`(${paymentSectionNumber}) ${isCurrentlyOccupied ? '住宅ローン' : '支払い方法'}`}
+      summary={loanSummary}
+    >
+      <div
+        className="housing-owned-payment-options"
+        role="radiogroup"
+        aria-label={isCurrentlyOccupied ? '住宅ローンの有無' : '支払い方法'}
+      >
+        {PAYMENT_METHODS.map((method) => (
+          <label key={method} className="housing-owned-payment-option">
+            <input
+              type="radio"
+              name={`owned-payment-${property.id}`}
+              checked={property.paymentMethod === method}
+              onChange={() => update({ paymentMethod: method })}
+            />
+            <span>
+              {isCurrentlyOccupied
+                ? OWNED_PROPERTY_CURRENT_LOAN_STATUS_LABELS[method]
+                : OWNED_PROPERTY_LOAN_PAYMENT_LABELS[method]}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {property.paymentMethod === 'loan' && onUpdateLoan ? (
+        <>
+          {isCurrentlyOccupied ? (
+            <p className="housing-owned-loan-existing-note">
+              月々の返済額だけを入力する場合、取得価格は不要です。借入条件から詳しく計算する場合のみ、取得価格・購入時費用を入力してください。
+            </p>
+          ) : null}
+          <HousingLoanLinks
+            propertyName={property.name}
+            loans={linkedLoans}
+            contractorMembers={contractorMembers}
+            hasSpouse={hasSpouse}
+            members={members}
+            loanState={loanState}
+            housingState={housingState}
+            vehicleState={vehicleState}
+            referenceDate={referenceDate}
+            preferMonthlyRepayment={isCurrentlyOccupied}
+            addLoanEnabled={
+              canAddLoan && (isCurrentlyOccupied || hasAcquisitionAmount)
+            }
+            onAddLoan={onAddLoan}
+            onUpdateLoan={onUpdateLoan}
+            onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
+            onPairShareChange={onPairShareChange}
+            onJointDebtShareChange={onJointDebtShareChange}
+            onPropertyFeeChange={onLoanPropertyFeeChange}
+            onRemoveLoan={onRemoveLoan}
+          />
+        </>
+      ) : null}
+    </HousingOwnedDetailFold>
+  ) : null;
+
   return (
     <div className="housing-owned-detail">
-      {isCurrentlyOccupied && (
-        <div
-          className="housing-owned-expense-mode"
-          role="radiogroup"
-          aria-label="住居費の入力方法"
-        >
-          {CURRENT_EXPENSE_MODES.map((mode) => (
-            <label key={mode} className="housing-owned-expense-mode-option">
-              <input
-                type="radio"
-                name={`owned-expense-mode-${property.id}`}
-                checked={property.currentExpenseMode === mode}
-                onChange={() => update({ currentExpenseMode: mode })}
-              />
-              <span>{OWNED_PROPERTY_CURRENT_EXPENSE_MODE_LABELS[mode]}</span>
-            </label>
-          ))}
+      {isCurrentlyOccupied ? (
+        <div className="housing-owned-detail-section">
+          <div
+            className="ui-workspace-tabs"
+            role="group"
+            aria-label="住居費の入力方法"
+          >
+            {CURRENT_EXPENSE_MODES.map((mode) => {
+              const active = property.currentExpenseMode === mode;
+              const blocked =
+                mode === 'simple' && hasRegisteredPairLoan && !isSimpleMode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`ui-workspace-tab${active ? ' is-active' : ''}`}
+                  aria-pressed={active}
+                  disabled={blocked}
+                  onClick={() => handleCurrentExpenseModeChange(mode)}
+                >
+                  {OWNED_PROPERTY_CURRENT_EXPENSE_MODE_LABELS[mode]}
+                </button>
+              );
+            })}
+          </div>
+          {hasRegisteredPairLoan ? (
+            <p className="housing-owned-loan-existing-note" role="alert">
+              {isSimpleMode
+                ? 'ペアローンが登録されています。ペアローンを計算するには「内訳を詳しく入力」へ切り替えてください。まとめ入力へ戻す場合は、住宅ローンからペアローンを削除してください。'
+                : 'ペアローンが登録されているため、「住居費をまとめて入力」には切り替えられません。まとめて入力する場合は、住宅ローンからペアローンを削除してください。'}
+            </p>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
       <section className="housing-owned-detail-section">
         <h4 className="housing-owned-detail-title">(1) 所有期間</h4>
@@ -445,7 +570,7 @@ export function OwnedPropertyDetail({
                   </>
                 )}
               </div>
-              {property.endMode === 'until' && (
+              {property.endMode === 'until' ? (
                 <p className="period-end-label">
                   {formatEndYearLabel(
                     property.endAge,
@@ -454,13 +579,13 @@ export function OwnedPropertyDetail({
                     member.birthMonth,
                   )}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
       </section>
 
-      {isSimpleMode && (
+      {isSimpleMode ? (
         <section className="housing-owned-detail-section">
           <h4 className="housing-owned-detail-title">
             ({simpleExpenseSectionNumber}) 月々の住居費
@@ -478,36 +603,25 @@ export function OwnedPropertyDetail({
             住宅ローン返済・管理費・修繕積立金・固定資産税などを含む毎月の住居費をまとめて入力します。住宅ローン控除などの税制優遇は試算に反映されません。
           </p>
         </section>
-      )}
+      ) : null}
 
       {isSimpleMode ? insuranceSection : null}
 
-      {!isSimpleMode && (
+      {!isSimpleMode ? (
         <>
-          <OwnedPropertyTargetSection
-            property={property}
-            member={member}
-            members={members}
-            referenceDate={referenceDate}
-            sectionNumber={targetSectionNumber}
-            onChange={onChange}
-          />
-
-          {showAcquisitionSection && acquisitionSectionNumber !== null ? (
-            <OwnedPropertyAcquisitionSection
-              sectionNumber={acquisitionSectionNumber}
-              property={property}
-              acquisitionTotal={acquisitionTotal}
-              showBuildingField={showBuildingField}
-              isCurrentlyOccupied={isCurrentlyOccupied}
-              canFetchAcquisitionFees={canFetchAcquisitionFees}
-              breakdown={acqBreakdown}
-              onChange={update}
-              onFetchReference={handleFetchAcquisitionFees}
-              onOpenReference={setAcqRefSection}
-              onOpenTaxDetail={() => setAcqDetailOpen(true)}
-            />
-          ) : null}
+          {isCurrentlyOccupied ? (
+            <>
+              {paymentSection}
+              {acquisitionSection}
+              {targetSection}
+            </>
+          ) : (
+            <>
+              {targetSection}
+              {acquisitionSection}
+              {paymentSection}
+            </>
+          )}
 
           <AcquisitionReferenceModal
             open={acqRefSection !== null}
@@ -536,65 +650,6 @@ export function OwnedPropertyDetail({
             }}
           />
 
-          <HousingOwnedDetailFold
-            title={`(${paymentSectionNumber}) ${isCurrentlyOccupied ? '住宅ローン' : '支払い方法'}`}
-            summary={loanSummary}
-          >
-            <div
-              className="housing-owned-payment-options"
-              role="radiogroup"
-              aria-label={isCurrentlyOccupied ? '住宅ローンの有無' : '支払い方法'}
-            >
-              {PAYMENT_METHODS.map((method) => (
-                <label key={method} className="housing-owned-payment-option">
-                  <input
-                    type="radio"
-                    name={`owned-payment-${property.id}`}
-                    checked={property.paymentMethod === method}
-                    onChange={() => update({ paymentMethod: method })}
-                  />
-                  <span>
-                    {isCurrentlyOccupied
-                      ? OWNED_PROPERTY_CURRENT_LOAN_STATUS_LABELS[method]
-                      : OWNED_PROPERTY_LOAN_PAYMENT_LABELS[method]}
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            {property.paymentMethod === 'loan' && onUpdateLoan ? (
-              <>
-                {isCurrentlyOccupied && (
-                  <p className="housing-owned-loan-existing-note">
-                    残っている住宅ローンは、月々の返済額だけ入力するか、取得価格をもとに借入条件から詳しく計算できます。
-                  </p>
-                )}
-                <HousingLoanLinks
-                  propertyName={property.name}
-                  loans={linkedLoans}
-                  contractorMembers={contractorMembers}
-                  hasSpouse={hasSpouse}
-                  members={members}
-                  loanState={loanState}
-                  housingState={housingState}
-                  vehicleState={vehicleState}
-                  referenceDate={referenceDate}
-                  preferMonthlyRepayment={isCurrentlyOccupied}
-                  addLoanEnabled={
-                    canAddLoan && (isCurrentlyOccupied || hasAcquisitionAmount)
-                  }
-                  onAddLoan={onAddLoan}
-                  onUpdateLoan={onUpdateLoan}
-                  onUpdatePairPartnerLoan={onUpdatePairPartnerLoan}
-                  onPairShareChange={onPairShareChange}
-                  onJointDebtShareChange={onJointDebtShareChange}
-                  onPropertyFeeChange={onLoanPropertyFeeChange}
-                  onRemoveLoan={onRemoveLoan}
-                />
-              </>
-            ) : null}
-          </HousingOwnedDetailFold>
-
           {insuranceSection}
 
           <HousingOwnedDetailFold
@@ -609,7 +664,7 @@ export function OwnedPropertyDetail({
             />
           </HousingOwnedDetailFold>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
