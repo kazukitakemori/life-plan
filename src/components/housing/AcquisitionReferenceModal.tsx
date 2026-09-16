@@ -48,9 +48,8 @@ export function AcquisitionReferenceModal({
   const typeLabel = OWNED_PROPERTY_TYPE_LABELS[propertyType];
   const targetLabel = formatAcquisitionTargetLabel(target);
   const isBrokerage = section === 'brokerage';
-  const title = isBrokerage
-    ? `仲介手数料の自動計算内訳 — ${typeLabel}`
-    : `登記手数料の自動計算内訳 — ${typeLabel}`;
+  const feeLabel = isBrokerage ? '仲介手数料' : '登記手数料';
+  const title = `${feeLabel}の参考額｜計算根拠`;
 
   return (
     <div className="education-ref-modal-overlay" onClick={onClose}>
@@ -76,110 +75,108 @@ export function AcquisitionReferenceModal({
           {title}
         </h3>
         <p className="education-ref-modal-summary">
-          対象物件「{targetLabel}」の前提で、入力された建物・土地の金額から
-          {isBrokerage ? '仲介手数料' : '登記手数料'}の概算を自動入力しました。
-          実際の費用は契約内容や物件の評価額によって変わるため、見積書等で確認してください。
+          {typeLabel}・対象物件「{targetLabel}」の前提で、入力された建物・土地の金額から
+          {feeLabel}の参考額を計算しています。実際の費用は契約内容や物件の評価額等で変わるため、見積書等がある場合はそちらを優先してください。
         </p>
 
         <div className="education-ref-modal-body">
-
           {isBrokerage && (
-          <section className="education-ref-section">
-            <h4 className="education-ref-section-title">仲介手数料（法定上限・税込）</h4>
-            <p className="education-ref-section-desc">{brokerageDetail.note}</p>
-            <table className="education-ref-kv-table">
-              <tbody>
-                <tr>
-                  <th scope="row">建物 ＋ 土地</th>
-                  <td>{fmt(basePriceMan)}</td>
-                </tr>
-                <tr>
-                  <th scope="row">計算式</th>
-                  <td>{brokerageDetail.formula}{brokerageFeeMan > 0 ? '（税込）' : ''}</td>
-                </tr>
-                <tr className="education-ref-row--highlight">
-                  <th scope="row">自動入力した金額</th>
-                  <td>{fmt(brokerageFeeMan)}{brokerageFeeMan > 0 ? '（税込）' : ''}</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
+            <section className="education-ref-section">
+              <h4 className="education-ref-section-title">今回の計算</h4>
+              <p className="education-ref-section-desc">{brokerageDetail.note}</p>
+              <table className="education-ref-kv-table">
+                <tbody>
+                  <tr>
+                    <th scope="row">建物 ＋ 土地</th>
+                    <td>{fmt(basePriceMan)}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">計算式</th>
+                    <td>{brokerageDetail.formula}{brokerageFeeMan > 0 ? '（税込）' : ''}</td>
+                  </tr>
+                  <tr className="education-ref-row--highlight">
+                    <th scope="row">参考額</th>
+                    <td>{fmt(brokerageFeeMan)}{brokerageFeeMan > 0 ? '（税込）' : ''}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
           )}
 
           {!isBrokerage && (
-          <section className="education-ref-section">
-            <h4 className="education-ref-section-title">登記手数料（登録免許税＋司法書士報酬）</h4>
-            {registrationDetail.note && (
-              <p className="education-ref-section-desc">{registrationDetail.note}</p>
-            )}
-            <table className="education-ref-kv-table">
-              <tbody>
-                {landMan > 0 && (
-                  <>
-                    <tr>
-                      <th scope="row">土地の固定資産税評価額（目安）</th>
-                      <td>{fmt(registrationDetail.landAssessedMan)}（{registrationDetail.landAssessedRateLabel}）</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">土地の登録免許税税率</th>
-                      <td>{registrationDetail.landRateLabel}</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">土地の登録免許税概算</th>
-                      <td>{fmt(registrationDetail.landRegistrationTaxMan)}</td>
-                    </tr>
-                  </>
-                )}
-                {propertyType !== 'land' && buildingMan > 0 && (
-                  <>
-                    <tr>
-                      <th scope="row">建物の固定資産税評価額（目安）</th>
-                      <td>{fmt(registrationDetail.buildingAssessedMan)}（{registrationDetail.buildingAssessedRateLabel}）</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">建物の登録免許税税率</th>
-                      <td>{registrationDetail.buildingRateLabel}</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">建物の登録免許税概算</th>
-                      <td>{fmt(registrationDetail.buildingRegistrationTaxMan)}</td>
-                    </tr>
-                  </>
-                )}
-                <tr>
-                  <th scope="row">司法書士報酬（目安）</th>
-                  <td>
-                    {fmt(registrationDetail.scrivenerFeeMan)}
-                    {registrationDetail.pairLoanScrivenerSurchargeMan > 0 ? (
-                      <span className="education-ref-subline">
-                        内訳：基本
-                        {fmt(
-                          registrationDetail.scrivenerFeeMan -
-                            registrationDetail.pairLoanScrivenerSurchargeMan,
-                        )}{' '}
-                        ＋ ペアローン上乗せ
-                        {fmt(registrationDetail.pairLoanScrivenerSurchargeMan)}
-                      </span>
-                    ) : null}
-                  </td>
-                </tr>
-                {registrationDetail.note ? (
+            <section className="education-ref-section">
+              <h4 className="education-ref-section-title">今回の計算</h4>
+              {registrationDetail.note && (
+                <p className="education-ref-section-desc">{registrationDetail.note}</p>
+              )}
+              <table className="education-ref-kv-table">
+                <tbody>
+                  {landMan > 0 && (
+                    <>
+                      <tr>
+                        <th scope="row">土地の固定資産税評価額（目安）</th>
+                        <td>{fmt(registrationDetail.landAssessedMan)}（{registrationDetail.landAssessedRateLabel}）</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">土地の登録免許税税率</th>
+                        <td>{registrationDetail.landRateLabel}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">土地の登録免許税概算</th>
+                        <td>{fmt(registrationDetail.landRegistrationTaxMan)}</td>
+                      </tr>
+                    </>
+                  )}
+                  {propertyType !== 'land' && buildingMan > 0 && (
+                    <>
+                      <tr>
+                        <th scope="row">建物の固定資産税評価額（目安）</th>
+                        <td>{fmt(registrationDetail.buildingAssessedMan)}（{registrationDetail.buildingAssessedRateLabel}）</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">建物の登録免許税税率</th>
+                        <td>{registrationDetail.buildingRateLabel}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">建物の登録免許税概算</th>
+                        <td>{fmt(registrationDetail.buildingRegistrationTaxMan)}</td>
+                      </tr>
+                    </>
+                  )}
                   <tr>
-                    <th scope="row">補足</th>
-                    <td>{registrationDetail.note}</td>
+                    <th scope="row">司法書士報酬（目安）</th>
+                    <td>
+                      {fmt(registrationDetail.scrivenerFeeMan)}
+                      {registrationDetail.pairLoanScrivenerSurchargeMan > 0 ? (
+                        <span className="education-ref-subline">
+                          内訳：基本
+                          {fmt(
+                            registrationDetail.scrivenerFeeMan -
+                              registrationDetail.pairLoanScrivenerSurchargeMan,
+                          )}{' '}
+                          ＋ ペアローン上乗せ
+                          {fmt(registrationDetail.pairLoanScrivenerSurchargeMan)}
+                        </span>
+                      ) : null}
+                    </td>
                   </tr>
-                ) : null}
-                <tr>
-                  <th scope="row">計算式</th>
-                  <td>{registrationDetail.formula}</td>
-                </tr>
-                <tr className="education-ref-row--highlight">
-                  <th scope="row">自動入力した金額</th>
-                  <td>{fmt(registrationFeeMan)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
+                  {registrationDetail.note ? (
+                    <tr>
+                      <th scope="row">補足</th>
+                      <td>{registrationDetail.note}</td>
+                    </tr>
+                  ) : null}
+                  <tr>
+                    <th scope="row">計算式</th>
+                    <td>{registrationDetail.formula}</td>
+                  </tr>
+                  <tr className="education-ref-row--highlight">
+                    <th scope="row">参考額</th>
+                    <td>{fmt(registrationFeeMan)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
           )}
 
           <section className="education-ref-section education-ref-sources">
@@ -214,7 +211,6 @@ export function AcquisitionReferenceModal({
               </tbody>
             </table>
           </section>
-
         </div>
       </div>
     </div>

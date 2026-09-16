@@ -389,32 +389,52 @@ function sumOwnedMonthlyFeeMan(
   return totalMan;
 }
 
-function isOwnedSelfRepairMonth(
+/**
+ * 自主修繕費・改良費はQ5では年単位の入力とする。
+ * 月次CFへは、その年に物件を所有している最後の月へ1回だけ載せることで、
+ * シミュレーション開始年や所有終了年でも非表示の月設定に結果が左右されないようにする。
+ */
+function isLastOwnedActiveMonthOfYear(
   property: OwnedProperty,
+  member: FamilyMember,
+  referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
 ): boolean {
+  if (
+    !isOwnedActive(property, member, referenceDate, calendarYear, calendarMonth)
+  ) {
+    return false;
+  }
+
+  for (let month = calendarMonth + 1; month <= 12; month += 1) {
+    if (isOwnedActive(property, member, referenceDate, calendarYear, month)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isOwnedSelfRepairYear(
+  property: OwnedProperty,
+  calendarYear: number,
+): boolean {
   const { selfRepair } = property.maintenance;
   if (selfRepair.costMan <= 0) return false;
-
-  const first = selfRepair.nextYear * 12 + selfRepair.nextMonth;
-  const current = calendarYear * 12 + calendarMonth;
-  if (current < first) return false;
-  if (selfRepair.intervalYears <= 0) return current === first;
-
-  const monthsSinceFirst = current - first;
-  const intervalMonths = selfRepair.intervalYears * 12;
-  return monthsSinceFirst % intervalMonths === 0;
+  if (calendarYear < selfRepair.nextYear) return false;
+  if (selfRepair.intervalYears <= 0) {
+    return calendarYear === selfRepair.nextYear;
+  }
+  return (calendarYear - selfRepair.nextYear) % selfRepair.intervalYears === 0;
 }
 
 function calcOwnedImprovementCostMan(
   property: OwnedProperty,
   calendarYear: number,
-  calendarMonth: number,
 ): number {
   let totalMan = 0;
   for (const entry of property.maintenance.improvements) {
-    if (entry.year === calendarYear && entry.month === calendarMonth) {
+    if (entry.year === calendarYear) {
       totalMan += Math.max(0, entry.amountMan);
     }
   }
@@ -720,15 +740,25 @@ function calcOwnedMonthlyHousingDetailMan(
     );
   }
 
-  if (isOwnedSelfRepairMonth(property, calendarYear, calendarMonth)) {
-    detail.selfRepairCost = property.maintenance.selfRepair.costMan;
-  }
-
-  detail.improvementCost = calcOwnedImprovementCostMan(
+  const annualMaintenancePostingMonth = isLastOwnedActiveMonthOfYear(
     property,
+    member,
+    referenceDate,
     calendarYear,
     calendarMonth,
   );
+  if (
+    annualMaintenancePostingMonth &&
+    isOwnedSelfRepairYear(property, calendarYear)
+  ) {
+    detail.selfRepairCost = property.maintenance.selfRepair.costMan;
+  }
+  if (annualMaintenancePostingMonth) {
+    detail.improvementCost = calcOwnedImprovementCostMan(
+      property,
+      calendarYear,
+    );
+  }
 
   const q12Loan = calcSecondLifeFinanceLoanMonth(
     property,

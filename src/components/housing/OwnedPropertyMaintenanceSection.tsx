@@ -1,4 +1,3 @@
-import { Fragment, type CSSProperties } from 'react';
 import {
   createOwnedAnnualTaxEntry,
   createOwnedImprovementEntry,
@@ -48,7 +47,7 @@ function getPeriodOffsetOptions(
   return options;
 }
 
-interface MonthlyFeeTableProps {
+interface MonthlyFeeGroupProps {
   label: string;
   entries: OwnedMonthlyFeeEntry[];
   property: OwnedProperty;
@@ -56,13 +55,13 @@ interface MonthlyFeeTableProps {
   onChange: (entries: OwnedMonthlyFeeEntry[]) => void;
 }
 
-function MonthlyFeeTable({
+function MonthlyFeeGroup({
   label,
   entries,
   property,
   member,
   onChange,
-}: MonthlyFeeTableProps) {
+}: MonthlyFeeGroupProps) {
   const startOptions = getPeriodOffsetOptions(property, member, false);
   const endOptions = getPeriodOffsetOptions(property, member, true);
   const canRemove = entries.length > 1;
@@ -96,122 +95,119 @@ function MonthlyFeeTable({
   };
 
   return (
-    <div
-      className="housing-rental-table-group"
-      style={{ '--fee-rows': entries.length } as CSSProperties}
-    >
-      <div
-        className="housing-table-cell housing-col-name housing-table-cell--item-label housing-table-cell--rowspan-label"
-        style={{ gridRow: `1 / ${entries.length + 1}` }}
-      >
-        {label}
+    <section className="housing-maint-subsection">
+      <div className="housing-maint-subsection-header">
+        <div>
+          <h6 className="housing-maint-subsection-title">{label}</h6>
+          <p className="housing-maint-subsection-note">
+            金額が変わる場合は、期間を追加して分けて入力できます。
+          </p>
+        </div>
       </div>
-      {entries.map((entry, index) => {
-        const row = index + 1;
-        return (
-          <Fragment key={entry.id}>
-            <div
-              className="housing-table-cell housing-col-period"
-              style={{ gridRow: row, gridColumn: 2 }}
-            >
-              <select
-                className="select-input select-input--compact housing-maint-offset-select"
-                value={entry.startOffsetYears}
-                onChange={(e) =>
-                  updateEntry(entry.id, {
-                    startOffsetYears: Number(e.target.value),
-                  })
-                }
-                aria-label={`${label} 開始`}
-              >
-                {startOptions.map((offset) => (
-                  <option key={offset} value={offset}>
-                    {formatOwnedPeriodOffsetLabel(offset)}
-                  </option>
-                ))}
-              </select>
-              <span className="housing-maint-period-sep" aria-hidden>
-                〜
-              </span>
-              <select
-                className="select-input select-input--compact housing-maint-offset-select"
-                value={entry.endOffsetYears}
-                onChange={(e) =>
-                  updateEntry(entry.id, {
-                    endOffsetYears: Number(e.target.value),
-                  })
-                }
-                aria-label={`${label} 終了`}
-              >
-                {endOptions.map((offset) => (
-                  <option key={offset} value={offset}>
-                    {formatOwnedPeriodOffsetLabel(offset)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div
-              className="housing-table-cell housing-col-amount"
-              style={{ gridRow: row, gridColumn: 3 }}
-            >
-              <HousingManInput
-                compact
-                unit="万円/月"
-                value={entry.amountManPerMonth}
-                onChange={(amountManPerMonth) =>
-                  updateEntry(entry.id, { amountManPerMonth })
-                }
-              />
-            </div>
-            <div
-              className="housing-table-cell housing-col-add"
-              style={{ gridRow: row, gridColumn: 4 }}
-            >
-              {index === entries.length - 1 && (
+
+      <div className="housing-maint-entry-list">
+        {entries.map((entry, index) => (
+          <div className="housing-maint-entry-card" key={entry.id}>
+            <div className="housing-maint-entry-header">
+              <strong className="housing-maint-entry-title">
+                {entries.length > 1 ? `${label} ${index + 1}` : label}
+              </strong>
+              {canRemove ? (
                 <button
                   type="button"
-                  className="housing-maint-add-btn"
-                  onClick={addEntry}
-                >
-                  ＋ 追加
-                </button>
-              )}
-            </div>
-            <div
-              className="housing-table-cell housing-col-action"
-              style={{ gridRow: row, gridColumn: 5 }}
-            >
-              {canRemove && (
-                <button
-                  type="button"
-                  className="housing-row-remove"
+                  className="ui-entry-delete-button housing-maint-entry-delete"
                   onClick={() => removeEntry(entry.id)}
-                  aria-label={`${label}を削除`}
+                  aria-label={`${label}${index + 1}を削除`}
                 >
-                  −
+                  削除
                 </button>
-              )}
+              ) : null}
             </div>
-          </Fragment>
-        );
-      })}
-    </div>
+
+            <div className="housing-maint-entry-grid housing-maint-entry-grid--monthly">
+              <label className="housing-maint-field">
+                <span className="housing-maint-field-label">適用期間</span>
+                <div className="housing-maint-period-fields">
+                  <select
+                    className="select-input select-input--compact ui-control-width--medium"
+                    value={entry.startOffsetYears}
+                    onChange={(e) =>
+                      updateEntry(entry.id, {
+                        startOffsetYears: Number(e.target.value),
+                      })
+                    }
+                    aria-label={`${label} 開始`}
+                  >
+                    {startOptions.map((offset) => (
+                      <option key={offset} value={offset}>
+                        {formatOwnedPeriodOffsetLabel(offset)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="housing-maint-period-sep" aria-hidden>
+                    〜
+                  </span>
+                  <select
+                    className="select-input select-input--compact ui-control-width--medium"
+                    value={entry.endOffsetYears}
+                    onChange={(e) =>
+                      updateEntry(entry.id, {
+                        endOffsetYears: Number(e.target.value),
+                      })
+                    }
+                    aria-label={`${label} 終了`}
+                  >
+                    {endOptions.map((offset) => (
+                      <option key={offset} value={offset}>
+                        {formatOwnedPeriodOffsetLabel(offset)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
+              <label className="housing-maint-field">
+                <span className="housing-maint-field-label">月額</span>
+                <HousingManInput
+                  compact
+                  unit="万円/月"
+                  value={entry.amountManPerMonth}
+                  onChange={(amountManPerMonth) =>
+                    updateEntry(entry.id, { amountManPerMonth })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="housing-maint-add-row">
+        <button
+          type="button"
+          className="ui-btn ui-btn--secondary"
+          onClick={addEntry}
+        >
+          ＋ 期間を追加
+        </button>
+      </div>
+    </section>
   );
 }
 
-interface TaxSectionProps {
+interface TaxGroupProps {
   title: string;
   entries: OwnedAnnualTaxEntry[];
   referenceYear: number;
   onChange: (entries: OwnedAnnualTaxEntry[]) => void;
 }
 
-function TaxSection({
+function TaxGroup({
   title,
   entries,
   referenceYear,
   onChange,
-}: TaxSectionProps) {
+}: TaxGroupProps) {
   const updateEntry = (id: string, patch: Partial<OwnedAnnualTaxEntry>) => {
     onChange(
       entries.map((entry) =>
@@ -237,103 +233,99 @@ function TaxSection({
   };
 
   return (
-    <div
-      className="housing-rental-table-group"
-      style={{ '--fee-rows': entries.length } as CSSProperties}
-    >
-      <div
-        className="housing-table-cell housing-col-name housing-table-cell--item-label housing-table-cell--rowspan-label"
-        style={{ gridRow: `1 / ${entries.length + 1}`, gridColumn: 1 }}
-      >
-        {title}
+    <section className="housing-maint-subsection">
+      <div className="housing-maint-subsection-header">
+        <div>
+          <h6 className="housing-maint-subsection-title">{title}</h6>
+          <p className="housing-maint-subsection-note">
+            税額が変わる場合は、変更年を追加して分けて入力できます。
+          </p>
+        </div>
       </div>
-      {entries.map((entry, index) => {
-        const row = index + 1;
-        return (
-          <Fragment key={entry.id}>
-            <div
-              className="housing-table-cell housing-col-period"
-              style={{ gridRow: row, gridColumn: 2 }}
-            >
-              {entry.startYear == null ? (
-                <span className="housing-maint-tax-initial">当初</span>
-              ) : (
-                <>
-                  <input
-                    type="number"
-                    className="housing-year-input"
-                    value={entry.startYear}
-                    min={referenceYear}
-                    onChange={(e) =>
-                      updateEntry(entry.id, {
-                        startYear: Number(e.target.value) || referenceYear,
-                      })
-                    }
-                    aria-label={`${title} 開始年`}
-                  />
-                  <span className="housing-maint-tax-year-suffix">年〜</span>
-                </>
-              )}
-            </div>
-            <div
-              className="housing-table-cell housing-col-amount"
-              style={{ gridRow: row, gridColumn: 3 }}
-            >
-              <HousingManInput
-                compact
-                unit="万円/年"
-                value={entry.fixedAssetTaxMan}
-                onChange={(fixedAssetTaxMan) =>
-                  updateEntry(entry.id, { fixedAssetTaxMan })
-                }
-              />
-            </div>
-            <div
-              className="housing-table-cell housing-col-amount"
-              style={{ gridRow: row, gridColumn: 4 }}
-            >
-              <HousingManInput
-                compact
-                unit="万円/年"
-                value={entry.cityPlanningTaxMan}
-                onChange={(cityPlanningTaxMan) =>
-                  updateEntry(entry.id, { cityPlanningTaxMan })
-                }
-              />
-            </div>
-            <div
-              className="housing-table-cell housing-col-add"
-              style={{ gridRow: row, gridColumn: 5 }}
-            >
-              {index === entries.length - 1 && (
+
+      <div className="housing-maint-entry-list">
+        {entries.map((entry, index) => (
+          <div className="housing-maint-entry-card" key={entry.id}>
+            <div className="housing-maint-entry-header">
+              <strong className="housing-maint-entry-title">
+                {entry.startYear == null
+                  ? `${title}・当初`
+                  : `${title}・${entry.startYear}年から`}
+              </strong>
+              {entry.startYear != null ? (
                 <button
                   type="button"
-                  className="housing-maint-add-btn"
-                  onClick={addEntry}
-                >
-                  ＋ 追加
-                </button>
-              )}
-            </div>
-            <div
-              className="housing-table-cell housing-col-action"
-              style={{ gridRow: row, gridColumn: 6 }}
-            >
-              {entry.startYear != null && (
-                <button
-                  type="button"
-                  className="housing-row-remove"
+                  className="ui-entry-delete-button housing-maint-entry-delete"
                   onClick={() => removeEntry(entry.id)}
-                  aria-label={`${title}の税額行を削除`}
+                  aria-label={`${title}${index + 1}の税額設定を削除`}
                 >
-                  −
+                  削除
                 </button>
-              )}
+              ) : null}
             </div>
-          </Fragment>
-        );
-      })}
-    </div>
+
+            <div className="housing-maint-entry-grid housing-maint-entry-grid--tax">
+              <label className="housing-maint-field">
+                <span className="housing-maint-field-label">適用開始</span>
+                {entry.startYear == null ? (
+                  <span className="housing-maint-static-value">当初から</span>
+                ) : (
+                  <div className="housing-maint-year-field">
+                    <input
+                      type="number"
+                      className="housing-year-input ui-control-width--short"
+                      value={entry.startYear}
+                      min={referenceYear}
+                      onChange={(e) =>
+                        updateEntry(entry.id, {
+                          startYear: Number(e.target.value) || referenceYear,
+                        })
+                      }
+                      aria-label={`${title} 開始年`}
+                    />
+                    <span>年〜</span>
+                  </div>
+                )}
+              </label>
+
+              <label className="housing-maint-field">
+                <span className="housing-maint-field-label">固定資産税</span>
+                <HousingManInput
+                  compact
+                  unit="万円/年"
+                  value={entry.fixedAssetTaxMan}
+                  onChange={(fixedAssetTaxMan) =>
+                    updateEntry(entry.id, { fixedAssetTaxMan })
+                  }
+                />
+              </label>
+
+              <label className="housing-maint-field">
+                <span className="housing-maint-field-label">都市計画税</span>
+                <HousingManInput
+                  compact
+                  unit="万円/年"
+                  value={entry.cityPlanningTaxMan}
+                  onChange={(cityPlanningTaxMan) =>
+                    updateEntry(entry.id, { cityPlanningTaxMan })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="housing-maint-add-row">
+        <button
+          type="button"
+          className="ui-btn ui-btn--secondary"
+          onClick={addEntry}
+        >
+          ＋ 税額の変更年を追加
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -387,136 +379,160 @@ export function OwnedPropertyMaintenanceSection({
   const canRemoveImprovement = maintenance.improvements.length > 1;
 
   return (
-    <div className="housing-maint-layout">
-      <div className="housing-rental-card">
-        <div className="housing-rental-table housing-rental-table--maint-fees">
-          <div className="housing-rental-table-header">
-            <div className="housing-table-header-cell housing-col-name">項目</div>
-            <div className="housing-table-header-cell housing-col-period">期間</div>
-            <div className="housing-table-header-cell housing-col-amount">金額</div>
-            <div className="housing-table-header-cell housing-col-add" />
-            <div className="housing-table-header-cell housing-col-action" />
+    <div className="housing-maint-layout housing-maint-layout--cards">
+      <section className="housing-maint-panel">
+        <div className="housing-maint-panel-header">
+          <div>
+            <h5 className="housing-maint-panel-title">毎月の維持費</h5>
+            <p className="housing-maint-panel-note">
+              管理費と修繕積立金を、金額が変わる期間ごとに入力します。
+            </p>
           </div>
+        </div>
+        <div className="housing-maint-panel-body">
+          <MonthlyFeeGroup
+            label="管理費"
+            entries={maintenance.managementFees}
+            property={property}
+            member={member}
+            onChange={(managementFees) =>
+              updateMaintenance({ managementFees })
+            }
+          />
+          <MonthlyFeeGroup
+            label="修繕積立金"
+            entries={maintenance.repairReserveFees}
+            property={property}
+            member={member}
+            onChange={(repairReserveFees) =>
+              updateMaintenance({ repairReserveFees })
+            }
+          />
+        </div>
+      </section>
 
-          <div className="housing-rental-table-body">
-            <MonthlyFeeTable
-              label="管理費"
-              entries={maintenance.managementFees}
-              property={property}
-              member={member}
-              onChange={(managementFees) =>
-                updateMaintenance({ managementFees })
-              }
-            />
-
-            <MonthlyFeeTable
-              label="修繕積立金"
-              entries={maintenance.repairReserveFees}
-              property={property}
-              member={member}
-              onChange={(repairReserveFees) =>
-                updateMaintenance({ repairReserveFees })
-              }
-            />
-
-            <div className="housing-rental-table-row housing-rental-table-row--self-repair">
-              <div className="housing-table-cell housing-col-name housing-table-cell--item-label">
-                自主修繕費
+      <section className="housing-maint-panel">
+        <div className="housing-maint-panel-header">
+          <div>
+            <h5 className="housing-maint-panel-title">修繕・改良</h5>
+            <p className="housing-maint-panel-note">
+              定期的な自主修繕と、個別に予定している改良費を入力します。
+            </p>
+          </div>
+        </div>
+        <div className="housing-maint-panel-body">
+          <section className="housing-maint-subsection">
+            <div className="housing-maint-subsection-header">
+              <div>
+                <h6 className="housing-maint-subsection-title">自主修繕費</h6>
+                <p className="housing-maint-subsection-note">
+                  次回予定年と、その後の繰り返し周期を設定します。
+                </p>
               </div>
-              <div className="housing-table-cell housing-col-period housing-col-period--wide">
-                <div className="housing-maint-self-repair-fields">
-                  <div className="housing-maint-self-repair-line">
-                    <span className="housing-maint-self-repair-label">費用：</span>
-                    <HousingManInput
-                      compact
-                      value={maintenance.selfRepair.costMan}
-                      onChange={(costMan) =>
-                        updateMaintenance({
-                          selfRepair: { ...maintenance.selfRepair, costMan },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="housing-maint-self-repair-line">
-                    <span className="housing-maint-self-repair-label">次回：</span>
-                    <HousingRenewalDateFields
-                      year={maintenance.selfRepair.nextYear}
-                      month={maintenance.selfRepair.nextMonth}
-                      referenceYear={referenceYear}
-                      onChange={(nextYear, nextMonth) =>
-                        updateMaintenance({
-                          selfRepair: {
-                            ...maintenance.selfRepair,
-                            nextYear,
-                            nextMonth,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="housing-maint-self-repair-line">
-                    <span className="housing-maint-self-repair-label">以降：</span>
-                    <select
-                      className="select-input select-input--compact"
-                      value={maintenance.selfRepair.intervalYears}
-                      onChange={(e) =>
-                        updateMaintenance({
-                          selfRepair: {
-                            ...maintenance.selfRepair,
-                            intervalYears: Number(e.target.value),
-                          },
-                        })
-                      }
-                    >
-                      {OWNED_REPAIR_INTERVAL_OPTIONS.map((years) => (
-                        <option key={years} value={years}>
-                          {formatOwnedRepairIntervalLabel(years)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="housing-table-cell housing-col-action" />
             </div>
 
-            <div
-              className="housing-rental-table-group"
-              style={
-                {
-                  '--fee-rows': maintenance.improvements.length,
-                } as CSSProperties
-              }
-            >
-              <div
-                className="housing-table-cell housing-col-name housing-table-cell--item-label housing-table-cell--rowspan-label"
-                style={{
-                  gridRow: `1 / ${maintenance.improvements.length + 1}`,
-                }}
-              >
-                改良費
+            <div className="housing-maint-entry-card">
+              <div className="housing-maint-entry-grid housing-maint-entry-grid--repair">
+                <label className="housing-maint-field">
+                  <span className="housing-maint-field-label">費用</span>
+                  <HousingManInput
+                    compact
+                    value={maintenance.selfRepair.costMan}
+                    onChange={(costMan) =>
+                      updateMaintenance({
+                        selfRepair: { ...maintenance.selfRepair, costMan },
+                      })
+                    }
+                  />
+                </label>
+
+                <div className="housing-maint-field">
+                  <span className="housing-maint-field-label">次回予定年</span>
+                  <HousingRenewalDateFields
+                    year={maintenance.selfRepair.nextYear}
+                    month={maintenance.selfRepair.nextMonth}
+                    referenceYear={referenceYear}
+                    yearOnly
+                    onChange={(nextYear) =>
+                      updateMaintenance({
+                        selfRepair: {
+                          ...maintenance.selfRepair,
+                          nextYear,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <label className="housing-maint-field">
+                  <span className="housing-maint-field-label">以降の周期</span>
+                  <select
+                    className="select-input select-input--compact ui-control-width--medium"
+                    value={maintenance.selfRepair.intervalYears}
+                    onChange={(e) =>
+                      updateMaintenance({
+                        selfRepair: {
+                          ...maintenance.selfRepair,
+                          intervalYears: Number(e.target.value),
+                        },
+                      })
+                    }
+                  >
+                    {OWNED_REPAIR_INTERVAL_OPTIONS.map((years) => (
+                      <option key={years} value={years}>
+                        {formatOwnedRepairIntervalLabel(years)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              {maintenance.improvements.map((entry, index) => {
-                const row = index + 1;
-                return (
-                  <Fragment key={entry.id}>
-                    <div
-                      className="housing-table-cell housing-col-period"
-                      style={{ gridRow: row, gridColumn: 2 }}
-                    >
+            </div>
+          </section>
+
+          <section className="housing-maint-subsection">
+            <div className="housing-maint-subsection-header">
+              <div>
+                <h6 className="housing-maint-subsection-title">改良費</h6>
+                <p className="housing-maint-subsection-note">
+                  リフォームなど、予定年が決まっている支出を個別に登録します。
+                </p>
+              </div>
+            </div>
+
+            <div className="housing-maint-entry-list">
+              {maintenance.improvements.map((entry, index) => (
+                <div className="housing-maint-entry-card" key={entry.id}>
+                  <div className="housing-maint-entry-header">
+                    <strong className="housing-maint-entry-title">
+                      改良費 {index + 1}
+                    </strong>
+                    {canRemoveImprovement ? (
+                      <button
+                        type="button"
+                        className="ui-entry-delete-button housing-maint-entry-delete"
+                        onClick={() => removeImprovement(entry.id)}
+                        aria-label={`改良費${index + 1}を削除`}
+                      >
+                        削除
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="housing-maint-entry-grid housing-maint-entry-grid--improvement">
+                    <div className="housing-maint-field">
+                      <span className="housing-maint-field-label">予定年</span>
                       <HousingRenewalDateFields
                         year={entry.year}
                         month={entry.month}
                         referenceYear={referenceYear}
-                        onChange={(year, month) =>
-                          updateImprovement(entry.id, { year, month })
+                        yearOnly
+                        onChange={(year) =>
+                          updateImprovement(entry.id, { year })
                         }
                       />
                     </div>
-                    <div
-                      className="housing-table-cell housing-col-amount"
-                      style={{ gridRow: row, gridColumn: 3 }}
-                    >
+                    <label className="housing-maint-field">
+                      <span className="housing-maint-field-label">金額</span>
                       <HousingManInput
                         compact
                         value={entry.amountMan}
@@ -524,101 +540,65 @@ export function OwnedPropertyMaintenanceSection({
                           updateImprovement(entry.id, { amountMan })
                         }
                       />
-                    </div>
-                    <div
-                      className="housing-table-cell housing-col-add"
-                      style={{ gridRow: row, gridColumn: 4 }}
-                    >
-                      {index === maintenance.improvements.length - 1 && (
-                        <button
-                          type="button"
-                          className="housing-maint-add-btn"
-                          onClick={addImprovement}
-                        >
-                          ＋ 追加
-                        </button>
-                      )}
-                    </div>
-                    <div
-                      className="housing-table-cell housing-col-action"
-                      style={{ gridRow: row, gridColumn: 5 }}
-                    >
-                      {canRemoveImprovement && (
-                        <button
-                          type="button"
-                          className="housing-row-remove"
-                          onClick={() => removeImprovement(entry.id)}
-                          aria-label="改良費を削除"
-                        >
-                          −
-                        </button>
-                      )}
-                    </div>
-                  </Fragment>
-                );
-              })}
+                    </label>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+
+            <div className="housing-maint-add-row">
+              <button
+                type="button"
+                className="ui-btn ui-btn--secondary"
+                onClick={addImprovement}
+              >
+                ＋ 改良費を追加
+              </button>
+            </div>
+          </section>
         </div>
-      </div>
+      </section>
 
-      <div className="housing-rental-card">
-        <div className="housing-rental-table housing-rental-table--maint-tax">
-          <div className="housing-rental-table-header">
-            <div className="housing-table-header-cell housing-col-name">税金</div>
-            <div className="housing-table-header-cell housing-col-period">
-              <a
-                className="housing-maint-road-price-link"
-                href="https://www.rosenka.nta.go.jp/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                路線価図 ↗
-              </a>
-            </div>
-            <div className="housing-table-header-cell housing-col-amount">
-              固定資産税
-              <span
-                className="housing-help-icon"
-                title="固定資産税は毎年4月・5月・6月に納付する地方税です"
-              >
-                ?
-              </span>
-            </div>
-            <div className="housing-table-header-cell housing-col-amount">
-              都市計画税
-              <span
-                className="housing-help-icon"
-                title="都市計画税は固定資産税とあわせて納付する地方税です"
-              >
-                ?
-              </span>
-            </div>
-            <div className="housing-table-header-cell housing-col-add" />
-            <div className="housing-table-header-cell housing-col-action" />
+      <section className="housing-maint-panel">
+        <div className="housing-maint-panel-header housing-maint-panel-header--action">
+          <div>
+            <h5 className="housing-maint-panel-title">
+              固定資産税・都市計画税
+            </h5>
+            <p className="housing-maint-panel-note">
+              土地と建物を分けて、年額を入力します。
+            </p>
           </div>
+          <a
+            className="ui-btn ui-btn--ghost housing-maint-road-price-link"
+            href="https://www.rosenka.nta.go.jp/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            路線価図を開く ↗
+          </a>
+        </div>
 
-          <div className="housing-rental-table-body">
-            <TaxSection
-              title="土地"
-              entries={maintenance.landTaxes}
+        <div className="housing-maint-panel-body">
+          <TaxGroup
+            title="土地"
+            entries={maintenance.landTaxes}
+            referenceYear={referenceYear}
+            onChange={(landTaxes) => updateMaintenance({ landTaxes })}
+          />
+
+          {showBuildingTaxes ? (
+            <TaxGroup
+              title="建物"
+              entries={maintenance.buildingTaxes}
               referenceYear={referenceYear}
-              onChange={(landTaxes) => updateMaintenance({ landTaxes })}
+              onChange={(buildingTaxes) =>
+                updateMaintenance({ buildingTaxes })
+              }
             />
-
-            {showBuildingTaxes && (
-              <TaxSection
-                title="建物"
-                entries={maintenance.buildingTaxes}
-                referenceYear={referenceYear}
-                onChange={(buildingTaxes) =>
-                  updateMaintenance({ buildingTaxes })
-                }
-              />
-            )}
-          </div>
+          ) : null}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

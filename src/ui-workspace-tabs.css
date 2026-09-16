@@ -1,0 +1,115 @@
+/* Shared workspace/content-switch tabs.
+ * Use for switching sections inside the same screen (for example Q5 housing
+ * domains and Q12 second-life workspace). Member/person tabs remain separate.
+ */
+
+:is(.ui-workspace-tabs, .second-life-workspace-tabs, .housing-domain-filter-tabs) {
+  --ui-workspace-tab-columns: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--ui-workspace-tab-columns), minmax(0, 1fr));
+  width: 100%;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  overflow: hidden;
+  background: var(--ui-bg-surface);
+}
+
+.second-life-workspace-tabs {
+  --ui-workspace-tab-columns: 4;
+  margin-top: 16px;
+}
+
+.housing-domain-filter-tabs {
+  --ui-workspace-tab-columns: 2;
+}
+
+:is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 0;
+  border-right: 1px solid var(--ui-border);
+  border-radius: 0;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-muted);
+  font: inherit;
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+  box-shadow: none;
+  transition:
+    background var(--ui-transition-fast),
+    color var(--ui-transition-fast),
+    box-shadow var(--ui-transition-fast);
+}
+
+:is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab):last-child {
+  border-right: 0;
+}
+
+:is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab):hover:not(:disabled):not(.is-active) {
+  background: var(--ui-bg-hover);
+  color: var(--ui-text);
+}
+
+:is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab).is-active,
+.housing-domain-filter-tab[aria-pressed='true'] {
+  background: var(--ui-bg-selected);
+  color: var(--ui-brand);
+  box-shadow: inset 0 -3px 0 var(--ui-brand);
+}
+
+:is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab):focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--ui-brand);
+  outline-offset: -3px;
+}
+
+.housing-domain-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 1px 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-bg-subtle);
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.housing-domain-filter-tab.is-active .housing-domain-filter-count,
+.housing-domain-filter-tab[aria-pressed='true'] .housing-domain-filter-count {
+  border-color: color-mix(in srgb, var(--ui-brand) 24%, var(--ui-border));
+  background: var(--ui-bg-surface);
+  color: var(--ui-brand);
+}
+
+@media (max-width: 960px) {
+  .second-life-workspace-tabs {
+    --ui-workspace-tab-columns: 2;
+  }
+
+  .second-life-workspace-tab:nth-child(2) {
+    border-right: 0;
+  }
+
+  .second-life-workspace-tab:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--ui-border);
+  }
+}
+
+@media (max-width: 768px) {
+  :is(.ui-workspace-tab, .second-life-workspace-tab, .housing-domain-filter-tab) {
+    min-height: 44px;
+    padding: 9px 10px;
+  }
+}

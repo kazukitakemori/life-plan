@@ -1,10 +1,13 @@
-import {
-  OWNED_PROPERTY_TYPE_LABELS,
-} from '../../lib/housingLabels';
+import { OWNED_PROPERTY_TYPE_LABELS } from '../../lib/housingLabels';
 import type { OwnedTabView } from '../../lib/housingOwnedViews';
 import type { FamilyMember } from '../../types/family';
 import type { OwnedProperty, OwnedPropertyType } from '../../types/housing';
-import type { HousingLinkedLoanView, LoanEntry, LoanState, LoanStructureType } from '../../types/loan';
+import type {
+  HousingLinkedLoanView,
+  LoanEntry,
+  LoanState,
+  LoanStructureType,
+} from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
@@ -24,8 +27,6 @@ interface OwnedPropertySectionProps {
   vehicleState: VehicleState;
   contractorMembers: FamilyMember[];
   hasSpouse: boolean;
-  highlightTokenById?: ReadonlyMap<string, number>;
-  endedPropertyIds?: ReadonlySet<string>;
   onAddProperty: (type: OwnedPropertyType) => void;
   onChangeProperty: (storageTargetId: string, property: OwnedProperty) => void;
   onRemoveProperty: (storageTargetId: string, propertyId: string) => void;
@@ -74,8 +75,6 @@ export function OwnedPropertySection({
   vehicleState,
   contractorMembers,
   hasSpouse,
-  highlightTokenById,
-  endedPropertyIds,
   onAddProperty,
   onChangeProperty,
   onRemoveProperty,
@@ -92,13 +91,6 @@ export function OwnedPropertySection({
 }: OwnedPropertySectionProps) {
   return (
     <section className="housing-section" id="housing-owned-section">
-      <div className="housing-section-header">
-        <h3 className="housing-section-title">所有物件</h3>
-        <p className="housing-section-desc">
-          購入・ローン・税金など。詳細は各カードを開いて入力します。
-        </p>
-      </div>
-
       {ownedViews.length > 0 ? (
         <div className="housing-owned-list">
           {ownedViews.map((view) => {
@@ -124,8 +116,6 @@ export function OwnedPropertySection({
                 viewRole={view.viewRole}
                 canRemove={view.viewRole === 'owner'}
                 canAddLoan={view.viewRole === 'owner'}
-                highlightToken={highlightTokenById?.get(view.property.id)}
-                endedBySecondLife={endedPropertyIds?.has(view.property.id)}
                 onChange={(updated) =>
                   onChangeProperty(view.storageTargetId, updated)
                 }

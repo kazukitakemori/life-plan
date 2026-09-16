@@ -14,7 +14,6 @@ import {
 } from '../../lib/lifeEventSource';
 import type { FamilyMember } from '../../types/family';
 import type { LifeEventEntry } from '../../types/lifeEvent';
-import { SegmentedControl } from '../ui';
 import { CelebrationGiftBlock } from './CelebrationGiftBlock';
 import { LifeEventRow } from './LifeEventRow';
 
@@ -177,13 +176,26 @@ export function LifeEventTable({
         <div className="life-event-table-card">
           {regularEntries.length > 1 ? (
             <div className="life-event-sort-tools">
-              <SegmentedControl
-                className="life-event-sort-control"
-                ariaLabel="ライフイベントの表示順"
-                value={sortMode}
-                options={SORT_OPTIONS}
-                onChange={(value) => setSortMode(value as LifeEventSortMode)}
-              />
+              <div
+                className="ui-workspace-tabs life-event-sort-control"
+                role="group"
+                aria-label="ライフイベントの表示順"
+              >
+                {SORT_OPTIONS.map((option) => {
+                  const active = option.value === sortMode;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`ui-workspace-tab${active ? ' is-active' : ''}`}
+                      aria-pressed={active}
+                      onClick={() => setSortMode(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ) : null}
 

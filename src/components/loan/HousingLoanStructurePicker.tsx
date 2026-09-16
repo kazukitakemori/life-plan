@@ -48,23 +48,11 @@ export function HousingLoanStructurePicker({
       aria-label="住宅ローンの借入形態を選択"
     >
       <div className="loan-structure-picker-header">
-        <h4 className="loan-structure-picker-title">借入形態を選択</h4>
-        <div className="loan-structure-picker-actions">
-          <button
-            type="button"
-            className="loan-structure-picker-confirm"
-            disabled={!canConfirm}
-            onClick={() => onConfirm(selected)}
-          >
-            {confirmLabel}
-          </button>
-          <button
-            type="button"
-            className="loan-structure-picker-cancel"
-            onClick={onCancel}
-          >
-            キャンセル
-          </button>
+        <div>
+          <h4 className="loan-structure-picker-title">借入形態を選択</h4>
+          <p className="loan-structure-picker-lead">
+            まず借り方を選びます。違いを確認したい場合は比較表を開いてください。
+          </p>
         </div>
       </div>
 
@@ -102,39 +90,62 @@ export function HousingLoanStructurePicker({
         </p>
       ) : null}
 
-      <div className="loan-structure-comparison-wrap">
-        <h5 className="loan-structure-comparison-title">ローン比較表</h5>
-        <div className="loan-structure-comparison-scroll">
-          <table className="loan-structure-comparison-table">
-            <thead>
-              <tr>
-                <th scope="col" className="loan-structure-comparison-row-label">
-                  項目
-                </th>
-                {HOUSING_LOAN_STRUCTURE_COMPARISON.columns.map((column) => (
-                  <th key={column.key} scope="col">
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {HOUSING_LOAN_STRUCTURE_COMPARISON.rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row" className="loan-structure-comparison-row-label">
-                    {row.label}
+      <div className="loan-structure-picker-actions loan-structure-picker-actions--footer">
+        <button
+          type="button"
+          className="loan-structure-picker-confirm"
+          disabled={!canConfirm}
+          onClick={() => onConfirm(selected)}
+        >
+          {confirmLabel}
+        </button>
+        <button
+          type="button"
+          className="loan-structure-picker-cancel"
+          onClick={onCancel}
+        >
+          キャンセル
+        </button>
+      </div>
+
+      <details className="loan-structure-comparison-disclosure">
+        <summary className="loan-structure-comparison-summary">
+          借入形態の違いを比較する
+        </summary>
+        <div className="loan-structure-comparison-wrap">
+          <h5 className="loan-structure-comparison-title">ローン比較表</h5>
+          <div className="loan-structure-comparison-scroll">
+            <table className="loan-structure-comparison-table">
+              <thead>
+                <tr>
+                  <th scope="col" className="loan-structure-comparison-row-label">
+                    項目
                   </th>
                   {HOUSING_LOAN_STRUCTURE_COMPARISON.columns.map((column) => (
-                    <td key={column.key}>
-                      <ComparisonCellContent value={row[column.key]} />
-                    </td>
+                    <th key={column.key} scope="col">
+                      {column.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {HOUSING_LOAN_STRUCTURE_COMPARISON.rows.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row" className="loan-structure-comparison-row-label">
+                      {row.label}
+                    </th>
+                    {HOUSING_LOAN_STRUCTURE_COMPARISON.columns.map((column) => (
+                      <td key={column.key}>
+                        <ComparisonCellContent value={row[column.key]} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </details>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { calcBirthYear, formatEndYearLabel, formatYearAtAgeLabel } from '../../lib/birthDate';
 import {
   formatRentalRenewalIntervalLabel,
@@ -13,6 +14,7 @@ import {
   resolveReferenceNowAgeMonth,
   resolveSimulationStartAgeMonth,
 } from '../../lib/periodTimingBounds';
+import { resolveRentalPayerMode } from '../../lib/housingRentalPayer';
 import type { FamilyMember } from '../../types/family';
 import type {
   RentalOccupancy,
@@ -22,13 +24,9 @@ import type {
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleState } from '../../types/vehicle';
-import { useEffect, useMemo } from 'react';
-import { resolveRentalPayerMode } from '../../lib/housingRentalPayer';
-import { HousingManInput } from './HousingManInput';
 import { HousingInsuranceLinks } from './HousingInsuranceLinks';
+import { HousingManInput } from './HousingManInput';
 import { HousingRenewalDateFields } from './HousingRenewalDateFields';
-import { housingPropertyElementId } from './HousingSecondLifeApplySummary';
-import { useHousingApplyFlash } from './useHousingApplyFlash';
 
 interface RentalPropertyCardProps {
   rental: RentalProperty;
@@ -44,10 +42,6 @@ interface RentalPropertyCardProps {
   housingState: HousingState;
   vehicleState: VehicleState;
   hasSpouse: boolean;
-  /** セカンドライフ反映で追加されたときのフラッシュ用トークン */
-  highlightToken?: number;
-  /** セカンドライフ反映で終了された */
-  endedBySecondLife?: boolean;
   onChange: (rental: RentalProperty) => void;
   onPayerModeChange: (payerMode: RentalPayerMode) => void;
   onRemove: () => void;
@@ -73,8 +67,6 @@ export function RentalPropertyCard({
   housingState,
   vehicleState,
   hasSpouse,
-  highlightToken,
-  endedBySecondLife = false,
   onChange,
   onPayerModeChange,
   onRemove,
@@ -82,7 +74,7 @@ export function RentalPropertyCard({
   onUpdateInsurance,
   onRemoveInsurance,
 }: RentalPropertyCardProps) {
-  const flashing = useHousingApplyFlash(highlightToken);
+  const [expanded, setExpanded] = useState(false);
   const headId = members.find((item) => item.role === 'head')?.id;
   const spouseId = members.find((item) => item.role === 'spouse')?.id;
   const payerMode = resolveRentalPayerMode(
@@ -149,226 +141,180 @@ export function RentalPropertyCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simStart.age, simStart.month, refNow.age, refNow.month, isUpcoming, isCurrent]);
 
+  const rentLabel =
+    payerMode === 'both'
+      ? amountRole === 'spouseShare'
+        ? '配偶者の負担額 / 月'
+        : '家賃 / 月（分担）'
+      : '家賃 / 月';
+
   return (
-    <div
-      id={housingPropertyElementId('rental', rental.id)}
-      className={[
-        'housing-rental-card',
-        flashing ? 'is-flash' : '',
-        endedBySecondLife ? 'is-ended-by-second-life' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+    <article
+      className={`housing-rental-card${expanded ? ' housing-rental-card--expanded' : ''}`}
     >
-      {endedBySecondLife ? (
-        <div className="housing-second-life-ended-banner">
-          セカンドライフ反映で終了
-        </div>
-      ) : null}
-      {hasSpouse ? (
-        <div className="housing-rental-payer-bar">
-          <label className="housing-rental-payer-label">
-            家賃の負担者
+      <div className="housing-rental-card-header">
+        <div className="housing-rental-header-fields">
+          <label className="housing-rental-field housing-rental-name-field">
+            <span className="housing-rental-field-label">物件名</span>
+            <input
+              type="text"
+              className="housing-text-input ui-control-width--long"
+              value={rental.name}
+              onChange={(e) => update({ name: e.target.value })}
+            />
+          </label>
+
+          <label className="housing-rental-field housing-rental-occupancy-field">
+            <span className="housing-rental-field-label">入居状況</span>
             <select
-              className="select-input select-input--compact housing-rental-payer-select"
+              className="select-input select-input--compact housing-occupancy-select ui-control-width--medium"
+              value={rental.occupancy}
+              onChange={(e) =>
+                update({ occupancy: e.target.value as RentalOccupancy })
+              }
+            >
+              {OCCUPANCY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {RENTAL_OCCUPANCY_SELECT_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {hasSpouse ? (
+          <label className="housing-rental-field housing-rental-payer-field">
+            <span className="housing-rental-field-label">家賃の負担者</span>
+            <select
+              className="select-input select-input--compact housing-rental-payer-select ui-control-width--medium"
               value={payerMode}
               onChange={(e) =>
                 onPayerModeChange(e.target.value as RentalPayerMode)
               }
-              aria-label="家賃の負担者"
             >
               <option value="head">世帯主が払う</option>
               <option value="spouse">配偶者が払う</option>
               <option value="both">両方で払う</option>
             </select>
           </label>
-        </div>
-      ) : null}
-      <div
-        className={[
-          'housing-rental-table',
-          isUpcoming ? 'housing-rental-table--upcoming' : '',
-          showEndCostInputs ? 'housing-rental-table--until' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        <div className="housing-rental-table-header">
-          <div className="housing-table-header-cell housing-col-name">物件名</div>
-          <div className="housing-table-header-cell housing-col-period">
-            契約期間
-          </div>
-          <div className="housing-table-header-cell housing-col-amount">
-            {payerMode === 'both' ? '賃料/月（分担）' : '賃料/月'}
-          </div>
-          {isUpcoming && (
-            <>
-              <div className="housing-table-header-cell housing-col-amount">
-                敷金
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                礼金／一時金
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                仲介手数料
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                引越し費用
-              </div>
-            </>
-          )}
-          {showEndCostInputs && (
-            <>
-              <div className="housing-table-header-cell housing-col-amount">
-                退去・引越し費用
-              </div>
-              <div className="housing-table-header-cell housing-col-amount">
-                敷金（返金）
-              </div>
-            </>
-          )}
-          <div className="housing-table-header-cell housing-col-renewal">更新</div>
-          <div className="housing-table-header-cell housing-col-action" />
-        </div>
+        ) : null}
 
-        <div className="housing-rental-table-body">
-          <div className="housing-rental-table-row">
-            <div className="housing-table-cell housing-col-name">
-              <input
-                type="text"
-                className="housing-text-input"
-                value={rental.name}
-                onChange={(e) => update({ name: e.target.value })}
-              />
-              <select
-                className="select-input select-input--compact housing-occupancy-select"
-                value={rental.occupancy}
-                onChange={(e) =>
-                  update({ occupancy: e.target.value as RentalOccupancy })
-                }
-                aria-label="入居状況"
-              >
-                {OCCUPANCY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {RENTAL_OCCUPANCY_SELECT_LABELS[option]}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="housing-rental-card-actions">
+          <button
+            type="button"
+            className={`ui-entry-disclosure-btn${expanded ? ' is-active' : ''}`}
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+          >
+            <span aria-hidden>{expanded ? '−' : '＋'}</span>
+            {expanded ? '詳細を閉じる' : '詳細を入力'}
+          </button>
+          <button
+            type="button"
+            className="ui-entry-delete-button housing-rental-remove-btn"
+            onClick={onRemove}
+            aria-label="賃貸物件を削除"
+          >
+            削除
+          </button>
+        </div>
+      </div>
 
-            <div className="housing-table-cell housing-col-period">
-              <div className="living-schedule-inputs">
-                <div className="living-schedule-side">
-                  <div className="living-schedule-fields">
-                    {isCurrent ? (
-                      <>
-                        <select
-                          className="select-input select-input--compact select-input--schedule"
-                          value={rental.startAge}
-                          disabled
-                          aria-label="契約開始年齢（基準月）"
-                        >
-                          <option value={rental.startAge}>
-                            {rental.startAge}才
-                          </option>
-                        </select>
-                        <select
-                          className="select-input select-input--compact select-input--schedule"
-                          value={rental.startMonth}
-                          disabled
-                          aria-label="契約開始月（基準月）"
-                        >
-                          <option value={rental.startMonth}>
-                            {rental.startMonth}月
-                          </option>
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <select
-                          className="select-input select-input--compact select-input--schedule"
-                          value={rental.startAge}
-                          onChange={(e) =>
-                            update({ startAge: Number(e.target.value) })
-                          }
-                        >
-                          {startAgeOptions.map((age) => (
-                            <option key={age} value={age}>
-                              {age}才
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          className="select-input select-input--compact select-input--schedule"
-                          value={rental.startMonth}
-                          onChange={(e) =>
-                            update({ startMonth: Number(e.target.value) })
-                          }
-                        >
-                          {startMonthOptions.map((month) => (
-                            <option key={month} value={month}>
-                              {month}月
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    )}
+      {expanded ? (
+        <div className="housing-rental-card-body">
+          <section className="housing-rental-block housing-rental-block--basic">
+            <h4 className="housing-rental-block-title">基本情報</h4>
+            <div className="housing-rental-basic-grid">
+              <div className="housing-rental-field housing-rental-period-field">
+                <span className="housing-rental-field-label">契約期間</span>
+                <div className="living-schedule-inputs">
+                  <div className="living-schedule-side">
+                    <div className="living-schedule-fields">
+                      {isCurrent ? (
+                        <>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.startAge}
+                            disabled
+                            aria-label="契約開始年齢（基準月）"
+                          >
+                            <option value={rental.startAge}>{rental.startAge}才</option>
+                          </select>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.startMonth}
+                            disabled
+                            aria-label="契約開始月（基準月）"
+                          >
+                            <option value={rental.startMonth}>{rental.startMonth}月</option>
+                          </select>
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.startAge}
+                            onChange={(e) =>
+                              update({ startAge: Number(e.target.value) })
+                            }
+                            aria-label="契約開始年齢"
+                          >
+                            {startAgeOptions.map((age) => (
+                              <option key={age} value={age}>
+                                {age}才
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.startMonth}
+                            onChange={(e) =>
+                              update({ startMonth: Number(e.target.value) })
+                            }
+                            aria-label="契約開始月"
+                          >
+                            {startMonthOptions.map((month) => (
+                              <option key={month} value={month}>
+                                {month}月
+                              </option>
+                            ))}
+                          </select>
+                        </>
+                      )}
+                    </div>
+                    <p className="period-start-label">
+                      {formatYearAtAgeLabel(
+                        rental.startAge,
+                        rental.startMonth,
+                        birthYear,
+                        timingMember.birthMonth,
+                      )}
+                      {isCurrent ? '（基準月）' : ''}
+                    </p>
                   </div>
-                  <p className="period-start-label">
-                    {formatYearAtAgeLabel(
-                      rental.startAge,
-                      rental.startMonth,
-                      birthYear,
-                      timingMember.birthMonth,
-                    )}
-                    {isCurrent ? '（基準月）' : ''}
-                  </p>
-                </div>
 
-                <span className="living-schedule-arrow" aria-hidden>
-                  →
-                </span>
+                  <span className="living-schedule-arrow" aria-hidden>
+                    →
+                  </span>
 
-                <div className="living-schedule-side">
-                  <div className="living-schedule-fields">
-                    {rental.endMode === 'lifetime' ? (
-                      <select
-                        className="select-input select-input--compact select-input--schedule"
-                        value="lifetime"
-                        onChange={(e) => {
-                          if (e.target.value !== 'lifetime') {
-                            update({
-                              endMode: 'until',
-                              endAge: Math.max(
-                                rental.startAge + 1,
-                                Number(e.target.value),
-                              ),
-                            });
-                          }
-                        }}
-                      >
-                        <option value="lifetime">生涯</option>
-                        {END_AGES.filter((age) => age > rental.startAge).map(
-                          (age) => (
-                            <option key={age} value={age}>
-                              {age}才
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    ) : (
-                      <>
+                  <div className="living-schedule-side">
+                    <div className="living-schedule-fields">
+                      {rental.endMode === 'lifetime' ? (
                         <select
                           className="select-input select-input--compact select-input--schedule"
-                          value={rental.endAge}
+                          value="lifetime"
                           onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === 'lifetime') {
-                              update({ endMode: 'lifetime' });
-                            } else {
-                              update({ endAge: Number(value) });
+                            if (e.target.value !== 'lifetime') {
+                              update({
+                                endMode: 'until',
+                                endAge: Math.max(
+                                  rental.startAge + 1,
+                                  Number(e.target.value),
+                                ),
+                              });
                             }
                           }}
+                          aria-label="契約終了年齢"
                         >
                           <option value="lifetime">生涯</option>
                           {END_AGES.filter((age) => age > rental.startAge).map(
@@ -379,120 +325,157 @@ export function RentalPropertyCard({
                             ),
                           )}
                         </select>
-                        <select
-                          className="select-input select-input--compact select-input--schedule"
-                          value={rental.endMonth}
-                          onChange={(e) =>
-                            update({ endMonth: Number(e.target.value) })
-                          }
-                        >
-                          {MONTHS.map((month) => (
-                            <option key={month} value={month}>
-                              {month}月
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    )}
-                  </div>
-                  {rental.endMode === 'until' && (
-                    <p className="period-end-label housing-period-end-label">
-                      {formatEndYearLabel(
-                        rental.endAge,
-                        rental.endMonth,
-                        birthYear,
-                        timingMember.birthMonth,
+                      ) : (
+                        <>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.endAge}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === 'lifetime') {
+                                update({ endMode: 'lifetime' });
+                              } else {
+                                update({ endAge: Number(value) });
+                              }
+                            }}
+                            aria-label="契約終了年齢"
+                          >
+                            <option value="lifetime">生涯</option>
+                            {END_AGES.filter((age) => age > rental.startAge).map(
+                              (age) => (
+                                <option key={age} value={age}>
+                                  {age}才
+                                </option>
+                              ),
+                            )}
+                          </select>
+                          <select
+                            className="select-input select-input--compact select-input--schedule"
+                            value={rental.endMonth}
+                            onChange={(e) =>
+                              update({ endMonth: Number(e.target.value) })
+                            }
+                            aria-label="契約終了月"
+                          >
+                            {MONTHS.map((month) => (
+                              <option key={month} value={month}>
+                                {month}月
+                              </option>
+                            ))}
+                          </select>
+                        </>
                       )}
-                    </p>
-                  )}
+                    </div>
+                    {rental.endMode === 'until' ? (
+                      <p className="period-end-label housing-period-end-label">
+                        {formatEndYearLabel(
+                          rental.endAge,
+                          rental.endMonth,
+                          birthYear,
+                          timingMember.birthMonth,
+                        )}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="housing-table-cell housing-col-amount">
-              {payerMode === 'both' && amountRole === 'primary' ? (
-                <div className="housing-rental-split-rent">
-                  <label className="housing-rental-split-rent-label">
-                    世帯主
-                    <HousingManInput
-                      compact
-                      value={rental.monthlyRentMan}
-                      onChange={(monthlyRentMan) => update({ monthlyRentMan })}
-                    />
-                  </label>
-                  <label className="housing-rental-split-rent-label">
-                    配偶者
-                    <HousingManInput
-                      compact
-                      value={rental.spouseMonthlyRentMan ?? 0}
-                      onChange={(spouseMonthlyRentMan) =>
-                        update({ spouseMonthlyRentMan })
-                      }
-                    />
-                  </label>
-                </div>
-              ) : amountRole === 'spouseShare' ? (
-                <HousingManInput
-                  compact
-                  value={rental.spouseMonthlyRentMan ?? 0}
-                  onChange={(spouseMonthlyRentMan) =>
-                    update({ spouseMonthlyRentMan })
-                  }
-                />
-              ) : (
-                <HousingManInput
-                  compact
-                  value={rental.monthlyRentMan}
-                  onChange={(monthlyRentMan) => update({ monthlyRentMan })}
-                />
-              )}
+              <div className="housing-rental-field housing-rental-rent-field">
+                <span className="housing-rental-field-label">{rentLabel}</span>
+                {payerMode === 'both' && amountRole === 'primary' ? (
+                  <div className="housing-rental-split-rent">
+                    <label className="housing-rental-split-rent-label">
+                      <span>世帯主</span>
+                      <HousingManInput
+                        compact
+                        value={rental.monthlyRentMan}
+                        onChange={(monthlyRentMan) => update({ monthlyRentMan })}
+                      />
+                    </label>
+                    <label className="housing-rental-split-rent-label">
+                      <span>配偶者</span>
+                      <HousingManInput
+                        compact
+                        value={rental.spouseMonthlyRentMan ?? 0}
+                        onChange={(spouseMonthlyRentMan) =>
+                          update({ spouseMonthlyRentMan })
+                        }
+                      />
+                    </label>
+                  </div>
+                ) : amountRole === 'spouseShare' ? (
+                  <HousingManInput
+                    compact
+                    value={rental.spouseMonthlyRentMan ?? 0}
+                    onChange={(spouseMonthlyRentMan) =>
+                      update({ spouseMonthlyRentMan })
+                    }
+                  />
+                ) : (
+                  <HousingManInput
+                    compact
+                    value={rental.monthlyRentMan}
+                    onChange={(monthlyRentMan) => update({ monthlyRentMan })}
+                  />
+                )}
+              </div>
             </div>
+          </section>
 
-            {isUpcoming && (
-              <>
-                <div className="housing-table-cell housing-col-amount">
+          {isUpcoming ? (
+            <section className="housing-rental-block">
+              <h4 className="housing-rental-block-title">入居時にかかる費用</h4>
+              <div className="housing-rental-cost-grid housing-rental-cost-grid--four">
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">敷金</span>
                   <HousingManInput
                     compact
                     value={rental.securityDepositMan}
-                    onChange={(securityDepositMan) =>
-                      update({ securityDepositMan })
-                    }
+                    onChange={(securityDepositMan) => update({ securityDepositMan })}
                   />
-                </div>
-                <div className="housing-table-cell housing-col-amount">
+                </label>
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">礼金／一時金</span>
                   <HousingManInput
                     compact
                     value={rental.keyMoneyMan}
                     onChange={(keyMoneyMan) => update({ keyMoneyMan })}
                   />
-                </div>
-                <div className="housing-table-cell housing-col-amount">
+                </label>
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">仲介手数料</span>
                   <HousingManInput
                     compact
                     value={rental.brokerageFeeMan}
                     onChange={(brokerageFeeMan) => update({ brokerageFeeMan })}
                   />
-                </div>
-                <div className="housing-table-cell housing-col-amount">
+                </label>
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">引越し費用</span>
                   <HousingManInput
                     compact
                     value={rental.movingCostMan}
                     onChange={(movingCostMan) => update({ movingCostMan })}
                   />
-                </div>
-              </>
-            )}
+                </label>
+              </div>
+            </section>
+          ) : null}
 
-            {showEndCostInputs && (
-              <>
-                <div className="housing-table-cell housing-col-amount">
+          {showEndCostInputs ? (
+            <section className="housing-rental-block">
+              <h4 className="housing-rental-block-title">退去時の費用・返金</h4>
+              <div className="housing-rental-cost-grid housing-rental-cost-grid--two">
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">退去・引越し費用</span>
                   <HousingManInput
                     compact
                     value={rental.moveOutCostMan}
                     onChange={(moveOutCostMan) => update({ moveOutCostMan })}
                   />
-                </div>
-                <div className="housing-table-cell housing-col-amount">
+                </label>
+                <label className="housing-rental-field">
+                  <span className="housing-rental-field-label">敷金（返金）</span>
                   <HousingManInput
                     compact
                     value={rental.securityDepositRefundMan}
@@ -500,96 +483,84 @@ export function RentalPropertyCard({
                       update({ securityDepositRefundMan })
                     }
                   />
-                </div>
-              </>
-            )}
-
-            <div className="housing-table-cell housing-col-renewal">
-              <div className="housing-renewal-fields">
-                <div className="housing-renewal-row">
-                  <span className="housing-renewal-label">費用:</span>
-                  <HousingManInput
-                    compact
-                    value={rental.renewalFeeMan}
-                    onChange={(renewalFeeMan) => update({ renewalFeeMan })}
-                  />
-                </div>
-                <div className="housing-renewal-row">
-                  <span className="housing-renewal-label">次回</span>
-                  <HousingRenewalDateFields
-                    yearOnly
-                    year={rental.renewalNextYear}
-                    month={rental.renewalNextMonth}
-                    referenceYear={referenceDate.getFullYear()}
-                    onChange={(renewalNextYear, renewalNextMonth) =>
-                      update({ renewalNextYear, renewalNextMonth })
-                    }
-                  />
-                </div>
-                <div className="housing-renewal-row">
-                  <span className="housing-renewal-suffix">以降</span>
-                  <select
-                    className="select-input select-input--compact"
-                    value={rental.renewalIntervalYears}
-                    onChange={(e) =>
-                      update({ renewalIntervalYears: Number(e.target.value) })
-                    }
-                  >
-                    {RENTAL_RENEWAL_INTERVAL_OPTIONS.map((years) => (
-                      <option key={years} value={years}>
-                        {formatRentalRenewalIntervalLabel(years)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                </label>
               </div>
-            </div>
+            </section>
+          ) : null}
 
-            <div className="housing-table-cell housing-col-action">
+          <section className="housing-rental-block">
+            <h4 className="housing-rental-block-title">更新</h4>
+            <div className="housing-rental-renewal-grid">
+              <label className="housing-rental-field">
+                <span className="housing-rental-field-label">更新費用</span>
+                <HousingManInput
+                  compact
+                  value={rental.renewalFeeMan}
+                  onChange={(renewalFeeMan) => update({ renewalFeeMan })}
+                />
+              </label>
+              <div className="housing-rental-field">
+                <span className="housing-rental-field-label">次回更新</span>
+                <HousingRenewalDateFields
+                  yearOnly
+                  year={rental.renewalNextYear}
+                  month={rental.renewalNextMonth}
+                  referenceYear={referenceDate.getFullYear()}
+                  onChange={(renewalNextYear, renewalNextMonth) =>
+                    update({ renewalNextYear, renewalNextMonth })
+                  }
+                />
+              </div>
+              <label className="housing-rental-field">
+                <span className="housing-rental-field-label">以降の更新間隔</span>
+                <select
+                  className="select-input select-input--compact ui-control-width--short"
+                  value={rental.renewalIntervalYears}
+                  onChange={(e) =>
+                    update({ renewalIntervalYears: Number(e.target.value) })
+                  }
+                >
+                  {RENTAL_RENEWAL_INTERVAL_OPTIONS.map((years) => (
+                    <option key={years} value={years}>
+                      {formatRentalRenewalIntervalLabel(years)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="housing-rental-block housing-rental-block--insurance">
+            <h4 className="housing-rental-block-title">保険</h4>
+            {onAddInsurance &&
+            onUpdateInsurance &&
+            onRemoveInsurance &&
+            insuranceState ? (
+              <HousingInsuranceLinks
+                propertyName={rental.name}
+                insurances={linkedInsurances}
+                members={members}
+                insuranceState={insuranceState}
+                housingState={housingState}
+                vehicleState={vehicleState}
+                referenceDate={referenceDate}
+                onAddInsurance={onAddInsurance}
+                onUpdateInsurance={onUpdateInsurance}
+                onRemoveInsurance={onRemoveInsurance}
+              />
+            ) : (
               <button
                 type="button"
-                className="housing-row-remove"
-                onClick={onRemove}
-                aria-label="賃貸物件を削除"
+                className="housing-owned-loan-add-btn"
+                disabled
+                title="保険の追加は準備中です"
               >
-                −
+                ＋ 保険の追加
               </button>
-            </div>
-          </div>
-
-          <div className="housing-rental-table-group housing-rental-table-insurance">
-            <div className="housing-table-header-cell housing-col-name">保険</div>
-            <div className="housing-table-cell housing-rental-table-insurance-body">
-              {onAddInsurance &&
-              onUpdateInsurance &&
-              onRemoveInsurance &&
-              insuranceState ? (
-                <HousingInsuranceLinks
-                  propertyName={rental.name}
-                  insurances={linkedInsurances}
-                  members={members}
-                  insuranceState={insuranceState}
-                  housingState={housingState}
-                  vehicleState={vehicleState}
-                  referenceDate={referenceDate}
-                  onAddInsurance={onAddInsurance}
-                  onUpdateInsurance={onUpdateInsurance}
-                  onRemoveInsurance={onRemoveInsurance}
-                />
-              ) : (
-                <button
-                  type="button"
-                  className="housing-owned-loan-add-btn"
-                  disabled
-                  title="保険の追加は準備中です"
-                >
-                  ＋ 保険の追加
-                </button>
-              )}
-            </div>
-          </div>
+            )}
+          </section>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </article>
   );
 }
