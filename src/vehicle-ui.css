@@ -25,10 +25,12 @@
     align-items: start;
   }
 
+  /* Right side: navigation only. The add disclosure stays below the list. */
   .vehicle-master-panel {
     position: sticky;
     top: 16px;
     overflow: hidden;
+    min-width: 0;
     border: 1px solid var(--ui-border, #dfe5e1);
     border-radius: var(--ui-radius-card, 12px);
     background: var(--ui-bg-surface, #fff);
@@ -48,6 +50,7 @@
   }
 
   .vehicle-master-count {
+    flex: 0 0 auto;
     color: var(--ui-text-muted, #65726b);
     font-size: var(--text-xs, 0.8125rem);
     font-weight: 600;
@@ -57,6 +60,7 @@
   .vehicle-master-list {
     display: grid;
     gap: 6px;
+    min-width: 0;
     padding: 8px;
   }
 
@@ -122,6 +126,7 @@
 
   .vehicle-master-name {
     overflow: hidden;
+    min-width: 0;
     font-size: var(--text-sm, 0.875rem);
     font-weight: 700;
     text-overflow: ellipsis;
@@ -129,9 +134,11 @@
   }
 
   .vehicle-master-meta {
+    overflow: hidden;
     color: var(--ui-text-muted, #65726b);
     font-size: 11px;
     line-height: 1.25;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -142,24 +149,65 @@
   }
 
   .vehicle-master-add {
+    min-width: 0;
     padding: 8px;
     border-top: 1px solid var(--ui-border, #dfe5e1);
     background: var(--ui-bg-surface, #fff);
   }
 
   .vehicle-master-add .vehicle-add-section {
+    min-width: 0;
     margin: 0;
   }
 
   .vehicle-master-add .ui-add-disclosure__actions,
   .vehicle-master-add .ui-add-disclosure__toggle {
     width: 100%;
+    min-width: 0;
+  }
+
+  .vehicle-master-add .ui-add-disclosure__panel {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  /* The narrow master panel keeps the shared add interaction, but uses compact choices. */
+  .vehicle-master-add .vehicle-add-lead {
+    display: none;
   }
 
   .vehicle-master-add .vehicle-add-grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
   }
 
+  .vehicle-master-add .vehicle-add-grid > .vehicle-add-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 56px;
+    max-height: none;
+    padding: 9px 10px;
+    gap: 2px;
+    border-radius: 9px;
+  }
+
+  .vehicle-master-add .vehicle-add-card-title {
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  .vehicle-master-add .vehicle-add-card-desc {
+    overflow: visible;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  /* Left side: one selected vehicle only. */
   .vehicle-detail-panel {
     overflow: visible;
     min-width: 0;
@@ -296,13 +344,50 @@
     background: transparent !important;
   }
 
+  /* Whole-vehicle deletion must be explicit; a bare minus is not sufficient. */
   .vehicle-step .life-event-row-remove {
-    min-width: 34px;
-    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-width: 70px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, var(--ui-border));
+    border-radius: var(--ui-radius-control, 8px);
+    background: transparent;
+    color: var(--ui-danger, #b42318);
+    font-size: 0;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .vehicle-step .life-event-row-remove::before {
+    content: '';
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    background: currentColor;
+    -webkit-mask: var(--ui-icon-trash) center / contain no-repeat;
+    mask: var(--ui-icon-trash) center / contain no-repeat;
+  }
+
+  .vehicle-step .life-event-row-remove::after {
+    content: '削除';
+    font-size: var(--ui-font-label, 14px);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .vehicle-step .life-event-row-remove:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--ui-danger) 60%, var(--ui-border));
+    background: var(--ui-danger-soft, #fef3f2);
   }
 
   .vehicle-step .vehicle-col-summary {
-    padding-right: 62px !important;
+    padding-right: 104px !important;
   }
 
   .vehicle-step .vehicle-col-summary .life-event-text-input {
@@ -525,6 +610,10 @@
 
   .vehicle-master-add .vehicle-add-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-master-add .vehicle-add-grid > .vehicle-add-card {
+    min-height: 64px;
   }
 
   .vehicle-step .life-event-table-row > .life-event-table-cell,
