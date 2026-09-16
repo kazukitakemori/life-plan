@@ -1,5 +1,5 @@
 /* Q6 vehicle: phone-specific composition only.
- * Reuses the shared member tabs and the Q3 card foundation.
+ * Reuses the shared member tabs and existing card foundation.
  */
 
 @media (max-width: 768px) {
@@ -10,10 +10,10 @@
       .vehicle-table-group,
       .vehicle-table-group-body
     ) {
+    box-sizing: border-box;
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    box-sizing: border-box;
   }
 
   .vehicle-step .vehicle-toolbar {
@@ -38,13 +38,33 @@
     border-top-color: var(--ui-brand);
   }
 
-  .vehicle-step .vehicle-col-summary::before { content: '名称'; }
-  .vehicle-step .vehicle-col-type::before { content: '種類'; }
-  .vehicle-step .vehicle-col-period::before { content: '利用期間'; }
-  .vehicle-step .vehicle-col-purchase::before { content: '購入費・返済額'; }
-  .vehicle-step .vehicle-col-monthly::before { content: '月次維持費'; }
-  .vehicle-step .vehicle-col-annual::before { content: '税金・メンテナンス費'; }
-  .vehicle-step .vehicle-col-replace::before { content: '買い替え'; }
+  .vehicle-step .vehicle-col-summary::before {
+    content: '名称';
+  }
+
+  .vehicle-step .vehicle-col-type::before {
+    content: '種類';
+  }
+
+  .vehicle-step .vehicle-col-period::before {
+    content: '利用期間';
+  }
+
+  .vehicle-step .vehicle-col-purchase::before {
+    content: '購入費・返済額';
+  }
+
+  .vehicle-step .vehicle-col-monthly::before {
+    content: '月次維持費';
+  }
+
+  .vehicle-step .vehicle-col-annual::before {
+    content: '税金・メンテナンス費';
+  }
+
+  .vehicle-step .vehicle-col-replace::before {
+    content: '買い替え';
+  }
 
   .vehicle-step :where(
       .vehicle-type-cell,
@@ -105,9 +125,9 @@
   }
 
   .vehicle-step .vehicle-monthly-label {
+    overflow-wrap: break-word;
     font-weight: 600;
     word-break: keep-all;
-    overflow-wrap: break-word;
   }
 
   .vehicle-step .vehicle-annual-cost-row {
@@ -124,7 +144,7 @@
 
   .vehicle-step .vehicle-duplicate-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     align-items: center;
   }
@@ -135,7 +155,11 @@
     white-space: nowrap;
   }
 
-  .vehicle-step :where(.vehicle-payment-error, .vehicle-replace-hint, .vehicle-inspection-hint) {
+  .vehicle-step :where(
+      .vehicle-payment-error,
+      .vehicle-replace-hint,
+      .vehicle-inspection-hint
+    ) {
     max-width: 100%;
     overflow-wrap: break-word;
   }
@@ -158,16 +182,7 @@
     word-break: keep-all;
   }
 
-  .vehicle-step .vehicle-add-section {
-  width: 100%;
-  min-width: 0;
-}
-
-.vehicle-step .vehicle-duplicate-controls {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.vehicle-step .vehicle-table-group-body {
+  .vehicle-step .vehicle-table-group-body {
     display: block;
     padding: 12px 14px;
     border: 0;
@@ -180,14 +195,18 @@
     min-height: 44px;
   }
 
+  .vehicle-step .vehicle-table-group-body .housing-owned-loan-add-btn {
+    width: 100%;
+    max-width: 100%;
+  }
 
-
-
+  .vehicle-step .vehicle-add-section {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 430px) {
-
-
   .vehicle-step .vehicle-duplicate-btn {
     width: 100%;
   }
