@@ -118,7 +118,9 @@ export function VehicleTable({
         <div className="life-event-table-empty vehicle-empty-state">
           <p>乗り物が登録されていません。「乗り物を追加」から登録してください。</p>
         </div>
-        <AddVehicleCards onAdd={onAdd} />
+        <div className="vehicle-page-add">
+          <AddVehicleCards onAdd={onAdd} />
+        </div>
       </div>
     );
   }
@@ -230,13 +232,10 @@ export function VehicleTable({
               );
             })}
           </div>
-          <div className="vehicle-master-add">
-            <AddVehicleCards onAdd={onAdd} />
-          </div>
         </aside>
       </div>
 
-      <div className="vehicle-mobile-add">
+      <div className="vehicle-page-add">
         <AddVehicleCards onAdd={onAdd} />
       </div>
     </>
