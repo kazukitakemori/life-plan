@@ -13,7 +13,6 @@ import type { MemberTabExtras } from '../../types/memberTabVisibility';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { MemberIncomeTabs } from '../income/MemberIncomeTabs';
 import { CopySettingsBar, StepHeading } from '../ui';
-import { AddVehicleCards } from './AddVehicleCards';
 import { VehicleTable } from './VehicleTable';
 
 interface VehicleStepProps {
@@ -212,8 +211,6 @@ export function VehicleStep({
         }
       />
 
-      <AddVehicleCards onAdd={addEntryFromPreset} />
-
       <VehicleTable
         entries={entries}
         member={activeMember}
@@ -226,6 +223,7 @@ export function VehicleStep({
         housingState={housingState}
         vehicleState={vehicleState}
         onChange={(updated) => persistEntries(resolvedActiveId, updated)}
+        onAdd={addEntryFromPreset}
         onAddLoan={(entry) => onAddVehicleLoan(resolvedActiveId, entry)}
         onRemoveLoan={onRemoveVehicleLoan}
         onUpdateLoan={onUpdateLoan}
