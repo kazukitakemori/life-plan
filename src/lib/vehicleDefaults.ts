@@ -58,78 +58,44 @@ function normalizeVehicleInsurances(
   }));
 }
 
-const PRESET_DEFAULTS: Record<
-  VehiclePresetId,
-  Pick<
-    VehicleEntry,
-    | 'label'
-    | 'type'
-    | 'kind'
-    | 'condition'
-    | 'purchaseAmountMan'
-    | 'repaymentEndYear'
-    | 'repaymentEndMonth'
-    | 'monthlyCostMan'
-    | 'gasolineCostMan'
-    | 'parkingCostMan'
-    | 'annualCostMan'
-    | 'annualCostCycleYears'
-    | 'inspectionCostMan'
-  >
-> = {
+type VehiclePresetDefaults = Pick<VehicleEntry, 'label' | 'type'> &
+  Partial<
+    Pick<
+      VehicleEntry,
+      'kind' | 'condition' | 'annualCostCycleYears'
+    >
+  >;
+
+/**
+ * プリセットは種類だけを決める。
+ * 金額は推定値を実データへ入れず、ユーザーが入力するまで未設定のままにする。
+ */
+const PRESET_DEFAULTS: Record<VehiclePresetId, VehiclePresetDefaults> = {
   car: {
     label: '自動車',
     type: 'car',
     kind: 'new',
     condition: 'new',
-    purchaseAmountMan: 250,
-    repaymentEndYear: 0,
-    repaymentEndMonth: 0,
-    monthlyCostMan: 0,
-    gasolineCostMan: 2,
-    parkingCostMan: 1,
-    annualCostMan: 5,
     annualCostCycleYears: 1,
-    inspectionCostMan: 10,
   },
   motorcycle: {
     label: 'バイク・原付',
     type: 'motorcycle',
     kind: 'under_250cc',
     condition: 'new',
-    purchaseAmountMan: 50,
-    repaymentEndYear: 0,
-    repaymentEndMonth: 0,
-    monthlyCostMan: 0,
-    gasolineCostMan: 1,
-    parkingCostMan: 0,
-    annualCostMan: 2,
     annualCostCycleYears: 1,
-    inspectionCostMan: 0,
   },
   bicycle: {
     label: '自転車',
     type: 'bicycle',
     condition: 'new',
-    purchaseAmountMan: 8,
-    repaymentEndYear: 0,
-    repaymentEndMonth: 0,
-    monthlyCostMan: 0,
-    annualCostMan: 0.5,
     annualCostCycleYears: 1,
-    inspectionCostMan: 0,
   },
   other: {
     label: 'その他',
     type: 'other',
     condition: 'new',
-    purchaseAmountMan: 0,
-    repaymentEndYear: 0,
-    repaymentEndMonth: 0,
-    monthlyCostMan: 0,
-    annualCostMan: 0,
     annualCostCycleYears: 1,
-    inspectionCostMan: 0,
   },
 };
 
@@ -197,7 +163,7 @@ function normalizeVehicleEntry(
     ...entry,
     kind: resolveVehicleKind(entry.type, entry.kind),
     paymentMode,
-    monthlyRepaymentMan: entry.monthlyRepaymentMan ?? 0,
+    monthlyRepaymentMan: entry.monthlyRepaymentMan,
     repaymentEndYear: entry.repaymentEndYear ?? 0,
     repaymentEndMonth: entry.repaymentEndMonth ?? 0,
     insurances: normalizeVehicleInsurances(entry.insurances),
@@ -207,11 +173,13 @@ function normalizeVehicleEntry(
     next = {
       ...next,
       condition: resolveVehicleCondition(next),
-      gasolineCostMan: entry.gasolineCostMan ?? entry.monthlyCostMan ?? 0,
-      parkingCostMan: entry.parkingCostMan ?? 0,
-      monthlyCostMan: 0,
+      // 旧データでは monthlyCostMan にガソリン代を保持していた。
+      // 値が存在するときだけ引き継ぎ、未入力を 0 に変換しない。
+      gasolineCostMan: entry.gasolineCostMan ?? entry.monthlyCostMan,
+      parkingCostMan: entry.parkingCostMan,
+      monthlyCostMan: undefined,
       annualCostCycleYears: resolveAnnualCostCycleYears(entry),
-      inspectionCostMan: entry.inspectionCostMan ?? 0,
+      inspectionCostMan: entry.inspectionCostMan,
     };
   } else {
     next = {
@@ -219,7 +187,7 @@ function normalizeVehicleEntry(
       kind: undefined,
       condition: resolveVehicleCondition(next),
       annualCostCycleYears: resolveAnnualCostCycleYears(entry),
-      inspectionCostMan: entry.inspectionCostMan ?? 0,
+      inspectionCostMan: entry.inspectionCostMan,
     };
   }
 
@@ -300,7 +268,6 @@ export function createVehicleEntry(
     condition,
     paymentMode:
       resolvedCondition === 'owned' ? 'alreadyOwned' : 'purchaseAmount',
-    monthlyRepaymentMan: 0,
     repaymentEndYear: 0,
     repaymentEndMonth: 0,
     startAge: startDefault.startAge,
@@ -308,11 +275,7 @@ export function createVehicleEntry(
     endMode: 'lifetime',
     endAge: member.expectedLifespan,
     endMonth: 12,
-    purchaseAmountMan: 0,
-    monthlyCostMan: 0,
-    annualCostMan: 0,
     annualCostCycleYears: 1,
-    inspectionCostMan: 0,
     insurances: [],
     ...overrides,
     kind: resolveVehicleKind(overrides.type ?? type, overrides.kind ?? kind),
