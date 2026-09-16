@@ -10,25 +10,11 @@
 }
 
 .vehicle-step .vehicle-empty-state {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
-.vehicle-page-add {
-  margin-top: 18px;
-}
-
-.vehicle-page-add .vehicle-add-section {
-  margin: 0;
-}
-
-@media (min-width: 981px) {
-  .vehicle-page-add {
-    width: calc(100% - 242px);
-  }
-
-  .vehicle-empty-stack .vehicle-page-add {
-    width: 100%;
-  }
+.vehicle-mobile-add {
+  display: none;
 }
 
 @media (min-width: 769px) {
@@ -72,6 +58,15 @@
     display: grid;
     gap: 6px;
     padding: 8px;
+  }
+
+  .vehicle-master-empty {
+    margin: 0;
+    padding: 18px 14px;
+    color: var(--ui-text-muted, #65726b);
+    font-size: var(--text-xs, 0.8125rem);
+    line-height: 1.5;
+    text-align: center;
   }
 
   .vehicle-master-item {
@@ -146,12 +141,47 @@
     line-height: 1;
   }
 
+  .vehicle-master-add {
+    padding: 8px;
+    border-top: 1px solid var(--ui-border, #dfe5e1);
+    background: var(--ui-bg-surface, #fff);
+  }
+
+  .vehicle-master-add .vehicle-add-section {
+    margin: 0;
+  }
+
+  .vehicle-master-add .ui-add-disclosure__actions,
+  .vehicle-master-add .ui-add-disclosure__toggle {
+    width: 100%;
+  }
+
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .vehicle-detail-panel {
     overflow: visible;
     min-width: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .vehicle-detail-empty {
+    display: grid;
+    place-items: center;
+    min-height: 148px;
+    margin: 0;
+    padding: 24px;
+    border: 1px solid var(--ui-border, #dfe5e1);
+    border-radius: var(--ui-radius-card, 12px);
+    background: var(--ui-bg-surface, #fff);
+    text-align: center;
+  }
+
+  .vehicle-detail-empty p {
+    margin: 0;
   }
 
   .vehicle-step .vehicle-table {
@@ -290,7 +320,33 @@
     max-width: 420px;
   }
 
-  .vehicle-step .vehicle-col-period .life-event-period-block,
+  .vehicle-step .vehicle-col-period .life-event-period-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-side {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .vehicle-step .vehicle-col-period .life-event-period-arrow {
+    flex: 0 0 auto;
+    padding-top: 9px;
+  }
+
   .vehicle-step .vehicle-owned-payment-cell,
   .vehicle-step .vehicle-monthly-stack,
   .vehicle-step .vehicle-annual-stack,
@@ -299,10 +355,16 @@
     min-width: 0;
   }
 
+  .vehicle-step .vehicle-col-purchase .vehicle-owned-payment-cell {
+    max-width: 620px;
+  }
+
   .vehicle-step .vehicle-owned-payment-toggle {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .vehicle-step .vehicle-owned-payment-toggle-option {
@@ -377,6 +439,18 @@
     margin-bottom: 0;
   }
 
+  .vehicle-step .vehicle-col-replace .life-event-select {
+    width: auto;
+    min-width: 180px;
+    max-width: 320px;
+  }
+
+  .vehicle-step .vehicle-duplicate-controls {
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+  }
+
   .vehicle-step .vehicle-table-group {
     display: grid;
     grid-template-columns: 170px minmax(0, 1fr);
@@ -413,6 +487,9 @@
       .housing-owned-insurance-links,
       .housing-owned-loan-links
     ) {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
     width: 100%;
     max-width: none;
     margin: 0;
@@ -446,6 +523,10 @@
     flex: 0 0 210px;
   }
 
+  .vehicle-master-add .vehicle-add-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .vehicle-step .life-event-table-row > .life-event-table-cell,
   .vehicle-step .vehicle-table-group {
     grid-template-columns: 140px minmax(0, 1fr);
@@ -461,7 +542,12 @@
     display: block;
   }
 
-  .vehicle-page-add {
+  .vehicle-detail-empty {
+    margin: 0;
+  }
+
+  .vehicle-mobile-add {
+    display: block;
     margin-top: 18px;
   }
 }
