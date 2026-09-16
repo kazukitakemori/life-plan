@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  OWNED_PROPERTY_TYPE_ICONS,
   OWNED_PROPERTY_TYPE_LABELS,
   OWNED_PROPERTY_USAGE_LABELS,
 } from '../../lib/housingLabels';
@@ -87,7 +86,6 @@ export function OwnedPropertyCard({
   onRemoveInsurance,
 }: OwnedPropertyCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const icon = OWNED_PROPERTY_TYPE_ICONS[property.type];
   const typeLabel = OWNED_PROPERTY_TYPE_LABELS[property.type];
 
   return (
@@ -101,10 +99,7 @@ export function OwnedPropertyCard({
     >
       <div className="housing-owned-card">
         <div className="housing-owned-card-identity">
-          <span className="housing-owned-icon" aria-hidden>
-            {icon}
-          </span>
-          <span className="housing-owned-type">{typeLabel}</span>
+          <span className="ui-entry-type-badge housing-owned-type">{typeLabel}</span>
           {viewRole === 'linked' ? (
             <span className="housing-owned-linked-badge">ローン契約に連動</span>
           ) : null}
@@ -143,22 +138,22 @@ export function OwnedPropertyCard({
         <div className="housing-owned-card-actions">
           <button
             type="button"
-            className={`housing-owned-open-btn${expanded ? ' housing-owned-open-btn--active' : ''}`}
+            className={`ui-entry-disclosure-btn${expanded ? ' is-active' : ''}`}
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
           >
-            <span aria-hidden>{expanded ? '∧' : '›'}</span>
+            <span aria-hidden>{expanded ? '−' : '＋'}</span>
             {expanded ? '詳細を閉じる' : '詳細を入力'}
           </button>
 
           {canRemove ? (
             <button
               type="button"
-              className="housing-row-remove housing-owned-remove-btn"
+              className="ui-entry-delete-button housing-owned-remove-btn"
               onClick={onRemove}
               aria-label="所有物件を削除"
             >
-              物件を削除
+              削除
             </button>
           ) : null}
         </div>
