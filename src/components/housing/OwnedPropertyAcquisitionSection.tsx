@@ -91,9 +91,6 @@ export function OwnedPropertyAcquisitionSection({
             <h5 className="housing-owned-acquisition-group-title">
               諸費用・税金
             </h5>
-            <p className="housing-owned-acquisition-group-note">
-              物件価格をもとに、購入時にかかる費用の参考額をまとめて試算できます。
-            </p>
             <div className="housing-owned-acquisition-group-note">
               <button
                 type="button"
@@ -106,7 +103,7 @@ export function OwnedPropertyAcquisitionSection({
             </div>
             <p className="housing-owned-acquisition-group-note">
               {canFetchAcquisitionFees
-                ? '仲介・登記・取得税を参考額で更新します。あとから手入力で変更できます。'
+                ? '物件価格を参考に、仲介・登記・取得税を参考額で更新します。あとから手入力で変更できます。'
                 : '建物または土地の金額を入力すると計算できます。'}
             </p>
           </div>
