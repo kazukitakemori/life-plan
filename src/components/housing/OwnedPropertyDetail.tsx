@@ -579,6 +579,7 @@ export function OwnedPropertyDetail({
                   housingState={housingState}
                   vehicleState={vehicleState}
                   referenceDate={referenceDate}
+                  preferMonthlyRepayment={isCurrentlyOccupied}
                   addLoanEnabled={
                     canAddLoan && (isCurrentlyOccupied || hasAcquisitionAmount)
                   }
