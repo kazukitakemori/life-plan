@@ -412,7 +412,7 @@ export function getLinkedVehicle(
 
 /** Q6 購入費用から自動車ローン借入額を求める */
 export function calcVehicleLoanEntryAmountMan(vehicle: VehicleEntry): number {
-  return Math.max(0, Math.round(vehicle.purchaseAmountMan));
+  return Math.max(0, Math.round(vehicle.purchaseAmountMan ?? 0));
 }
 
 export function getLinkedVehiclePurchaseAmountMan(
