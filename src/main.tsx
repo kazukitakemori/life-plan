@@ -19,6 +19,7 @@ import './mobileEducation.css';
 import './mobileLifeEvent.css';
 import './housing-ui.css';
 import './mobileHousing.css';
+import './housing-maintenance-ui.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
 import './mobileLoan.css';
