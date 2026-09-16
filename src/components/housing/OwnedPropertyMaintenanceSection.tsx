@@ -426,7 +426,7 @@ export function OwnedPropertyMaintenanceSection({
               <div>
                 <h6 className="housing-maint-subsection-title">自主修繕費</h6>
                 <p className="housing-maint-subsection-note">
-                  次回予定と、その後の繰り返し周期を設定します。
+                  次回予定年と、その後の繰り返し周期を設定します。
                 </p>
               </div>
             </div>
@@ -447,17 +447,17 @@ export function OwnedPropertyMaintenanceSection({
                 </label>
 
                 <div className="housing-maint-field">
-                  <span className="housing-maint-field-label">次回予定</span>
+                  <span className="housing-maint-field-label">次回予定年</span>
                   <HousingRenewalDateFields
                     year={maintenance.selfRepair.nextYear}
                     month={maintenance.selfRepair.nextMonth}
                     referenceYear={referenceYear}
-                    onChange={(nextYear, nextMonth) =>
+                    yearOnly
+                    onChange={(nextYear) =>
                       updateMaintenance({
                         selfRepair: {
                           ...maintenance.selfRepair,
                           nextYear,
-                          nextMonth,
                         },
                       })
                     }
@@ -494,7 +494,7 @@ export function OwnedPropertyMaintenanceSection({
               <div>
                 <h6 className="housing-maint-subsection-title">改良費</h6>
                 <p className="housing-maint-subsection-note">
-                  リフォームなど、時期が決まっている支出を個別に登録します。
+                  リフォームなど、予定年が決まっている支出を個別に登録します。
                 </p>
               </div>
             </div>
@@ -520,13 +520,14 @@ export function OwnedPropertyMaintenanceSection({
 
                   <div className="housing-maint-entry-grid housing-maint-entry-grid--improvement">
                     <div className="housing-maint-field">
-                      <span className="housing-maint-field-label">予定時期</span>
+                      <span className="housing-maint-field-label">予定年</span>
                       <HousingRenewalDateFields
                         year={entry.year}
                         month={entry.month}
                         referenceYear={referenceYear}
-                        onChange={(year, month) =>
-                          updateImprovement(entry.id, { year, month })
+                        yearOnly
+                        onChange={(year) =>
+                          updateImprovement(entry.id, { year })
                         }
                       />
                     </div>
