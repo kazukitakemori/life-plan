@@ -49,10 +49,6 @@ export function RentalPropertySection({
 }: RentalPropertySectionProps) {
   return (
     <section className="housing-section" id="housing-rental-section">
-      <div className="housing-section-header">
-        <h3 className="housing-section-title">賃貸物件</h3>
-      </div>
-
       <div className="housing-rental-schedules">
         {rentalViews.length === 0 ? (
           <div className="housing-rental-empty">
