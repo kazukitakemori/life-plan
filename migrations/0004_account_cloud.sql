@@ -96,3 +96,23 @@ ALTER TABLE license_keys ADD COLUMN redeemed_at TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_license_keys_redeemed_workspace_id
   ON license_keys(redeemed_workspace_id);
+
+-- Existing admin revoke/reactivate operations must also affect the account
+-- entitlement after a code has been linked to a workspace.
+CREATE TRIGGER IF NOT EXISTS trg_license_revoke_account_entitlement
+AFTER UPDATE OF status ON license_keys
+WHEN NEW.status = 'revoked' AND NEW.redeemed_workspace_id IS NOT NULL
+BEGIN
+  UPDATE account_entitlements
+  SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
+  WHERE workspace_id = NEW.redeemed_workspace_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_license_activate_account_entitlement
+AFTER UPDATE OF status ON license_keys
+WHEN NEW.status = 'active' AND NEW.redeemed_workspace_id IS NOT NULL
+BEGIN
+  UPDATE account_entitlements
+  SET status = 'active', edition = COALESCE(NEW.edition, edition), updated_at = CURRENT_TIMESTAMP
+  WHERE workspace_id = NEW.redeemed_workspace_id;
+END;
