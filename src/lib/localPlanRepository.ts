@@ -119,7 +119,13 @@ class AccountAwarePlanRepository implements PlanRepository {
     if (!this.modePromise) {
       this.modePromise = fetchAccountMe()
         .then((account) => (account.authenticated ? 'cloud' : 'local'))
-        .catch(() => 'local');
+        .catch((error) => {
+          // Do not silently fall back to IndexedDB when the account server is
+          // unreachable. For signed-in users D1 is the canonical store, and a
+          // silent fallback could create divergent local/cloud plan copies.
+          this.modePromise = null;
+          throw error;
+        });
     }
     return this.modePromise;
   }
