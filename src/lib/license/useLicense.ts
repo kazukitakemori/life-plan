@@ -106,9 +106,10 @@ export function useLicense() {
   }, []);
 
   const showLoginRequiredMessage = useCallback(() => {
-    setErrorMessage(
-      'Googleまたはメールアドレスでログインしてから続けてください。',
-    );
+    const message =
+      'この操作にはログインが必要です。管理メニューの「アカウント」から、Googleまたはメールアドレスでログインしてください。';
+    setErrorMessage(message);
+    window.alert(message);
   }, []);
 
   const openLicenseModal = useCallback(() => {
