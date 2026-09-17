@@ -38,6 +38,7 @@ export interface LicenseDeactivateResponse {
 export type LicenseState =
   | 'checking'
   | 'inactive'
+  | 'trial'
   | 'active'
   | 'error';
 
