@@ -88,3 +88,11 @@ CREATE TABLE IF NOT EXISTS account_plans (
 
 CREATE INDEX IF NOT EXISTS idx_account_plans_workspace_updated
   ON account_plans(workspace_id, updated_at DESC);
+
+-- Existing license keys become one-time account entitlement codes instead of
+-- browser/device registrations. A key can be linked to only one workspace.
+ALTER TABLE license_keys ADD COLUMN redeemed_workspace_id TEXT;
+ALTER TABLE license_keys ADD COLUMN redeemed_at TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_license_keys_redeemed_workspace_id
+  ON license_keys(redeemed_workspace_id);
