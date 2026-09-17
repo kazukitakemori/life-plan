@@ -1,323 +1,247 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { activateLicense, deactivateLicense, fetchLicenseStatus } from './api';
+import {
+  fetchAccountMe,
+  logoutAccount,
+  markAccountTrialAnalysisUsed,
+  redeemAccountLicense,
+  startGoogleLogin,
+} from '../account/api';
 import { isLicenseDevUnlock } from './devUnlock';
 import { getLicenseEntitlements, resolveLicenseEdition } from './edition';
-import {
-  clearStoredLicenseKey,
-  getDefaultDeviceLabel,
-  getLicenseCache,
-  getOrCreateDeviceId,
-  getStoredLicenseKey,
-  hasUsedTrialAnalysis,
-  markTrialAnalysisUsed as persistTrialAnalysisUsed,
-  saveLicenseCache,
-  setStoredLicenseKey,
-} from './storage';
 import type { LicenseDevice, LicenseState } from '../../types/license';
 import type { LicenseEdition, LicenseEntitlements } from '../../types/licenseEdition';
 
-interface PendingAnalysis {
+interface PendingAccess {
   resolve: (allowed: boolean) => void;
 }
 
 const DEV_UNLOCK = isLicenseDevUnlock();
 
 export function useLicense() {
-  const deviceId = useMemo(() => getOrCreateDeviceId(), []);
   const [licenseState, setLicenseState] = useState<LicenseState>(
     DEV_UNLOCK ? 'active' : 'checking',
   );
-  const [licenseKey, setLicenseKey] = useState<string | null>(() => getStoredLicenseKey());
-  const [edition, setEdition] = useState<LicenseEdition>(DEV_UNLOCK ? 'advisor' : 'personal');
-  const [keyHint, setKeyHint] = useState<string | null>(DEV_UNLOCK ? '開発モード' : null);
-  const [devices, setDevices] = useState<LicenseDevice[]>([]);
-  const [maxDevices, setMaxDevices] = useState(2);
+  const [edition, setEdition] = useState<LicenseEdition>(
+    DEV_UNLOCK ? 'advisor' : 'personal',
+  );
+  const [keyHint, setKeyHint] = useState<string | null>(
+    DEV_UNLOCK ? '確認版' : null,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(
     DEV_UNLOCK
-      ? '開発中のため、ライセンスキーなしで全機能を使えます。完成版ではキーが必要です。'
+      ? '確認版ではGoogleログインを要求せず、開発確認用として全機能を使えます。'
       : null,
   );
   const [keyModalOpen, setKeyModalOpen] = useState(false);
-  const [deviceLimitModalOpen, setDeviceLimitModalOpen] = useState(false);
-  const [pendingKey, setPendingKey] = useState('');
-  const [, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  const [, setPendingAccess] = useState<PendingAccess | null>(null);
   const [busy, setBusy] = useState(false);
-  const [trialAnalysisUsed, setTrialAnalysisUsed] = useState(() => hasUsedTrialAnalysis());
+  const [trialAnalysisUsed, setTrialAnalysisUsed] = useState(false);
 
   const entitlements = useMemo<LicenseEntitlements>(
     () => getLicenseEntitlements(edition),
     [edition],
   );
 
-  const applyActive = useCallback(
-    (
-      hint: string | undefined,
-      nextEdition: LicenseEdition | undefined,
-      nextDevices: LicenseDevice[],
-      nextMaxDevices: number,
-    ) => {
-      const resolvedEdition = resolveLicenseEdition(nextEdition);
-      setLicenseState('active');
-      setEdition(resolvedEdition);
-      setKeyHint(hint ?? null);
-      setDevices(nextDevices);
-      setMaxDevices(nextMaxDevices);
-      setErrorMessage(null);
-      saveLicenseCache({
-        keyHint: hint ?? 'LP-****',
-        deviceId,
-        verifiedAt: new Date().toISOString(),
-        edition: resolvedEdition,
-      });
-    },
-    [deviceId],
-  );
-
-  const applyOfflineActive = useCallback(() => {
-    const cached = getLicenseCache();
-    if (!cached || cached.deviceId !== deviceId) return false;
-    setLicenseState('active');
-    setEdition(resolveLicenseEdition(cached.edition));
-    setKeyHint(cached.keyHint);
-    setDevices([]);
-    setMaxDevices(2);
-    setErrorMessage('オフラインのため、前回確認時のライセンス状態で利用しています。');
-    return true;
-  }, [deviceId]);
-
-  const verifyStoredLicense = useCallback(async () => {
-    const stored = getStoredLicenseKey();
-    setLicenseKey(stored);
-    if (!stored) {
-      setLicenseState('inactive');
-      setEdition('personal');
-      setKeyHint(null);
-      setDevices([]);
-      return false;
-    }
-
-    setLicenseState('checking');
-    try {
-      const result = await fetchLicenseStatus(stored, deviceId);
-      if (!result.valid) {
-        if (result.error === 'NOT_ACTIVATED') {
-          setLicenseState('inactive');
-          setEdition(resolveLicenseEdition(result.edition));
-          setDevices(result.devices ?? []);
-          setMaxDevices(result.maxDevices ?? 2);
-          setErrorMessage(result.message ?? null);
-          return false;
-        }
-        clearStoredLicenseKey();
-        setLicenseKey(null);
+  const applyAccount = useCallback(
+    (account: Awaited<ReturnType<typeof fetchAccountMe>>) => {
+      if (!account.authenticated) {
         setLicenseState('inactive');
         setEdition('personal');
-        setErrorMessage(result.message ?? 'ライセンスが無効です。');
+        setKeyHint(null);
+        setTrialAnalysisUsed(false);
+        setErrorMessage(null);
         return false;
       }
 
-      applyActive(
-        result.keyHint,
-        result.edition,
-        result.devices ?? [],
-        result.maxDevices ?? 2,
-      );
-      return true;
-    } catch {
-      if (applyOfflineActive()) {
+      const nextEdition = resolveLicenseEdition(account.entitlement?.edition);
+      const status = account.entitlement?.status ?? 'trial';
+      setEdition(nextEdition);
+      setTrialAnalysisUsed(Boolean(account.entitlement?.trialAnalysisUsed));
+      setKeyHint(account.user?.email ?? null);
+
+      if (status === 'active') {
+        setLicenseState('active');
+        setErrorMessage(null);
         return true;
       }
+      if (status === 'trial') {
+        setLicenseState('trial');
+        setErrorMessage(null);
+        return false;
+      }
+
+      setLicenseState('error');
+      setErrorMessage('このアカウントの利用権は現在無効です。');
+      return false;
+    },
+    [],
+  );
+
+  const verifyStoredLicense = useCallback(async () => {
+    if (DEV_UNLOCK) return true;
+    setLicenseState('checking');
+    try {
+      const account = await fetchAccountMe();
+      return applyAccount(account);
+    } catch (error) {
+      console.error(error);
       setLicenseState('error');
       setErrorMessage(
-        'ライセンスサーバーに接続できません。しばらくしてから再度お試しください。',
+        'アカウント情報を確認できませんでした。通信状態を確認して再度お試しください。',
       );
       return false;
     }
-  }, [applyActive, applyOfflineActive, deviceId]);
+  }, [applyAccount]);
 
   useEffect(() => {
     if (DEV_UNLOCK) return;
     void verifyStoredLicense();
   }, [verifyStoredLicense]);
 
-  const completePendingAnalysis = useCallback((allowed: boolean) => {
-    setPendingAnalysis((pending) => {
+  const completePendingAccess = useCallback((allowed: boolean) => {
+    setPendingAccess((pending) => {
       pending?.resolve(allowed);
       return null;
     });
   }, []);
 
-  const activate = useCallback(
-    async (rawKey: string, replaceDeviceId?: string) => {
-      setBusy(true);
-      setErrorMessage(null);
-      try {
-        const result = await activateLicense({
-          key: rawKey,
-          deviceId,
-          deviceLabel: getDefaultDeviceLabel(),
-          replaceDeviceId,
-        });
-
-        if (!result.ok) {
-          if (result.error === 'DEVICE_LIMIT') {
-            setPendingKey(rawKey);
-            setEdition(resolveLicenseEdition(result.edition));
-            setDevices(result.devices ?? []);
-            setMaxDevices(result.maxDevices ?? 2);
-            setKeyModalOpen(false);
-            setDeviceLimitModalOpen(true);
-            return false;
-          }
-          setErrorMessage(result.message ?? 'ライセンスの登録に失敗しました。');
-          return false;
-        }
-
-        setStoredLicenseKey(rawKey);
-        setLicenseKey(rawKey);
-        applyActive(
-          result.keyHint,
-          result.edition,
-          result.devices ?? [],
-          result.maxDevices ?? 2,
-        );
-        setKeyModalOpen(false);
-        setDeviceLimitModalOpen(false);
-        setPendingKey('');
-        return true;
-      } catch {
-        if (applyOfflineActive()) {
-          return true;
-        }
-        setErrorMessage(
-          'ライセンスサーバーに接続できません。しばらくしてから再度お試しください。',
-        );
-        return false;
-      } finally {
-        setBusy(false);
-      }
-    },
-    [applyActive, applyOfflineActive, deviceId],
-  );
-
-  const replaceDeviceAndActivate = useCallback(
-    async (targetDeviceId: string) => {
-      const key = pendingKey || licenseKey;
-      if (!key) return false;
-      const ok = await activate(key, targetDeviceId);
-      if (ok) {
-        completePendingAnalysis(true);
-      }
-      return ok;
-    },
-    [activate, completePendingAnalysis, licenseKey, pendingKey],
-  );
+  const openLicenseModal = useCallback(() => {
+    setErrorMessage(null);
+    if (DEV_UNLOCK) return;
+    if (licenseState === 'inactive' || licenseState === 'error') {
+      startGoogleLogin();
+      return;
+    }
+    if (licenseState === 'checking') return;
+    setKeyModalOpen(true);
+  }, [licenseState]);
 
   const ensureLicensed = useCallback(async () => {
     if (DEV_UNLOCK) return true;
-
-    if (licenseState === 'active') {
-      const ok = await verifyStoredLicense();
-      if (ok) return true;
-    }
+    if (licenseState === 'active') return true;
 
     if (licenseState === 'checking') {
-      const ok = await verifyStoredLicense();
-      if (ok) return true;
+      const active = await verifyStoredLicense();
+      if (active) return true;
+    }
+
+    if (licenseState === 'inactive' || licenseState === 'error') {
+      startGoogleLogin();
+      return false;
     }
 
     return await new Promise<boolean>((resolve) => {
-      setPendingAnalysis({ resolve });
+      setPendingAccess({ resolve });
       setKeyModalOpen(true);
     });
   }, [licenseState, verifyStoredLicense]);
 
   const ensureCanRunAnalysis = useCallback(async () => {
     if (DEV_UNLOCK) return true;
+    if (licenseState === 'active') return true;
+    if (licenseState === 'trial' && !trialAnalysisUsed) return true;
 
-    if (licenseState === 'active' || licenseState === 'checking') {
-      const ok = await verifyStoredLicense();
-      if (ok) return true;
+    if (licenseState === 'checking') {
+      await verifyStoredLicense();
+      return false;
     }
 
-    if (!hasUsedTrialAnalysis()) return true;
+    if (licenseState === 'inactive' || licenseState === 'error') {
+      startGoogleLogin();
+      return false;
+    }
 
     return ensureLicensed();
-  }, [ensureLicensed, licenseState, verifyStoredLicense]);
+  }, [ensureLicensed, licenseState, trialAnalysisUsed, verifyStoredLicense]);
 
   const markTrialAnalysisUsed = useCallback(() => {
-    persistTrialAnalysisUsed();
+    if (DEV_UNLOCK || licenseState !== 'trial') return;
     setTrialAnalysisUsed(true);
-  }, []);
-
-  const openLicenseModal = useCallback(() => {
-    setErrorMessage(null);
-    setKeyModalOpen(true);
-  }, []);
+    void markAccountTrialAnalysisUsed().catch((error) => {
+      console.error(error);
+      setErrorMessage(
+        '体験利用の状態をクラウドへ保存できませんでした。再読み込み後に状態を確認してください。',
+      );
+    });
+  }, [licenseState]);
 
   const closeLicenseModal = useCallback(() => {
     setKeyModalOpen(false);
-    completePendingAnalysis(false);
-  }, [completePendingAnalysis]);
-
-  const closeDeviceLimitModal = useCallback(() => {
-    setDeviceLimitModalOpen(false);
-    completePendingAnalysis(false);
-  }, [completePendingAnalysis]);
+    completePendingAccess(false);
+  }, [completePendingAccess]);
 
   const handleSubmitKey = useCallback(
     async (rawKey: string) => {
-      const ok = await activate(rawKey);
-      if (ok) {
-        completePendingAnalysis(true);
+      if (DEV_UNLOCK) return true;
+      setBusy(true);
+      setErrorMessage(null);
+      try {
+        const result = await redeemAccountLicense(rawKey);
+        if (!result.ok) {
+          setErrorMessage(result.message ?? '利用コードの登録に失敗しました。');
+          return false;
+        }
+        setEdition(resolveLicenseEdition(result.edition));
+        setLicenseState('active');
+        setKeyHint('アカウント登録済み');
+        setKeyModalOpen(false);
+        completePendingAccess(true);
+        return true;
+      } catch (error) {
+        console.error(error);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '利用コードの登録に失敗しました。',
+        );
+        return false;
+      } finally {
+        setBusy(false);
       }
-      return ok;
     },
-    [activate, completePendingAnalysis],
+    [completePendingAccess],
   );
 
   const releaseCurrentDevice = useCallback(async () => {
-    const stored = getStoredLicenseKey();
-    if (!stored) return false;
+    if (DEV_UNLOCK) return false;
     setBusy(true);
     try {
-      const result = await deactivateLicense({
-        key: stored,
-        deviceId,
-        targetDeviceId: deviceId,
-      });
-      if (!result.ok) {
-        setErrorMessage(result.message ?? 'このブラウザの登録解除に失敗しました。');
-        return false;
-      }
-      clearStoredLicenseKey();
-      setLicenseKey(null);
+      await logoutAccount();
       setLicenseState('inactive');
       setEdition('personal');
       setKeyHint(null);
-      setDevices(result.devices ?? []);
+      setTrialAnalysisUsed(false);
+      window.location.reload();
       return true;
-    } catch {
-      setErrorMessage('ライセンスサーバーに接続できません。');
+    } catch (error) {
+      console.error(error);
+      setErrorMessage('ログアウトに失敗しました。');
       return false;
     } finally {
       setBusy(false);
     }
-  }, [deviceId]);
+  }, []);
+
+  const replaceDeviceAndActivate = useCallback(async () => false, []);
+  const closeDeviceLimitModal = useCallback(() => {
+    completePendingAccess(false);
+  }, [completePendingAccess]);
 
   const isLicensed = licenseState === 'active';
-  const canRunAnalysis = isLicensed || !trialAnalysisUsed;
+  const canRunAnalysis =
+    DEV_UNLOCK || isLicensed || (licenseState === 'trial' && !trialAnalysisUsed);
+  const devices = useMemo<LicenseDevice[]>(() => [], []);
 
   return {
-    deviceId,
+    deviceId: 'account',
     licenseState,
-    licenseKey,
+    licenseKey: null,
     edition,
     entitlements,
     keyHint,
     devices,
-    maxDevices,
+    maxDevices: 0,
     errorMessage,
     busy,
     isLicensed,
@@ -326,8 +250,8 @@ export function useLicense() {
     trialAnalysisUsed,
     isDevUnlock: DEV_UNLOCK,
     keyModalOpen,
-    deviceLimitModalOpen,
-    pendingKey,
+    deviceLimitModalOpen: false,
+    pendingKey: '',
     ensureLicensed,
     ensureCanRunAnalysis,
     ensureLicensedForAnalysis: ensureCanRunAnalysis,
