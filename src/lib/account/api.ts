@@ -37,6 +37,13 @@ export interface EmailAuthResponse {
   authenticated?: boolean;
 }
 
+export interface TrialAnalysisClaimResponse {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  trialAnalysisUsed?: boolean;
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | null;
   if (body == null) {
@@ -123,12 +130,14 @@ export async function redeemAccountLicense(
   return body;
 }
 
-export async function markAccountTrialAnalysisUsed(): Promise<void> {
+export async function claimAccountTrialAnalysis(): Promise<TrialAnalysisClaimResponse> {
   const response = await fetch('/api/account/trial-analysis/use', {
     method: 'POST',
     credentials: 'same-origin',
   });
-  if (!response.ok) {
-    throw new Error('体験利用の状態を保存できませんでした。');
+  const body = await parseJson<TrialAnalysisClaimResponse>(response);
+  if (!response.ok && !body.message) {
+    throw new Error('無料体験の利用状態を確認できませんでした。');
   }
+  return body;
 }

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
+  claimAccountTrialAnalysis,
   fetchAccountMe,
   logoutAccount,
-  markAccountTrialAnalysisUsed,
   redeemAccountLicense,
 } from '../account/api';
 import { isLicenseDevUnlock } from './devUnlock';
@@ -36,11 +36,17 @@ export function useLicense() {
   const [, setPendingAccess] = useState<PendingAccess | null>(null);
   const [busy, setBusy] = useState(false);
   const [trialAnalysisUsed, setTrialAnalysisUsed] = useState(false);
+  const trialAnalysisUsedRef = useRef(false);
 
   const entitlements = useMemo<LicenseEntitlements>(
     () => getLicenseEntitlements(edition),
     [edition],
   );
+
+  const setTrialUsed = useCallback((used: boolean) => {
+    trialAnalysisUsedRef.current = used;
+    setTrialAnalysisUsed(used);
+  }, []);
 
   const applyAccount = useCallback(
     (account: Awaited<ReturnType<typeof fetchAccountMe>>) => {
@@ -48,7 +54,7 @@ export function useLicense() {
         setLicenseState('inactive');
         setEdition('personal');
         setKeyHint(null);
-        setTrialAnalysisUsed(false);
+        setTrialUsed(false);
         setErrorMessage(null);
         return false;
       }
@@ -56,7 +62,7 @@ export function useLicense() {
       const nextEdition = resolveLicenseEdition(account.entitlement?.edition);
       const status = account.entitlement?.status ?? 'trial';
       setEdition(nextEdition);
-      setTrialAnalysisUsed(Boolean(account.entitlement?.trialAnalysisUsed));
+      setTrialUsed(Boolean(account.entitlement?.trialAnalysisUsed));
       setKeyHint(account.user?.email ?? null);
 
       if (status === 'active') {
@@ -74,7 +80,7 @@ export function useLicense() {
       setErrorMessage('このアカウントの利用権は現在無効です。');
       return false;
     },
-    [],
+    [setTrialUsed],
   );
 
   const verifyStoredLicense = useCallback(async () => {
@@ -112,6 +118,32 @@ export function useLicense() {
     window.alert(message);
   }, []);
 
+  const claimTrialAnalysis = useCallback(async () => {
+    try {
+      const result = await claimAccountTrialAnalysis();
+      if (!result.ok) {
+        if (result.error === 'TRIAL_ALREADY_USED') {
+          setTrialUsed(true);
+        }
+        setErrorMessage(
+          result.message ?? '無料体験の利用状態を確認できませんでした。',
+        );
+        return false;
+      }
+      setTrialUsed(true);
+      setErrorMessage(null);
+      return true;
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : '無料体験の利用状態を確認できませんでした。',
+      );
+      return false;
+    }
+  }, [setTrialUsed]);
+
   const openLicenseModal = useCallback(() => {
     setErrorMessage(null);
     if (DEV_UNLOCK) return;
@@ -146,11 +178,31 @@ export function useLicense() {
   const ensureCanRunAnalysis = useCallback(async () => {
     if (DEV_UNLOCK) return true;
     if (licenseState === 'active') return true;
-    if (licenseState === 'trial' && !trialAnalysisUsed) return true;
+    if (licenseState === 'trial') {
+      if (trialAnalysisUsedRef.current) return ensureLicensed();
+      return claimTrialAnalysis();
+    }
 
     if (licenseState === 'checking') {
-      await verifyStoredLicense();
-      return false;
+      try {
+        const account = await fetchAccountMe();
+        if (applyAccount(account)) return true;
+        if (
+          account.authenticated &&
+          account.entitlement?.status === 'trial' &&
+          !account.entitlement.trialAnalysisUsed
+        ) {
+          return claimTrialAnalysis();
+        }
+        return false;
+      } catch (error) {
+        console.error(error);
+        setLicenseState('error');
+        setErrorMessage(
+          'アカウント情報を確認できませんでした。通信状態を確認して再度お試しください。',
+        );
+        return false;
+      }
     }
 
     if (licenseState === 'inactive' || licenseState === 'error') {
@@ -158,25 +210,25 @@ export function useLicense() {
       return false;
     }
 
-    return ensureLicensed();
+    return false;
   }, [
+    applyAccount,
+    claimTrialAnalysis,
     ensureLicensed,
     licenseState,
     showLoginRequiredMessage,
-    trialAnalysisUsed,
-    verifyStoredLicense,
   ]);
 
   const markTrialAnalysisUsed = useCallback(() => {
-    if (DEV_UNLOCK || licenseState !== 'trial') return;
-    setTrialAnalysisUsed(true);
-    void markAccountTrialAnalysisUsed().catch((error) => {
-      console.error(error);
-      setErrorMessage(
-        '体験利用の状態をクラウドへ保存できませんでした。再読み込み後に状態を確認してください。',
-      );
-    });
-  }, [licenseState]);
+    if (
+      DEV_UNLOCK ||
+      licenseState !== 'trial' ||
+      trialAnalysisUsedRef.current
+    ) {
+      return;
+    }
+    void claimTrialAnalysis();
+  }, [claimTrialAnalysis, licenseState]);
 
   const closeLicenseModal = useCallback(() => {
     setKeyModalOpen(false);
@@ -223,7 +275,7 @@ export function useLicense() {
       setLicenseState('inactive');
       setEdition('personal');
       setKeyHint(null);
-      setTrialAnalysisUsed(false);
+      setTrialUsed(false);
       window.location.reload();
       return true;
     } catch (error) {
@@ -233,7 +285,7 @@ export function useLicense() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [setTrialUsed]);
 
   const replaceDeviceAndActivate = useCallback(async () => false, []);
   const closeDeviceLimitModal = useCallback(() => {

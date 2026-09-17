@@ -36,6 +36,10 @@ function isSameOriginMutation(request) {
   return origin === new URL(request.url).origin;
 }
 
+function changedRows(result) {
+  return Number(result?.meta?.changes ?? 0);
+}
+
 async function getWorkspaceContext(request, env) {
   const token = parseCookies(request).get(SESSION_COOKIE);
   if (!token) return null;
@@ -90,6 +94,12 @@ async function handleRedeemLicense(request, env) {
       400,
     );
   }
+  if (!env.LICENSE_PEPPER) {
+    return jsonResponse(
+      { ok: false, error: 'LICENSE_NOT_CONFIGURED', message: '利用コード認証が設定されていません。' },
+      503,
+    );
+  }
 
   const keyHash = await hashLicenseKey(key, env.LICENSE_PEPPER);
   const license = await env.DB
@@ -124,22 +134,67 @@ async function handleRedeemLicense(request, env) {
 
   const now = new Date().toISOString();
   const edition = license.edition === 'advisor' ? 'advisor' : 'personal';
-  await env.DB.batch([
-    env.DB
+
+  // Claim the code first with an atomic conditional update. If two different
+  // workspaces redeem at the same time, only the first claim can succeed.
+  const claimed = await env.DB
+    .prepare(
+      `UPDATE license_keys
+       SET redeemed_workspace_id = ?, redeemed_at = COALESCE(redeemed_at, ?)
+       WHERE id = ? AND status = 'active'
+         AND (redeemed_workspace_id IS NULL OR redeemed_workspace_id = ?)`,
+    )
+    .bind(
+      auth.context.workspace_id,
+      now,
+      license.id,
+      auth.context.workspace_id,
+    )
+    .run();
+
+  if (changedRows(claimed) !== 1) {
+    const current = await env.DB
       .prepare(
-        `UPDATE account_entitlements
-         SET edition = ?, status = 'active', expires_at = NULL, updated_at = ?
-         WHERE workspace_id = ?`,
-      )
-      .bind(edition, now, auth.context.workspace_id),
-    env.DB
-      .prepare(
-        `UPDATE license_keys
-         SET redeemed_workspace_id = ?, redeemed_at = COALESCE(redeemed_at, ?)
+        `SELECT status, redeemed_workspace_id
+         FROM license_keys
          WHERE id = ?`,
       )
-      .bind(auth.context.workspace_id, now, license.id),
-  ]);
+      .bind(license.id)
+      .first();
+    if (
+      current?.redeemed_workspace_id &&
+      current.redeemed_workspace_id !== auth.context.workspace_id
+    ) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: 'ALREADY_REDEEMED',
+          message: 'この利用コードは別のアカウントに登録済みです。',
+        },
+        409,
+      );
+    }
+    return jsonResponse(
+      { ok: false, error: 'INVALID_KEY', message: 'この利用コードは使用できません。' },
+      400,
+    );
+  }
+
+  // A retry by the same workspace is safe and repairs a partially completed
+  // prior request if the entitlement write failed after the code was claimed.
+  await env.DB
+    .prepare(
+      `INSERT INTO account_entitlements
+         (workspace_id, edition, status, trial_analysis_used, expires_at, created_at, updated_at)
+       VALUES (?, ?, 'active', 0, NULL, ?, ?)
+       ON CONFLICT(workspace_id) DO UPDATE SET
+         edition = excluded.edition,
+         status = 'active',
+         expires_at = NULL,
+         updated_at = excluded.updated_at`,
+    )
+    .bind(auth.context.workspace_id, edition, now, now)
+    .run();
 
   return jsonResponse({ ok: true, edition, status: 'active' });
 }
@@ -152,15 +207,50 @@ async function handleUseTrialAnalysis(request, env) {
   if (auth.response) return auth.response;
 
   const now = new Date().toISOString();
-  await env.DB
+  const claimed = await env.DB
     .prepare(
       `UPDATE account_entitlements
        SET trial_analysis_used = 1, updated_at = ?
-       WHERE workspace_id = ? AND status = 'trial'`,
+       WHERE workspace_id = ? AND status = 'trial' AND trial_analysis_used = 0`,
     )
     .bind(now, auth.context.workspace_id)
     .run();
-  return jsonResponse({ ok: true, trialAnalysisUsed: true });
+
+  if (changedRows(claimed) === 1) {
+    return jsonResponse({ ok: true, trialAnalysisUsed: true });
+  }
+
+  const current = await env.DB
+    .prepare(
+      `SELECT status, trial_analysis_used
+       FROM account_entitlements
+       WHERE workspace_id = ?`,
+    )
+    .bind(auth.context.workspace_id)
+    .first();
+
+  if (current?.status === 'trial' && Number(current.trial_analysis_used) === 1) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'TRIAL_ALREADY_USED',
+        message: '無料体験のライフプラン分析はすでに利用済みです。',
+        trialAnalysisUsed: true,
+      },
+      409,
+    );
+  }
+  if (current?.status === 'active') {
+    return jsonResponse({ ok: true, trialAnalysisUsed: true });
+  }
+  return jsonResponse(
+    {
+      ok: false,
+      error: 'ENTITLEMENT_INACTIVE',
+      message: 'このアカウントでは現在ライフプラン分析を利用できません。',
+    },
+    403,
+  );
 }
 
 /**
