@@ -3,6 +3,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS account_users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL,
+  email_normalized TEXT NOT NULL UNIQUE,
   name TEXT,
   picture_url TEXT,
   created_at TEXT NOT NULL,
@@ -38,6 +39,25 @@ CREATE INDEX IF NOT EXISTS idx_account_sessions_user_id
   ON account_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_account_sessions_expires_at
   ON account_sessions(expires_at);
+
+CREATE TABLE IF NOT EXISTS account_email_challenges (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  email_normalized TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  request_ip_hash TEXT,
+  expires_at TEXT NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0,
+  used_at TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_email_challenges_email_created
+  ON account_email_challenges(email_normalized, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_account_email_challenges_ip_created
+  ON account_email_challenges(request_ip_hash, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_account_email_challenges_expires
+  ON account_email_challenges(expires_at);
 
 CREATE TABLE IF NOT EXISTS account_workspaces (
   id TEXT PRIMARY KEY,
