@@ -1,26 +1,30 @@
+import { handleAccountApi } from './accountApi.js';
 import { handleLicenseApi } from './licenseApi.js';
 
 export default {
   /**
    * @param {Request} request
-   * @param {Record<string, string>} env
+   * @param {Record<string, any>} env
    */
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/api/')) {
-      if (request.method === 'OPTIONS') {
-        return new Response(null, {
-          status: 204,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          },
-        });
-      }
-
       try {
+        const accountResponse = await handleAccountApi(request, env);
+        if (accountResponse) return accountResponse;
+
+        if (request.method === 'OPTIONS') {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            },
+          });
+        }
+
         const response = await handleLicenseApi(request, env);
         const headers = new Headers(response.headers);
         headers.set('Access-Control-Allow-Origin', '*');
@@ -33,13 +37,13 @@ export default {
         return new Response(
           JSON.stringify({
             error: 'INTERNAL_ERROR',
-            message: 'ライセンスサーバーでエラーが発生しました。',
+            message: 'サーバーでエラーが発生しました。',
           }),
           {
             status: 500,
             headers: {
               'Content-Type': 'application/json; charset=utf-8',
-              'Access-Control-Allow-Origin': '*',
+              'Cache-Control': 'no-store',
             },
           },
         );
