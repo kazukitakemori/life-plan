@@ -29,6 +29,14 @@ interface RedeemLicenseResponse {
   status?: 'active';
 }
 
+export interface EmailAuthResponse {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  expiresInSeconds?: number;
+  authenticated?: boolean;
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | null;
   if (body == null) {
@@ -54,6 +62,39 @@ export function startGoogleLogin(): void {
   window.location.assign(
     `/api/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`,
   );
+}
+
+export async function requestEmailLoginCode(
+  email: string,
+): Promise<EmailAuthResponse> {
+  const response = await fetch('/api/auth/email/request', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const body = await parseJson<EmailAuthResponse>(response);
+  if (!response.ok && !body.message) {
+    throw new Error('認証コードを送信できませんでした。');
+  }
+  return body;
+}
+
+export async function verifyEmailLoginCode(
+  email: string,
+  code: string,
+): Promise<EmailAuthResponse> {
+  const response = await fetch('/api/auth/email/verify', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+  const body = await parseJson<EmailAuthResponse>(response);
+  if (!response.ok && !body.message) {
+    throw new Error('認証コードを確認できませんでした。');
+  }
+  return body;
 }
 
 export async function logoutAccount(): Promise<void> {
