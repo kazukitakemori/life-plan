@@ -1,4 +1,5 @@
 import { handleAccountApi } from './accountApi.js';
+import { handleAccountEntitlementApi } from './accountEntitlementApi.js';
 import { handleLicenseApi } from './licenseApi.js';
 
 export default {
@@ -11,6 +12,9 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       try {
+        const entitlementResponse = await handleAccountEntitlementApi(request, env);
+        if (entitlementResponse) return entitlementResponse;
+
         const accountResponse = await handleAccountApi(request, env);
         if (accountResponse) return accountResponse;
 
