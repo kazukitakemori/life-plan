@@ -1,15 +1,7 @@
-import { createId, jsonResponse, readJson } from './licenseShared.js';
+import { jsonResponse, readJson } from './licenseShared.js';
 
 const SESSION_COOKIE = 'lp_session';
-const OAUTH_STATE_COOKIE = 'lp_oauth_state';
-const OAUTH_RETURN_COOKIE = 'lp_oauth_return';
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
-const OAUTH_STATE_TTL_SECONDS = 60 * 10;
 const MAX_PLAN_DOCUMENT_BYTES = 1_500_000;
-
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 
 function parseCookies(request) {
   const header = request.headers.get('Cookie') ?? '';
@@ -34,35 +26,6 @@ function serializeCookie(request, name, value, options = {}) {
   return parts.join('; ');
 }
 
-function redirectWithCookies(location, cookies = []) {
-  const headers = new Headers({ Location: location, 'Cache-Control': 'no-store' });
-  for (const cookie of cookies) headers.append('Set-Cookie', cookie);
-  return new Response(null, { status: 302, headers });
-}
-
-function getAppOrigin(request, env) {
-  const configured = String(env.AUTH_ORIGIN ?? '').trim();
-  if (configured) return new URL(configured).origin;
-  return new URL(request.url).origin;
-}
-
-function getRedirectUri(request, env) {
-  return `${getAppOrigin(request, env)}/api/auth/google/callback`;
-}
-
-function normalizeReturnTo(value) {
-  if (!value || typeof value !== 'string') return '/';
-  if (!value.startsWith('/') || value.startsWith('//')) return '/';
-  return value;
-}
-
-function randomToken() {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
-}
-
 async function sha256Hex(value) {
   const digest = await crypto.subtle.digest(
     'SHA-256',
@@ -77,141 +40,6 @@ function isSameOriginMutation(request) {
   const origin = request.headers.get('Origin');
   if (!origin) return true;
   return origin === new URL(request.url).origin;
-}
-
-async function findGoogleUser(db, subject) {
-  return db
-    .prepare(
-      `SELECT u.id, u.email, u.name, u.picture_url
-       FROM account_identities i
-       JOIN account_users u ON u.id = i.user_id
-       WHERE i.provider = 'google' AND i.provider_subject = ?
-       LIMIT 1`,
-    )
-    .bind(subject)
-    .first();
-}
-
-async function ensureWorkspace(db, userId, now) {
-  const existing = await db
-    .prepare(
-      `SELECT w.id, w.name
-       FROM account_workspace_members m
-       JOIN account_workspaces w ON w.id = m.workspace_id
-       WHERE m.user_id = ?
-       ORDER BY m.created_at ASC
-       LIMIT 1`,
-    )
-    .bind(userId)
-    .first();
-  if (existing) return existing;
-
-  const workspaceId = createId();
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO account_workspaces (id, name, kind, created_at, updated_at)
-         VALUES (?, 'マイライフプラン', 'personal', ?, ?)`,
-      )
-      .bind(workspaceId, now, now),
-    db
-      .prepare(
-        `INSERT INTO account_workspace_members (workspace_id, user_id, role, created_at)
-         VALUES (?, ?, 'owner', ?)`,
-      )
-      .bind(workspaceId, userId, now),
-    db
-      .prepare(
-        `INSERT INTO account_entitlements
-           (workspace_id, edition, status, trial_analysis_used, expires_at, created_at, updated_at)
-         VALUES (?, 'personal', 'trial', 0, NULL, ?, ?)`,
-      )
-      .bind(workspaceId, now, now),
-  ]);
-  return { id: workspaceId, name: 'マイライフプラン' };
-}
-
-async function upsertGoogleUser(db, profile, now) {
-  const existing = await findGoogleUser(db, profile.sub);
-  if (existing) {
-    await db.batch([
-      db
-        .prepare(
-          `UPDATE account_users
-           SET email = ?, name = ?, picture_url = ?, updated_at = ?
-           WHERE id = ?`,
-        )
-        .bind(profile.email, profile.name ?? null, profile.picture ?? null, now, existing.id),
-      db
-        .prepare(
-          `UPDATE account_identities
-           SET email = ?, updated_at = ?
-           WHERE provider = 'google' AND provider_subject = ?`,
-        )
-        .bind(profile.email, now, profile.sub),
-    ]);
-    await ensureWorkspace(db, existing.id, now);
-    return existing.id;
-  }
-
-  const userId = createId();
-  const identityId = createId();
-  const workspaceId = createId();
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO account_users
-           (id, email, name, picture_url, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(userId, profile.email, profile.name ?? null, profile.picture ?? null, now, now),
-    db
-      .prepare(
-        `INSERT INTO account_identities
-           (id, user_id, provider, provider_subject, email, created_at, updated_at)
-         VALUES (?, ?, 'google', ?, ?, ?, ?)`,
-      )
-      .bind(identityId, userId, profile.sub, profile.email, now, now),
-    db
-      .prepare(
-        `INSERT INTO account_workspaces (id, name, kind, created_at, updated_at)
-         VALUES (?, 'マイライフプラン', 'personal', ?, ?)`,
-      )
-      .bind(workspaceId, now, now),
-    db
-      .prepare(
-        `INSERT INTO account_workspace_members (workspace_id, user_id, role, created_at)
-         VALUES (?, ?, 'owner', ?)`,
-      )
-      .bind(workspaceId, userId, now),
-    db
-      .prepare(
-        `INSERT INTO account_entitlements
-           (workspace_id, edition, status, trial_analysis_used, expires_at, created_at, updated_at)
-         VALUES (?, 'personal', 'trial', 0, NULL, ?, ?)`,
-      )
-      .bind(workspaceId, now, now),
-  ]);
-  return userId;
-}
-
-async function createSession(db, userId, now) {
-  const token = randomToken();
-  const tokenHash = await sha256Hex(token);
-  const expiresAt = new Date(Date.parse(now) + SESSION_TTL_SECONDS * 1000).toISOString();
-  await db.batch([
-    db
-      .prepare(`DELETE FROM account_sessions WHERE expires_at <= ?`)
-      .bind(now),
-    db
-      .prepare(
-        `INSERT INTO account_sessions
-           (id, user_id, token_hash, expires_at, created_at, last_seen_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(createId(), userId, tokenHash, expiresAt, now, now),
-  ]);
-  return { token, expiresAt };
 }
 
 async function getSessionContext(request, env) {
@@ -259,120 +87,12 @@ async function requireSession(request, env) {
   if (!context) {
     return {
       response: jsonResponse(
-        { error: 'AUTH_REQUIRED', message: 'Googleアカウントでログインしてください。' },
+        { error: 'AUTH_REQUIRED', message: 'アカウントへログインしてください。' },
         401,
       ),
     };
   }
   return { context };
-}
-
-async function handleGoogleStart(request, env) {
-  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-    const origin = getAppOrigin(request, env);
-    return Response.redirect(`${origin}/?auth=not-configured`, 302);
-  }
-
-  const url = new URL(request.url);
-  const state = randomToken();
-  const returnTo = normalizeReturnTo(url.searchParams.get('returnTo'));
-  const params = new URLSearchParams({
-    client_id: env.GOOGLE_CLIENT_ID,
-    redirect_uri: getRedirectUri(request, env),
-    response_type: 'code',
-    scope: 'openid email profile',
-    state,
-    access_type: 'online',
-    include_granted_scopes: 'true',
-    prompt: 'select_account',
-  });
-
-  return redirectWithCookies(`${GOOGLE_AUTH_URL}?${params.toString()}`, [
-    serializeCookie(request, OAUTH_STATE_COOKIE, state, {
-      maxAge: OAUTH_STATE_TTL_SECONDS,
-      path: '/api/auth/google',
-    }),
-    serializeCookie(request, OAUTH_RETURN_COOKIE, encodeURIComponent(returnTo), {
-      maxAge: OAUTH_STATE_TTL_SECONDS,
-      path: '/api/auth/google',
-    }),
-  ]);
-}
-
-async function handleGoogleCallback(request, env) {
-  const url = new URL(request.url);
-  const origin = getAppOrigin(request, env);
-  const cookies = parseCookies(request);
-  const clearOauthCookies = [
-    serializeCookie(request, OAUTH_STATE_COOKIE, '', { maxAge: 0, path: '/api/auth/google' }),
-    serializeCookie(request, OAUTH_RETURN_COOKIE, '', { maxAge: 0, path: '/api/auth/google' }),
-  ];
-  const returnTo = normalizeReturnTo(
-    decodeURIComponent(cookies.get(OAUTH_RETURN_COOKIE) ?? '%2F'),
-  );
-
-  if (url.searchParams.get('error')) {
-    return redirectWithCookies(`${origin}${returnTo}?auth=cancelled`, clearOauthCookies);
-  }
-
-  const code = url.searchParams.get('code') ?? '';
-  const state = url.searchParams.get('state') ?? '';
-  const expectedState = cookies.get(OAUTH_STATE_COOKIE) ?? '';
-  if (!code || !state || !expectedState || state !== expectedState) {
-    return redirectWithCookies(`${origin}/?auth=invalid-state`, clearOauthCookies);
-  }
-
-  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: getRedirectUri(request, env),
-    }),
-  });
-  if (!tokenResponse.ok) {
-    console.error('Google token exchange failed', tokenResponse.status);
-    return redirectWithCookies(`${origin}/?auth=token-error`, clearOauthCookies);
-  }
-  const tokens = await tokenResponse.json();
-  const accessToken = String(tokens.access_token ?? '');
-  if (!accessToken) {
-    return redirectWithCookies(`${origin}/?auth=token-error`, clearOauthCookies);
-  }
-
-  const profileResponse = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!profileResponse.ok) {
-    console.error('Google userinfo failed', profileResponse.status);
-    return redirectWithCookies(`${origin}/?auth=profile-error`, clearOauthCookies);
-  }
-  const profile = await profileResponse.json();
-  if (
-    !profile ||
-    typeof profile.sub !== 'string' ||
-    !profile.sub ||
-    typeof profile.email !== 'string' ||
-    !profile.email ||
-    profile.email_verified !== true
-  ) {
-    return redirectWithCookies(`${origin}/?auth=profile-invalid`, clearOauthCookies);
-  }
-
-  const now = new Date().toISOString();
-  const userId = await upsertGoogleUser(env.DB, profile, now);
-  const session = await createSession(env.DB, userId, now);
-  const sessionCookie = serializeCookie(request, SESSION_COOKIE, session.token, {
-    maxAge: SESSION_TTL_SECONDS,
-    path: '/',
-  });
-  return redirectWithCookies(`${origin}${returnTo}`, [
-    ...clearOauthCookies,
-    sessionCookie,
-  ]);
 }
 
 async function handleMe(request, env) {
@@ -525,7 +245,8 @@ async function handleDeletePlan(request, env, planId) {
 }
 
 /**
- * Account/auth/cloud APIs. Returns null when the path belongs to another API.
+ * Account/session/cloud APIs. Returns null when the path belongs elsewhere.
+ * Authentication itself lives in authApi.js.
  * @param {Request} request
  * @param {Record<string, any>} env
  */
@@ -533,12 +254,6 @@ export async function handleAccountApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  if (path === '/api/auth/google/start' && request.method === 'GET') {
-    return handleGoogleStart(request, env);
-  }
-  if (path === '/api/auth/google/callback' && request.method === 'GET') {
-    return handleGoogleCallback(request, env);
-  }
   if (path === '/api/auth/logout' && request.method === 'POST') {
     return handleLogout(request, env);
   }
