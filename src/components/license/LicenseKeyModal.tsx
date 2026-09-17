@@ -66,15 +66,15 @@ export function LicenseKeyModal({
         </button>
 
         <h3 id={titleId} className="education-ref-modal-title">
-          ライセンスキーの登録
+          利用コードの登録
         </h3>
         <p id={hintId} className="education-ref-modal-summary">
-          ライフプラン分析は1回までキーなしで体験できます。2回目以降の分析と書き出しには、購入時のキーが必要です。
+          購入時の利用コードをGoogleアカウントに登録します。登録後は、別のブラウザやPCでも同じアカウントで利用できます。
         </p>
 
         <div className="education-ref-modal-body">
           <label className="plan-meta-label" htmlFor="license-key-input">
-            ライセンスキー
+            利用コード
           </label>
           <input
             id="license-key-input"
