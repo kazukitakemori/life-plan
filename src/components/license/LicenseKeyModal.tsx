@@ -69,7 +69,7 @@ export function LicenseKeyModal({
           利用コードの登録
         </h3>
         <p id={hintId} className="education-ref-modal-summary">
-          購入時の利用コードをGoogleアカウントに登録します。登録後は、別のブラウザやPCでも同じアカウントで利用できます。
+          購入時の利用コードを現在のアカウントに登録します。登録後は、別のブラウザやPCでも同じアカウントで利用できます。
         </p>
 
         <div className="education-ref-modal-body">
