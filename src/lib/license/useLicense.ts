@@ -5,7 +5,6 @@ import {
   logoutAccount,
   markAccountTrialAnalysisUsed,
   redeemAccountLicense,
-  startGoogleLogin,
 } from '../account/api';
 import { isLicenseDevUnlock } from './devUnlock';
 import { getLicenseEntitlements, resolveLicenseEdition } from './edition';
@@ -30,7 +29,7 @@ export function useLicense() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(
     DEV_UNLOCK
-      ? '確認版ではGoogleログインを要求せず、開発確認用として全機能を使えます。'
+      ? '確認版ではログインを要求せず、開発確認用として全機能を使えます。'
       : null,
   );
   const [keyModalOpen, setKeyModalOpen] = useState(false);
@@ -106,16 +105,22 @@ export function useLicense() {
     });
   }, []);
 
+  const showLoginRequiredMessage = useCallback(() => {
+    setErrorMessage(
+      'Googleまたはメールアドレスでログインしてから続けてください。',
+    );
+  }, []);
+
   const openLicenseModal = useCallback(() => {
     setErrorMessage(null);
     if (DEV_UNLOCK) return;
     if (licenseState === 'inactive' || licenseState === 'error') {
-      startGoogleLogin();
+      showLoginRequiredMessage();
       return;
     }
     if (licenseState === 'checking') return;
     setKeyModalOpen(true);
-  }, [licenseState]);
+  }, [licenseState, showLoginRequiredMessage]);
 
   const ensureLicensed = useCallback(async () => {
     if (DEV_UNLOCK) return true;
@@ -127,7 +132,7 @@ export function useLicense() {
     }
 
     if (licenseState === 'inactive' || licenseState === 'error') {
-      startGoogleLogin();
+      showLoginRequiredMessage();
       return false;
     }
 
@@ -135,7 +140,7 @@ export function useLicense() {
       setPendingAccess({ resolve });
       setKeyModalOpen(true);
     });
-  }, [licenseState, verifyStoredLicense]);
+  }, [licenseState, showLoginRequiredMessage, verifyStoredLicense]);
 
   const ensureCanRunAnalysis = useCallback(async () => {
     if (DEV_UNLOCK) return true;
@@ -148,12 +153,18 @@ export function useLicense() {
     }
 
     if (licenseState === 'inactive' || licenseState === 'error') {
-      startGoogleLogin();
+      showLoginRequiredMessage();
       return false;
     }
 
     return ensureLicensed();
-  }, [ensureLicensed, licenseState, trialAnalysisUsed, verifyStoredLicense]);
+  }, [
+    ensureLicensed,
+    licenseState,
+    showLoginRequiredMessage,
+    trialAnalysisUsed,
+    verifyStoredLicense,
+  ]);
 
   const markTrialAnalysisUsed = useCallback(() => {
     if (DEV_UNLOCK || licenseState !== 'trial') return;
