@@ -67,7 +67,7 @@ async function requireWorkspace(request, env) {
   if (!context) {
     return {
       response: jsonResponse(
-        { error: 'AUTH_REQUIRED', message: 'Googleアカウントでログインしてください。' },
+        { error: 'AUTH_REQUIRED', message: 'アカウントへログインしてください。' },
         401,
       ),
     };
