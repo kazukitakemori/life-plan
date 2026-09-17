@@ -10,6 +10,7 @@ import type {
   PriorYearIncomeByMember,
   PriorYearIncomeOverride,
 } from '../../types/income';
+import { FormSelect } from '../ui';
 
 const PRIOR_YEAR_CATEGORIES: IncomeCategory[] = [
   'employee',
@@ -96,30 +97,28 @@ export function PriorYearIncomeSection({
             <div className="prior-year-income-fields">
               <div className="prior-year-income-field">
                 <label className="prior-year-income-label">収入区分</label>
-                <select
-                  className="select-input"
+                <FormSelect
                   value={priorYear.category}
-                  onChange={(e) =>
+                  controlWidth="medium"
+                  onValueChange={(raw) =>
                     persist({
                       ...priorYear,
-                      category: e.target.value as IncomeCategory,
+                      category: raw as IncomeCategory,
                     })
                   }
-                >
-                  {PRIOR_YEAR_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {INCOME_CATEGORY_LABELS[category]}
-                    </option>
-                  ))}
-                </select>
+                  options={PRIOR_YEAR_CATEGORIES.map((category) => ({
+                    value: category,
+                    label: INCOME_CATEGORY_LABELS[category],
+                  }))}
+                />
               </div>
 
               <div className="prior-year-income-field">
                 <label className="prior-year-income-label">月額（概算）</label>
-                <div className="amount-inline">
+                <div className="ui-amount">
                   <input
                     type="number"
-                    className="amount-input"
+                    className="ui-input ui-input--amount"
                     value={priorYear.monthlyAmountMan}
                     min={0}
                     step={0.1}
@@ -133,7 +132,7 @@ export function PriorYearIncomeSection({
                       })
                     }
                   />
-                  <span className="amount-unit">万円</span>
+                  <span className="ui-amount-unit">万円</span>
                 </div>
               </div>
             </div>
