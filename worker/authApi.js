@@ -1,4 +1,5 @@
 import { createId, jsonResponse, readJson } from './licenseShared.js';
+import { sendLoginCodeEmail } from './sesMailer.js';
 
 const SESSION_COOKIE = 'lp_session';
 const OAUTH_STATE_COOKIE = 'lp_oauth_state';
@@ -15,8 +16,6 @@ const EMAIL_VERIFY_MAX_ATTEMPTS = 5;
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
-
-const textEncoder = new TextEncoder();
 
 function parseCookies(request) {
   const header = request.headers.get('Cookie') ?? '';
@@ -90,29 +89,14 @@ function randomEmailCode() {
   return String(bytes[0] % 1_000_000).padStart(6, '0');
 }
 
-function bytesToHex(bytes) {
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-async function sha256Bytes(value) {
-  return new Uint8Array(await crypto.subtle.digest('SHA-256', textEncoder.encode(value)));
-}
-
 async function sha256Hex(value) {
-  return bytesToHex(await sha256Bytes(value));
-}
-
-async function hmacSha256(keyBytes, value) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value),
   );
-  return new Uint8Array(
-    await crypto.subtle.sign('HMAC', key, textEncoder.encode(value)),
-  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 function authPepper(env) {
@@ -309,112 +293,6 @@ async function createSession(db, userId, now) {
       .bind(createId(), userId, tokenHash, expiresAt, now, now),
   ]);
   return { token, expiresAt };
-}
-
-async function signSesRequest({ region, accessKeyId, secretAccessKey, sessionToken, payload }) {
-  const service = 'ses';
-  const host = `email.${region}.amazonaws.com`;
-  const canonicalUri = '/v2/email/outbound-emails';
-  const method = 'POST';
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const dateStamp = amzDate.slice(0, 8);
-  const payloadHash = await sha256Hex(payload);
-
-  const headers = {
-    'content-type': 'application/json',
-    host,
-    'x-amz-content-sha256': payloadHash,
-    'x-amz-date': amzDate,
-  };
-  if (sessionToken) headers['x-amz-security-token'] = sessionToken;
-
-  const signedHeaderNames = Object.keys(headers).sort();
-  const canonicalHeaders = signedHeaderNames
-    .map((name) => `${name}:${String(headers[name]).trim()}\n`)
-    .join('');
-  const signedHeaders = signedHeaderNames.join(';');
-  const canonicalRequest = [
-    method,
-    canonicalUri,
-    '',
-    canonicalHeaders,
-    signedHeaders,
-    payloadHash,
-  ].join('\n');
-  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credentialScope,
-    await sha256Hex(canonicalRequest),
-  ].join('\n');
-
-  const dateKey = await hmacSha256(textEncoder.encode(`AWS4${secretAccessKey}`), dateStamp);
-  const regionKey = await hmacSha256(dateKey, region);
-  const serviceKey = await hmacSha256(regionKey, service);
-  const signingKey = await hmacSha256(serviceKey, 'aws4_request');
-  const signature = bytesToHex(await hmacSha256(signingKey, stringToSign));
-  const authorization =
-    `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, ` +
-    `SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-  return {
-    url: `https://${host}${canonicalUri}`,
-    headers: { ...headers, Authorization: authorization },
-  };
-}
-
-async function sendEmailCode(env, toEmail, code) {
-  const region = String(env.SES_REGION ?? '').trim();
-  const fromEmail = String(env.SES_FROM_EMAIL ?? '').trim();
-  const accessKeyId = String(env.AWS_ACCESS_KEY_ID ?? '').trim();
-  const secretAccessKey = String(env.AWS_SECRET_ACCESS_KEY ?? '').trim();
-  const sessionToken = String(env.AWS_SESSION_TOKEN ?? '').trim();
-  if (!region || !fromEmail || !accessKeyId || !secretAccessKey) {
-    throw new Error('SES email authentication is not configured');
-  }
-
-  const payload = JSON.stringify({
-    FromEmailAddress: fromEmail,
-    Destination: { ToAddresses: [toEmail] },
-    Content: {
-      Simple: {
-        Subject: { Data: '【ライフプランソフト】認証コード', Charset: 'UTF-8' },
-        Body: {
-          Text: {
-            Data: [
-              'ライフプランソフトの認証コードです。',
-              '',
-              `認証コード: ${code}`,
-              '',
-              'このコードは10分間有効です。',
-              'このメールに心当たりがない場合は、そのまま破棄してください。',
-            ].join('\n'),
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    },
-  });
-
-  const signed = await signSesRequest({
-    region,
-    accessKeyId,
-    secretAccessKey,
-    sessionToken: sessionToken || null,
-    payload,
-  });
-  const response = await fetch(signed.url, {
-    method: 'POST',
-    headers: signed.headers,
-    body: payload,
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    console.error('SES SendEmail failed', response.status, detail.slice(0, 300));
-    throw new Error('SES SendEmail failed');
-  }
 }
 
 async function handleGoogleStart(request, env) {
@@ -625,16 +503,10 @@ async function handleEmailRequest(request, env) {
         expiresAt,
         nowIso,
       ),
-    env.DB
-      .prepare(
-        `DELETE FROM account_email_challenges
-         WHERE expires_at < ? AND created_at < ?`,
-      )
-      .bind(nowIso, windowStart),
   ]);
 
   try {
-    await sendEmailCode(env, email, code);
+    await sendLoginCodeEmail(env, email, code);
   } catch (error) {
     await env.DB
       .prepare(`DELETE FROM account_email_challenges WHERE id = ?`)
