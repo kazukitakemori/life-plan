@@ -64,6 +64,9 @@ export interface LicenseAdminKeySummary {
   note: string | null;
   created_at: string;
   device_count: number;
+  redeemed_workspace_id: string | null;
+  redeemed_at: string | null;
+  redeemed: 0 | 1;
 }
 
 export interface LicenseAdminListResponse {
