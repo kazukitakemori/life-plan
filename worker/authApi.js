@@ -59,7 +59,30 @@ function getRedirectUri(request, env) {
 function normalizeReturnTo(value) {
   if (!value || typeof value !== 'string') return '/';
   if (!value.startsWith('/') || value.startsWith('//')) return '/';
-  return value;
+  try {
+    const base = 'https://return.invalid';
+    const parsed = new URL(value, base);
+    if (parsed.origin !== base) return '/';
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/';
+  }
+}
+
+function decodeReturnToCookie(value) {
+  if (!value) return '/';
+  try {
+    return normalizeReturnTo(decodeURIComponent(value));
+  } catch {
+    return '/';
+  }
+}
+
+function buildReturnUrl(origin, returnTo = '/', authStatus = null) {
+  const target = new URL(normalizeReturnTo(returnTo), origin);
+  if (target.origin !== origin) return `${origin}/`;
+  if (authStatus) target.searchParams.set('auth', authStatus);
+  return target.toString();
 }
 
 function normalizeEmail(value) {
@@ -296,9 +319,9 @@ async function createSession(db, userId, now) {
 }
 
 async function handleGoogleStart(request, env) {
+  const origin = getAppOrigin(request, env);
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-    const origin = getAppOrigin(request, env);
-    return Response.redirect(`${origin}/?auth=not-configured`, 302);
+    return Response.redirect(buildReturnUrl(origin, '/', 'not-configured'), 302);
   }
 
   const url = new URL(request.url);
@@ -335,48 +358,85 @@ async function handleGoogleCallback(request, env) {
     serializeCookie(request, OAUTH_STATE_COOKIE, '', { maxAge: 0, path: '/api/auth/google' }),
     serializeCookie(request, OAUTH_RETURN_COOKIE, '', { maxAge: 0, path: '/api/auth/google' }),
   ];
-  const returnTo = normalizeReturnTo(
-    decodeURIComponent(cookies.get(OAUTH_RETURN_COOKIE) ?? '%2F'),
-  );
+  const returnTo = decodeReturnToCookie(cookies.get(OAUTH_RETURN_COOKIE));
 
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return redirectWithCookies(
+      buildReturnUrl(origin, returnTo, 'not-configured'),
+      clearOauthCookies,
+    );
+  }
   if (url.searchParams.get('error')) {
-    return redirectWithCookies(`${origin}${returnTo}?auth=cancelled`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, returnTo, 'cancelled'),
+      clearOauthCookies,
+    );
   }
 
   const code = url.searchParams.get('code') ?? '';
   const state = url.searchParams.get('state') ?? '';
   const expectedState = cookies.get(OAUTH_STATE_COOKIE) ?? '';
   if (!code || !state || !expectedState || state !== expectedState) {
-    return redirectWithCookies(`${origin}/?auth=invalid-state`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'invalid-state'),
+      clearOauthCookies,
+    );
   }
 
-  const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: getRedirectUri(request, env),
-    }),
-  });
+  let tokenResponse;
+  try {
+    tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: getRedirectUri(request, env),
+      }),
+    });
+  } catch (error) {
+    console.error('Google token exchange request failed', error);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'token-error'),
+      clearOauthCookies,
+    );
+  }
   if (!tokenResponse.ok) {
     console.error('Google token exchange failed', tokenResponse.status);
-    return redirectWithCookies(`${origin}/?auth=token-error`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'token-error'),
+      clearOauthCookies,
+    );
   }
   const tokens = await tokenResponse.json();
   const accessToken = String(tokens.access_token ?? '');
   if (!accessToken) {
-    return redirectWithCookies(`${origin}/?auth=token-error`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'token-error'),
+      clearOauthCookies,
+    );
   }
 
-  const profileResponse = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  let profileResponse;
+  try {
+    profileResponse = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch (error) {
+    console.error('Google userinfo request failed', error);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'profile-error'),
+      clearOauthCookies,
+    );
+  }
   if (!profileResponse.ok) {
     console.error('Google userinfo failed', profileResponse.status);
-    return redirectWithCookies(`${origin}/?auth=profile-error`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'profile-error'),
+      clearOauthCookies,
+    );
   }
   const profile = await profileResponse.json();
   if (
@@ -387,7 +447,10 @@ async function handleGoogleCallback(request, env) {
     !profile.email ||
     profile.email_verified !== true
   ) {
-    return redirectWithCookies(`${origin}/?auth=profile-invalid`, clearOauthCookies);
+    return redirectWithCookies(
+      buildReturnUrl(origin, '/', 'profile-invalid'),
+      clearOauthCookies,
+    );
   }
 
   const now = new Date().toISOString();
@@ -397,7 +460,7 @@ async function handleGoogleCallback(request, env) {
     maxAge: SESSION_TTL_SECONDS,
     path: '/',
   });
-  return redirectWithCookies(`${origin}${returnTo}`, [
+  return redirectWithCookies(buildReturnUrl(origin, returnTo), [
     ...clearOauthCookies,
     sessionCookie,
   ]);
