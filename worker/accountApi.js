@@ -2,6 +2,7 @@ import { jsonResponse, readJson } from './licenseShared.js';
 
 const SESSION_COOKIE = 'lp_session';
 const MAX_PLAN_DOCUMENT_BYTES = 1_500_000;
+const SESSION_TOUCH_INTERVAL_MS = 15 * 60 * 1000;
 
 function parseCookies(request) {
   const header = request.headers.get('Cookie') ?? '';
@@ -51,6 +52,7 @@ async function getSessionContext(request, env) {
     .prepare(
       `SELECT
          s.id AS session_id,
+         s.last_seen_at AS session_last_seen_at,
          u.id AS user_id,
          u.email,
          u.name,
@@ -75,10 +77,15 @@ async function getSessionContext(request, env) {
     .first();
   if (!row) return null;
 
-  await env.DB
-    .prepare(`UPDATE account_sessions SET last_seen_at = ? WHERE id = ?`)
-    .bind(now, row.session_id)
-    .run();
+  const lastSeenMs = Date.parse(String(row.session_last_seen_at ?? ''));
+  const shouldTouch =
+    !Number.isFinite(lastSeenMs) || Date.now() - lastSeenMs >= SESSION_TOUCH_INTERVAL_MS;
+  if (shouldTouch) {
+    await env.DB
+      .prepare(`UPDATE account_sessions SET last_seen_at = ? WHERE id = ?`)
+      .bind(now, row.session_id)
+      .run();
+  }
   return row;
 }
 
