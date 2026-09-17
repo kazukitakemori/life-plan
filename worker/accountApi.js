@@ -43,6 +43,15 @@ function isSameOriginMutation(request) {
   return origin === new URL(request.url).origin;
 }
 
+function positiveRevision(value) {
+  const revision = Number(value);
+  return Number.isInteger(revision) && revision >= 1 ? revision : null;
+}
+
+function changedRows(result) {
+  return Number(result?.meta?.changes ?? 0);
+}
+
 async function getSessionContext(request, env) {
   const token = parseCookies(request).get(SESSION_COOKIE);
   if (!token) return null;
@@ -164,7 +173,7 @@ async function handleListPlans(request, env) {
   if (auth.response) return auth.response;
   const { results } = await env.DB
     .prepare(
-      `SELECT document_json
+      `SELECT document_json, revision
        FROM account_plans
        WHERE workspace_id = ?
        ORDER BY updated_at DESC`,
@@ -174,7 +183,10 @@ async function handleListPlans(request, env) {
   const plans = [];
   for (const row of results ?? []) {
     try {
-      plans.push(JSON.parse(row.document_json));
+      plans.push({
+        plan: JSON.parse(row.document_json),
+        revision: Number(row.revision),
+      });
     } catch (error) {
       console.error('Invalid cloud plan JSON', error);
     }
@@ -187,7 +199,7 @@ async function handleGetPlan(request, env, planId) {
   if (auth.response) return auth.response;
   const row = await env.DB
     .prepare(
-      `SELECT document_json
+      `SELECT document_json, revision
        FROM account_plans
        WHERE workspace_id = ? AND plan_id = ?`,
     )
@@ -195,10 +207,33 @@ async function handleGetPlan(request, env, planId) {
     .first();
   if (!row) return jsonResponse({ error: 'PLAN_NOT_FOUND' }, 404);
   try {
-    return jsonResponse({ plan: JSON.parse(row.document_json) });
+    return jsonResponse({
+      plan: JSON.parse(row.document_json),
+      revision: Number(row.revision),
+    });
   } catch {
     return jsonResponse({ error: 'PLAN_DATA_INVALID' }, 500);
   }
+}
+
+async function conflictResponse(env, workspaceId, planId) {
+  const current = await env.DB
+    .prepare(
+      `SELECT revision
+       FROM account_plans
+       WHERE workspace_id = ? AND plan_id = ?`,
+    )
+    .bind(workspaceId, planId)
+    .first();
+  return jsonResponse(
+    {
+      error: 'PLAN_CONFLICT',
+      message:
+        '別のブラウザまたはPCでこのプランが更新されています。古い内容では上書きしませんでした。再読み込みして最新データを確認してください。',
+      currentRevision: current ? Number(current.revision) : null,
+    },
+    409,
+  );
 }
 
 async function handleSavePlan(request, env, planId) {
@@ -219,21 +254,48 @@ async function handleSavePlan(request, env, planId) {
       413,
     );
   }
+
+  const expectedRevision = positiveRevision(body?.expectedRevision);
   const now = new Date().toISOString();
   const createdAt = typeof plan.createdAt === 'string' ? plan.createdAt : now;
-  const updatedAt = typeof plan.updatedAt === 'string' ? plan.updatedAt : now;
-  await env.DB
-    .prepare(
-      `INSERT INTO account_plans
-         (workspace_id, plan_id, document_json, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(workspace_id, plan_id) DO UPDATE SET
-         document_json = excluded.document_json,
-         updated_at = excluded.updated_at`,
-    )
-    .bind(auth.context.workspace_id, planId, documentJson, createdAt, updatedAt)
-    .run();
-  return jsonResponse({ ok: true, plan });
+  let revision;
+
+  if (expectedRevision == null) {
+    const inserted = await env.DB
+      .prepare(
+        `INSERT INTO account_plans
+           (workspace_id, plan_id, document_json, revision, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)
+         ON CONFLICT(workspace_id, plan_id) DO NOTHING`,
+      )
+      .bind(auth.context.workspace_id, planId, documentJson, createdAt, now)
+      .run();
+    if (changedRows(inserted) !== 1) {
+      return conflictResponse(env, auth.context.workspace_id, planId);
+    }
+    revision = 1;
+  } else {
+    const updated = await env.DB
+      .prepare(
+        `UPDATE account_plans
+         SET document_json = ?, revision = revision + 1, updated_at = ?
+         WHERE workspace_id = ? AND plan_id = ? AND revision = ?`,
+      )
+      .bind(
+        documentJson,
+        now,
+        auth.context.workspace_id,
+        planId,
+        expectedRevision,
+      )
+      .run();
+    if (changedRows(updated) !== 1) {
+      return conflictResponse(env, auth.context.workspace_id, planId);
+    }
+    revision = expectedRevision + 1;
+  }
+
+  return jsonResponse({ ok: true, plan, revision });
 }
 
 async function handleDeletePlan(request, env, planId) {
@@ -242,12 +304,27 @@ async function handleDeletePlan(request, env, planId) {
   }
   const auth = await requireSession(request, env);
   if (auth.response) return auth.response;
-  await env.DB
+  const url = new URL(request.url);
+  const expectedRevision = positiveRevision(url.searchParams.get('revision'));
+  if (expectedRevision == null) {
+    return jsonResponse(
+      {
+        error: 'REVISION_REQUIRED',
+        message: '削除前にプランの最新状態を読み込んでください。',
+      },
+      428,
+    );
+  }
+  const deleted = await env.DB
     .prepare(
-      `DELETE FROM account_plans WHERE workspace_id = ? AND plan_id = ?`,
+      `DELETE FROM account_plans
+       WHERE workspace_id = ? AND plan_id = ? AND revision = ?`,
     )
-    .bind(auth.context.workspace_id, planId)
+    .bind(auth.context.workspace_id, planId, expectedRevision)
     .run();
+  if (changedRows(deleted) !== 1) {
+    return conflictResponse(env, auth.context.workspace_id, planId);
+  }
   return jsonResponse({ ok: true });
 }
 

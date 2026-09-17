@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS account_plans (
   workspace_id TEXT NOT NULL,
   plan_id TEXT NOT NULL,
   document_json TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 1 CHECK (revision >= 1),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   PRIMARY KEY (workspace_id, plan_id),
