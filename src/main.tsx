@@ -47,6 +47,7 @@ import './ui-action-integrity.css';
 import './living-ui.css';
 import './mobileLiving.css';
 import './ui-fafafa-shell.css';
+import './account-auth-ui.css';
 
 async function bootstrap(): Promise<void> {
   if (!isLicenseKeyAdminRoute()) {
