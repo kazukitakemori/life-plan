@@ -1,0 +1,83 @@
+.license-account-login {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin-top: 20px;
+}
+
+.license-account-login > .plan-bar-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.license-account-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted, #6b7280);
+  font-size: 13px;
+}
+
+.license-account-login-divider::before,
+.license-account-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color, #e5e7eb);
+}
+
+.license-account-login-divider span {
+  white-space: nowrap;
+}
+
+.license-account-email-form {
+  display: grid;
+  gap: 10px;
+}
+
+.license-account-email-form .plan-meta-input {
+  width: 100%;
+  max-width: 100%;
+}
+
+.license-account-email-form > .plan-bar-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.license-account-code-sent {
+  margin: 0;
+  color: var(--text-muted, #4b5563);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.license-account-code-input {
+  max-width: 220px !important;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+}
+
+.license-account-email-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .license-account-login {
+    max-width: none;
+  }
+
+  .license-account-email-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .license-account-email-actions .plan-bar-btn,
+  .license-account-code-input {
+    width: 100%;
+    max-width: none !important;
+  }
+}

@@ -1,3 +1,6 @@
+import { fetchAccountMe } from './account/api';
+import { CloudPlanRepository } from './cloudPlanRepository';
+import { isLicenseDevUnlock } from './license/devUnlock';
 import { migratePlanRecord, toPlanSummary } from './planDocument';
 import type { PlanRepository } from './planRepository';
 import type { PlanRecord, PlanSummary } from '../types/plan';
@@ -106,9 +109,59 @@ export class LocalPlanRepository implements PlanRepository {
   }
 }
 
-let singleton: LocalPlanRepository | null = null;
+class AccountAwarePlanRepository implements PlanRepository {
+  private readonly local = new LocalPlanRepository();
+  private readonly cloud = new CloudPlanRepository();
+  private modePromise: Promise<'local' | 'cloud'> | null = null;
 
+  private async resolveMode(): Promise<'local' | 'cloud'> {
+    if (isLicenseDevUnlock()) return 'local';
+    if (!this.modePromise) {
+      this.modePromise = fetchAccountMe()
+        .then((account) => (account.authenticated ? 'cloud' : 'local'))
+        .catch((error) => {
+          // Do not silently fall back to IndexedDB when the account server is
+          // unreachable. For signed-in users D1 is the canonical store, and a
+          // silent fallback could create divergent local/cloud plan copies.
+          this.modePromise = null;
+          throw error;
+        });
+    }
+    return this.modePromise;
+  }
+
+  private async repository(): Promise<PlanRepository> {
+    return (await this.resolveMode()) === 'cloud' ? this.cloud : this.local;
+  }
+
+  async listSummaries(): Promise<PlanSummary[]> {
+    return (await this.repository()).listSummaries();
+  }
+
+  async listAll(): Promise<PlanRecord[]> {
+    return (await this.repository()).listAll();
+  }
+
+  async get(id: string): Promise<PlanRecord | null> {
+    return (await this.repository()).get(id);
+  }
+
+  async save(record: PlanRecord): Promise<PlanRecord> {
+    return (await this.repository()).save(record);
+  }
+
+  async delete(id: string): Promise<void> {
+    return (await this.repository()).delete(id);
+  }
+}
+
+let singleton: PlanRepository | null = null;
+
+/**
+ * Compatibility entry point used by App.tsx.
+ * Preview keeps IndexedDB; signed-in production accounts use D1 cloud storage.
+ */
 export function getLocalPlanRepository(): PlanRepository {
-  if (!singleton) singleton = new LocalPlanRepository();
+  if (!singleton) singleton = new AccountAwarePlanRepository();
   return singleton;
 }
