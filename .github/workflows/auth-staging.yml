@@ -16,6 +16,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: auth-staging-life-plan
@@ -158,3 +160,17 @@ jobs:
             echo "- Production Worker/D1 are not modified."
             echo "- Google/SES secrets are applied only when matching GitHub Actions secrets exist."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report auth staging result to PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ job.status }}" = "success" ]; then
+            BODY="✅ Auth staging: success\n\n- URL: $STAGING_ORIGIN\n- Production Worker/D1 were not modified.\n- Google/SES secrets are applied only when matching GitHub Actions secrets exist."
+          else
+            BODY="❌ Auth staging: failed\n\nThe production Worker/D1 were not modified. Check the Auth staging workflow log for the failed step."
+          fi
+          printf '%b' "$BODY" | gh pr comment 43 --repo ${{ github.repository }} --body-file -
