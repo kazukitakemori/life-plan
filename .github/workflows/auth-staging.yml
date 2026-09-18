@@ -176,10 +176,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          AUTH_PEPPER="$(openssl rand -hex 32)"
-          LICENSE_PEPPER="$(openssl rand -hex 32)"
-          printf '%s' "$AUTH_PEPPER" | npx wrangler secret put EMAIL_AUTH_PEPPER --config wrangler.auth-staging.generated.toml
-          printf '%s' "$LICENSE_PEPPER" | npx wrangler secret put LICENSE_PEPPER --config wrangler.auth-staging.generated.toml
+          EXISTING_SECRETS="$(npx wrangler secret list --format json --config wrangler.auth-staging.generated.toml)"
+          for NAME in EMAIL_AUTH_PEPPER LICENSE_PEPPER; do
+            if printf '%s' "$EXISTING_SECRETS" | node --input-type=module -e '
+              let input = "";
+              process.stdin.on("data", chunk => input += chunk);
+              process.stdin.on("end", () => {
+                process.exit(JSON.parse(input).some(secret => secret.name === process.argv[1]) ? 0 : 1);
+              });
+            ' "$NAME"; then
+              echo "Preserved $NAME"
+            else
+              VALUE="$(openssl rand -hex 32)"
+              echo "::add-mask::$VALUE"
+              printf '%s' "$VALUE" | npx wrangler secret put "$NAME" --config wrangler.auth-staging.generated.toml
+              unset VALUE
+            fi
+          done
 
       - name: Apply optional Google and SES secrets
         id: set_external_secrets
