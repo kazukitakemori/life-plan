@@ -132,6 +132,27 @@ async function handleRedeemLicense(request, env) {
     );
   }
 
+  const existingWorkspaceLicense = await env.DB
+    .prepare(
+      `SELECT id
+       FROM license_keys
+       WHERE redeemed_workspace_id = ?
+       LIMIT 1`,
+    )
+    .bind(auth.context.workspace_id)
+    .first();
+
+  if (existingWorkspaceLicense && existingWorkspaceLicense.id !== license.id) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'WORKSPACE_ALREADY_LICENSED',
+        message: 'このアカウントにはすでに別の利用コードが登録されています。',
+      },
+      409,
+    );
+  }
+
   const now = new Date().toISOString();
   const edition = license.edition === 'advisor' ? 'advisor' : 'personal';
 
@@ -142,17 +163,45 @@ async function handleRedeemLicense(request, env) {
       `UPDATE license_keys
        SET redeemed_workspace_id = ?, redeemed_at = COALESCE(redeemed_at, ?)
        WHERE id = ? AND status = 'active'
-         AND (redeemed_workspace_id IS NULL OR redeemed_workspace_id = ?)`,
+         AND (redeemed_workspace_id IS NULL OR redeemed_workspace_id = ?)
+         AND NOT EXISTS (
+           SELECT 1
+           FROM license_keys existing
+           WHERE existing.redeemed_workspace_id = ?
+             AND existing.id <> ?
+         )`,
     )
     .bind(
       auth.context.workspace_id,
       now,
       license.id,
       auth.context.workspace_id,
+      auth.context.workspace_id,
+      license.id,
     )
     .run();
 
   if (changedRows(claimed) !== 1) {
+    const workspaceLicense = await env.DB
+      .prepare(
+        `SELECT id
+         FROM license_keys
+         WHERE redeemed_workspace_id = ? AND id <> ?
+         LIMIT 1`,
+      )
+      .bind(auth.context.workspace_id, license.id)
+      .first();
+    if (workspaceLicense) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: 'WORKSPACE_ALREADY_LICENSED',
+          message: 'このアカウントにはすでに別の利用コードが登録されています。',
+        },
+        409,
+      );
+    }
+
     const current = await env.DB
       .prepare(
         `SELECT status, redeemed_workspace_id
