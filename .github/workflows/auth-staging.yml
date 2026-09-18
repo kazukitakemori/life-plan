@@ -70,7 +70,12 @@ jobs:
           set -euo pipefail
 
           get_db_id() {
-            npx wrangler d1 list --json | node --input-type=module -e "
+            local json
+            if ! json="$(npx wrangler d1 list --json)"; then
+              echo "Cloudflare D1 API access failed. The CI token needs Account > D1 > Edit permission." >&2
+              return 1
+            fi
+            printf '%s' "$json" | node --input-type=module -e "
               let input='';
               process.stdin.on('data', d => input += d);
               process.stdin.on('end', () => {
