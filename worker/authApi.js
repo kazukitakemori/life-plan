@@ -1,5 +1,5 @@
 import { createId, jsonResponse, readJson } from './licenseShared.js';
-import { sendLoginCodeEmail } from './sesMailer.js';
+import { sendLoginCodeEmail } from './loginEmail.js';
 
 const SESSION_COOKIE = 'lp_session';
 const OAUTH_STATE_COOKIE = 'lp_oauth_state';
