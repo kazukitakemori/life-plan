@@ -1,9 +1,13 @@
 name: Auth staging on Cloudflare Workers
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/google-cloud-sync
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
     paths:
       - ".github/workflows/auth-staging.yml"
       - "worker/**"
@@ -25,6 +29,7 @@ concurrency:
 
 jobs:
   deploy-auth-staging:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/google-cloud-sync'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
