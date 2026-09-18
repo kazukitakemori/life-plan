@@ -64,6 +64,7 @@ jobs:
           VITE_PREVIEW_SEED_DATA: "0"
 
       - name: Resolve dedicated staging D1
+        id: resolve_d1
         shell: bash
         run: |
           set -euo pipefail
@@ -118,12 +119,15 @@ jobs:
           echo "STAGING_DB_ID=$DB_ID" >> "$GITHUB_ENV"
 
       - name: Apply staging D1 migrations
+        id: migrate_d1
         run: npx wrangler d1 migrations apply DB --remote --config wrangler.auth-staging.generated.toml
 
       - name: Deploy auth staging worker
+        id: deploy_worker
         run: npx wrangler deploy --config wrangler.auth-staging.generated.toml
 
       - name: Set staging-only peppers
+        id: set_peppers
         shell: bash
         run: |
           set -euo pipefail
@@ -133,6 +137,7 @@ jobs:
           printf '%s' "$LICENSE_PEPPER" | npx wrangler secret put LICENSE_PEPPER --config wrangler.auth-staging.generated.toml
 
       - name: Apply optional Google and SES secrets
+        id: set_external_secrets
         shell: bash
         run: |
           set -euo pipefail
@@ -173,9 +178,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          STEPS="Resolve D1: ${{ steps.resolve_d1.outcome }}\nMigrate D1: ${{ steps.migrate_d1.outcome }}\nDeploy Worker: ${{ steps.deploy_worker.outcome }}\nSet peppers: ${{ steps.set_peppers.outcome }}\nSet Google/SES secrets: ${{ steps.set_external_secrets.outcome }}"
           if [ "${{ job.status }}" = "success" ]; then
-            BODY="✅ Auth staging: success\n\n- URL: $STAGING_ORIGIN\n- Production Worker/D1 were not modified.\n- Google/SES secrets are applied only when matching GitHub Actions secrets exist."
+            BODY="✅ Auth staging: success\n\n- URL: $STAGING_ORIGIN\n- Production Worker/D1 were not modified.\n- Google/SES secrets are applied only when matching GitHub Actions secrets exist.\n\n$STEPS\n\nRun: $RUN_URL"
           else
-            BODY="❌ Auth staging: failed\n\nThe production Worker/D1 were not modified. Check the Auth staging workflow log for the failed step."
+            BODY="❌ Auth staging: failed\n\nThe production Worker/D1 were not modified.\n\n$STEPS\n\nRun: $RUN_URL"
           fi
           printf '%b' "$BODY" | gh pr comment 43 --repo ${{ github.repository }} --body-file -
