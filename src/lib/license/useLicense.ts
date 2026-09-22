@@ -8,7 +8,7 @@ import {
 } from '../account/api';
 import { isLicenseDevUnlock } from './devUnlock';
 import { getLicenseEntitlements, resolveLicenseEdition } from './edition';
-import type { LicenseDevice, LicenseState } from '../../types/license';
+import type { LicenseState } from '../../types/license';
 import type { LicenseEdition, LicenseEntitlements } from '../../types/licenseEdition';
 
 interface PendingAccess {
@@ -267,7 +267,7 @@ export function useLicense() {
     [completePendingAccess],
   );
 
-  const releaseCurrentDevice = useCallback(async () => {
+  const logout = useCallback(async () => {
     if (DEV_UNLOCK) return false;
     setBusy(true);
     try {
@@ -287,25 +287,16 @@ export function useLicense() {
     }
   }, [setTrialUsed]);
 
-  const replaceDeviceAndActivate = useCallback(async () => false, []);
-  const closeDeviceLimitModal = useCallback(() => {
-    completePendingAccess(false);
-  }, [completePendingAccess]);
 
   const isLicensed = licenseState === 'active';
   const canRunAnalysis =
     DEV_UNLOCK || isLicensed || (licenseState === 'trial' && !trialAnalysisUsed);
-  const devices = useMemo<LicenseDevice[]>(() => [], []);
 
   return {
-    deviceId: 'account',
     licenseState,
-    licenseKey: null,
     edition,
     entitlements,
     keyHint,
-    devices,
-    maxDevices: 0,
     errorMessage,
     busy,
     isLicensed,
@@ -314,18 +305,14 @@ export function useLicense() {
     trialAnalysisUsed,
     isDevUnlock: DEV_UNLOCK,
     keyModalOpen,
-    deviceLimitModalOpen: false,
-    pendingKey: '',
     ensureLicensed,
     ensureCanRunAnalysis,
     ensureLicensedForAnalysis: ensureCanRunAnalysis,
     markTrialAnalysisUsed,
     openLicenseModal,
     closeLicenseModal,
-    closeDeviceLimitModal,
     handleSubmitKey,
-    replaceDeviceAndActivate,
-    releaseCurrentDevice,
+    logout,
     verifyStoredLicense,
   };
 }
