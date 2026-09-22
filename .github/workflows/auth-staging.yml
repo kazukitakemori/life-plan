@@ -152,7 +152,7 @@ jobs:
 
           [vars]
           AUTH_ORIGIN = "$STAGING_ORIGIN"
-          AWS_SES_REGION = "us-east-1"
+          AWS_SES_REGION = "ap-northeast-1"
 
           [assets]
           directory = "./dist"
