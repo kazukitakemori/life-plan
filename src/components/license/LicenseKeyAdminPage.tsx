@@ -93,6 +93,7 @@ function LicenseKeyTable({
             <th>利用コード</th>
             <th>購入者名</th>
             <th>状態</th>
+            <th>保存方式</th>
             <th>アカウント登録</th>
             <th>発行日</th>
             <th>操作</th>
@@ -126,6 +127,7 @@ function LicenseKeyTable({
                     {statusLabel(entry.status)}
                   </span>
                 </td>
+                <td>{entry.cloud_storage_enabled ? 'クラウド' : 'ブラウザ内'}</td>
                 <td>{redemptionLabel(entry)}</td>
                 <td>{formatDateTime(entry.created_at)}</td>
                 <td>
@@ -180,6 +182,7 @@ export function LicenseKeyAdminPage() {
 
   const [customerNote, setCustomerNote] = useState('');
   const [keyEdition, setKeyEdition] = useState<LicenseEdition>('personal');
+  const [cloudStorageEnabled, setCloudStorageEnabled] = useState(false);
   const [generateBusy, setGenerateBusy] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [issuedKeys, setIssuedKeys] = useState<LicenseAdminGeneratedKey[]>([]);
@@ -270,6 +273,7 @@ export function LicenseKeyAdminPage() {
         count: 1,
         note: customerNote,
         edition: keyEdition,
+        cloudStorageEnabled: keyEdition === 'advisor' ? true : cloudStorageEnabled,
       });
       if (!body.ok || !body.keys?.length) {
         setGenerateError('利用コードの発行に失敗しました。');
@@ -431,11 +435,28 @@ export function LicenseKeyAdminPage() {
             className="plan-meta-input"
             value={keyEdition}
             disabled={generateBusy}
-            onChange={(event) => setKeyEdition(event.target.value as LicenseEdition)}
+            onChange={(event) => {
+              const nextEdition = event.target.value as LicenseEdition;
+              setKeyEdition(nextEdition);
+              if (nextEdition === 'advisor') setCloudStorageEnabled(true);
+            }}
           >
             <option value="personal">{LICENSE_EDITION_LABELS.personal}</option>
             <option value="advisor">{LICENSE_EDITION_LABELS.advisor}</option>
           </select>
+
+          <label className="license-key-admin-cloud-option">
+            <input
+              type="checkbox"
+              checked={keyEdition === 'advisor' || cloudStorageEnabled}
+              disabled={generateBusy || keyEdition === 'advisor'}
+              onChange={(event) => setCloudStorageEnabled(event.target.checked)}
+            />
+            <span>
+              クラウド保存を付ける
+              {keyEdition === 'advisor' ? '（事業者向けは標準）' : '（一般向けは任意オプション）'}
+            </span>
+          </label>
 
           <label className="plan-meta-label" htmlFor="license-admin-customer">
             購入者名（メモ）
