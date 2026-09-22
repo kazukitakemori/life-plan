@@ -43,6 +43,8 @@ async function handleAdminApi(request, env, path) {
     const count = Math.min(Math.max(Number(body.count ?? 1), 1), 50);
     const note = body.note ? String(body.note) : null;
     const edition = body.edition === 'advisor' ? 'advisor' : 'personal';
+    const cloudStorageEnabled =
+      edition === 'advisor' ? true : Boolean(body.cloudStorageEnabled);
     const now = new Date().toISOString();
     const keys = [];
 
@@ -52,8 +54,8 @@ async function handleAdminApi(request, env, path) {
       const id = createId();
       await env.DB.prepare(
         `INSERT INTO license_keys
-           (id, key_hash, key_hint, key_display, status, edition, max_devices, note, created_at)
-         VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+           (id, key_hash, key_hint, key_display, status, edition, cloud_storage_enabled, max_devices, note, created_at)
+         VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
       )
         .bind(
           id,
@@ -61,6 +63,7 @@ async function handleAdminApi(request, env, path) {
           getLicenseKeyHint(plainKey),
           formatLicenseKeyForDisplay(plainKey),
           edition,
+          cloudStorageEnabled ? 1 : 0,
           LEGACY_MAX_DEVICES_DEFAULT,
           note,
           now,
@@ -70,6 +73,7 @@ async function handleAdminApi(request, env, path) {
         key: formatLicenseKeyForDisplay(plainKey),
         hint: getLicenseKeyHint(plainKey),
         note,
+        cloudStorageEnabled,
       });
     }
 
@@ -84,12 +88,12 @@ async function handleAdminApi(request, env, path) {
          lk.key_display,
          lk.status,
          lk.edition,
+         lk.cloud_storage_enabled,
          lk.note,
          lk.created_at,
          lk.redeemed_workspace_id,
          lk.redeemed_at,
-         CASE WHEN lk.redeemed_workspace_id IS NULL THEN 0 ELSE 1 END AS redeemed,
-         lk.created_at
+         CASE WHEN lk.redeemed_workspace_id IS NULL THEN 0 ELSE 1 END AS redeemed
        FROM license_keys lk
        ORDER BY lk.created_at DESC
        LIMIT 200`,
