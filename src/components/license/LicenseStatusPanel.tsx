@@ -12,11 +12,10 @@ import type { LicenseState } from '../../types/license';
 interface LicenseStatusPanelProps {
   licenseState: LicenseState;
   entitlements: LicenseEntitlements;
-  deviceLabel: string;
   errorMessage?: string | null;
   onManageLicense: () => void;
   onStartWithoutKey?: () => void;
-  onReleaseDevice?: () => Promise<boolean> | boolean;
+  onLogout?: () => Promise<boolean> | boolean;
   busy?: boolean;
   trialAnalysisUsed?: boolean;
   /** Previewだけログインなしで全機能を使える状態 */
@@ -37,7 +36,7 @@ export function LicenseStatusPanel({
   errorMessage,
   onManageLicense,
   onStartWithoutKey,
-  onReleaseDevice,
+  onLogout,
   busy = false,
   trialAnalysisUsed = false,
   isDevUnlock = false,
@@ -309,7 +308,7 @@ export function LicenseStatusPanel({
               </button>
             ) : null}
 
-            {(licenseState === 'trial' || licenseState === 'active') && onReleaseDevice ? (
+            {(licenseState === 'trial' || licenseState === 'active') && onLogout ? (
               <button
                 type="button"
                 className="plan-bar-btn"
@@ -322,8 +321,8 @@ export function LicenseStatusPanel({
                       'クラウドに保存されたプランは削除されません。',
                     ].join('\n'),
                   );
-                  if (!confirmed || !onReleaseDevice) return;
-                  void onReleaseDevice();
+                  if (!confirmed || !onLogout) return;
+                  void onLogout();
                 }}
               >
                 ログアウト
