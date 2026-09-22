@@ -237,9 +237,6 @@ export function PensionAmountTableOver50({
     <div className="teikibin-block">
       <h5 className="teikibin-block-title">
         (2) 老齢年金の種類と見込額（年額）
-        <span className="pension-help-icon" title="老齢年金の種類と見込額について">
-          ?
-        </span>
       </h5>
 
       <table className="teikibin-amount-table teikibin-amount-table--over50">
