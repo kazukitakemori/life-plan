@@ -1466,6 +1466,7 @@ export default function App() {
             licenseState={license.licenseState}
             entitlements={license.entitlements}
             trialAnalysisUsed={license.trialAnalysisUsed}
+            cloudStorageEnabled={license.cloudStorageEnabled}
             errorMessage={license.errorMessage}
             busy={license.busy}
             isDevUnlock={license.isDevUnlock}
