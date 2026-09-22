@@ -19,9 +19,6 @@ export function PensionAmountTable({ form, onChange }: PensionAmountTableProps) 
     <div className="teikibin-block">
       <h5 className="teikibin-block-title">
         (2) これまでの加入実績に応じた年金額
-        <span className="pension-help-icon" title="加入実績に応じた年金額について">
-          ?
-        </span>
       </h5>
 
       <table className="teikibin-amount-table">
