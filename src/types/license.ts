@@ -11,6 +11,7 @@ export interface LicenseAdminGeneratedKey {
   key: string;
   hint: string;
   note: string | null;
+  cloudStorageEnabled: boolean;
 }
 
 export interface LicenseAdminGenerateResponse {
@@ -25,6 +26,7 @@ export interface LicenseAdminKeySummary {
   key_display: string | null;
   status: 'active' | 'revoked';
   edition: LicenseEdition;
+  cloud_storage_enabled: 0 | 1;
   note: string | null;
   created_at: string;
   redeemed_workspace_id: string | null;
