@@ -104,7 +104,7 @@ async function handleRedeemLicense(request, env) {
   const keyHash = await hashLicenseKey(key, env.LICENSE_PEPPER);
   const license = await env.DB
     .prepare(
-      `SELECT id, status, edition, redeemed_workspace_id
+      `SELECT id, status, edition, cloud_storage_enabled, redeemed_workspace_id
        FROM license_keys
        WHERE key_hash = ?
        LIMIT 1`,
@@ -155,6 +155,8 @@ async function handleRedeemLicense(request, env) {
 
   const now = new Date().toISOString();
   const edition = license.edition === 'advisor' ? 'advisor' : 'personal';
+  const cloudStorageEnabled =
+    edition === 'advisor' || Boolean(license.cloud_storage_enabled);
 
   // Claim the code first with an atomic conditional update. If two different
   // workspaces redeem at the same time, only the first claim can succeed.
@@ -234,18 +236,24 @@ async function handleRedeemLicense(request, env) {
   await env.DB
     .prepare(
       `INSERT INTO account_entitlements
-         (workspace_id, edition, status, trial_analysis_used, expires_at, created_at, updated_at)
-       VALUES (?, ?, 'active', 0, NULL, ?, ?)
+         (workspace_id, edition, status, trial_analysis_used, cloud_storage_enabled, expires_at, created_at, updated_at)
+       VALUES (?, ?, 'active', 0, ?, NULL, ?, ?)
        ON CONFLICT(workspace_id) DO UPDATE SET
          edition = excluded.edition,
          status = 'active',
+         cloud_storage_enabled = excluded.cloud_storage_enabled,
          expires_at = NULL,
          updated_at = excluded.updated_at`,
     )
-    .bind(auth.context.workspace_id, edition, now, now)
+    .bind(auth.context.workspace_id, edition, cloudStorageEnabled ? 1 : 0, now, now)
     .run();
 
-  return jsonResponse({ ok: true, edition, status: 'active' });
+  return jsonResponse({
+    ok: true,
+    edition,
+    status: 'active',
+    cloudStorageEnabled,
+  });
 }
 
 async function handleUseTrialAnalysis(request, env) {
