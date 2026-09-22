@@ -17,6 +17,7 @@ export interface AccountMeResponse {
     edition: LicenseEdition;
     status: 'trial' | 'active' | 'inactive';
     trialAnalysisUsed: boolean;
+    cloudStorageEnabled: boolean;
     expiresAt: string | null;
   };
 }
@@ -27,6 +28,7 @@ interface RedeemLicenseResponse {
   message?: string;
   edition?: LicenseEdition;
   status?: 'active';
+  cloudStorageEnabled?: boolean;
 }
 
 export interface EmailAuthResponse {
