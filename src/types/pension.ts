@@ -147,14 +147,14 @@ export const PAST_ENROLLMENT_OPTIONS: {
   value: PastEnrollmentMode;
   label: string;
 }[] = [
-  { value: 'none', label: '入力しない' },
+  { value: 'none', label: '収入情報から概算する' },
   {
     value: 'nenkin-teikibin-under50',
-    label: 'ねんきん定期便（50歳未満の方タイプ）',
+    label: 'ねんきん定期便から入力（50歳未満）',
   },
   {
     value: 'nenkin-teikibin-over50',
-    label: 'ねんきん定期便（50歳以上の方タイプ）',
+    label: 'ねんきん定期便から入力（50歳以上）',
   },
 ];
 
