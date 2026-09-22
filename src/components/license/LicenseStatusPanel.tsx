@@ -18,6 +18,7 @@ interface LicenseStatusPanelProps {
   onLogout?: () => Promise<boolean> | boolean;
   busy?: boolean;
   trialAnalysisUsed?: boolean;
+  cloudStorageEnabled?: boolean;
   /** Previewだけログインなしで全機能を使える状態 */
   isDevUnlock?: boolean;
 }
@@ -39,6 +40,7 @@ export function LicenseStatusPanel({
   onLogout,
   busy = false,
   trialAnalysisUsed = false,
+  cloudStorageEnabled = false,
   isDevUnlock = false,
 }: LicenseStatusPanelProps) {
   const [email, setEmail] = useState('');
@@ -60,25 +62,27 @@ export function LicenseStatusPanel({
     : licenseState === 'checking'
       ? 'アカウントの状態を確認しています。'
       : licenseState === 'inactive'
-        ? 'Googleまたはメールアドレスでログインすると、プランをクラウドに保存して別のブラウザやPCから続きが使えます。'
+        ? 'Googleまたはメールアドレスでログインすると、無料体験や購入済みの利用権をこのアカウントで確認できます。'
         : licenseState === 'trial'
           ? trialAnalysisUsed
             ? 'ログイン済みです。無料体験のライフプラン分析は利用済みです。'
             : 'ログイン済みです。データ入力とライフプラン分析1回を無料で体験できます。'
           : licenseState === 'active'
-            ? '利用権とプランはアカウントに紐付いています。ブラウザを変えても同じデータを利用できます。'
+            ? cloudStorageEnabled
+              ? '利用権とクラウド保存はこのアカウントに紐付いています。別のブラウザやPCから同じデータを利用できます。'
+              : '利用権はこのアカウントに紐付いています。プランデータはこのブラウザ内に保存されます。'
             : 'アカウント情報を確認できませんでした。';
 
   const featureSummary = isDevUnlock
     ? 'データ入力 / ライフプラン分析 / 複数プラン管理（確認版）'
     : licenseState === 'active'
       ? entitlements.edition === 'advisor'
-        ? 'データ入力 / ライフプラン分析 / 複数プラン管理 / クラウド保存'
-        : 'データ入力 / ライフプラン分析（プラン1件） / クラウド保存'
+        ? `データ入力 / ライフプラン分析 / 複数プラン管理${cloudStorageEnabled ? ' / クラウド保存' : ''}`
+        : `データ入力 / ライフプラン分析（プラン1件）${cloudStorageEnabled ? ' / クラウド保存' : ''}`
       : licenseState === 'trial'
         ? trialAnalysisUsed
-          ? 'データ入力 / クラウド保存 / 体験分析済み'
-          : 'データ入力 / クラウド保存 / ライフプラン分析（1回まで）'
+          ? 'データ入力 / ブラウザ内保存 / 体験分析済み'
+          : 'データ入力 / ブラウザ内保存 / ライフプラン分析（1回まで）'
         : 'ログイン後に利用できます';
 
   const statusLabel = isDevUnlock ? '確認版' : STATE_LABELS[licenseState];
@@ -163,7 +167,13 @@ export function LicenseStatusPanel({
           {licenseState === 'trial' || licenseState === 'active' || isDevUnlock ? (
             <div>
               <dt>データ保存</dt>
-              <dd>{isDevUnlock ? 'この確認版のブラウザ内' : 'アカウントにクラウド保存'}</dd>
+              <dd>
+                {isDevUnlock
+                  ? 'この確認版のブラウザ内'
+                  : cloudStorageEnabled
+                    ? 'クラウド保存'
+                    : 'このブラウザ内'}
+              </dd>
             </div>
           ) : null}
           <div>
@@ -318,7 +328,9 @@ export function LicenseStatusPanel({
                     [
                       'アカウントからログアウトしますか？',
                       '',
-                      'クラウドに保存されたプランは削除されません。',
+                      cloudStorageEnabled
+                        ? 'クラウドに保存されたプランは削除されません。'
+                        : 'このブラウザ内のプランは削除されません。',
                     ].join('\n'),
                   );
                   if (!confirmed || !onLogout) return;
