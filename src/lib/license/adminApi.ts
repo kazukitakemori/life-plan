@@ -38,7 +38,12 @@ export async function verifyAdminSecret(adminSecret: string): Promise<boolean> {
 
 export async function generateLicenseKeys(
   adminSecret: string,
-  input: { count?: number; note?: string; edition?: LicenseEdition },
+  input: {
+    count?: number;
+    note?: string;
+    edition?: LicenseEdition;
+    cloudStorageEnabled?: boolean;
+  },
 ): Promise<LicenseAdminGenerateResponse> {
   const response = await fetch(apiUrl('/api/admin/keys/generate'), {
     method: 'POST',
@@ -47,6 +52,7 @@ export async function generateLicenseKeys(
       count: input.count ?? 1,
       note: input.note?.trim() || null,
       edition: input.edition ?? 'personal',
+      cloudStorageEnabled: input.cloudStorageEnabled ?? false,
     }),
   });
   return parseJson<LicenseAdminGenerateResponse>(response);
