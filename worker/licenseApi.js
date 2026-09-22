@@ -84,13 +84,12 @@ async function handleAdminApi(request, env, path) {
          lk.key_display,
          lk.status,
          lk.edition,
-         lk.max_devices,
          lk.note,
          lk.created_at,
          lk.redeemed_workspace_id,
          lk.redeemed_at,
          CASE WHEN lk.redeemed_workspace_id IS NULL THEN 0 ELSE 1 END AS redeemed,
-         0 AS device_count
+         lk.created_at
        FROM license_keys lk
        ORDER BY lk.created_at DESC
        LIMIT 200`,
