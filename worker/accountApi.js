@@ -72,6 +72,7 @@ async function getSessionContext(request, env) {
          e.edition,
          e.status AS entitlement_status,
          e.trial_analysis_used,
+         e.cloud_storage_enabled,
          e.expires_at AS entitlement_expires_at
        FROM account_sessions s
        JOIN account_users u ON u.id = s.user_id
@@ -111,6 +112,23 @@ async function requireSession(request, env) {
   return { context };
 }
 
+async function requireCloudStorage(request, env) {
+  const auth = await requireSession(request, env);
+  if (auth.response) return auth;
+  if (!Boolean(auth.context.cloud_storage_enabled)) {
+    return {
+      response: jsonResponse(
+        {
+          error: 'CLOUD_STORAGE_REQUIRED',
+          message: 'このアカウントではクラウド保存を利用できません。',
+        },
+        403,
+      ),
+    };
+  }
+  return auth;
+}
+
 async function handleMe(request, env) {
   const context = await getSessionContext(request, env);
   if (!context) return jsonResponse({ authenticated: false });
@@ -131,6 +149,7 @@ async function handleMe(request, env) {
       edition: context.edition ?? 'personal',
       status: context.entitlement_status ?? 'trial',
       trialAnalysisUsed: Boolean(context.trial_analysis_used),
+      cloudStorageEnabled: Boolean(context.cloud_storage_enabled),
       expiresAt: context.entitlement_expires_at ?? null,
     },
   });
@@ -169,7 +188,7 @@ function parsePlanId(path) {
 }
 
 async function handleListPlans(request, env) {
-  const auth = await requireSession(request, env);
+  const auth = await requireCloudStorage(request, env);
   if (auth.response) return auth.response;
   const { results } = await env.DB
     .prepare(
@@ -195,7 +214,7 @@ async function handleListPlans(request, env) {
 }
 
 async function handleGetPlan(request, env, planId) {
-  const auth = await requireSession(request, env);
+  const auth = await requireCloudStorage(request, env);
   if (auth.response) return auth.response;
   const row = await env.DB
     .prepare(
@@ -240,7 +259,7 @@ async function handleSavePlan(request, env, planId) {
   if (!isSameOriginMutation(request)) {
     return jsonResponse({ error: 'ORIGIN_MISMATCH' }, 403);
   }
-  const auth = await requireSession(request, env);
+  const auth = await requireCloudStorage(request, env);
   if (auth.response) return auth.response;
   const body = await readJson(request);
   const plan = body?.plan;
@@ -302,7 +321,7 @@ async function handleDeletePlan(request, env, planId) {
   if (!isSameOriginMutation(request)) {
     return jsonResponse({ error: 'ORIGIN_MISMATCH' }, 403);
   }
-  const auth = await requireSession(request, env);
+  const auth = await requireCloudStorage(request, env);
   if (auth.response) return auth.response;
   const url = new URL(request.url);
   const expectedRevision = positiveRevision(url.searchParams.get('revision'));
