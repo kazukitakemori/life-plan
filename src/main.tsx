@@ -23,6 +23,7 @@ import './housing-maintenance-ui.css';
 import './vehicle-ui.css';
 import './mobileVehicle.css';
 import './mobilePension.css';
+import './pension-ui.css';
 import './mobileLoan.css';
 import './mobileInsurance.css';
 import './mobileSavings.css';
