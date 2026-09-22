@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import {
   formatNumericDisplay,
   getWesternYearOptions,
@@ -11,7 +10,10 @@ import type {
   DependentSpousePensionSettings,
   OldAgeBenefitRowSettings,
 } from '../../types/pension';
-import { PENSION_START_AGE_OPTIONS, PENSION_START_MONTH_OPTIONS } from '../../types/pension';
+import {
+  PENSION_START_AGE_OPTIONS,
+  PENSION_START_MONTH_OPTIONS,
+} from '../../types/pension';
 import { DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR } from '../../lib/pensionConstants';
 
 interface BenefitSettingsSectionProps {
@@ -43,7 +45,7 @@ function OldAgeAmountOptions({
           onChange={() => setMode('auto')}
         />
         <span className="benefit-amount-option-label benefit-amount-option-label--auto">
-          「1. 年金加入実績」を元に自動計算
+          加入実績から自動計算
           <span className="pension-help-icon" title="加入実績から自動計算">
             ?
           </span>
@@ -62,6 +64,7 @@ function OldAgeAmountOptions({
             className="pension-field-input pension-field-input--benefit"
             value={formatNumericDisplay(row.manualAmountPerYear)}
             disabled={row.amountMode !== 'manual'}
+            aria-label="年金額を手入力"
             onChange={(e) =>
               onChange({
                 ...row,
@@ -69,7 +72,7 @@ function OldAgeAmountOptions({
               })
             }
           />
-          <span className="pension-field-unit">円/年</span>
+          <span className="pension-field-unit">円/年（手入力）</span>
           <span className="pension-help-icon" title="手入力の基本金額">
             ?
           </span>
@@ -83,15 +86,11 @@ function OldAgeBenefitRow({
   rowId,
   label,
   row,
-  survivorCell,
-  omitSurvivorCell = false,
   onChange,
 }: {
   rowId: string;
   label: string;
   row: OldAgeBenefitRowSettings;
-  survivorCell?: ReactNode;
-  omitSurvivorCell?: boolean;
   onChange: (row: OldAgeBenefitRowSettings) => void;
 }) {
   return (
@@ -134,8 +133,6 @@ function OldAgeBenefitRow({
           onChange={onChange}
         />
       </td>
-      {!omitSurvivorCell &&
-        (survivorCell ?? <td className="benefit-survivor-cell" />)}
     </tr>
   );
 }
@@ -186,6 +183,7 @@ function DependentSpousePensionRow({
                 className="pension-field-input pension-field-input--benefit"
                 value={formatNumericDisplay(settings.manualAmountPerYear)}
                 disabled={settings.amountMode !== 'manual'}
+                aria-label="加給年金を手入力"
                 onChange={(e) =>
                   onChange({
                     ...settings,
@@ -229,18 +227,27 @@ export function BenefitSettingsSection({
     if (isEarlyStart(newRow.startAge)) {
       const syncedAge = newRow.startAge;
       const syncedMonth = newRow.startMonth ?? 0;
-      const syncStart = (r: OldAgeBenefitRowSettings): OldAgeBenefitRowSettings => ({
-        ...r,
+      const syncStart = (
+        row: OldAgeBenefitRowSettings,
+      ): OldAgeBenefitRowSettings => ({
+        ...row,
         startAge: syncedAge,
         startMonth: syncedMonth,
       });
       onChange({
         ...settings,
-        oldAgeBasic: changedKey === 'oldAgeBasic' ? newRow : syncStart(settings.oldAgeBasic),
+        oldAgeBasic:
+          changedKey === 'oldAgeBasic'
+            ? newRow
+            : syncStart(settings.oldAgeBasic),
         oldAgeGeneralEmployees:
-          changedKey === 'oldAgeGeneralEmployees' ? newRow : syncStart(settings.oldAgeGeneralEmployees),
+          changedKey === 'oldAgeGeneralEmployees'
+            ? newRow
+            : syncStart(settings.oldAgeGeneralEmployees),
         oldAgePublicPrivate:
-          changedKey === 'oldAgePublicPrivate' ? newRow : syncStart(settings.oldAgePublicPrivate),
+          changedKey === 'oldAgePublicPrivate'
+            ? newRow
+            : syncStart(settings.oldAgePublicPrivate),
       });
     } else {
       update({ [changedKey]: newRow });
@@ -254,10 +261,12 @@ export function BenefitSettingsSection({
 
   return (
     <div className="pension-subsection benefit-settings">
-      <h4 className="pension-subsection-title">(2) 受給設定</h4>
+      <h4 className="pension-subsection-title">受給設定</h4>
 
       <div className="benefit-settings-block">
-        <h5 className="benefit-settings-block-title">① 老齢年金</h5>
+        <h5 className="benefit-settings-block-title">
+          老齢年金の受け取り方
+        </h5>
         {isEarlyPension && (
           <p className="benefit-early-pension-note">
             ※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。
@@ -268,15 +277,15 @@ export function BenefitSettingsSection({
             <tr>
               <th className="benefit-row-label-header" />
               <th className="benefit-col-header">
-                受取開始年齢
-                <span className="pension-help-icon" title="受取開始年齢について">
+                受取開始
+                <span
+                  className="pension-help-icon"
+                  title="受取開始年齢について"
+                >
                   ?
                 </span>
               </th>
-              <th className="benefit-col-header">基本金額</th>
-              <th className="benefit-col-header benefit-col-header--survivor">
-                {headOfHouseholdLabel}に万が一があった場合の遺族年金
-              </th>
+              <th className="benefit-col-header">年金額</th>
             </tr>
           </thead>
           <tbody>
@@ -285,41 +294,22 @@ export function BenefitSettingsSection({
               label="老齢基礎"
               row={settings.oldAgeBasic}
               onChange={(row) => handleOldAgeChange('oldAgeBasic', row)}
-              survivorCell={
-                <td className="benefit-survivor-cell">
-                  遺族基礎年金を自動計算
-                  <span
-                    className="pension-help-icon"
-                    title="遺族基礎年金の自動計算"
-                  >
-                    ?
-                  </span>
-                </td>
-              }
             />
             <OldAgeBenefitRow
               rowId="general"
               label="一般厚生"
               row={settings.oldAgeGeneralEmployees}
-              onChange={(row) => handleOldAgeChange('oldAgeGeneralEmployees', row)}
-              survivorCell={
-                <td className="benefit-survivor-cell" rowSpan={2}>
-                  遺族厚生年金を自動計算
-                  <span
-                    className="pension-help-icon"
-                    title="遺族厚生年金の自動計算"
-                  >
-                    ?
-                  </span>
-                </td>
+              onChange={(row) =>
+                handleOldAgeChange('oldAgeGeneralEmployees', row)
               }
             />
             <OldAgeBenefitRow
               rowId="public-private"
               label="公務員厚生・私学共済"
               row={settings.oldAgePublicPrivate}
-              omitSurvivorCell
-              onChange={(row) => handleOldAgeChange('oldAgePublicPrivate', row)}
+              onChange={(row) =>
+                handleOldAgeChange('oldAgePublicPrivate', row)
+              }
             />
             <DependentSpousePensionRow
               settings={
@@ -334,11 +324,19 @@ export function BenefitSettingsSection({
             />
           </tbody>
         </table>
+
+        <div className="pension-auto-benefit-note" role="note">
+          <strong>万一の場合の年金</strong>
+          <span>
+            {headOfHouseholdLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
+          </span>
+        </div>
       </div>
 
-      <div className="benefit-settings-block">
+      <div className="benefit-settings-block benefit-settings-block--optional">
         <h5 className="benefit-settings-block-title">
-          ② 受給中の遺族年金・寡婦年金
+          <span>受給中の遺族年金・寡婦年金</span>
+          <span className="benefit-optional-badge">該当する場合のみ</span>
           <span className="benefit-death-date">
             【 故人の死亡年月：
             <select
