@@ -14,7 +14,6 @@ import {
   PENSION_START_AGE_OPTIONS,
   PENSION_START_MONTH_OPTIONS,
 } from '../../types/pension';
-import { DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR } from '../../lib/pensionConstants';
 
 interface BenefitSettingsSectionProps {
   settings: BenefitSettings;
@@ -46,9 +45,6 @@ function OldAgeAmountOptions({
         />
         <span className="benefit-amount-option-label benefit-amount-option-label--auto">
           加入実績から自動計算
-          <span className="pension-help-icon" title="加入実績から自動計算">
-            ?
-          </span>
         </span>
       </label>
       <label className="benefit-amount-option">
@@ -73,9 +69,6 @@ function OldAgeAmountOptions({
             }
           />
           <span className="pension-field-unit">円/年（手入力）</span>
-          <span className="pension-help-icon" title="手入力の基本金額">
-            ?
-          </span>
         </span>
       </label>
     </div>
@@ -162,12 +155,6 @@ function DependentSpousePensionRow({
             />
             <span className="benefit-amount-option-label benefit-amount-option-label--auto">
               自動計算（厚生年金20年以上・配偶者65歳未満の間）
-              <span
-                className="pension-help-icon"
-                title={`2026年度: ${DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR.toLocaleString()}円/年（昭和18年4月2日以降生まれ）`}
-              >
-                ?
-              </span>
             </span>
           </label>
           <label className="benefit-amount-option">
@@ -278,12 +265,6 @@ export function BenefitSettingsSection({
               <th className="benefit-row-label-header" />
               <th className="benefit-col-header">
                 受取開始
-                <span
-                  className="pension-help-icon"
-                  title="受取開始年齢について"
-                >
-                  ?
-                </span>
               </th>
               <th className="benefit-col-header">年金額</th>
             </tr>
