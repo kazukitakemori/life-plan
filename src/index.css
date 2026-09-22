@@ -8502,19 +8502,6 @@ button:disabled {
   min-width: 320px;
 }
 
-.pension-help-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  cursor: help;
-  flex-shrink: 0;
-}
-
 .pension-estimate-panel {
   margin: 28px 0 24px;
   padding: 16px 18px;
