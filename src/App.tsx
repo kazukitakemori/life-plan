@@ -2026,16 +2026,6 @@ export default function App() {
         onClose={license.closeLicenseModal}
         onSubmit={license.handleSubmitKey}
       />
-      <DeviceLimitModal
-        open={license.deviceLimitModalOpen}
-        busy={license.busy}
-        devices={license.devices}
-        currentDeviceId={license.deviceId}
-        maxDevices={license.maxDevices}
-        errorMessage={license.errorMessage}
-        onClose={license.closeDeviceLimitModal}
-        onReplace={license.replaceDeviceAndActivate}
-      />
     </>
   );
 }
