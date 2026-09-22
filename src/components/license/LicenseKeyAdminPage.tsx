@@ -33,6 +33,11 @@ function statusLabel(status: LicenseAdminKeySummary['status']): string {
   return status === 'active' ? '有効' : '無効';
 }
 
+function redemptionLabel(entry: LicenseAdminKeySummary): string {
+  if (!entry.redeemed) return '未登録';
+  return entry.redeemed_at ? `登録済み（${formatDateTime(entry.redeemed_at)}）` : '登録済み';
+}
+
 async function copyTextToClipboard(value: string): Promise<boolean> {
   try {
     if (navigator.clipboard?.writeText) {
@@ -77,7 +82,7 @@ function LicenseKeyTable({
   onDelete: (entry: LicenseAdminKeySummary) => void;
 }) {
   if (keys.length === 0) {
-    return <p className="license-key-admin-empty">まだキーは発行されていません。</p>;
+    return <p className="license-key-admin-empty">まだ利用コードは発行されていません。</p>;
   }
 
   return (
@@ -85,10 +90,11 @@ function LicenseKeyTable({
       <table className="license-key-admin-table">
         <thead>
           <tr>
-            <th>ライセンスキー</th>
+            <th>利用コード</th>
             <th>購入者名</th>
             <th>状態</th>
-            <th>登録数</th>
+            <th>保存方式</th>
+            <th>アカウント登録</th>
             <th>発行日</th>
             <th>操作</th>
           </tr>
@@ -121,9 +127,8 @@ function LicenseKeyTable({
                     {statusLabel(entry.status)}
                   </span>
                 </td>
-                <td>
-                  {entry.device_count} / {entry.max_devices}
-                </td>
+                <td>{entry.cloud_storage_enabled ? 'クラウド' : 'ブラウザ内'}</td>
+                <td>{redemptionLabel(entry)}</td>
                 <td>{formatDateTime(entry.created_at)}</td>
                 <td>
                   <div className="license-key-admin-row-actions">
@@ -146,14 +151,16 @@ function LicenseKeyTable({
                         >
                           {busyId === entry.id ? '処理中…' : '有効化'}
                         </button>
-                        <button
-                          type="button"
-                          className="plan-bar-btn plan-bar-btn--danger"
-                          disabled={busyId === entry.id}
-                          onClick={() => onDelete(entry)}
-                        >
-                          {busyId === entry.id ? '処理中…' : '削除'}
-                        </button>
+                        {!entry.redeemed ? (
+                          <button
+                            type="button"
+                            className="plan-bar-btn plan-bar-btn--danger"
+                            disabled={busyId === entry.id}
+                            onClick={() => onDelete(entry)}
+                          >
+                            {busyId === entry.id ? '処理中…' : '削除'}
+                          </button>
+                        ) : null}
                       </>
                     )}
                   </div>
@@ -175,6 +182,7 @@ export function LicenseKeyAdminPage() {
 
   const [customerNote, setCustomerNote] = useState('');
   const [keyEdition, setKeyEdition] = useState<LicenseEdition>('personal');
+  const [cloudStorageEnabled, setCloudStorageEnabled] = useState(false);
   const [generateBusy, setGenerateBusy] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [issuedKeys, setIssuedKeys] = useState<LicenseAdminGeneratedKey[]>([]);
@@ -265,9 +273,10 @@ export function LicenseKeyAdminPage() {
         count: 1,
         note: customerNote,
         edition: keyEdition,
+        cloudStorageEnabled: keyEdition === 'advisor' ? true : cloudStorageEnabled,
       });
       if (!body.ok || !body.keys?.length) {
-        setGenerateError('キーの発行に失敗しました。');
+        setGenerateError('利用コードの発行に失敗しました。');
         return;
       }
       setIssuedKeys(body.keys);
@@ -283,8 +292,8 @@ export function LicenseKeyAdminPage() {
     const ok = await copyTextToClipboard(key);
     setCopyMessage(
       ok
-        ? 'キーをコピーしました。'
-        : 'コピーできませんでした。キーを手動で選択してコピーしてください。',
+        ? '利用コードをコピーしました。'
+        : 'コピーできませんでした。利用コードを手動で選択してコピーしてください。',
     );
   };
 
@@ -296,8 +305,8 @@ export function LicenseKeyAdminPage() {
     const label = entry.note?.trim() || entry.key_hint;
     const confirmed = window.confirm(
       status === 'revoked'
-        ? `「${label}」のキーを無効にしますか？\n\n無効のあいだは使えません。あとから有効に戻せます。`
-        : `「${label}」のキーを有効に戻しますか？`,
+        ? `「${label}」の利用コードを無効にしますか？\n\n登録済みアカウントの利用権も停止します。あとから有効に戻せます。`
+        : `「${label}」の利用コードを有効に戻しますか？`,
     );
     if (!confirmed) return;
 
@@ -317,10 +326,10 @@ export function LicenseKeyAdminPage() {
   };
 
   const handleDelete = async (entry: LicenseAdminKeySummary) => {
-    if (!adminSecret) return;
+    if (!adminSecret || entry.redeemed) return;
     const label = entry.note?.trim() || entry.key_hint;
     const confirmed = window.confirm(
-      `「${label}」の無効化されたキーを削除しますか？\n\nこの操作は取り消せません。`,
+      `「${label}」の未登録・無効化済み利用コードを削除しますか？\n\nこの操作は取り消せません。`,
     );
     if (!confirmed) return;
 
@@ -344,9 +353,9 @@ export function LicenseKeyAdminPage() {
       <div className="license-key-admin">
         <div className="license-key-admin-shell">
           <header className="license-key-admin-header">
-            <h1 className="license-key-admin-title">ライセンスキー管理</h1>
+            <h1 className="license-key-admin-title">利用コード管理</h1>
             <p className="license-key-admin-lead">
-              振込確認後、ここからお客様へ渡すキーを発行できます。
+              振込確認後、ここからお客様のアカウントへ登録する利用コードを発行できます。
             </p>
           </header>
 
@@ -401,9 +410,9 @@ export function LicenseKeyAdminPage() {
         <header className="license-key-admin-header">
           <div className="license-key-admin-header-row">
             <div>
-              <h1 className="license-key-admin-title">ライセンスキー管理</h1>
+              <h1 className="license-key-admin-title">利用コード管理</h1>
               <p className="license-key-admin-lead">
-                お客様1人につき、キーを1つ発行してメールでお渡しください。
+                お客様1人につき利用コードを1つ発行し、ログイン後のアカウントへ登録してもらいます。
               </p>
             </div>
             <button type="button" className="plan-bar-btn" onClick={handleLogout}>
@@ -413,9 +422,9 @@ export function LicenseKeyAdminPage() {
         </header>
 
         <section className="license-key-admin-card">
-          <h2 className="license-key-admin-card-title">新しいキーを発行</h2>
+          <h2 className="license-key-admin-card-title">新しい利用コードを発行</h2>
           <p className="license-key-admin-card-desc">
-            キーの文字列は自動で作られます。購入者名は管理用メモとして残ります（アプリ内には表示されません）。
+            コードの文字列は自動で作られます。購入者名は管理用メモとして残ります（アプリ内には表示されません）。
           </p>
 
           <label className="plan-meta-label" htmlFor="license-admin-edition">
@@ -426,11 +435,28 @@ export function LicenseKeyAdminPage() {
             className="plan-meta-input"
             value={keyEdition}
             disabled={generateBusy}
-            onChange={(event) => setKeyEdition(event.target.value as LicenseEdition)}
+            onChange={(event) => {
+              const nextEdition = event.target.value as LicenseEdition;
+              setKeyEdition(nextEdition);
+              if (nextEdition === 'advisor') setCloudStorageEnabled(true);
+            }}
           >
             <option value="personal">{LICENSE_EDITION_LABELS.personal}</option>
             <option value="advisor">{LICENSE_EDITION_LABELS.advisor}</option>
           </select>
+
+          <label className="license-key-admin-cloud-option">
+            <input
+              type="checkbox"
+              checked={keyEdition === 'advisor' || cloudStorageEnabled}
+              disabled={generateBusy || keyEdition === 'advisor'}
+              onChange={(event) => setCloudStorageEnabled(event.target.checked)}
+            />
+            <span>
+              クラウド保存を付ける
+              {keyEdition === 'advisor' ? '（事業者向けは標準）' : '（一般向けは任意オプション）'}
+            </span>
+          </label>
 
           <label className="plan-meta-label" htmlFor="license-admin-customer">
             購入者名（メモ）
@@ -456,13 +482,13 @@ export function LicenseKeyAdminPage() {
                 void handleGenerate();
               }}
             >
-              {generateBusy ? '発行中…' : 'キーを発行'}
+              {generateBusy ? '発行中…' : '利用コードを発行'}
             </button>
           </div>
 
           {issuedKeys.length > 0 ? (
             <div className="license-key-admin-issued">
-              <p className="license-key-admin-issued-label">発行したキー</p>
+              <p className="license-key-admin-issued-label">発行した利用コード</p>
               {issuedKeys.map((entry) => (
                 <div key={entry.key} className="license-key-admin-issued-item">
                   <code className="license-key-admin-issued-code">{entry.key}</code>
@@ -478,7 +504,7 @@ export function LicenseKeyAdminPage() {
                 </div>
               ))}
               <p className="license-key-admin-issued-note">
-                発行したキーは下の一覧にも表示されます。メール送信前にコピーしてください。
+                発行した利用コードは下の一覧にも表示されます。お客様へ案内する前にコピーしてください。
               </p>
             </div>
           ) : null}

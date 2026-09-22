@@ -1,43 +1,9 @@
 import type { LicenseEdition } from './licenseEdition';
 
-export interface LicenseDevice {
-  deviceId: string;
-  deviceLabel: string;
-  activatedAt: string;
-  lastSeenAt: string;
-}
-
-export interface LicenseStatusResponse {
-  valid: boolean;
-  error?: string;
-  message?: string;
-  keyHint?: string;
-  edition?: LicenseEdition;
-  devices?: LicenseDevice[];
-  maxDevices?: number;
-}
-
-export interface LicenseActivateResponse {
-  ok: boolean;
-  error?: string;
-  message?: string;
-  keyHint?: string;
-  edition?: LicenseEdition;
-  devices?: LicenseDevice[];
-  maxDevices?: number;
-}
-
-export interface LicenseDeactivateResponse {
-  ok: boolean;
-  error?: string;
-  message?: string;
-  devices?: LicenseDevice[];
-  maxDevices?: number;
-}
-
 export type LicenseState =
   | 'checking'
   | 'inactive'
+  | 'trial'
   | 'active'
   | 'error';
 
@@ -45,6 +11,7 @@ export interface LicenseAdminGeneratedKey {
   key: string;
   hint: string;
   note: string | null;
+  cloudStorageEnabled: boolean;
 }
 
 export interface LicenseAdminGenerateResponse {
@@ -59,10 +26,12 @@ export interface LicenseAdminKeySummary {
   key_display: string | null;
   status: 'active' | 'revoked';
   edition: LicenseEdition;
-  max_devices: number;
+  cloud_storage_enabled: 0 | 1;
   note: string | null;
   created_at: string;
-  device_count: number;
+  redeemed_workspace_id: string | null;
+  redeemed_at: string | null;
+  redeemed: 0 | 1;
 }
 
 export interface LicenseAdminListResponse {

@@ -18,7 +18,6 @@ import { VehicleStep } from './components/vehicle/VehicleStep';
 import { InsuranceStep } from './components/insurance/InsuranceStep';
 import { SavingsStep } from './components/savings/SavingsStep';
 import { PlanAdminView } from './components/plan/PlanAdminView';
-import { DeviceLimitModal } from './components/license/DeviceLimitModal';
 import { LicenseKeyModal } from './components/license/LicenseKeyModal';
 import { LicenseStatusPanel } from './components/license/LicenseStatusPanel';
 import {
@@ -85,7 +84,6 @@ import {
   getRequiredCoverageBlockedDescription,
 } from './lib/planPurposeInput';
 import { getLocalPlanRepository } from './lib/localPlanRepository';
-import { getDefaultDeviceLabel } from './lib/license/storage';
 import { useLicense } from './lib/license/useLicense';
 import {
   getDefaultPlanPurposes,
@@ -1468,7 +1466,7 @@ export default function App() {
             licenseState={license.licenseState}
             entitlements={license.entitlements}
             trialAnalysisUsed={license.trialAnalysisUsed}
-            deviceLabel={getDefaultDeviceLabel()}
+            cloudStorageEnabled={license.cloudStorageEnabled}
             errorMessage={license.errorMessage}
             busy={license.busy}
             isDevUnlock={license.isDevUnlock}
@@ -1476,7 +1474,7 @@ export default function App() {
             onStartWithoutKey={() => {
               void handleStartTrialWithoutKey();
             }}
-            onReleaseDevice={() => license.releaseCurrentDevice()}
+            onLogout={() => license.logout()}
           />
         );
       }
@@ -2028,16 +2026,6 @@ export default function App() {
         errorMessage={license.errorMessage}
         onClose={license.closeLicenseModal}
         onSubmit={license.handleSubmitKey}
-      />
-      <DeviceLimitModal
-        open={license.deviceLimitModalOpen}
-        busy={license.busy}
-        devices={license.devices}
-        currentDeviceId={license.deviceId}
-        maxDevices={license.maxDevices}
-        errorMessage={license.errorMessage}
-        onClose={license.closeDeviceLimitModal}
-        onReplace={license.replaceDeviceAndActivate}
       />
     </>
   );
