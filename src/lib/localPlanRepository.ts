@@ -118,11 +118,14 @@ class AccountAwarePlanRepository implements PlanRepository {
     if (isLicenseDevUnlock()) return 'local';
     if (!this.modePromise) {
       this.modePromise = fetchAccountMe()
-        .then((account) => (account.authenticated ? 'cloud' : 'local'))
+        .then((account) =>
+          account.authenticated && account.entitlement?.cloudStorageEnabled
+            ? 'cloud'
+            : 'local',
+        )
         .catch((error) => {
-          // Do not silently fall back to IndexedDB when the account server is
-          // unreachable. For signed-in users D1 is the canonical store, and a
-          // silent fallback could create divergent local/cloud plan copies.
+          // Do not silently change storage mode when account rights cannot be
+          // confirmed. Cloud subscribers use D1; everyone else uses IndexedDB.
           this.modePromise = null;
           throw error;
         });
@@ -159,7 +162,8 @@ let singleton: PlanRepository | null = null;
 
 /**
  * Compatibility entry point used by App.tsx.
- * Preview keeps IndexedDB; signed-in production accounts use D1 cloud storage.
+ * Preview uses IndexedDB. Production uses D1 only when the account has a
+ * cloud-storage entitlement; otherwise plans remain in IndexedDB.
  */
 export function getLocalPlanRepository(): PlanRepository {
   if (!singleton) singleton = new AccountAwarePlanRepository();
