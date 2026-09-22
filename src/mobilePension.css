@@ -65,10 +65,6 @@
     min-width: 0;
   }
 
-  .pension-step .pension-help-icon {
-    flex: 0 0 auto;
-  }
-
   .pension-step .pension-info-box {
     margin-top: 12px;
     padding: 12px;
@@ -311,9 +307,5 @@
 
   .pension-step .benefit-amount-option-manual {
     grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .pension-step .benefit-amount-option-manual .pension-help-icon {
-    grid-column: 2;
   }
 }
