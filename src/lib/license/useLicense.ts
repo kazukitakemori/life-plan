@@ -36,6 +36,7 @@ export function useLicense() {
   const [, setPendingAccess] = useState<PendingAccess | null>(null);
   const [busy, setBusy] = useState(false);
   const [trialAnalysisUsed, setTrialAnalysisUsed] = useState(false);
+  const [cloudStorageEnabled, setCloudStorageEnabled] = useState(DEV_UNLOCK);
   const trialAnalysisUsedRef = useRef(false);
 
   const entitlements = useMemo<LicenseEntitlements>(
@@ -55,6 +56,7 @@ export function useLicense() {
         setEdition('personal');
         setKeyHint(null);
         setTrialUsed(false);
+        setCloudStorageEnabled(false);
         setErrorMessage(null);
         return false;
       }
@@ -63,6 +65,7 @@ export function useLicense() {
       const status = account.entitlement?.status ?? 'trial';
       setEdition(nextEdition);
       setTrialUsed(Boolean(account.entitlement?.trialAnalysisUsed));
+      setCloudStorageEnabled(Boolean(account.entitlement?.cloudStorageEnabled));
       setKeyHint(account.user?.email ?? null);
 
       if (status === 'active') {
@@ -247,6 +250,7 @@ export function useLicense() {
           return false;
         }
         setEdition(resolveLicenseEdition(result.edition));
+        setCloudStorageEnabled(Boolean(result.cloudStorageEnabled));
         setLicenseState('active');
         setKeyHint('アカウント登録済み');
         setKeyModalOpen(false);
@@ -274,6 +278,7 @@ export function useLicense() {
       await logoutAccount();
       setLicenseState('inactive');
       setEdition('personal');
+      setCloudStorageEnabled(false);
       setKeyHint(null);
       setTrialUsed(false);
       window.location.reload();
@@ -303,6 +308,7 @@ export function useLicense() {
     isAnalysisAllowed: isLicensed,
     canRunAnalysis,
     trialAnalysisUsed,
+    cloudStorageEnabled,
     isDevUnlock: DEV_UNLOCK,
     keyModalOpen,
     ensureLicensed,
