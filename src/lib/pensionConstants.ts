@@ -57,6 +57,9 @@ export const DEFERRAL_INCREASE_PER_MONTH = 0.007;
 /** 年金加入期間の走査開始年齢 */
 export const PENSION_ENROLLMENT_START_AGE = 20;
 
+/** 老齢基礎年金の原則的な強制加入期間の終了年齢（60歳到達まで） */
+export const NATIONAL_PENSION_MANDATORY_END_AGE = 60;
+
 /**
  * 加給年金（老齢厚生年金）2026年度。
  * 受給権者が昭和18年4月2日以後生まれ（現在の受給年齢層はほぼ該当）を前提に統一。
