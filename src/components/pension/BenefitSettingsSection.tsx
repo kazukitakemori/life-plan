@@ -401,7 +401,7 @@ export function BenefitSettingsSection({
             className="pension-enrollment-label"
             htmlFor={`survivor-premium-requirement-${member.id}`}
           >
-            遺族厚生年金の保険料納付要件
+            遺族年金の保険料納付要件
           </label>
           <select
             id={`survivor-premium-requirement-${member.id}`}
@@ -419,7 +419,7 @@ export function BenefitSettingsSection({
             <option value="not_met">満たしていない</option>
           </select>
           <p className="ui-note">
-            自動確認で判定できない場合、遺族厚生年金は試算へ自動計上しません。
+            自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
             ねんきんネット等で要件を確認できる場合は手動で指定できます。
           </p>
         </div>
