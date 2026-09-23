@@ -1530,10 +1530,14 @@ export function calcTransitionalWidowAddYenPerYear(input: {
   );
   if (amount <= 0) return 0;
 
-  // 障害基礎年金の受給権がある間は経過的寡婦加算を停止する。
+  // 障害基礎年金を受けられる間は経過的寡婦加算を停止する。
+  // 受給権だけでなく現在等級も一致する場合に自動停止する。
+  // 障害年金が全額支給停止中かどうかは現データでは判定できない。
   if (
-    input.wife.disabilityPension === 'basic_grade1' ||
-    input.wife.disabilityPension === 'basic_grade2'
+    (input.wife.disabilityPension === 'basic_grade1' &&
+      input.wife.disabilityGrade === 'grade1') ||
+    (input.wife.disabilityPension === 'basic_grade2' &&
+      input.wife.disabilityGrade === 'grade2')
   ) {
     return 0;
   }
