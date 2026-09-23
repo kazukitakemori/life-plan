@@ -1841,6 +1841,15 @@ function calcDependentSpousePensionMonthlyMan(
     return 0;
   }
 
+  // 配偶者が障害基礎年金・障害厚生年金を受給している間も、
+  // 配偶者加給年金は支給停止となる。
+  if (
+    spouseMember.disability === 'has' &&
+    (spouseMember.disabilityPension ?? 'none') !== 'none'
+  ) {
+    return 0;
+  }
+
   // 2022年4月以降、配偶者が20年以上の老齢厚生年金等の受給権を
   // 有する場合は、実際の支給・停止状況にかかわらず配偶者加給を停止する。
   const spouseEmployees = getTotalEmployeesMonthsForDependentQualification(
