@@ -102,7 +102,7 @@ import {
 import type { SpouseDeductionReferenceContext } from './taxBreakdownReferenceDetail';
 import { premiumsManToYen } from './taxBreakdownReferenceDetail';
 import type { LifeInsurancePremiumByKindMan } from './lifeInsuranceDeduction';
-import { calcMemberAnnualPensionManByMember } from './pensionIncome';
+import { calcMemberAnnualTaxableOldAgePensionPaymentManByMember } from './pensionIncome';
 import type { MemberYearIncomeProfile } from './memberYearIncome';
 import {
   calcOtherIncomeExcludingPensionYen,
@@ -1971,7 +1971,7 @@ function resolveLevyAnnualPensionManByMember(input: {
     assessmentMonthEnd: input.monthEnd,
   });
 
-  return calcMemberAnnualPensionManByMember({
+  return calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
     familyMembers: input.familyMembers,
     incomeByMember: input.incomeByMember,
     pensionByMember: input.pensionByMember,
