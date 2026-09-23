@@ -258,5 +258,37 @@ const pension = createDefaultPensionMemberState();
   console.log('OK middle-aged widow addition');
 }
 
+{
+  const reformDeath = { year: 2028, month: 4 };
+  const reformNoChild = calcMiddleAgedWidowAddYenPerYear({
+    wife: wife45,
+    remainingFamilyMembers: [wife45],
+    referenceDate,
+    death: reformDeath,
+    now: reformDeath,
+    hadEligibleChildrenAtDeath: false,
+    hasEligibleChildrenNow: false,
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  assert.ok(reformNoChild > 0);
+  assert.ok(reformNoChild < MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
+
+  const reformAfterChild = calcMiddleAgedWidowAddYenPerYear({
+    wife: wife38,
+    remainingFamilyMembers: [wife38, child],
+    referenceDate,
+    death: reformDeath,
+    now: { year: 2036, month: 4 },
+    hadEligibleChildrenAtDeath: true,
+    hasEligibleChildrenNow: false,
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  assert.ok(reformAfterChild > 0);
+  assert.ok(reformAfterChild < MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
+  console.log('OK 2028 reform: middle-aged widow addition phase-down applies to new awards');
+}
+
 assert.equal(CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE, 30);
 console.log('verify-survivor-employees: all passed');
