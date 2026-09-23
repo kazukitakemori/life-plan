@@ -552,7 +552,7 @@ function hasTripleAmount(triple: TeikibinOver50AmountTriple): boolean {
   );
 }
 
-function resolveOver50GeneralSpecialStartAge(
+export function resolveOver50GeneralSpecialStartAge(
   form: NenkinTeikibinOver50Form,
 ): number | null {
   const candidates = [
@@ -574,7 +574,7 @@ function resolveOver50GeneralSpecialStartAge(
   return candidates.length > 0 ? Math.min(...candidates) : null;
 }
 
-function resolveOver50PublicPrivateSpecialStartAge(
+export function resolveOver50PublicPrivateSpecialStartAge(
   form: NenkinTeikibinOver50Form,
 ): number | null {
   const columns: Array<{
