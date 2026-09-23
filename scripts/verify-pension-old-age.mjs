@@ -19,6 +19,7 @@ import {
 } from '../src/lib/pensionEnrollmentEstimate.ts';
 import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionPremium.ts';
 import {
+  calcMemberAnnualTaxableOldAgePensionPaymentManByMember,
   calcMemberMonthlyPensionBreakdownMan,
   calcMonthlyPensionEntitlementBreakdownMan,
   getDependentSpousePensionYenPerYear,
@@ -691,6 +692,67 @@ assert.equal(
   );
   assert.equal(result.oldAge.generalEmployees.dependent, 0);
   assert.equal(result.oldAge.publicServant.dependent, 0);
+}
+
+// 世帯単位の加給・子加算は、実際の年金受給者本人へ税務上も帰属する。
+{
+  const youngerHead = {
+    ...pensionMember({ age: 50 }),
+    id: 'tax-head',
+    role: 'head',
+  };
+  const olderSpouse = {
+    ...pensionMember({ age: 63 }),
+    id: 'tax-spouse',
+    role: 'spouse',
+    gender: 'female',
+  };
+  const child = {
+    id: 'tax-child',
+    role: 'child',
+    nickname: '子',
+    gender: 'male',
+    age: 8,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    pensionChildResidence: 'japan',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const spouseState = createDefaultPensionMemberState();
+  spouseState.pastEnrollment = 'nenkin-teikibin-over50';
+  spouseState.teikibinOver50.employeesPensionGeneralMonths = 120;
+  spouseState.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  spouseState.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  spouseState.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const withoutChild =
+    calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+      familyMembers: [youngerHead, olderSpouse],
+      incomeByMember: {},
+      pensionByMember: { [olderSpouse.id]: spouseState },
+      referenceDate,
+      calendarYear: 2028,
+    });
+  const withChild =
+    calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+      familyMembers: [youngerHead, olderSpouse, child],
+      incomeByMember: {},
+      pensionByMember: { [olderSpouse.id]: spouseState },
+      referenceDate,
+      calendarYear: 2028,
+    });
+
+  assert.equal(withChild[youngerHead.id] ?? 0, withoutChild[youngerHead.id] ?? 0);
+  assert.ok(
+    (withChild[olderSpouse.id] ?? 0) >
+      (withoutChild[olderSpouse.id] ?? 0),
+  );
 }
 
 console.log('verify-pension-old-age: all passed');
