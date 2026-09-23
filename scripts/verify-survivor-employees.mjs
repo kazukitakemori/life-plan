@@ -397,6 +397,65 @@ const pension = createDefaultPensionMemberState();
 }
 
 {
+  const grandchild = member({
+    id: 'grandchild',
+    role: 'other',
+    otherRelationship: 'grandchild',
+    nickname: '孫',
+    age: 10,
+    birthMonth: 4,
+  });
+  const parent = member({
+    id: 'parent',
+    role: 'other',
+    otherRelationship: 'parent',
+    nickname: '親',
+    age: 65,
+    birthMonth: 4,
+  });
+  const grandparent = member({
+    id: 'grandparent',
+    role: 'other',
+    otherRelationship: 'grandparent',
+    nickname: '祖父母',
+    age: 70,
+    birthMonth: 4,
+  });
+
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, grandchild],
+      'head',
+      referenceDate,
+      death,
+      death,
+    )?.kind,
+    'grandchild',
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, parent, grandchild, grandparent],
+      'head',
+      referenceDate,
+      death,
+      death,
+    )?.kind,
+    'parent',
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, grandchild, grandparent],
+      'head',
+      referenceDate,
+      death,
+      death,
+    )?.kind,
+    'grandchild',
+  );
+  console.log('OK survivor employees priority includes grandchild between parent and grandparent');
+}
+
+{
   const recipient = resolveSurvivorEmployeesRecipient(
     [head, wife38, child],
     'head',
