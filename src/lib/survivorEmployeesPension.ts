@@ -130,7 +130,8 @@ function listRecordedMonthlyRows(
   if (memberState.pastEnrollment === 'nenkin-teikibin-over50') {
     rows.push({
       serial: latestSerial,
-      row: form.recentMonthlyInputRow,
+      row: migrateTeikibinOver50Form(memberState.teikibinOver50)
+        .recentMonthlyInputRow,
     });
   }
   return rows;
@@ -167,7 +168,7 @@ function recordedPremiumEligibleMonths(memberState: PensionMemberState): number 
     form.employeesPensionGeneralMonths,
     form.employeesPensionPublicServantMonths,
     form.employeesPensionPrivateSchoolMonths,
-  ].reduce((sum, value) => sum + Math.max(0, value ?? 0), 0);
+  ].reduce<number>((sum, value) => sum + Math.max(0, value ?? 0), 0);
 }
 
 function recordedLongTermQualifyingMonths(memberState: PensionMemberState): number {
