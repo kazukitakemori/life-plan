@@ -1,10 +1,16 @@
-/** 老齢基礎年金の満額（2026年度・昭和31年4月2日以降生まれ。物価スライドは v1 未対応） */
+/**
+ * 年金計算の基準年度。
+ * 年度改定値はこのファイルへ集約し、将来額は原則としてこの年度の実質水準で試算する。
+ */
+export const PENSION_STANDARD_YEAR = 2026;
+
+/** 老齢基礎年金の満額（2026年度・昭和31年4月2日以降生まれ） */
 export const FULL_BASIC_PENSION_YEN_PER_MONTH = 70_608;
-export const FULL_BASIC_PENSION_YEN_PER_YEAR =
-  FULL_BASIC_PENSION_YEN_PER_MONTH * 12;
+/** 公表年額を直接保持（月額×12の丸め差を持ち込まない） */
+export const FULL_BASIC_PENSION_YEN_PER_YEAR = 847_300;
 
 /** 国民年金保険料（第1号被保険者・2026年度） */
-export const NATIONAL_PENSION_MONTHLY_YEN = 17_570;
+export const NATIONAL_PENSION_MONTHLY_YEN = 17_920;
 export const NATIONAL_PENSION_ANNUAL_YEN = NATIONAL_PENSION_MONTHLY_YEN * 12;
 
 /** 老齢基礎年金の満額算定に必要な加入月数 */
@@ -40,8 +46,10 @@ export const STANDARD_OLD_AGE_START = 65;
  */
 export const EMPLOYEES_PENSION_MAX_INSURED_AGE = 70;
 
-/** 繰上げ受給: 1ヶ月あたりの減額率（老齢基礎・厚生共通の簡易値） */
+/** 繰上げ受給: 昭和37年4月2日以降生まれの1ヶ月あたり減額率 */
 export const EARLY_CLAIM_REDUCTION_PER_MONTH = 0.004;
+/** 昭和37年4月1日以前生まれの1ヶ月あたり減額率 */
+export const EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY = 0.005;
 
 /** 繰下げ受給: 1ヶ月あたりの増額率 */
 export const DEFERRAL_INCREASE_PER_MONTH = 0.007;
