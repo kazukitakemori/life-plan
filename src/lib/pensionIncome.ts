@@ -28,6 +28,7 @@ import {
   applyBasicDetailAdjustment,
   applyGeneralDetailAdjustment,
   applyPublicDetailAdjustment,
+  canDeferOldAgeWithDisabilityPension,
   buildBasicDetailFromYen,
   buildGeneralDetailFromYen,
   buildPublicServantDetailFromYen,
@@ -122,6 +123,24 @@ function normalizeOldAgeRowForMember(
       maxDeferralAge,
     ),
   };
+}
+
+function applyKnownDisabilityDeferralRestriction(
+  member: FamilyMember,
+  row: OldAgeBenefitRowSettings,
+  kind: 'basic' | 'employees',
+): OldAgeBenefitRowSettings {
+  if (
+    row.startAge > STANDARD_OLD_AGE_START &&
+    !canDeferOldAgeWithDisabilityPension(member.disabilityPension, kind)
+  ) {
+    return {
+      ...row,
+      startAge: STANDARD_OLD_AGE_START,
+      startMonth: 0,
+    };
+  }
+  return row;
 }
 
 function pensionCalendarSerial(year: number, month: number): number {
@@ -708,20 +727,32 @@ function calcOldAgeMonthlyManByRow(
   benefitSettings: BenefitSettings,
   ageMonth: { age: number; month: number },
 ): OldAgePensionBreakdown {
-  const bSetting = normalizeOldAgeRowForMember(
+  const bSetting = applyKnownDisabilityDeferralRestriction(
     member,
-    benefitSettings.oldAgeBasic,
-    referenceDate,
+    normalizeOldAgeRowForMember(
+      member,
+      benefitSettings.oldAgeBasic,
+      referenceDate,
+    ),
+    'basic',
   );
-  const gSetting = normalizeOldAgeRowForMember(
+  const gSetting = applyKnownDisabilityDeferralRestriction(
     member,
-    benefitSettings.oldAgeGeneralEmployees,
-    referenceDate,
+    normalizeOldAgeRowForMember(
+      member,
+      benefitSettings.oldAgeGeneralEmployees,
+      referenceDate,
+    ),
+    'employees',
   );
-  const pSetting = normalizeOldAgeRowForMember(
+  const pSetting = applyKnownDisabilityDeferralRestriction(
     member,
-    benefitSettings.oldAgePublicPrivate,
-    referenceDate,
+    normalizeOldAgeRowForMember(
+      member,
+      benefitSettings.oldAgePublicPrivate,
+      referenceDate,
+    ),
+    'employees',
   );
 
   const basicActive = isOldAgeRowPaymentActive(
