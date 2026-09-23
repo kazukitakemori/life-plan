@@ -604,8 +604,10 @@ const pension = createDefaultPensionMemberState();
     requirement: 'short_term',
     deceasedEmployeesMonths: 200,
   });
-  assert.ok(reformNoChild > 0);
-  assert.ok(reformNoChild < MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
+  assert.equal(
+    Math.round(reformNoChild),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.962),
+  );
 
   const reformAfterChild = calcMiddleAgedWidowAddYenPerYear({
     wife: wife38,
@@ -618,8 +620,27 @@ const pension = createDefaultPensionMemberState();
     requirement: 'short_term',
     deceasedEmployeesMonths: 200,
   });
-  assert.ok(reformAfterChild > 0);
-  assert.ok(reformAfterChild < MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
+  assert.equal(
+    Math.round(reformAfterChild),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.962),
+  );
+
+  const phase2030 = calcMiddleAgedWidowAddYenPerYear({
+    wife: wife45,
+    remainingFamilyMembers: [wife45],
+    referenceDate,
+    death: { year: 2030, month: 4 },
+    now: { year: 2030, month: 4 },
+    hadEligibleChildrenAtDeath: false,
+    hasEligibleChildrenNow: false,
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  assert.equal(
+    Math.round(phase2030),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.885),
+  );
+
   const finalPhaseDeath = { year: 2052, month: 4 };
   const finalPhase = calcMiddleAgedWidowAddYenPerYear({
     wife: wife45,
@@ -634,7 +655,7 @@ const pension = createDefaultPensionMemberState();
   });
   assert.equal(
     Math.round(finalPhase),
-    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR / 25),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.038),
   );
 
   const abolishedDeath = { year: 2053, month: 4 };
@@ -650,7 +671,7 @@ const pension = createDefaultPensionMemberState();
     deceasedEmployeesMonths: 200,
   });
   assert.equal(abolished, 0);
-  console.log('OK 2028 reform: middle-aged widow addition phases down through FY2052');
+  console.log('OK 2028 reform: statutory middle-aged widow phase-down rates through FY2052');
 }
 
 {
