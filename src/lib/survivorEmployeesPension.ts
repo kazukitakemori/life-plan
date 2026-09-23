@@ -517,8 +517,10 @@ export function applySurvivorEmployeesOwnOldAgeOffsetMan(
   return Math.max(0, amount - ownEmployeesMonthlyMan);
 }
 
-function fiveYearEnd(death: CalendarYearMonth): CalendarYearMonth {
-  const total = calendarIndex(death.year, death.month) + 59;
+function fiveYearEnd(startEvent: CalendarYearMonth): CalendarYearMonth {
+  // 受給権取得日等から5年を経過した「日の属する月」までは有期給付。
+  // CalendarYearMonth は日を持たないため、開始事由の月から60か月後を終端月とする。
+  const total = calendarIndex(startEvent.year, startEvent.month) + 60;
   return {
     year: Math.floor((total - 1) / 12),
     month: ((total - 1) % 12) + 1,
