@@ -18,7 +18,11 @@ import {
   getNationalPensionCreditedMonthCount,
 } from '../src/lib/pensionEnrollmentEstimate.ts';
 import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionPremium.ts';
-import { calcMemberMonthlyPensionBreakdownMan } from '../src/lib/pensionIncome.ts';
+import {
+  calcMemberMonthlyPensionBreakdownMan,
+  calcMonthlyPensionEntitlementBreakdownMan,
+  getDependentSpousePensionYenPerYear,
+} from '../src/lib/pensionIncome.ts';
 import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
   EARLY_CLAIM_REDUCTION_PER_MONTH,
@@ -97,6 +101,7 @@ assert.deepEqual(
   const adjusted = applyBasicDetailAdjustment(
     {
       basic: 100,
+      children: 0,
       additional: 0,
       transfer: 0,
       earlyPayment: 0,
@@ -487,5 +492,163 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.ok(amount.basicYenPerYear > 0);
   assert.ok(amount.generalEmployeesYenPerYear > 0);
 }
+
+// 2028年4月: 老齢基礎年金にも子の加算を新設。
+// 納付済・免除期間が300月未満なら月数/300で按分する。
+{
+  const pensioner = pensionMember({ age: 63 });
+  const child = {
+    id: 'child-2028',
+    role: 'child',
+    nickname: '子',
+    gender: 'female',
+    age: 10,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.nationalPensionType1Months = 150;
+  state.teikibinOver50.recentMonthlyYear = 2026;
+  state.teikibinOver50.recentMonthlyMonth = 8;
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const result = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, child],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.ok(
+    Math.abs(
+      result.oldAge.basic.children -
+        (292_500 * (150 / 300)) / 12 / 10_000,
+    ) < 1e-9,
+  );
+}
+
+// 2028年4月以降に老齢厚生年金の受給権を得る人は、子の加給が10年要件。
+// 厚生側に子の加給が付く場合、老齢基礎側へ同じ子を二重加算しない。
+{
+  const pensioner = pensionMember({ age: 63 });
+  const child = {
+    id: 'child-employee-add',
+    role: 'child',
+    nickname: '子',
+    gender: 'female',
+    age: 10,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.employeesPensionGeneralMonths = 120;
+  state.teikibinOver50.nationalPensionType1Months = 120;
+  state.teikibinOver50.recentMonthlyYear = 2026;
+  state.teikibinOver50.recentMonthlyMonth = 8;
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const result = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, child],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.equal(result.oldAge.basic.children, 0);
+  assert.ok(
+    Math.abs(
+      result.oldAge.generalEmployees.dependent -
+        292_500 / 12 / 10_000,
+    ) < 1e-9,
+  );
+}
+
+// 加給年金は世帯主固定ではなく、配偶者側が年金受給者でも計算する。
+{
+  const youngerHead = {
+    ...pensionMember({ age: 50 }),
+    id: 'younger-head',
+    role: 'head',
+  };
+  const olderSpouse = {
+    ...pensionMember({ age: 63 }),
+    id: 'older-spouse',
+    role: 'spouse',
+    gender: 'female',
+  };
+  const child = {
+    id: 'reverse-child',
+    role: 'child',
+    nickname: '子',
+    gender: 'male',
+    age: 8,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const spouseState = createDefaultPensionMemberState();
+  spouseState.pastEnrollment = 'nenkin-teikibin-over50';
+  spouseState.teikibinOver50.employeesPensionGeneralMonths = 120;
+  spouseState.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  spouseState.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  spouseState.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const result = calcMonthlyPensionEntitlementBreakdownMan(
+    [youngerHead, olderSpouse, child],
+    { [olderSpouse.id]: spouseState },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.ok(result.oldAge.generalEmployees.dependent > 0);
+}
+
+// 2028年4月以降に新たに配偶者加給の対象となる人は新額。
+// 施行前から加算されていた人は経過措置で旧額を維持する。
+assert.equal(
+  getDependentSpousePensionYenPerYear(
+    pensionMember({ age: 63 }),
+    referenceDate,
+    true,
+  ),
+  381_300,
+);
+assert.equal(
+  getDependentSpousePensionYenPerYear(
+    pensionMember({ age: 64 }),
+    referenceDate,
+    false,
+  ),
+  423_700,
+);
 
 console.log('verify-pension-old-age: all passed');
