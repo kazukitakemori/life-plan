@@ -3,7 +3,10 @@
  * npx tsx scripts/verify-pension-payment.mjs
  */
 import assert from 'node:assert/strict';
-import { calcPensionPaymentFromEntitlements } from '../src/lib/pensionPaymentSchedule.ts';
+import {
+  calcPensionPaymentFromEntitlements,
+  calcTaxableOldAgePensionPaymentMan,
+} from '../src/lib/pensionPaymentSchedule.ts';
 import {
   createEmptyPensionBreakdown,
   sumPensionBreakdown,
@@ -52,5 +55,32 @@ mixedOne.survivor.basic.basic = 2;
 const mixedTwo = oldAgeEntitlement(3);
 mixedTwo.survivor.basic.basic = 4;
 assert.equal(payment(6, mixedOne, mixedTwo), 10);
+
+// 課税年金は支払ベースの老齢年金だけ。遺族年金は非課税なので除外する。
+{
+  const oneMonthAgo = oldAgeEntitlement(1);
+  oneMonthAgo.survivor.basic.basic = 10;
+  const twoMonthsAgo = oldAgeEntitlement(2);
+  twoMonthsAgo.survivor.basic.basic = 20;
+
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(4, oneMonthAgo, twoMonthsAgo),
+    3,
+  );
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(3, oneMonthAgo, twoMonthsAgo),
+    0,
+  );
+}
+
+// 年跨ぎも「支払月に前2か月分」を渡せば、2月支払へ前年12月分が帰属する。
+{
+  const january = oldAgeEntitlement(1);
+  const previousDecember = oldAgeEntitlement(2);
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(2, january, previousDecember),
+    3,
+  );
+}
 
 console.log('verify-pension-payment: all checks passed');
