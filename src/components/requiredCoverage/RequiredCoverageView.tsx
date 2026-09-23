@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import type { CashFlowInput } from '../../lib/cashFlow';
 import type { CashFlowTableData } from '../../types/cashFlow';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
-import { resolveMemberPriorYearIncomeProfile } from '../../lib/priorYearIncomeResolution';
+import { resolveSurvivorLivelihoodIncomeAssessment } from '../../lib/requiredCoverageIncome';
 import {
   REQUIRED_COVERAGE_CUSTOM_OPTION,
   buildRequiredCoverageResult,
@@ -181,21 +181,19 @@ export function RequiredCoverageView({
             member.otherRelationship === 'common_law_partner',
         ))
       : headMember;
-  const survivorIncomeProfile = survivorMember
-    ? resolveMemberPriorYearIncomeProfile({
-        member: survivorMember,
+  const survivorLivelihoodIncomeAssessment = survivorMember
+    ? resolveSurvivorLivelihoodIncomeAssessment({
+        recipient: survivorMember,
         incomeByMember: cashFlowInput.incomeByMember,
-        priorYearIncomeByMember: cashFlowInput.priorYearIncomeByMember ?? {},
+        priorYearIncomeByMember: cashFlowInput.priorYearIncomeByMember,
         referenceDate: cashFlowInput.referenceDate,
-        incomeReferenceYear: result.coverageStart.year - 1,
-        assessmentCalendarYear: result.coverageStart.year,
-        simulationStartYear: result.coverageStart.year,
+        death: result.coverageStart,
       })
     : null;
   const shouldWarnSurvivorLivelihoodIncome =
-    survivorIncomeProfile?.hasActiveIncomeBlock === true &&
-    survivorIncomeProfile.grossIncomeMan >= 850 &&
-    survivorIncomeProfile.totalIncomeMan >= 655.5;
+    survivorLivelihoodIncomeAssessment != null &&
+    survivorLivelihoodIncomeAssessment.status !== 'met' &&
+    survivorLivelihoodIncomeAssessment.grossRevenueMan != null;
   const survivorLabel = survivorMember
     ? getMemberTabLabel(survivorMember)
     : '残されたご家族';
