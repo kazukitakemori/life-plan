@@ -23,7 +23,9 @@ import {
   buildGeneralDetailFromYen,
   buildPublicServantDetailFromYen,
   getEarlyClaimReductionPerMonthByBirth,
+  getMaxOldAgeDeferralAgeByBirth,
   isOnOrAfterBenefitStart,
+  normalizeOldAgeBenefitStart,
   toMonthlyMan,
 } from './pensionOldAge';
 import {
@@ -52,6 +54,7 @@ import type {
   DependentSpousePensionSettings,
   NenkinTeikibinOver50Form,
   NenkinTeikibinUnder50Form,
+  OldAgeBenefitRowSettings,
   PensionByMember,
   PensionMemberState,
   TeikibinOver50AmountPair,
@@ -87,6 +90,28 @@ function getMemberAgeMonth(
     return null;
   }
   return { age, month: calendarMonth };
+}
+
+function normalizeOldAgeRowForMember(
+  member: FamilyMember,
+  row: OldAgeBenefitRowSettings,
+  referenceDate: Date,
+): OldAgeBenefitRowSettings {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
+  const maxDeferralAge = getMaxOldAgeDeferralAgeByBirth(
+    birthYear,
+    birthMonth,
+    member.birthDay,
+  );
+  return {
+    ...row,
+    ...normalizeOldAgeBenefitStart(
+      row.startAge,
+      row.startMonth ?? 0,
+      maxDeferralAge,
+    ),
+  };
 }
 
 function isOnOrAfterMonth(
@@ -376,9 +401,21 @@ function calcOldAgeMonthlyManByRow(
   benefitSettings: BenefitSettings,
   ageMonth: { age: number; month: number },
 ): OldAgePensionBreakdown {
-  const bSetting = benefitSettings.oldAgeBasic;
-  const gSetting = benefitSettings.oldAgeGeneralEmployees;
-  const pSetting = benefitSettings.oldAgePublicPrivate;
+  const bSetting = normalizeOldAgeRowForMember(
+    member,
+    benefitSettings.oldAgeBasic,
+    referenceDate,
+  );
+  const gSetting = normalizeOldAgeRowForMember(
+    member,
+    benefitSettings.oldAgeGeneralEmployees,
+    referenceDate,
+  );
+  const pSetting = normalizeOldAgeRowForMember(
+    member,
+    benefitSettings.oldAgePublicPrivate,
+    referenceDate,
+  );
 
   const basicActive   = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, bSetting.startAge, resolveMemberBirthMonth(member), bSetting.startMonth ?? 0);
   const generalActive = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, gSetting.startAge, resolveMemberBirthMonth(member), gSetting.startMonth ?? 0);
@@ -427,9 +464,20 @@ function calcOldAgeMonthlyManByRow(
 
   // ─ 各行に manual/auto を適用し、繰上繰下調整 ─
   const result = createEmptyOldAgePensionBreakdown();
+  const memberBirthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const memberBirthMonth = resolveMemberBirthMonth(member);
+  const maxDeferralAge = getMaxOldAgeDeferralAgeByBirth(
+    memberBirthYear,
+    memberBirthMonth,
+    member.birthDay,
+  );
   const earlyReductionPerMonth = getEarlyClaimReductionPerMonthByBirth(
-    calcBirthYear(member.age, member.birthMonth, referenceDate),
-    resolveMemberBirthMonth(member),
+    memberBirthYear,
+    memberBirthMonth,
     member.birthDay,
   );
 
@@ -446,6 +494,7 @@ function calcOldAgeMonthlyManByRow(
         bSetting.startAge,
         bSetting.startMonth ?? 0,
         earlyReductionPerMonth,
+        maxDeferralAge,
       );
     }
     result.basic = basic;
@@ -468,6 +517,7 @@ function calcOldAgeMonthlyManByRow(
         gSetting.startAge,
         gSetting.startMonth ?? 0,
         earlyReductionPerMonth,
+        maxDeferralAge,
       );
     }
     result.generalEmployees = general;
@@ -489,6 +539,7 @@ function calcOldAgeMonthlyManByRow(
         pSetting.startAge,
         pSetting.startMonth ?? 0,
         earlyReductionPerMonth,
+        maxDeferralAge,
       );
     }
     result.publicServant = pub;
@@ -935,8 +986,16 @@ function calcDependentChildrenPensionMonthlyMan(
   let age = calendarYear - birthYear;
   if (calendarMonth < resolveMemberBirthMonth(pensioner)) age--;
 
-  const gSet = benefitSettings.oldAgeGeneralEmployees;
-  const pSet = benefitSettings.oldAgePublicPrivate;
+  const gSet = normalizeOldAgeRowForMember(
+    pensioner,
+    benefitSettings.oldAgeGeneralEmployees,
+    referenceDate,
+  );
+  const pSet = normalizeOldAgeRowForMember(
+    pensioner,
+    benefitSettings.oldAgePublicPrivate,
+    referenceDate,
+  );
   const start = Math.min(
     gSet.startAge * 12 + (gSet.startMonth ?? 0),
     pSet.startAge * 12 + (pSet.startMonth ?? 0),
@@ -1003,8 +1062,16 @@ function calcDependentSpousePensionMonthlyMan(
   let headAge = calendarYear - headBirthYear;
   if (calendarMonth < resolveMemberBirthMonth(headMember)) headAge--;
 
-  const gSet = benefitSettings.oldAgeGeneralEmployees;
-  const pSet = benefitSettings.oldAgePublicPrivate;
+  const gSet = normalizeOldAgeRowForMember(
+    headMember,
+    benefitSettings.oldAgeGeneralEmployees,
+    referenceDate,
+  );
+  const pSet = normalizeOldAgeRowForMember(
+    headMember,
+    benefitSettings.oldAgePublicPrivate,
+    referenceDate,
+  );
   const empStartMonths = Math.min(
     gSet.startAge * 12 + (gSet.startMonth ?? 0),
     pSet.startAge * 12 + (pSet.startMonth ?? 0),
@@ -1057,11 +1124,19 @@ function calcDependentSpousePensionMonthlyMan(
   ) {
     const spouseBenefitSettings =
       spouseMemberState.benefitSettings ?? createDefaultBenefitSettings();
+    const spouseGeneralStart = normalizeOldAgeRowForMember(
+      spouseMember,
+      spouseBenefitSettings.oldAgeGeneralEmployees,
+      referenceDate,
+    );
+    const spousePublicStart = normalizeOldAgeRowForMember(
+      spouseMember,
+      spouseBenefitSettings.oldAgePublicPrivate,
+      referenceDate,
+    );
     const spouseEmployeesStart = Math.min(
-      spouseBenefitSettings.oldAgeGeneralEmployees.startAge * 12 +
-        (spouseBenefitSettings.oldAgeGeneralEmployees.startMonth ?? 0),
-      spouseBenefitSettings.oldAgePublicPrivate.startAge * 12 +
-        (spouseBenefitSettings.oldAgePublicPrivate.startMonth ?? 0),
+      spouseGeneralStart.startAge * 12 + (spouseGeneralStart.startMonth ?? 0),
+      spousePublicStart.startAge * 12 + (spousePublicStart.startMonth ?? 0),
     );
     if (
       isOnOrAfterBenefitStart(
@@ -1201,6 +1276,11 @@ function calcTransferAdditionMonthlyMan(
   // 配偶者が老齢基礎年金の受給開始年齢に達しているか確認
   const spouseSettings =
     spouseMemberState.benefitSettings ?? createDefaultBenefitSettings();
+  const spouseBasicStart = normalizeOldAgeRowForMember(
+    spouseMember,
+    spouseSettings.oldAgeBasic,
+    referenceDate,
+  );
   let spouseAge = calendarYear - spouseBirthYear;
   if (calendarMonth < resolveMemberBirthMonth(spouseMember)) spouseAge--;
 
@@ -1208,9 +1288,9 @@ function calcTransferAdditionMonthlyMan(
     !isOnOrAfterBenefitStart(
       spouseAge,
       calendarMonth,
-      spouseSettings.oldAgeBasic.startAge,
+      spouseBasicStart.startAge,
       resolveMemberBirthMonth(spouseMember),
-      spouseSettings.oldAgeBasic.startMonth ?? 0,
+      spouseBasicStart.startMonth ?? 0,
     )
   ) {
     return 0;
