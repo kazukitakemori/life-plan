@@ -16,7 +16,6 @@ import {
   DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS,
   MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR,
   MIDDLE_AGED_WIDOW_MIN_AGE,
-  PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
   SURVIVOR_EMPLOYEES_DEEMED_MONTHS,
   SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS,
@@ -25,16 +24,11 @@ import {
   SURVIVOR_PARENT_PAYMENT_START_AGE,
   SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH,
   SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR,
-  UNIVERSITY_EXEMPTION_END_AGE,
-  UNIVERSITY_EXEMPTION_END_MONTH,
-  UNIVERSITY_EXEMPTION_START_AGE,
-  UNIVERSITY_EXEMPTION_START_MONTH,
 } from './pensionConstants';
 import { createDefaultPensionMemberState, migrateTeikibinOver50Form } from './pensionDefaults';
 import {
   accumulateEmployeesEnrollmentUntilAgeMonth,
   getActiveEmployeesMonthlyRemunerationMan,
-  getNationalPensionCreditedMonthCount,
 } from './pensionEnrollmentEstimate';
 import {
   calcMemberEmployeesProportionalYenPerYear,
@@ -60,8 +54,15 @@ import type {
   IncomeEntry,
   PriorYearIncomeByMember,
 } from '../types/income';
-import type { PensionByMember, PensionMemberState } from '../types/pension';
-import type { CalendarYearMonth } from './housingLoanAmortization';
+import type {
+  NenkinTeikibinMonthlyRow,
+  PensionByMember,
+  PensionMemberState,
+} from '../types/pension';
+import {
+  addCalendarMonths,
+  type CalendarYearMonth,
+} from './housingLoanAmortization';
 import type { RequiredCoverageSubject } from '../types/requiredCoverage';
 
 function calendarIndex(year: number, month: number): number {
@@ -70,31 +71,6 @@ function calendarIndex(year: number, month: number): number {
 
 function ageMonthIndex(age: number, month: number): number {
   return age * 12 + month;
-}
-
-function isUniversityExemptionMonth(age: number, month: number): boolean {
-  const current = ageMonthIndex(age, month);
-  return (
-    current >=
-      ageMonthIndex(
-        UNIVERSITY_EXEMPTION_START_AGE,
-        UNIVERSITY_EXEMPTION_START_MONTH,
-      ) &&
-    current <=
-      ageMonthIndex(UNIVERSITY_EXEMPTION_END_AGE, UNIVERSITY_EXEMPTION_END_MONTH)
-  );
-}
-
-function possibleNationalPensionMonthsUntil(untilAge: number, untilMonth: number): number {
-  let count = 0;
-  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
-    for (let month = 1; month <= 12; month++) {
-      if (ageMonthIndex(age, month) > ageMonthIndex(untilAge, untilMonth)) continue;
-      if (isUniversityExemptionMonth(age, month)) continue;
-      count += 1;
-    }
-  }
-  return count;
 }
 
 export function isEmployeesInsuredAt(
@@ -115,21 +91,6 @@ export function isEmployeesInsuredAt(
   );
 }
 
-export function hasTwoThirdsPremiumPaid(
-  member: FamilyMember,
-  entries: IncomeEntry[],
-  referenceDate: Date,
-  deathAge: { age: number; month: number },
-): boolean {
-  const possible = possibleNationalPensionMonthsUntil(deathAge.age, deathAge.month);
-  if (possible <= 0) return true;
-  const credited = getNationalPensionCreditedMonthCount(member, entries, referenceDate, {
-    age: deathAge.age,
-    month: deathAge.month,
-  });
-  return credited * 3 >= possible * 2;
-}
-
 function isUnpaidNationalPensionStatus(status: string): boolean {
   return (
     status === 'unpaid' ||
@@ -139,51 +100,194 @@ function isUnpaidNationalPensionStatus(status: string): boolean {
   );
 }
 
+function isConfirmedCoveredMonthlyRow(
+  row: NenkinTeikibinMonthlyRow,
+): boolean {
+  // 厚生年金加入月は国民年金欄が空欄でも納付要件上の加入期間になる。
+  if (row.employeesPensionCategory) return true;
+  if (!row.nationalPensionStatus || row.nationalPensionStatus === 'pending') {
+    return false;
+  }
+  return !isUnpaidNationalPensionStatus(row.nationalPensionStatus);
+}
+
+function listRecordedMonthlyRows(
+  memberState: PensionMemberState,
+): Array<{ serial: number; row: NenkinTeikibinMonthlyRow }> {
+  if (memberState.pastEnrollment === 'none') return [];
+
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  const latestSerial =
+    form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1);
+  const rows = form.monthlyRows.slice(0, 12).map((row, index) => ({
+    serial: latestSerial - 12 + index,
+    row,
+  }));
+
+  if (memberState.pastEnrollment === 'nenkin-teikibin-over50') {
+    rows.push({
+      serial: latestSerial,
+      row: form.recentMonthlyInputRow,
+    });
+  }
+  return rows;
+}
+
 export function hasConfirmedNoUnpaidInRecentYear(
   memberState: PensionMemberState,
   deathYear: number,
   deathMonth: number,
 ): boolean {
-  if (memberState.pastEnrollment === 'none') return false;
-  // 通常のねんきん定期便は「最近の月別状況」を直近13月掲載する。
-  // 現行データでは over50 のみ 12行 + recentMonthlyInputRow で13月目を保持する。
-  // under50 は12行しか保持していないため、ここでは特例成立を断定しない。
-  if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') return false;
-  const form = migrateTeikibinOver50Form(memberState.teikibinOver50);
-
-  const rows = [...form.monthlyRows.slice(0, 12), form.recentMonthlyInputRow];
-  if (rows.length !== 13) return false;
-
-  // recentMonthlyYear/month は13月目（最新月）の年月。
-  // 死亡月の前々月までの直近12月を13月の記録から切り出せる場合だけ判定する。
-  const latestSerial =
-    form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1);
   const requiredEndSerial = deathYear * 12 + (deathMonth - 1) - 2;
-  const startSerial = latestSerial - 12;
-  if (requiredEndSerial < startSerial + 11 || requiredEndSerial > latestSerial) {
-    return false;
+  const requiredStartSerial = requiredEndSerial - 11;
+  const selected = listRecordedMonthlyRows(memberState).filter(
+    ({ serial }) =>
+      serial >= requiredStartSerial && serial <= requiredEndSerial,
+  );
+  if (selected.length !== 12) return false;
+  return selected.every(({ row }) => isConfirmedCoveredMonthlyRow(row));
+}
+
+function recordedPremiumEligibleMonths(memberState: PensionMemberState): number {
+  if (memberState.pastEnrollment === 'none') return 0;
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  // 「これまでの年金加入期間」の第1号は未納月を除き、
+  // 納付済・免除（学生納付特例等を含む）を計上する。第3号・厚生年金も
+  // 納付要件上の期間に含められる。合算対象期間は3分の2要件には含めない。
+  return [
+    form.nationalPensionType1Months,
+    form.nationalPensionType3Months,
+    form.seamenInsuranceMonths,
+    form.employeesPensionGeneralMonths,
+    form.employeesPensionPublicServantMonths,
+    form.employeesPensionPrivateSchoolMonths,
+  ].reduce((sum, value) => sum + Math.max(0, value ?? 0), 0);
+}
+
+function recordedLongTermQualifyingMonths(memberState: PensionMemberState): number {
+  if (memberState.pastEnrollment === 'none') return 0;
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  return (
+    recordedPremiumEligibleMonths(memberState) +
+    Math.max(0, form.consolidationPeriodMonths ?? 0)
+  );
+}
+
+function maximumNationalPensionInsuredMonthsUntil(
+  member: FamilyMember,
+  referenceDate: Date,
+  cutoff: CalendarYearMonth,
+): number {
+  const cutoffAge = getMemberAgeMonth(
+    member,
+    referenceDate,
+    cutoff.year,
+    cutoff.month,
+  );
+  if (!cutoffAge || cutoffAge.age < 20) return 0;
+  const start = ageMonthIndex(20, 1);
+  const end = Math.min(
+    ageMonthIndex(cutoffAge.age, cutoffAge.month),
+    ageMonthIndex(59, 12),
+  );
+  return Math.max(0, end - start + 1);
+}
+
+/**
+ * ねんきん定期便の累計加入期間だけで3分の2要件を確実に満たすといえるか。
+ *
+ * 第1号欄は未納月数を除くが、前納期間が将来月まで含まれる場合があるため、
+ * 最大2年（24月）を安全側に差し引いた下限値で判定する。
+ * 判定できない場合はfalseであり、「要件を満たさない」と断定する意味ではない。
+ */
+export function hasConfirmedTwoThirdsPremiumRequirement(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (memberState.pastEnrollment === 'none') return false;
+  const cutoff = addCalendarMonths(death, -2);
+  const possible = maximumNationalPensionInsuredMonthsUntil(
+    member,
+    referenceDate,
+    cutoff,
+  );
+  if (possible <= 0) return true;
+  const conservativeRecorded = Math.max(
+    0,
+    recordedPremiumEligibleMonths(memberState) - 24,
+  );
+  return conservativeRecorded * 3 >= possible * 2;
+}
+
+export type SurvivorPremiumRequirementAssessment =
+  | {
+      status: 'met';
+      basis: 'manual' | 'one_year_no_unpaid' | 'two_thirds_recorded';
+    }
+  | {
+      status: 'not_met';
+      basis: 'manual';
+    }
+  | {
+      status: 'unconfirmed';
+      basis: 'insufficient_record';
+    };
+
+export function resolveSurvivorPremiumRequirementAssessment(
+  deceased: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): SurvivorPremiumRequirementAssessment {
+  const setting =
+    memberState.benefitSettings.survivorPremiumRequirement ?? 'auto';
+  if (setting === 'met') return { status: 'met', basis: 'manual' };
+  if (setting === 'not_met') {
+    return { status: 'not_met', basis: 'manual' };
   }
 
-  const requiredStartSerial = requiredEndSerial - 11;
-  const selected = rows.filter((_, index) => {
-    const serial = startSerial + index;
-    return serial >= requiredStartSerial && serial <= requiredEndSerial;
-  });
-  if (selected.length !== 12) return false;
+  const deathAge = getMemberAgeMonth(
+    deceased,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  if (!deathAge) {
+    return { status: 'unconfirmed', basis: 'insufficient_record' };
+  }
 
-  // 空欄・確認中は「未納なし」と断定できない。
   if (
-    selected.some(
-      (row) =>
-        !row.nationalPensionStatus ||
-        row.nationalPensionStatus === 'pending',
+    isWithinOneYearPremiumException(
+      memberState,
+      death.year,
+      death.month,
+      deathAge.age,
     )
   ) {
-    return false;
+    return { status: 'met', basis: 'one_year_no_unpaid' };
   }
-  return selected.every(
-    (row) => !isUnpaidNationalPensionStatus(row.nationalPensionStatus),
-  );
+  if (
+    hasConfirmedTwoThirdsPremiumRequirement(
+      deceased,
+      memberState,
+      referenceDate,
+      death,
+    )
+  ) {
+    return { status: 'met', basis: 'two_thirds_recorded' };
+  }
+  return { status: 'unconfirmed', basis: 'insufficient_record' };
 }
 
 export function isWithinOneYearPremiumException(
@@ -223,35 +327,24 @@ export function resolveSurvivorEmployeesDeathRequirement(
     deceased.birthMonth ?? 1,
   );
   if (insured) {
-    if (
-      isWithinOneYearPremiumException(
-        memberState,
-        death.year,
-        death.month,
-        deathAge.age,
-      ) ||
-      hasTwoThirdsPremiumPaid(deceased, entries, referenceDate, deathAge)
-    ) {
-      return 'short_term';
-    }
-    return 'none';
+    const premiumAssessment = resolveSurvivorPremiumRequirementAssessment(
+      deceased,
+      memberState,
+      referenceDate,
+      death,
+    );
+    return premiumAssessment.status === 'met' ? 'short_term' : 'none';
   }
 
-  const credited = getNationalPensionCreditedMonthCount(
-    deceased,
-    entries,
-    referenceDate,
-    { age: deathAge.age, month: deathAge.month },
-  );
-  const monthsUntilDeath = calcEmployeesMonthsUntilDeath(
-    deceased,
-    entries,
-    memberState,
-    referenceDate,
-    death,
+  // 老齢厚生年金の受給資格（25年以上）による長期要件は、
+  // Q7の就労推計ではなく、ねんきん定期便の記録済み加入期間で確認する。
+  // 前納による将来月混入に備えて最大24月を安全側に控除する。
+  const recordedLongTermMonths = Math.max(
+    0,
+    recordedLongTermQualifyingMonths(memberState) - 24,
   );
   if (
-    Math.max(credited, monthsUntilDeath) >=
+    recordedLongTermMonths >=
     SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS
   ) {
     return 'long_term';
