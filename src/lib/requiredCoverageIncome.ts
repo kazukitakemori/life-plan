@@ -701,13 +701,24 @@ export function accumulateCoverageIncome(
     const monthEarned = sumIncomeBreakdown(
       calcMonthlyEarnedIncomeBreakdown(earnedInput, year, month),
     );
-    const monthBasic = calcCoverageSurvivorBasicMonthlyMan(
-      input.familyMembers,
-      subject,
-      input.referenceDate,
-      year,
+    const survivorBasicEntitlement = (calendarIdx: number): PensionBreakdown => {
+      const target = indexToYearMonth(calendarIdx);
+      const entitlement = createEmptyPensionBreakdown();
+      entitlement.survivor.basic.basic = calcCoverageSurvivorBasicMonthlyMan(
+        input.familyMembers,
+        subject,
+        input.referenceDate,
+        target.year,
+        target.month,
+      );
+      return entitlement;
+    };
+    const survivorBasicPayment = calcPensionPaymentFromEntitlements(
       month,
+      survivorBasicEntitlement(prevCalendarIndex(idx)),
+      survivorBasicEntitlement(prevCalendarIndex(prevCalendarIndex(idx))),
     );
+    const monthBasic = sumPensionBreakdown(survivorBasicPayment);
     const monthChildAllowance = calcHouseholdMonthlyChildAllowanceMan(
       input.familyMembers,
       input.referenceDate,
