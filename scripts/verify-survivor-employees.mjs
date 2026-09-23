@@ -18,6 +18,7 @@ import {
   calcMiddleAgedWidowAddYenPerYear,
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
+  hasQualifyingSurvivorContinuationDisabilityPension,
   isSurvivingSpouseEligibleForEmployees,
   resolveSurvivorContinuationAnnualPensionYen,
   resolveSurvivorContinuationAssessmentTarget,
@@ -488,6 +489,49 @@ const pension = createDefaultPensionMemberState();
   assert.equal(childTransitionExcluded, null);
 
   console.log('OK 2028 continuation: child-loss age and transition phase are respected');
+}
+
+{
+  const qualifyingStatuses = [
+    'basic_grade1',
+    'basic_grade2',
+    'employees_grade1',
+    'employees_grade2',
+    'employees_grade3',
+  ];
+  for (const disabilityPension of qualifyingStatuses) {
+    assert.equal(
+      hasQualifyingSurvivorContinuationDisabilityPension(
+        member({
+          ...wife38,
+          disability: 'has',
+          disabilityPension,
+        }),
+      ),
+      true,
+    );
+  }
+  assert.equal(
+    hasQualifyingSurvivorContinuationDisabilityPension(
+      member({
+        ...wife38,
+        disability: 'has',
+        disabilityPension: 'none',
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    hasQualifyingSurvivorContinuationDisabilityPension(
+      member({
+        ...wife38,
+        disability: 'none',
+        disabilityPension: 'employees_grade3',
+      }),
+    ),
+    false,
+  );
+  console.log('OK 2028 continuation: basic grades 1-2 and employees grades 1-3 qualify');
 }
 
 {
