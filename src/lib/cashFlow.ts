@@ -45,7 +45,6 @@ import {
   sumLifeEventExpenseDetail,
   sumOtherInsurancePremiumDetail,
   sumOtherLoanRepaymentDetail,
-  sumPensionBreakdown,
   sumVehicleExpenseDetail,
 } from '../types/cashFlow';
 import {
