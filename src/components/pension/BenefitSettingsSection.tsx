@@ -340,8 +340,9 @@ export function BenefitSettingsSection({
     isEarlyStart(settings.oldAgeGeneralEmployees.startAge) ||
     isEarlyStart(settings.oldAgePublicPrivate.startAge);
   const isEmployeesDeferred =
-    settings.oldAgeGeneralEmployees.startAge > 65 ||
-    settings.oldAgePublicPrivate.startAge > 65;
+    canDeferEmployees &&
+    (settings.oldAgeGeneralEmployees.startAge > 65 ||
+      settings.oldAgePublicPrivate.startAge > 65);
 
   return (
     <div className="pension-subsection benefit-settings">
