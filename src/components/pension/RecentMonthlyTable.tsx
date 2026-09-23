@@ -14,6 +14,7 @@ interface RecentMonthlyTableProps {
   onChange: (patch: Partial<NenkinTeikibinMonthlyFields>) => void;
 }
 
+export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
   const updateRow = (
     index: number,
     patch: Partial<NenkinTeikibinMonthlyRow>,
@@ -24,7 +25,6 @@ interface RecentMonthlyTableProps {
     onChange({ monthlyRows });
   };
 
-export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
   const monthLabels = buildMonthlyLabelsFromWestern(
     form.recentMonthlyYear,
     form.recentMonthlyMonth,
