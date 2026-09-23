@@ -260,16 +260,17 @@ export function BenefitSettingsSection({
     changedKey: 'oldAgeBasic' | 'oldAgeGeneralEmployees' | 'oldAgePublicPrivate',
     newRow: OldAgeBenefitRowSettings,
   ) => {
+    const syncedAge = newRow.startAge;
+    const syncedMonth = newRow.startMonth ?? 0;
+    const syncStart = (
+      row: OldAgeBenefitRowSettings,
+    ): OldAgeBenefitRowSettings => ({
+      ...row,
+      startAge: syncedAge,
+      startMonth: syncedMonth,
+    });
+
     if (isEarlyStart(newRow.startAge)) {
-      const syncedAge = newRow.startAge;
-      const syncedMonth = newRow.startMonth ?? 0;
-      const syncStart = (
-        row: OldAgeBenefitRowSettings,
-      ): OldAgeBenefitRowSettings => ({
-        ...row,
-        startAge: syncedAge,
-        startMonth: syncedMonth,
-      });
       onChange({
         ...settings,
         oldAgeBasic:
@@ -285,15 +286,39 @@ export function BenefitSettingsSection({
             ? newRow
             : syncStart(settings.oldAgePublicPrivate),
       });
-    } else {
-      update({ [changedKey]: newRow });
+      return;
     }
+
+    // 老齢厚生年金を複数の実施機関から受ける場合、繰下げ請求は同時に行う。
+    // 一般厚生と公務員厚生・私学共済の開始年月だけを常に連動させる。
+    if (
+      changedKey === 'oldAgeGeneralEmployees' ||
+      changedKey === 'oldAgePublicPrivate'
+    ) {
+      onChange({
+        ...settings,
+        oldAgeGeneralEmployees:
+          changedKey === 'oldAgeGeneralEmployees'
+            ? newRow
+            : syncStart(settings.oldAgeGeneralEmployees),
+        oldAgePublicPrivate:
+          changedKey === 'oldAgePublicPrivate'
+            ? newRow
+            : syncStart(settings.oldAgePublicPrivate),
+      });
+      return;
+    }
+
+    update({ [changedKey]: newRow });
   };
 
   const isEarlyPension =
     isEarlyStart(settings.oldAgeBasic.startAge) ||
     isEarlyStart(settings.oldAgeGeneralEmployees.startAge) ||
     isEarlyStart(settings.oldAgePublicPrivate.startAge);
+  const isEmployeesDeferred =
+    settings.oldAgeGeneralEmployees.startAge > 65 ||
+    settings.oldAgePublicPrivate.startAge > 65;
 
   return (
     <div className="pension-subsection benefit-settings">
@@ -306,6 +331,11 @@ export function BenefitSettingsSection({
         {isEarlyPension && (
           <p className="benefit-early-pension-note">
             ※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。
+          </p>
+        )}
+        {!isEarlyPension && isEmployeesDeferred && (
+          <p className="benefit-early-pension-note">
+            ※ 一般厚生と公務員厚生・私学共済は、老齢厚生年金の繰下げ請求を同時に行うため、開始年月を連動させています。
           </p>
         )}
         <table className="benefit-settings-table">
