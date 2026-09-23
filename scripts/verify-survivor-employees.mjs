@@ -12,6 +12,7 @@ import {
   SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE,
 } from '../src/lib/pensionConstants.ts';
 import {
+  applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan,
   applySurvivorEmployeesOwnOldAgeOffsetMan,
   calcCoverageSurvivorEmployeesDetail,
   calcDeceasedProportionalYenPerYearUntilDeath,
@@ -351,7 +352,19 @@ const pension = createDefaultPensionMemberState();
   assert.equal(offset, Math.max(0, amount - ownMan));
   assert.equal(applySurvivorEmployeesOwnOldAgeOffsetMan(baseMan, ownMan, 64), baseMan);
   assert.equal(applySurvivorEmployeesOwnOldAgeOffsetMan(baseMan, 20, 65), 0);
-  console.log('OK 65+ own old-age employees offset');
+  assert.equal(
+    applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(baseMan, ownMan, 65),
+    2,
+  );
+  assert.equal(
+    applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(baseMan, ownMan, 64),
+    baseMan,
+  );
+  assert.equal(
+    applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(baseMan, 20, 65),
+    0,
+  );
+  console.log('OK 65+ own old-age employees offset for spouse and non-spouse recipients');
 }
 
 {
@@ -456,6 +469,48 @@ const pension = createDefaultPensionMemberState();
     'grandchild',
   );
   console.log('OK survivor employees priority includes grandchild between parent and grandparent');
+}
+
+{
+  const reformDeath = { year: 2028, month: 4 };
+  const parentAge59AtDeath = member({
+    id: 'parent-reform-59',
+    role: 'other',
+    otherRelationship: 'parent',
+    nickname: '親59',
+    age: 57,
+    birthMonth: 4,
+  });
+  const parentAge60AtDeath = member({
+    id: 'parent-reform-60',
+    role: 'other',
+    otherRelationship: 'parent',
+    nickname: '親60',
+    age: 58,
+    birthMonth: 4,
+  });
+
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, parentAge59AtDeath],
+      'head',
+      referenceDate,
+      reformDeath,
+      { year: 2028, month: 5 },
+    ),
+    null,
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, parentAge60AtDeath],
+      'head',
+      referenceDate,
+      reformDeath,
+      { year: 2028, month: 5 },
+    )?.member.id,
+    parentAge60AtDeath.id,
+  );
+  console.log('OK 2028 reform: parent/grandparent right starts at age 60 at death');
 }
 
 {
