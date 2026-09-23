@@ -21,6 +21,7 @@ import {
   isSurvivingSpouseEligibleForEmployees,
   isSurvivingSpouseInContinuationAssessmentWindow,
   resolveSurvivorContinuationAnnualPensionYen,
+  resolveSurvivorContinuationAssessmentTarget,
   resolveSurvivorContinuationIncomeBasis,
   resolveSurvivorContinuationIncomeReferenceYear,
   resolveSurvivorEmployeesDeathRequirement,
@@ -323,6 +324,60 @@ const pension = createDefaultPensionMemberState();
   });
   assert.equal(abolished, 0);
   console.log('OK 2028 reform: middle-aged widow addition phases down through FY2052');
+}
+
+{
+  // 2028年改正の5年有期給付後は、65歳まで継続給付の判定対象として追跡する。
+  const reformDeath = { year: 2028, month: 4 };
+  assert.equal(
+    resolveSurvivorContinuationAssessmentTarget(
+      [head, wife38],
+      'head',
+      referenceDate,
+      reformDeath,
+      { year: 2033, month: 3 },
+    ),
+    null,
+  );
+  const continuationTarget = resolveSurvivorContinuationAssessmentTarget(
+    [head, wife38],
+    'head',
+    referenceDate,
+    reformDeath,
+    { year: 2033, month: 4 },
+  );
+  assert.equal(continuationTarget?.member.id, wife38.id);
+  assert.deepEqual(continuationTarget?.finiteBenefitStart, reformDeath);
+  assert.deepEqual(continuationTarget?.finiteBenefitEnd, {
+    year: 2033,
+    month: 3,
+  });
+  assert.equal(continuationTarget?.assessmentEndAge, 65);
+  assert.equal(continuationTarget?.reason, 'income_or_disability');
+
+  // 2028年度に40歳以上となる女性は段階移行の対象外なので、継続判定へ送らない。
+  assert.equal(
+    resolveSurvivorContinuationAssessmentTarget(
+      [head, wife45],
+      'head',
+      referenceDate,
+      reformDeath,
+      { year: 2033, month: 4 },
+    ),
+    null,
+  );
+
+  // 男性も改正後は60歳未満で死別した場合に5年有期給付→継続判定の対象となる。
+  const maleContinuationTarget = resolveSurvivorContinuationAssessmentTarget(
+    [wife38, husband40],
+    'spouse',
+    referenceDate,
+    reformDeath,
+    { year: 2033, month: 4 },
+  );
+  assert.equal(maleContinuationTarget?.member.id, husband40.id);
+
+  console.log('OK 2028 continuation: finite-benefit survivors remain assessment targets until 65');
 }
 
 {
