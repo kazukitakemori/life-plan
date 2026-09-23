@@ -691,6 +691,7 @@ function calcCoveragePensionEntitlementMonth(
   calendarMonth: number,
   subject: RequiredCoverageSubject,
   death: CalendarYearMonth,
+  survivorEmployeesFamilyMembers: FamilyMember[] = input.familyMembers,
 ): { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth } {
   const entitlement = calcMonthlyPensionEntitlementBreakdownMan(
     household,
@@ -702,7 +703,7 @@ function calcCoveragePensionEntitlementMonth(
   );
   entitlement.survivor.employees = createEmptySurvivorEmployeesDetail();
   const survivorAuto = calcCoverageSurvivorEmployeesDetail({
-    familyMembers: input.familyMembers,
+    familyMembers: survivorEmployeesFamilyMembers,
     subject,
     pensionByMember: input.pensionByMember,
     originalIncomeByMember: input.incomeByMember,
@@ -764,10 +765,21 @@ export function accumulateCoverageIncome(
   if (endIdx < startIdx) return emptyCoverageIncomeTotals();
 
   const workers = input.familyMembers.filter((member) => member.role !== 'pet');
-  const spouseReceives =
+  const survivorSpouse =
     subject === 'head'
-      ? input.familyMembers.some((member) => isPensionSpouseLikeMember(member))
-      : input.familyMembers.some((member) => member.role === 'head');
+      ? input.familyMembers.find((member) => isPensionSpouseLikeMember(member))
+      : input.familyMembers.find((member) => member.role === 'head');
+  const spouseLivelihoodIncomeAssessment = survivorSpouse
+    ? resolveSurvivorLivelihoodIncomeAssessment({
+        recipient: survivorSpouse,
+        incomeByMember: input.incomeByMember,
+        priorYearIncomeByMember: input.priorYearIncomeByMember,
+        referenceDate: input.referenceDate,
+        death: start,
+      })
+    : null;
+  const spouseIncomeClearlyNotMet =
+    spouseLivelihoodIncomeAssessment?.status === 'not_met';
   const deceased = input.familyMembers.find((member) => member.role === subject);
   const deceasedState = deceased
     ? input.pensionByMember[deceased.id] ?? createDefaultPensionMemberState()
@@ -821,15 +833,41 @@ export function accumulateCoverageIncome(
     start.year,
     start.month,
   ).length;
-  const survivorBasicYenPerYearStart = survivorBasicDeathRequirementMet
-    ? calcSurvivorBasicYenPerYear(
-        eligibleChildCountStart,
-        spouseReceives,
-        undefined,
-        start.year,
-        start.month,
-      )
-    : 0;
+  const reformAtDeath = isOnOrAfterSurvivorReformDate(start);
+  const spouseEmployeesIncomeRequirementRemoved =
+    survivorSpouse != null &&
+    isSurvivorEmployeesSpouseIncomeRequirementRemoved(
+      survivorSpouse,
+      eligibleChildCountStart > 0,
+      input.referenceDate,
+      start,
+    );
+  const survivorEmployeesFamilyMembers =
+    survivorSpouse &&
+    spouseIncomeClearlyNotMet &&
+    !spouseEmployeesIncomeRequirementRemoved
+      ? input.familyMembers.filter((member) => member.id !== survivorSpouse.id)
+      : input.familyMembers;
+  const survivorBasicFamilyMembers =
+    survivorSpouse && spouseIncomeClearlyNotMet && reformAtDeath
+      ? input.familyMembers.filter((member) => member.id !== survivorSpouse.id)
+      : input.familyMembers;
+  const survivorBasicBlockedByIneligibleParent =
+    Boolean(survivorSpouse) &&
+    spouseIncomeClearlyNotMet &&
+    !reformAtDeath &&
+    eligibleChildCountStart > 0;
+  const survivorBasicYenPerYearStart =
+    survivorBasicDeathRequirementMet &&
+    !survivorBasicBlockedByIneligibleParent
+      ? calcSurvivorBasicYenPerYear(
+          eligibleChildCountStart,
+          Boolean(survivorSpouse) && !spouseIncomeClearlyNotMet,
+          undefined,
+          start.year,
+          start.month,
+        )
+      : 0;
   const byMemberAmounts: Record<string, number> = {};
   const byYearEarned: Record<number, number> = {};
   const byYearSurvivorBasic: Record<number, number> = {};
@@ -862,6 +900,7 @@ export function accumulateCoverageIncome(
       month,
       subject,
       start,
+      survivorEmployeesFamilyMembers,
     );
     pensionMonthCache.set(idx, next);
     return next;
@@ -890,15 +929,18 @@ export function accumulateCoverageIncome(
       // 遺族基礎年金は死亡月の翌月分から発生する。
       if (calendarIdx <= startIdx) return entitlement;
 
+      if (survivorBasicBlockedByIneligibleParent) {
+        return entitlement;
+      }
       const basicDetail = calcCoverageSurvivorBasicDetailMonthlyMan(
-        input.familyMembers,
+        survivorBasicFamilyMembers,
         subject,
         input.referenceDate,
         target.year,
         target.month,
       );
       const employeesDetail = calcCoverageSurvivorEmployeesDetail({
-        familyMembers: input.familyMembers,
+        familyMembers: survivorEmployeesFamilyMembers,
         subject,
         pensionByMember: input.pensionByMember,
         originalIncomeByMember: input.incomeByMember,
