@@ -90,6 +90,33 @@ function ageMonthIndex(age: number, month: number): number {
   return age * 12 + month;
 }
 
+/**
+ * Q1「世帯主と生計を一にする期間」から、世帯主死亡時の生計同一を判定する。
+ * 生年月日が不明な場合は勝手に不該当とせず、確認不能として候補に残す。
+ */
+function isInHeadLivelihoodAt(
+  member: FamilyMember,
+  referenceDate: Date,
+  date: CalendarYearMonth,
+): boolean {
+  if (member.role === 'head') return true;
+  if (member.householdPeriod.mode === 'lifetime') return true;
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    date.year,
+    date.month,
+  );
+  if (!ageMonth) return true;
+  return (
+    ageMonthIndex(ageMonth.age, ageMonth.month) <=
+    ageMonthIndex(
+      member.householdPeriod.endAge,
+      member.householdPeriod.endMonth,
+    )
+  );
+}
+
 function roundMan(value: number): number {
   return Math.round(value);
 }
@@ -808,6 +835,10 @@ export function accumulateCoverageIncome(
     : null;
   const spouseIncomeClearlyNotMet =
     spouseLivelihoodIncomeAssessment?.status === 'not_met';
+  const survivorSpouseSameLivelihood =
+    !survivorSpouse ||
+    subject !== 'head' ||
+    isInHeadLivelihoodAt(survivorSpouse, input.referenceDate, start);
   const deceased = input.familyMembers.find((member) => member.role === subject);
   const deceasedState = deceased
     ? input.pensionByMember[deceased.id] ?? createDefaultPensionMemberState()
@@ -882,6 +913,12 @@ export function accumulateCoverageIncome(
   const survivorEmployeesBaseFamilyMembers = input.familyMembers.filter(
     (member) => {
       if (member.role === 'pet' || member.id === deceased?.id) return true;
+      if (
+        subject === 'head' &&
+        !isInHeadLivelihoodAt(member, input.referenceDate, start)
+      ) {
+        return false;
+      }
       // 配偶者の850万円基準は、2028年改正の有期給付へ移った時点で
       // 月ごとに撤廃されるため、ここでは一旦残して後で判定する。
       if (survivorSpouse && member.id === survivorSpouse.id) return true;
@@ -892,7 +929,11 @@ export function accumulateCoverageIncome(
     year: number,
     month: number,
   ): FamilyMember[] => {
-    if (!survivorSpouse || !spouseIncomeClearlyNotMet) {
+    if (
+      !survivorSpouse ||
+      !survivorSpouseSameLivelihood ||
+      !spouseIncomeClearlyNotMet
+    ) {
       return survivorEmployeesBaseFamilyMembers;
     }
     const remaining = survivorEmployeesBaseFamilyMembers.filter(
@@ -918,6 +959,12 @@ export function accumulateCoverageIncome(
   const survivorBasicFamilyMembers = input.familyMembers.filter((member) => {
     if (member.role === 'pet' || member.id === deceased?.id) return true;
     if (
+      subject === 'head' &&
+      !isInHeadLivelihoodAt(member, input.referenceDate, start)
+    ) {
+      return false;
+    }
+    if (
       member.role !== 'child' &&
       !(
         member.role === 'other' &&
@@ -935,8 +982,16 @@ export function accumulateCoverageIncome(
     start.year,
     start.month,
   ).length;
+  const survivorSpouseReceivesBasic =
+    Boolean(
+      survivorSpouse &&
+        survivorBasicFamilyMembers.some(
+          (member) => member.id === survivorSpouse.id,
+        ),
+    );
   const survivorBasicBlockedByIneligibleParent =
     Boolean(survivorSpouse) &&
+    survivorSpouseSameLivelihood &&
     spouseIncomeClearlyNotMet &&
     !reformAtDeath &&
     eligibleChildCountStart > 0;
@@ -945,7 +1000,7 @@ export function accumulateCoverageIncome(
     !survivorBasicBlockedByIneligibleParent
       ? calcSurvivorBasicYenPerYear(
           eligibleChildCountStart,
-          Boolean(survivorSpouse) && !spouseIncomeClearlyNotMet,
+          survivorSpouseReceivesBasic,
           undefined,
           start.year,
           start.month,
