@@ -17,11 +17,13 @@ import {
   calcDeceasedProportionalYenPerYearUntilDeath,
   calcEmployeesMonthsUntilDeath,
   calcMiddleAgedWidowAddYenPerYear,
+  calcTransitionalWidowAddYenPerYear,
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
   hasConfirmedLongTermSurvivorQualification,
   hasConfirmedNoUnpaidInRecentYear,
   hasConfirmedTwoThirdsPremiumRequirement,
+  getTransitionalWidowAddYenPerYear,
   hasQualifyingSurvivorContinuationDisabilityPension,
   isSurvivingSpouseEligibleForEmployees,
   resolveSurvivorContinuationAnnualPensionYen,
@@ -518,6 +520,75 @@ const pension = createDefaultPensionMemberState();
   });
   assert.equal(afterChild, MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
   console.log('OK middle-aged widow addition');
+}
+
+{
+  // 経過的寡婦加算は昭和31年4月1日以前生まれまで。
+  const born19550402 = member({
+    id: 'wife-1955',
+    role: 'spouse',
+    nickname: '妻',
+    age: 71,
+    birthMonth: 4,
+    birthDay: 2,
+    gender: 'female',
+  });
+  const born19560401 = member({
+    ...born19550402,
+    id: 'wife-19560401',
+    age: 70,
+    birthMonth: 4,
+    birthDay: 1,
+  });
+  const born19560402 = member({
+    ...born19560401,
+    id: 'wife-19560402',
+    birthDay: 2,
+  });
+  assert.equal(
+    getTransitionalWidowAddYenPerYear(born19550402, referenceDate),
+    21_147,
+  );
+  assert.equal(
+    getTransitionalWidowAddYenPerYear(born19560401, referenceDate),
+    21_147,
+  );
+  assert.equal(
+    getTransitionalWidowAddYenPerYear(born19560402, referenceDate),
+    0,
+  );
+
+  const oldWifeDeath = { year: 2026, month: 7 };
+  assert.equal(
+    calcTransitionalWidowAddYenPerYear({
+      wife: born19550402,
+      remainingFamilyMembers: [born19550402],
+      referenceDate,
+      death: oldWifeDeath,
+      now: oldWifeDeath,
+      requirement: 'short_term',
+      deceasedEmployeesMonths: 100,
+    }),
+    21_147,
+  );
+  assert.equal(
+    calcTransitionalWidowAddYenPerYear({
+      wife: {
+        ...born19550402,
+        disability: 'has',
+        disabilityGrade: 'grade2',
+        disabilityPension: 'basic_grade2',
+      },
+      remainingFamilyMembers: [born19550402],
+      referenceDate,
+      death: oldWifeDeath,
+      now: oldWifeDeath,
+      requirement: 'short_term',
+      deceasedEmployeesMonths: 100,
+    }),
+    0,
+  );
+  console.log('OK transitional widow addition uses 2026 official birth-date table and disability-basic stop');
 }
 
 {
