@@ -4,6 +4,12 @@ export type Gender = 'male' | 'female';
 
 export type DisabilityStatus = 'none' | 'has';
 
+export type PensionChildResidenceStatus =
+  | 'unknown'
+  | 'japan'
+  | 'overseas_exception'
+  | 'overseas';
+
 export type DisabilityGrade =
   | 'none'
   | 'grade1'
@@ -56,6 +62,11 @@ export interface FamilyMember {
   gender: Gender;
   expectedLifespan: number;
   disability: DisabilityStatus;
+  /**
+   * 2028年4月以降の年金「子の加算」の国内居住要件。
+   * child と other/grandchild で使用する。旧データはunknown。
+   */
+  pensionChildResidence?: PensionChildResidenceStatus;
   /**
    * 現在の障害等級・状態。
    * 子の年金加算等では「1級・2級の障害状態」を判定するために使用する。
@@ -114,4 +125,14 @@ export const DISABILITY_GRADE_LABELS: Record<DisabilityGrade, string> = {
   grade2: '2級',
   grade3: '3級',
   other: 'その他・等級外',
+};
+
+export const PENSION_CHILD_RESIDENCE_LABELS: Record<
+  PensionChildResidenceStatus,
+  string
+> = {
+  unknown: '未確認',
+  japan: '日本国内',
+  overseas_exception: '海外（留学等の例外）',
+  overseas: '海外（その他）',
 };
