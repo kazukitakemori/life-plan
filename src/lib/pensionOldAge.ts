@@ -196,6 +196,7 @@ export function toMonthlyMan(yenPerYear: number | null | undefined): number {
 export function buildBasicDetailFromYen(yenPerYear: number): OldAgeBasicDetail {
   return {
     basic: toMonthlyMan(yenPerYear),
+    children: 0,
     additional: 0,
     transfer: 0,
     earlyPayment: 0,
