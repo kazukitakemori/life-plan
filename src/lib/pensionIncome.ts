@@ -71,12 +71,16 @@ import type {
 } from '../types/pension';
 import {
   ADDITIONAL_PENSION_UNIT_YEN_PER_MONTH,
+  DEPENDENT_CHILD_REFORM_MIN_EMPLOYEES_MONTHS,
   DEPENDENT_PENSION_CUTOFF_AGE,
   DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS,
   DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR,
+  DEPENDENT_SPOUSE_PENSION_REFORM_YEN_PER_YEAR,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS,
+  PENSION_CHILD_ADD_REFORM_START_MONTH,
+  PENSION_CHILD_ADD_REFORM_START_YEAR,
   STANDARD_OLD_AGE_START,
   ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH,
 } from './pensionConstants';
@@ -1353,6 +1357,175 @@ function getTotalEmployeesMonthsForDependentQualification(
   };
 }
 
+function dependentReformStartSerial(): number {
+  return pensionCalendarSerial(
+    PENSION_CHILD_ADD_REFORM_START_YEAR,
+    PENSION_CHILD_ADD_REFORM_START_MONTH,
+  );
+}
+
+/**
+ * 老齢厚生年金の「受給権取得時点」を月単位で概算する。
+ * 通常は65歳。50歳以上の定期便で65歳前の特別支給開始が明示されている場合は
+ * その早い方を使う。繰下げ設定で65歳超にしていても受給権自体は65歳で発生する。
+ */
+function resolveOldAgeEmployeesRightStartSerial(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+): number {
+  let start = getAgeReachedSerial(member, referenceDate, STANDARD_OLD_AGE_START);
+  if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') return start;
+
+  const settings =
+    memberState.benefitSettings ?? createDefaultBenefitSettings();
+  for (const row of [
+    settings.oldAgeGeneralEmployees,
+    settings.oldAgePublicPrivate,
+  ]) {
+    const normalized = normalizeOldAgeRowForMember(
+      member,
+      row,
+      referenceDate,
+    );
+    if (normalized.startAge < STANDARD_OLD_AGE_START) {
+      start = Math.min(
+        start,
+        getAgeReachedSerial(member, referenceDate, normalized.startAge) +
+          (normalized.startMonth ?? 0),
+      );
+    }
+  }
+  return start;
+}
+
+function usesReformedDependentChildQualification(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+): boolean {
+  return (
+    resolveOldAgeEmployeesRightStartSerial(
+      member,
+      memberState,
+      referenceDate,
+    ) >= dependentReformStartSerial()
+  );
+}
+
+/**
+ * 2028年3月までに配偶者加給が実際に加算される状態だったかを確認する。
+ * 該当する場合、2028年4月以降も経過措置で旧額を維持する。
+ */
+function hadSpouseDependentAdditionBeforeReform(
+  pensioner: FamilyMember,
+  pensionerState: PensionMemberState,
+  pensionerIncomeEntries: IncomeEntry[],
+  spouse: FamilyMember,
+  spouseState: PensionMemberState,
+  spouseIncomeEntries: IncomeEntry[],
+  referenceDate: Date,
+): boolean {
+  const checkYear = PENSION_CHILD_ADD_REFORM_START_YEAR;
+  const checkMonth = PENSION_CHILD_ADD_REFORM_START_MONTH - 1;
+  const pensionerAgeMonth = getMemberAgeMonth(
+    pensioner,
+    referenceDate,
+    checkYear,
+    checkMonth,
+  );
+  const spouseAgeMonth = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    checkYear,
+    checkMonth,
+  );
+  if (!pensionerAgeMonth || !spouseAgeMonth) return false;
+  if (spouseAgeMonth.age >= DEPENDENT_PENSION_CUTOFF_AGE) return false;
+
+  const settings =
+    pensionerState.benefitSettings ?? createDefaultBenefitSettings();
+  const gSet = normalizeOldAgeRowForMember(
+    pensioner,
+    settings.oldAgeGeneralEmployees,
+    referenceDate,
+  );
+  const pSet = normalizeOldAgeRowForMember(
+    pensioner,
+    settings.oldAgePublicPrivate,
+    referenceDate,
+  );
+  const start = Math.min(
+    gSet.startAge * 12 + (gSet.startMonth ?? 0),
+    pSet.startAge * 12 + (pSet.startMonth ?? 0),
+  );
+  if (
+    !isOnOrAfterBenefitStart(
+      pensionerAgeMonth.age,
+      checkMonth,
+      Math.floor(start / 12),
+      resolveMemberBirthMonth(pensioner),
+      start % 12,
+    )
+  ) {
+    return false;
+  }
+
+  const ownMonths = getTotalEmployeesMonthsForDependentQualification(
+    pensioner,
+    pensionerState,
+    pensionerIncomeEntries,
+    referenceDate,
+  );
+  if (
+    ownMonths.general + ownMonths.publicServant <
+    DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
+    return false;
+  }
+
+  const spouseMonths = getTotalEmployeesMonthsForDependentQualification(
+    spouse,
+    spouseState,
+    spouseIncomeEntries,
+    referenceDate,
+  );
+  if (
+    spouseMonths.general + spouseMonths.publicServant >=
+    DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
+    const spouseSettings =
+      spouseState.benefitSettings ?? createDefaultBenefitSettings();
+    const sg = normalizeOldAgeRowForMember(
+      spouse,
+      spouseSettings.oldAgeGeneralEmployees,
+      referenceDate,
+    );
+    const sp = normalizeOldAgeRowForMember(
+      spouse,
+      spouseSettings.oldAgePublicPrivate,
+      referenceDate,
+    );
+    const spouseStart = Math.min(
+      sg.startAge * 12 + (sg.startMonth ?? 0),
+      sp.startAge * 12 + (sp.startMonth ?? 0),
+    );
+    if (
+      isOnOrAfterBenefitStart(
+        spouseAgeMonth.age,
+        checkMonth,
+        Math.floor(spouseStart / 12),
+        resolveMemberBirthMonth(spouse),
+        spouseStart % 12,
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * 加給年金（配偶者分）の月額（万円）を計算する。
  *
@@ -1366,7 +1539,11 @@ function getTotalEmployeesMonthsForDependentQualification(
 export function getDependentSpousePensionYenPerYear(
   pensioner: FamilyMember,
   referenceDate: Date,
+  useReformedAmount = false,
 ): number {
+  if (useReformedAmount) {
+    return DEPENDENT_SPOUSE_PENSION_REFORM_YEN_PER_YEAR;
+  }
   const birthYear = calcBirthYear(
     pensioner.age,
     pensioner.birthMonth,
@@ -1442,7 +1619,14 @@ function calcDependentChildrenPensionMonthlyMan(
       pensionerIncomeEntries,
       referenceDate,
     );
-  if (general + publicServant < DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS) {
+  const childMinimumMonths = usesReformedDependentChildQualification(
+    pensioner,
+    pensionerState,
+    referenceDate,
+  )
+    ? DEPENDENT_CHILD_REFORM_MIN_EMPLOYEES_MONTHS
+    : DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS;
+  if (general + publicServant < childMinimumMonths) {
     return 0;
   }
 
@@ -1600,8 +1784,27 @@ function calcDependentSpousePensionMonthlyMan(
     return 0;
   }
 
+  const reformActive =
+    pensionCalendarSerial(calendarYear, calendarMonth) >=
+    dependentReformStartSerial();
+  const keepLegacyAmount =
+    reformActive &&
+    hadSpouseDependentAdditionBeforeReform(
+      headMember,
+      headMemberState,
+      headIncomeEntries,
+      spouseMember,
+      spouseMemberState,
+      spouseIncomeEntries,
+      referenceDate,
+    );
+
   return toMonthlyMan(
-    getDependentSpousePensionYenPerYear(headMember, referenceDate),
+    getDependentSpousePensionYenPerYear(
+      headMember,
+      referenceDate,
+      reformActive && !keepLegacyAmount,
+    ),
   );
 }
 
