@@ -111,7 +111,7 @@ export const OTHER_RELATIONSHIP_LABELS: Record<OtherRelationship, string> = {
 };
 
 export const DISABILITY_PENSION_LABELS: Record<DisabilityPensionStatus, string> = {
-  none: '受給なし・不明',
+  none: '受給権なし・不明',
   basic_grade1: '障害基礎年金 1級',
   basic_grade2: '障害基礎年金 2級',
   employees_grade1: '障害厚生年金 1級',
