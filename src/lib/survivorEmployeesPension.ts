@@ -5,8 +5,8 @@
  * 参照: 日本年金機構「遺族厚生年金（受給要件・対象者・年金額）」
  * https://www.nenkin.go.jp/service/jukyu/seido/izokunenkin/jukyu-yoken/20150424.html
  *
- * v1 で未対応: 障害厚生による死亡、初診から5年以内の死亡、
- * 経過的寡婦加算、平成19年4月1日前の65歳以上の選択、物価スライド。
+ * 主な未対応: 初診から5年以内の傷病死亡、生計維持の個別認定、
+ * 平成19年4月1日前の65歳以上の選択、物価スライド。
  */
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
 import {
@@ -40,8 +40,10 @@ import { resolveMemberYearIncomeProfile } from './memberYearIncome';
 import { buildMemberYearIncomeProfileFromOverride } from './priorYearIncomeResolution';
 import { calcProportionalPartAnnualYen } from './pensionProportionalPart';
 import {
+  isEligiblePensionChildAdditionResidence,
   listEligibleSurvivorBasicChildren,
   isEligibleSurvivorBasicChild,
+  survivorBasicChildAddYenPerYear,
 } from './survivorBasicPension';
 import {
   createEmptySurvivorEmployeesDetail,
@@ -1408,7 +1410,32 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     }
   }
 
-  const recipientState =
+  let childrenMan = 0;
+  if (
+    isOnOrAfterSurvivorReform(now) &&
+    (recipient.kind === 'spouse' || recipient.kind === 'child')
+  ) {
+    const residentChildrenNow = childrenNow.filter((member) =>
+      isEligiblePensionChildAdditionResidence(
+        member,
+        input.year,
+        input.month,
+      ),
+    );
+    const childAdditionCount =
+      recipient.kind === 'spouse'
+        ? residentChildrenNow.length
+        : Math.max(0, residentChildrenNow.length - 1);
+    childrenMan = toMonthlyMan(
+      survivorBasicChildAddYenPerYear(
+        childAdditionCount,
+        input.year,
+        input.month,
+      ),
+    );
+  }
+
+    const recipientState =
     input.pensionByMember[recipient.member.id] ?? createDefaultPensionMemberState();
   const recipientAge = getMemberAgeMonth(
     recipient.member,
@@ -1453,6 +1480,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     detail: {
       ...createEmptySurvivorEmployeesDetail(),
       basic: basicMan,
+      children: childrenMan,
       middleAged: middleAgedMan,
     },
     recipientId: recipient.member.id,
