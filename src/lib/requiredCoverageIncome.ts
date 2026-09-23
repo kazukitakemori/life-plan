@@ -166,11 +166,54 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
     };
   }
 
+  if (grossRevenueMan < 850 || totalIncomeMan < 655.5) {
+    return {
+      status: 'met',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  // 基準以上でも、おおむね5年以内に基準未満へ下がる見込みがあれば
+  // 生計維持として認定され得る。Q7でその可能性が見える場合は不該当と断定しない。
+  const entries = input.incomeByMember[input.recipient.id] ?? [];
+  if (entries.length === 0) {
+    return {
+      status: 'unconfirmed',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+  for (let year = input.death.year; year <= input.death.year + 5; year += 1) {
+    const profile = resolveMemberYearIncomeProfile(
+      input.recipient,
+      entries,
+      input.referenceDate,
+      year,
+      1,
+      12,
+    );
+    if (
+      !profile.hasActiveIncomeBlock ||
+      profile.grossRevenueMan < 850 ||
+      profile.totalIncomeMan < 655.5
+    ) {
+      return {
+        status: 'unconfirmed',
+        incomeReferenceYear,
+        grossRevenueMan,
+        totalIncomeMan,
+        resolution,
+      };
+    }
+  }
+
   return {
-    status:
-      grossRevenueMan < 850 || totalIncomeMan < 655.5
-        ? 'met'
-        : 'not_met',
+    status: 'not_met',
     incomeReferenceYear,
     grossRevenueMan,
     totalIncomeMan,
