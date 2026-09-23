@@ -64,6 +64,12 @@ export function migrateFamilyMember(member: FamilyMember): FamilyMember {
     birthDay: member.birthDay ?? null,
     disabilityGrade: member.disabilityGrade ?? 'none',
     disabilityPension: member.disabilityPension ?? 'none',
+    pensionChildResidence:
+      member.pensionChildResidence ??
+      (member.role === 'child' ||
+      (member.role === 'other' && member.otherRelationship === 'grandchild')
+        ? 'unknown'
+        : undefined),
   };
 }
 
@@ -84,6 +90,7 @@ export function createFamilyMember(role: FamilyMemberRole): FamilyMember {
     disability: 'none',
     disabilityGrade: 'none',
     disabilityPension: 'none',
+    pensionChildResidence: role === 'child' ? 'unknown' : undefined,
     hobbies: [],
     householdPeriod: defaultHouseholdPeriod(role),
   };
