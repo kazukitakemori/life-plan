@@ -293,7 +293,8 @@ const pension = createDefaultPensionMemberState();
     birthMonth: 4,
     gender: 'female',
     disability: 'has',
-    disabilityPension: 'basic_grade2',
+    disabilityGrade: 'grade2',
+    disabilityPension: 'none',
   });
   assert.equal(
     isEligibleSurvivorBasicChild(child19, referenceDate, 2026, 7),
@@ -301,7 +302,7 @@ const pension = createDefaultPensionMemberState();
   );
   assert.equal(
     isEligibleSurvivorBasicChild(
-      { ...child19, disabilityPension: 'employees_grade3' },
+      { ...child19, disabilityGrade: 'grade3' },
       referenceDate,
       2026,
       7,
