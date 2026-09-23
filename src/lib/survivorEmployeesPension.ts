@@ -9,7 +9,10 @@
  * 平成19年4月1日前の65歳以上の選択、物価スライド。
  */
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
-import { isPensionSpouseLikeMember } from './familyDefaults';
+import {
+  isPensionSpouseLikeMember,
+  resolveMemberBirthMonth,
+} from './familyDefaults';
 import {
   CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH,
   CHILDLESS_HUSBAND_PAYMENT_START_AGE,
