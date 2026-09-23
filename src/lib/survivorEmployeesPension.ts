@@ -851,6 +851,25 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
   );
 }
 
+export function isSurvivorEmployeesSpouseIncomeRequirementRemoved(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (!isOnOrAfterSurvivorReform(death) || hadEligibleChildrenAtDeath) {
+    return false;
+  }
+  return isSpouseFiniteSurvivorEmployeesBenefit(
+    spouse,
+    false,
+    referenceDate,
+    death,
+    false,
+    null,
+  );
+}
+
 export interface SurvivorContinuationAssessmentTarget {
   member: FamilyMember;
   finiteBenefitStart: CalendarYearMonth;
