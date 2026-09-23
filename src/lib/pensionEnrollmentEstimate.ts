@@ -54,6 +54,7 @@ interface ActiveIncome {
   category: IncomeCategory;
   streamType: IncomeStreamType;
   monthlyAmountMan: number;
+  standardBonusYen: number;
 }
 
 interface AgeMonth {
@@ -160,6 +161,13 @@ function findActiveIncomeAtAgeMonth(
           category: entry.category,
           streamType: period.streamType,
           monthlyAmountMan: period.monthlyAmountMan,
+          standardBonusYen: (period.bonuses ?? [])
+            .filter((bonus) => bonus.paymentMonth === month)
+            .reduce(
+              (sum, bonus) =>
+                sum + resolvePensionStandardBonusYen(bonus.amountMan * 10_000),
+              0,
+            ),
         };
       }
     }
@@ -201,7 +209,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   workProfile: CurrentWorkProfile,
   careerEnd: AgeMonth | null,
   birthYear: number,
-): { kind: EmployeesEnrollmentKind; monthlyAmountMan: number } | null {
+): { kind: EmployeesEnrollmentKind; monthlyAmountMan: number; standardBonusYen: number } | null {
   if (!isEmployeesPensionLiableAtAgeMonth(age, month, resolveMemberBirthMonth(member))) {
     return null;
   }
@@ -227,6 +235,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
     return {
       kind: explicitKind,
       monthlyAmountMan: active?.monthlyAmountMan ?? 0,
+      standardBonusYen: active?.standardBonusYen ?? 0,
     };
   }
 
@@ -254,6 +263,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   return {
     kind: workProfile.employeesKind,
     monthlyAmountMan: careerAnnualIncomeToMonthlyMan(annualYen),
+    standardBonusYen: 0,
   };
 }
 
@@ -308,7 +318,13 @@ function accumulateEmployeesEnrollmentFromIncome(
       const target =
         enrollment.kind === 'general' ? general : publicServant;
 
-      addEmployeesEnrollmentMonth(target, calendarYear, month, remunerationYen);
+      addEmployeesEnrollmentMonth(
+        target,
+        calendarYear,
+        month,
+        remunerationYen,
+        enrollment.standardBonusYen,
+      );
     }
   }
 
@@ -720,6 +736,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
           calendarYear,
           month,
           remunerationYen,
+          active.standardBonusYen,
         );
         continue;
       }
