@@ -29,6 +29,7 @@ interface BenefitSettingsSectionProps {
   member: FamilyMember;
   referenceDate: Date;
   settings: BenefitSettings;
+  specialEmployeesStartAge?: number | null;
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -92,6 +93,7 @@ function OldAgeBenefitRow({
   row,
   maxDeferralAge,
   allowDeferral,
+  earlyClaimCutoffAge = null,
   onChange,
 }: {
   rowId: string;
@@ -99,6 +101,7 @@ function OldAgeBenefitRow({
   row: OldAgeBenefitRowSettings;
   maxDeferralAge: number;
   allowDeferral: boolean;
+  earlyClaimCutoffAge?: number | null;
   onChange: (row: OldAgeBenefitRowSettings) => void;
 }) {
   const normalizedByAge = normalizeOldAgeBenefitStart(
@@ -106,12 +109,22 @@ function OldAgeBenefitRow({
     row.startMonth ?? 0,
     maxDeferralAge,
   );
+  const restrictedByDisability =
+    !allowDeferral && normalizedByAge.startAge > 65;
+  const restrictedBySpecialPension =
+    earlyClaimCutoffAge != null &&
+    normalizedByAge.startAge >= earlyClaimCutoffAge &&
+    normalizedByAge.startAge < 65;
   const normalizedStart =
-    !allowDeferral && normalizedByAge.startAge > 65
+    restrictedByDisability || restrictedBySpecialPension
       ? { startAge: 65, startMonth: 0 }
       : normalizedByAge;
   const ageOptions = PENSION_START_AGE_OPTIONS.filter(
-    (age) => age <= (allowDeferral ? maxDeferralAge : 65),
+    (age) =>
+      age <= (allowDeferral ? maxDeferralAge : 65) &&
+      (earlyClaimCutoffAge == null ||
+        age < earlyClaimCutoffAge ||
+        age >= 65),
   );
   const monthOptions =
     normalizedStart.startAge === 65 ||
@@ -125,11 +138,15 @@ function OldAgeBenefitRow({
       startMonth,
       maxDeferralAge,
     );
+    const specialRestricted =
+      earlyClaimCutoffAge != null &&
+      normalized.startAge >= earlyClaimCutoffAge &&
+      normalized.startAge < 65;
     onChange({
       ...row,
-      ...(!allowDeferral && normalized.startAge > 65
+      ...(!allowDeferral && normalized.startAge > 65) || specialRestricted
         ? { startAge: 65, startMonth: 0 }
-        : normalized),
+        : normalized,
     });
   };
 
@@ -247,6 +264,7 @@ export function BenefitSettingsSection({
   member,
   referenceDate,
   settings,
+  specialEmployeesStartAge = null,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -294,6 +312,24 @@ export function BenefitSettingsSection({
     });
 
     if (isEarlyStart(newRow.startAge)) {
+      const startMonths =
+        newRow.startAge * 12 + (newRow.startMonth ?? 0);
+      const specialStartMonths =
+        specialEmployeesStartAge == null
+          ? null
+          : specialEmployeesStartAge * 12;
+
+      // 特別支給の開始後は、老齢厚生年金を改めて繰上げるのではなく、
+      // 特別支給を受けながら老齢基礎年金だけを65歳前に繰上げられる。
+      if (
+        changedKey === 'oldAgeBasic' &&
+        specialStartMonths != null &&
+        startMonths >= specialStartMonths
+      ) {
+        update({ oldAgeBasic: newRow });
+        return;
+      }
+
       onChange({
         ...settings,
         oldAgeBasic:
@@ -361,7 +397,9 @@ export function BenefitSettingsSection({
         )}
         {isEarlyPension && (
           <p className="benefit-early-pension-note">
-            ※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。
+            {specialEmployeesStartAge != null
+              ? '※ 特別支給の老齢厚生年金がある場合、厚生年金の繰上げは本来の特別支給開始前だけ選べます。開始後は特別支給を反映したまま、老齢基礎年金だけ65才前に繰上げできます。'
+              : '※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。'}
           </p>
         )}
         {!isEarlyPension && isEmployeesDeferred && (
@@ -394,6 +432,7 @@ export function BenefitSettingsSection({
               row={settings.oldAgeGeneralEmployees}
               maxDeferralAge={maxDeferralAge}
               allowDeferral={canDeferEmployees}
+              earlyClaimCutoffAge={specialEmployeesStartAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgeGeneralEmployees', row)
               }
@@ -404,6 +443,7 @@ export function BenefitSettingsSection({
               row={settings.oldAgePublicPrivate}
               maxDeferralAge={maxDeferralAge}
               allowDeferral={canDeferEmployees}
+              earlyClaimCutoffAge={specialEmployeesStartAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgePublicPrivate', row)
               }
