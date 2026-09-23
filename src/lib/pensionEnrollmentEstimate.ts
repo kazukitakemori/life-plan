@@ -199,7 +199,6 @@ function findCareerEnd(entries: IncomeEntry[]): AgeMonth | null {
 
 import {
   resolvePensionStandardBonusYen,
-  standardRemunerationYenFromMonthlyMan,
   standardRemunerationYenFromMonthlyManAt,
 } from './standardRemuneration';
 
