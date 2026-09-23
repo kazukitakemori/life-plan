@@ -7,7 +7,10 @@ import {
   calcBirthYear,
   calendarYearFromAgeCalendarMonth,
 } from './birthDate';
-import { isEligibleSurvivorBasicChild } from './survivorBasicPension';
+import {
+  isEligibleSurvivorBasicChild,
+  survivorBasicChildAddYenPerYear,
+} from './survivorBasicPension';
 import { calcTaxableOldAgePensionPaymentMan } from './pensionPaymentSchedule';
 import {
   calcTransitionalAdditionYenPerYear,
@@ -71,8 +74,6 @@ import {
   DEPENDENT_PENSION_CUTOFF_AGE,
   DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS,
   DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR,
-  DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR,
-  DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS,
@@ -1454,11 +1455,11 @@ function calcDependentChildrenPensionMonthlyMan(
     ),
   ).length;
   if (count <= 0) return 0;
-  const firstTwo =
-    Math.min(count, 2) * DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
-  const rest =
-    Math.max(0, count - 2) * DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
-  return toMonthlyMan(firstTwo + rest);
+  // 2028年4月以降は令和7年改正により、子の加算は第何子かに
+  // かかわらず同額へ引き上げる。2026年度の実質水準で統一して試算する。
+  return toMonthlyMan(
+    survivorBasicChildAddYenPerYear(count, calendarYear, calendarMonth),
+  );
 }
 
 function calcDependentSpousePensionMonthlyMan(
