@@ -916,11 +916,53 @@ function getDependentSpousePensionYenPerYear(
 }
 
 function calcDependentChildrenPensionMonthlyMan(
+  pensioner: FamilyMember,
+  pensionerState: PensionMemberState,
+  pensionerIncomeEntries: IncomeEntry[],
   familyMembers: FamilyMember[],
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
 ): number {
+  const benefitSettings =
+    pensionerState.benefitSettings ?? createDefaultBenefitSettings();
+  const birthYear = calcBirthYear(
+    pensioner.age,
+    pensioner.birthMonth,
+    referenceDate,
+  );
+  let age = calendarYear - birthYear;
+  if (calendarMonth < resolveMemberBirthMonth(pensioner)) age--;
+
+  const gSet = benefitSettings.oldAgeGeneralEmployees;
+  const pSet = benefitSettings.oldAgePublicPrivate;
+  const start = Math.min(
+    gSet.startAge * 12 + (gSet.startMonth ?? 0),
+    pSet.startAge * 12 + (pSet.startMonth ?? 0),
+  );
+  if (
+    !isOnOrAfterBenefitStart(
+      age,
+      calendarMonth,
+      Math.floor(start / 12),
+      resolveMemberBirthMonth(pensioner),
+      start % 12,
+    )
+  ) {
+    return 0;
+  }
+
+  const { general, publicServant } =
+    getTotalEmployeesMonthsForDependentQualification(
+      pensioner,
+      pensionerState,
+      pensionerIncomeEntries,
+      referenceDate,
+    );
+  if (general + publicServant < DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS) {
+    return 0;
+  }
+
   const count = familyMembers.filter((member) =>
     isEligibleSurvivorBasicChild(
       member,
@@ -1203,6 +1245,9 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
 
     const childDependentMonthlyMan =
       calcDependentChildrenPensionMonthlyMan(
+        headMember,
+        headState,
+        headEntries,
         familyMembers,
         referenceDate,
         calendarYear,
@@ -1243,6 +1288,37 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
     );
     if (transferMonthlyMan > 0) {
       total.oldAge.basic.transfer += transferMonthlyMan;
+    }
+  }
+
+
+  // 配偶者がいない世帯でも、要件を満たす子がいれば子の加給年金は対象。
+  if (headMember && !spouseMember) {
+    const headState =
+      pensionByMember[headMember.id] ?? createDefaultPensionMemberState();
+    const headEntries = incomeByMember[headMember.id] ?? [];
+    const childDependentMonthlyMan =
+      calcDependentChildrenPensionMonthlyMan(
+        headMember,
+        headState,
+        headEntries,
+        familyMembers,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+    if (childDependentMonthlyMan > 0) {
+      const { general, publicServant } = getTotalEmployeesMonths(
+        headMember,
+        headState,
+        headEntries,
+        referenceDate,
+      );
+      if (general >= publicServant) {
+        total.oldAge.generalEmployees.dependent += childDependentMonthlyMan;
+      } else {
+        total.oldAge.publicServant.dependent += childDependentMonthlyMan;
+      }
     }
   }
 
