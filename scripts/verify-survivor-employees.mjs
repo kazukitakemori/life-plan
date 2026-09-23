@@ -13,6 +13,7 @@ import {
 } from '../src/lib/pensionConstants.ts';
 import {
   applySurvivorEmployeesOwnOldAgeOffsetMan,
+  calcCoverageSurvivorEmployeesDetail,
   calcDeceasedProportionalYenPerYearUntilDeath,
   calcEmployeesMonthsUntilDeath,
   calcMiddleAgedWidowAddYenPerYear,
