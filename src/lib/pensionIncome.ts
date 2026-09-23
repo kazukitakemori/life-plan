@@ -2203,7 +2203,7 @@ function calcOldAgeHouseholdAdditionsByMemberMan(
   return result;
 }
 
-function calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+export function calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
   member: FamilyMember,
   memberState: PensionMemberState,
   incomeEntries: IncomeEntry[],
