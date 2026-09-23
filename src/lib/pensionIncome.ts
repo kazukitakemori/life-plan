@@ -1654,17 +1654,12 @@ function resolveOldAgeEmployeesRightStartSerial(
 
   const form = migrateTeikibinOver50Form(memberState.teikibinOver50);
   if (hasOver50SpecialStageAges(form)) {
-    for (const specialAge of [
-      form.specialStartAgeCol2,
-      form.specialStartAgeCol3,
-      form.specialStartAgeCol4,
-    ]) {
-      if (specialAge != null) {
-        start = Math.min(
-          start,
-          getAgeReachedSerial(member, referenceDate, specialAge),
-        );
-      }
+    const specialStartAge = resolveOver50AnySpecialStartAge(form);
+    if (specialStartAge != null) {
+      start = Math.min(
+        start,
+        getAgeReachedSerial(member, referenceDate, specialStartAge),
+      );
     }
   }
 
