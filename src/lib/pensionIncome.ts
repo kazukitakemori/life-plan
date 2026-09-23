@@ -8,6 +8,7 @@ import {
   calendarYearFromAgeCalendarMonth,
 } from './birthDate';
 import { isEligibleSurvivorBasicChild } from './survivorBasicPension';
+import { calcTaxableOldAgePensionPaymentMan } from './pensionPaymentSchedule';
 import {
   calcTransitionalAdditionYenPerYear,
   countQ7EmployeesMonthsAfterDate,
@@ -1101,6 +1102,108 @@ export function calcMemberMonthlyPensionBreakdownMan(
     calendarYear,
     calendarMonth,
   );
+
+  return result;
+}
+
+/**
+ * 税計算用の年間老齢年金実支払額（万円）をメンバー別に返す。
+ *
+ * - 偶数月に前2か月分を受け取る実支払ベース
+ * - 非課税の遺族年金・障害年金は含めない
+ * - 加給年金・振替加算など世帯単位の老齢年金加算は世帯主へ帰属
+ */
+export function calcMemberAnnualTaxableOldAgePensionPaymentManByMember(input: {
+  familyMembers: FamilyMember[];
+  incomeByMember: IncomeByMember;
+  pensionByMember: PensionByMember;
+  referenceDate: Date;
+  calendarYear: number;
+  monthStart?: number;
+  monthEnd?: number;
+}): Record<string, number> {
+  const monthStart = input.monthStart ?? 1;
+  const monthEnd = input.monthEnd ?? 12;
+  const result: Record<string, number> = {};
+
+  const householdEntitlements: PensionBreakdown[] = [];
+  householdEntitlements[0] = calcMonthlyPensionEntitlementBreakdownMan(
+    input.familyMembers,
+    input.pensionByMember,
+    input.incomeByMember,
+    input.referenceDate,
+    input.calendarYear - 1,
+    12,
+  );
+  for (let month = 1; month <= 12; month++) {
+    householdEntitlements[month] = calcMonthlyPensionEntitlementBreakdownMan(
+      input.familyMembers,
+      input.pensionByMember,
+      input.incomeByMember,
+      input.referenceDate,
+      input.calendarYear,
+      month,
+    );
+  }
+
+  for (const member of input.familyMembers) {
+    if (member.role === 'pet') continue;
+    const memberState =
+      input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
+    const incomeEntries = input.incomeByMember[member.id] ?? [];
+    const entitlements: PensionBreakdown[] = [];
+    entitlements[0] = calcMemberMonthlyPensionBreakdownMan(
+      member,
+      memberState,
+      incomeEntries,
+      input.referenceDate,
+      input.calendarYear - 1,
+      12,
+    );
+    for (let month = 1; month <= 12; month++) {
+      entitlements[month] = calcMemberMonthlyPensionBreakdownMan(
+        member,
+        memberState,
+        incomeEntries,
+        input.referenceDate,
+        input.calendarYear,
+        month,
+      );
+    }
+
+    let annual = 0;
+    for (let month = monthStart; month <= monthEnd; month++) {
+      annual += calcTaxableOldAgePensionPaymentMan(
+        month,
+        entitlements[month - 1] ?? createEmptyPensionBreakdown(),
+        entitlements[month - 2] ?? createEmptyPensionBreakdown(),
+      );
+    }
+    result[member.id] = annual;
+  }
+
+  const householdAnnual = Array.from(
+    { length: monthEnd - monthStart + 1 },
+    (_, index) => monthStart + index,
+  ).reduce(
+    (sum, month) =>
+      sum +
+      calcTaxableOldAgePensionPaymentMan(
+        month,
+        householdEntitlements[month - 1] ?? createEmptyPensionBreakdown(),
+        householdEntitlements[month - 2] ?? createEmptyPensionBreakdown(),
+      ),
+    0,
+  );
+  const memberAnnual = Object.values(result).reduce(
+    (sum, amount) => sum + amount,
+    0,
+  );
+  const additions = Math.max(0, householdAnnual - memberAnnual);
+  const head = input.familyMembers.find((member) => member.role === 'head');
+  if (head && additions > 0) {
+    result[head.id] = (result[head.id] ?? 0) + additions;
+  }
 
   return result;
 }
