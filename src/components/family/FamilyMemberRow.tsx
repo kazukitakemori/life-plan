@@ -16,12 +16,14 @@ import { isMemberBirthComplete } from '../../lib/familyDefaults';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { validateMemberDependentDefaults } from '../../lib/dependentValidation';
 import type {
+  DisabilityGrade,
   DisabilityPensionStatus,
   FamilyMember,
   HouseholdPeriodMode,
   OtherRelationship,
 } from '../../types/family';
 import {
+  DISABILITY_GRADE_LABELS,
   DISABILITY_PENSION_LABELS,
   OTHER_RELATIONSHIP_LABELS,
   ROLE_LABELS,
@@ -229,12 +231,15 @@ export function FamilyMemberRow({
 
   const detailSummaryParts: string[] = [];
   if (member.disability === 'has') {
+    const grade = member.disabilityGrade ?? 'none';
     const pensionStatus = member.disabilityPension ?? 'none';
-    detailSummaryParts.push(
-      pensionStatus === 'none'
-        ? '障害あり'
-        : DISABILITY_PENSION_LABELS[pensionStatus],
-    );
+    if (grade !== 'none') {
+      detailSummaryParts.push(`障害${DISABILITY_GRADE_LABELS[grade]}`);
+    } else if (pensionStatus !== 'none') {
+      detailSummaryParts.push(DISABILITY_PENSION_LABELS[pensionStatus]);
+    } else {
+      detailSummaryParts.push('障害あり');
+    }
   }
   if (member.hobbies.length > 0) {
     detailSummaryParts.push(`趣味${member.hobbies.length}`);
@@ -415,7 +420,10 @@ export function FamilyMemberRow({
                     ...member,
                     disability,
                     ...(disability === 'none'
-                      ? { disabilityPension: 'none' as const }
+                      ? {
+                          disabilityGrade: 'none' as const,
+                          disabilityPension: 'none' as const,
+                        }
                       : {}),
                   });
                 }}
@@ -428,16 +436,49 @@ export function FamilyMemberRow({
 
             {member.disability === 'has' && (
               <div className="family-disability-pension-block">
+                <FormField label="障害等級・状態">
+                  <FormSelect
+                    wide
+                    value={member.disabilityGrade ?? 'none'}
+                    onValueChange={(raw) =>
+                      onChange({
+                        ...member,
+                        disabilityGrade: raw as DisabilityGrade,
+                      })
+                    }
+                    options={(
+                      Object.entries(DISABILITY_GRADE_LABELS) as Array<
+                        [DisabilityGrade, string]
+                      >
+                    ).map(([value, label]) => ({ value, label }))}
+                  />
+                </FormField>
+                <p className="ui-note">
+                  子の年金加算などでは、1級・2級の障害状態かどうかを使います。
+                </p>
+
                 <FormField label="障害年金（現在）">
                   <FormSelect
                     wide
                     value={member.disabilityPension ?? 'none'}
-                    onValueChange={(raw) =>
+                    onValueChange={(raw) => {
+                      const disabilityPension = raw as DisabilityPensionStatus;
+                      const grade: DisabilityGrade =
+                        disabilityPension === 'basic_grade1' ||
+                        disabilityPension === 'employees_grade1'
+                          ? 'grade1'
+                          : disabilityPension === 'basic_grade2' ||
+                              disabilityPension === 'employees_grade2'
+                            ? 'grade2'
+                            : disabilityPension === 'employees_grade3'
+                              ? 'grade3'
+                              : (member.disabilityGrade ?? 'none');
                       onChange({
                         ...member,
-                        disabilityPension: raw as DisabilityPensionStatus,
-                      })
-                    }
+                        disabilityGrade: grade,
+                        disabilityPension,
+                      });
+                    }}
                     options={(
                       Object.entries(DISABILITY_PENSION_LABELS) as Array<
                         [DisabilityPensionStatus, string]
@@ -446,8 +487,8 @@ export function FamilyMemberRow({
                   />
                 </FormField>
                 <p className="ui-note">
-                  遺族厚生年金の将来試算では、ここで選んだ受給権・等級が
-                  継続する前提で判定します。
+                  遺族厚生年金の5年後の継続給付では、障害状態だけでなく、
+                  障害年金の受給権も確認して判定します。
                 </p>
               </div>
             )}
