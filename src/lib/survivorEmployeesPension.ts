@@ -358,8 +358,10 @@ export function resolveSurvivorEmployeesDeathRequirement(
   // 1級・2級の障害厚生年金受給権者の死亡は、保険料納付要件を別途求めず
   // 短期要件と同じ300月みなしの対象となる。
   const disabilityEmployeesQualification =
-    deceased.disabilityPension === 'employees_grade1' ||
-    deceased.disabilityPension === 'employees_grade2';
+    (deceased.disabilityPension === 'employees_grade1' &&
+      deceased.disabilityGrade === 'grade1') ||
+    (deceased.disabilityPension === 'employees_grade2' &&
+      deceased.disabilityGrade === 'grade2');
   if (disabilityEmployeesQualification) {
     return 'short_term';
   }
