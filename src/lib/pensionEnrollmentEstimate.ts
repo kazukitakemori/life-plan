@@ -389,10 +389,7 @@ function hasNationalPensionCoverageAtAgeMonth(
   careerEnd: AgeMonth | null,
   birthYear: number,
 ): boolean {
-  if (isUniversityExemptionMonth(age, month)) {
-    return false;
-  }
-
+  // 大学在学想定の期間でも、Q7に厚生年金加入が明示されていれば実績を優先する。
   if (resolveEmployeesEnrollmentAtAgeMonth(
     entries,
     age,
@@ -403,6 +400,11 @@ function hasNationalPensionCoverageAtAgeMonth(
     birthYear,
   )) {
     return true;
+  }
+
+  // Q7に加入実績がない場合のみ、20歳4月〜22歳3月を学生納付特例の既定値として扱う。
+  if (isUniversityExemptionMonth(age, month)) {
+    return false;
   }
 
   if (!isAssumedEmploymentStarted(age, month)) {
@@ -434,7 +436,7 @@ function hasNationalPensionCoverageAtAgeMonth(
 
 /**
  * ねんきん定期便なし推計用の国民年金加入月数（満額480か月で上限）。
- * 大学在学猶予24か月は算入しない。
+ * 大学在学猶予24か月は既定では算入しないが、Q7に加入実績があれば実績を優先する。
  */
 export function getNationalPensionCreditedMonthCount(
   member: FamilyMember,
@@ -457,9 +459,6 @@ export function getNationalPensionCreditedMonthCount(
   ) {
     for (let month = 1; month <= 12; month++) {
       if (ageMonthIndex(age, month) > untilIndex) continue;
-      if (isUniversityExemptionMonth(age, month)) {
-        continue;
-      }
       if (
         hasNationalPensionCoverageAtAgeMonth(
           entries,
