@@ -17,7 +17,6 @@ import {
 
 interface PublicPensionSectionProps {
   member: FamilyMember;
-  headOfHouseholdLabel: string;
   referenceDate: Date;
   memberState: PensionMemberState;
   onChange: (state: PensionMemberState) => void;
@@ -49,7 +48,6 @@ const PENSION_SOURCE_OPTIONS: Array<{
 
 export function PublicPensionSection({
   member,
-  headOfHouseholdLabel,
   referenceDate,
   memberState,
   onChange,
@@ -185,7 +183,6 @@ export function PublicPensionSection({
         member={member}
         referenceDate={referenceDate}
         settings={resolvedBenefitSettings}
-        headOfHouseholdLabel={headOfHouseholdLabel}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
