@@ -11,6 +11,7 @@ import {
   estimateOldAgeAmountsFromIncome,
   estimateQ7FuturePensionAdditionsAfterDate,
   getActiveEmployeesTotalRemunerationMan,
+  estimatePost65EmployeesPensionIncreaseMan,
   getEmployeesEnrollmentMonthCounts,
 } from './pensionEnrollmentEstimate';
 import {
@@ -327,6 +328,27 @@ function calcOver50OldAgeAmounts(
   return result;
 }
 
+
+function calcPost65EmployeesPensionIncreaseMan(
+  member: FamilyMember,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+  currentAge: number,
+  currentMonth: number,
+): { generalEmployees: number; publicServant: number } {
+  const annual = estimatePost65EmployeesPensionIncreaseMan(
+    member,
+    incomeEntries,
+    referenceDate,
+    currentAge,
+    currentMonth,
+  );
+  return {
+    generalEmployees: toMonthlyMan(annual.generalEmployeesYenPerYear),
+    publicServant: toMonthlyMan(annual.publicServantYenPerYear),
+  };
+}
+
 /**
  * 暦月ごとの老齢年金内訳（月額・万円）を計算する。
  *
@@ -465,6 +487,26 @@ function calcOldAgeMonthlyManByRow(
       );
     }
     result.publicServant = pub;
+  }
+
+  // ─ 65歳以降の在職定時改定 ─
+  // 65歳時点の年金額へ将来の65〜69歳加入分を先取りせず、
+  // 毎年10月に前年9月〜当年8月の加入実績を追加する。
+  // 70歳到達時は残る未反映期間を退職改定相当として反映する。
+  if (
+    ageMonth.age >= STANDARD_OLD_AGE_START &&
+    (generalActive || publicActive) &&
+    memberState.pastEnrollment !== 'nenkin-teikibin-over50'
+  ) {
+    const post65 = calcPost65EmployeesPensionIncreaseMan(
+      member,
+      incomeEntries,
+      referenceDate,
+      ageMonth.age,
+      ageMonth.month,
+    );
+    result.generalEmployees.basic += post65.generalEmployees;
+    result.publicServant.basic += post65.publicServant;
   }
 
   // ─ 在職老齢年金（60歳以上）: 就労収入があれば支給停止を適用 ─
