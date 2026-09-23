@@ -10,7 +10,7 @@ import {
   estimateEmployeesMonthsForDependentQualification,
   estimateOldAgeAmountsFromIncome,
   estimateQ7FuturePensionAdditionsAfterDate,
-  getActiveEmployeesMonthlyRemunerationMan,
+  getActiveEmployeesTotalRemunerationMan,
   getEmployeesEnrollmentMonthCounts,
 } from './pensionEnrollmentEstimate';
 import {
@@ -470,7 +470,7 @@ function calcOldAgeMonthlyManByRow(
   // ─ 在職老齢年金（60歳以上）: 就労収入があれば支給停止を適用 ─
   // 令和4年4月以降、60〜64歳も65歳以上と同じ基準で判定する。
   if (ageMonth.age >= 60 && (generalActive || publicActive)) {
-    const remunerationMan = getActiveEmployeesMonthlyRemunerationMan(
+    const remunerationMan = getActiveEmployeesTotalRemunerationMan(
       incomeEntries,
       ageMonth.age,
       ageMonth.month,
@@ -569,7 +569,7 @@ export function calcMemberEmployeesProportionalYenPerYear(
 }
 
 /**
- * 在職老齢年金（65歳以上）の支給停止を老齢厚生年金内訳に適用する。
+ * 在職老齢年金（60歳以上）の支給停止を老齢厚生年金内訳に適用する。
  *
  * 支給停止ルール（令和8年度基準額 65万円/月）:
  *   超過額 = 基本月額 + 総報酬月額相当額 − 65万円
