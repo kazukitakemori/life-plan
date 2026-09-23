@@ -26,6 +26,7 @@ import {
   hasConfirmedTwoThirdsPremiumRequirement,
   getTransitionalWidowAddYenPerYear,
   hasQualifyingSurvivorContinuationDisabilityPension,
+  isSurvivorEmployeesSpouseIncomeRequirementRemovedAt,
   isSurvivingSpouseEligibleForEmployees,
   resolveSurvivorContinuationAnnualPensionYen,
   resolveSurvivorContinuationAssessmentTarget,
@@ -98,6 +99,46 @@ const child = member({
   age: 10,
   birthMonth: 4,
 });
+
+{
+  const reformReferenceDate = new Date(2028, 3, 1);
+  const nearCutoffChild = member({
+    id: 'near-cutoff-child',
+    role: 'child',
+    nickname: '子',
+    age: 17,
+    birthMonth: 4,
+    birthDay: 2,
+  });
+  const reformWife = member({
+    ...wife38,
+    age: 38,
+    birthMonth: 6,
+  });
+  const remaining = [reformWife, nearCutoffChild];
+
+  assert.equal(
+    isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+      reformWife,
+      remaining,
+      reformReferenceDate,
+      { year: 2028, month: 4 },
+      { year: 2028, month: 5 },
+    ),
+    false,
+  );
+  assert.equal(
+    isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+      reformWife,
+      remaining,
+      reformReferenceDate,
+      { year: 2028, month: 4 },
+      { year: 2029, month: 4 },
+    ),
+    true,
+  );
+  console.log('OK 2028 spouse income requirement is removed when child-period ends and finite benefit starts');
+}
 
 const headIncome = createIncomeEntry(head.id, 'employee', 40, 6, head);
 headIncome.periods[0].monthlyAmountMan = 50;
