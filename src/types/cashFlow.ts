@@ -60,6 +60,8 @@ export interface OldAgeBasicDetail {
 
   basic: number;
 
+  children: number;
+
   additional: number;
 
   transfer: number;
@@ -247,6 +249,8 @@ export const OLD_AGE_BASIC_DETAIL_ROWS: {
 }[] = [
 
   { key: 'basic', label: '基本' },
+
+  { key: 'children', label: '子の加算' },
 
   { key: 'additional', label: '付加' },
 
@@ -1399,7 +1403,14 @@ function roundNumericRecord<T extends object>(
 
 export function createEmptyOldAgeBasicDetail(): OldAgeBasicDetail {
 
-  return { basic: 0, additional: 0, transfer: 0, earlyPayment: 0, fund: 0 };
+  return {
+    basic: 0,
+    children: 0,
+    additional: 0,
+    transfer: 0,
+    earlyPayment: 0,
+    fund: 0,
+  };
 
 }
 
