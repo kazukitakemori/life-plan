@@ -910,3 +910,104 @@ export function estimateOldAgeAmountsFromIncome(
     publicTransitionalYenPerYear: totalTransitional - generalTransitionalYenPerYear,
   };
 }
+
+/**
+ * 65歳以降の厚生年金加入分のうち、指定月までに在職定時改定・70歳到達改定で
+ * 年金額へ反映済みとなる報酬比例部分（年額・円）を返す。
+ *
+ * - 65〜69歳の在職中: 毎年10月に前年9月〜当年8月分を追加
+ * - 70歳到達後: 70歳到達月までの未反映分も追加
+ * - Q7の給与・賞与から標準報酬月額・標準賞与額を用いて推計
+ */
+export function estimatePost65EmployeesPensionIncreaseMan(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+  currentAge: number,
+  currentMonth: number,
+): { generalEmployeesYenPerYear: number; publicServantYenPerYear: number } {
+  if (currentAge < STANDARD_OLD_AGE_START) {
+    return {
+      generalEmployeesYenPerYear: 0,
+      publicServantYenPerYear: 0,
+    };
+  }
+
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = member.birthMonth ?? 1;
+  const currentYear = calcYearAtAge(
+    birthYear,
+    birthMonth,
+    currentAge,
+    currentMonth,
+  );
+
+  // 在職定時改定で反映済みとなる最終月を決める。
+  // 65〜69歳は当年10月以降なら当年8月まで、9月以前なら前年8月まで。
+  // 70歳以降は70歳到達月までを最終的に反映済みとして扱う。
+  let reflectedThroughYear: number;
+  let reflectedThroughMonth: number;
+  if (currentAge >= EMPLOYEES_PENSION_MAX_INSURED_AGE + 1) {
+    reflectedThroughYear = calcYearAtAge(
+      birthYear,
+      birthMonth,
+      EMPLOYEES_PENSION_MAX_INSURED_AGE + 1,
+      1,
+    );
+    reflectedThroughMonth = birthMonth;
+  } else if (currentMonth >= 10) {
+    reflectedThroughYear = currentYear;
+    reflectedThroughMonth = 8;
+  } else {
+    reflectedThroughYear = currentYear - 1;
+    reflectedThroughMonth = 8;
+  }
+
+  const reflectedThroughSerial =
+    reflectedThroughYear * 12 + (reflectedThroughMonth - 1);
+  const general = createEmptyProportionalAccumulation();
+  const publicServant = createEmptyProportionalAccumulation();
+
+  for (
+    let age = STANDARD_OLD_AGE_START;
+    age <= EMPLOYEES_PENSION_MAX_INSURED_AGE;
+    age++
+  ) {
+    for (let month = 1; month <= 12; month++) {
+      const calendarYear = calcYearAtAge(birthYear, birthMonth, age, month);
+      const serial = calendarYear * 12 + (month - 1);
+      if (serial > reflectedThroughSerial) continue;
+
+      const active = findActiveIncomeAtAgeMonth(
+        entries,
+        age,
+        month,
+        birthYear,
+        birthMonth,
+      );
+      if (!active) continue;
+      const kind = classifyEmployeesEnrollmentFromIncome(
+        active.category,
+        active.streamType,
+      );
+      if (!kind) continue;
+
+      const remunerationYen = standardRemunerationYenFromMonthlyMan(
+        active.monthlyAmountMan,
+        'pension',
+      );
+      addEmployeesEnrollmentMonth(
+        kind === 'public_servant' ? publicServant : general,
+        calendarYear,
+        month,
+        remunerationYen,
+        active.standardBonusYen,
+      );
+    }
+  }
+
+  return {
+    generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
+    publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
+  };
+}
