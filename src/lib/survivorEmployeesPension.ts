@@ -133,7 +133,7 @@ function isUnpaidNationalPensionStatus(status: string): boolean {
   );
 }
 
-function hasConfirmedNoUnpaidInRecentYear(
+export function hasConfirmedNoUnpaidInRecentYear(
   memberState: PensionMemberState,
   deathYear: number,
   deathMonth: number,
@@ -158,7 +158,7 @@ function hasConfirmedNoUnpaidInRecentYear(
   return rows.every((row) => !isUnpaidNationalPensionStatus(row.nationalPensionStatus));
 }
 
-function isWithinOneYearPremiumException(
+export function isWithinOneYearPremiumException(
   memberState: PensionMemberState,
   deathYear: number,
   deathMonth: number,
