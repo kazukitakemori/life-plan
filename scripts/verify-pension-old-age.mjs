@@ -369,6 +369,152 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.ok(day2May.oldAge.basic.basic > 0);
 }
 
+// 老齢厚生年金の子加算は、老齢厚生年金本体と同じく受給権発生月の翌月分から。
+// 4月2日生まれが65歳になる年は、4月分には付けず5月分から加算する。
+{
+  const pensioner = pensionMember({ birthDay: 2, age: 63 });
+  const child = {
+    id: 'timing-child',
+    role: 'child',
+    nickname: '子',
+    gender: 'female',
+    age: 10,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    pensionChildResidence: 'japan',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.employeesPensionGeneralMonths = 240;
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const april = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, child],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    4,
+  );
+  const may = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, child],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+
+  assert.equal(april.oldAge.generalEmployees.dependent, 0);
+  assert.ok(may.oldAge.generalEmployees.dependent > 0);
+}
+
+// 配偶者加給も、本人の老齢厚生年金の受給権発生月の翌月分から加算する。
+{
+  const pensioner = pensionMember({ birthDay: 2, age: 63 });
+  const spouse = {
+    ...pensionMember({ birthDay: 2, age: 50 }),
+    id: 'timing-spouse',
+    role: 'spouse',
+    gender: 'female',
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.employeesPensionGeneralMonths = 300;
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const april = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, spouse],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    4,
+  );
+  const may = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, spouse],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+
+  assert.equal(april.oldAge.generalEmployees.dependent, 0);
+  assert.ok(may.oldAge.generalEmployees.dependent > 0);
+}
+
+// 配偶者が20年以上の特別支給の老齢厚生年金の受給権を得た場合、
+// 配偶者加給はその受給権発生月の翌月分から停止する。
+{
+  const pensioner = {
+    ...pensionMember({ birthDay: 2, age: 66 }),
+    id: 'kakyu-timing-head',
+    role: 'head',
+  };
+  const spouse = {
+    ...pensionMember({ birthDay: 2, age: 63 }),
+    id: 'kakyu-timing-spouse',
+    role: 'spouse',
+    gender: 'female',
+  };
+  const pensionerState = createDefaultPensionMemberState();
+  pensionerState.pastEnrollment = 'nenkin-teikibin-over50';
+  pensionerState.teikibinOver50.employeesPensionGeneralMonths = 300;
+  pensionerState.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  pensionerState.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  pensionerState.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  pensionerState.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  pensionerState.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  pensionerState.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const spouseState = createDefaultPensionMemberState();
+  spouseState.pastEnrollment = 'nenkin-teikibin-over50';
+  spouseState.teikibinOver50.employeesPensionGeneralMonths = 300;
+  spouseState.benefitSettings.oldAgeGeneralEmployees.startAge = 63;
+  spouseState.benefitSettings.oldAgeGeneralEmployees.startMonth = 0;
+
+  const april = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, spouse],
+    {
+      [pensioner.id]: pensionerState,
+      [spouse.id]: spouseState,
+    },
+    {},
+    referenceDate,
+    2026,
+    4,
+  );
+  const may = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, spouse],
+    {
+      [pensioner.id]: pensionerState,
+      [spouse.id]: spouseState,
+    },
+    {},
+    referenceDate,
+    2026,
+    5,
+  );
+
+  assert.ok(april.oldAge.generalEmployees.dependent > 0);
+  assert.equal(may.oldAge.generalEmployees.dependent, 0);
+}
+
 // 繰下げ待機中の在職停止分は増額対象外。
 // 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
 // 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
