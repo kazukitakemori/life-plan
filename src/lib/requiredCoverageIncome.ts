@@ -16,6 +16,8 @@ import { canAddSideBusinessIncome } from './incomeGuidance';
 import type { AddIncomeOption } from './incomeLabels';
 import { getMemberTabLabel } from './memberDisplay';
 import { isPensionSpouseLikeMember } from './familyDefaults';
+import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import { buildMemberYearIncomeProfileFromOverride } from './priorYearIncomeResolution';
 import {
   addCalendarMonths,
   type CalendarYearMonth,
@@ -35,6 +37,7 @@ import {
   calcCoverageSurvivorEmployeesDetail,
   hasConfirmedLongTermSurvivorQualification,
   isEmployeesInsuredAt,
+  isSurvivorEmployeesSpouseIncomeRequirementRemoved,
   resolveSurvivorPremiumRequirementAssessment,
 } from './survivorEmployeesPension';
 import {
@@ -89,6 +92,94 @@ function ageMonthIndex(age: number, month: number): number {
 
 function roundMan(value: number): number {
   return Math.round(value);
+}
+
+export type SurvivorLivelihoodIncomeAssessmentStatus =
+  | 'met'
+  | 'not_met'
+  | 'unconfirmed';
+
+export interface SurvivorLivelihoodIncomeAssessment {
+  status: SurvivorLivelihoodIncomeAssessmentStatus;
+  incomeReferenceYear: number;
+  grossRevenueMan: number | null;
+  totalIncomeMan: number | null;
+  resolution: 'prior_year_override' | 'q7_reference_year' | 'unavailable';
+}
+
+/**
+ * 遺族年金の生計維持に使う収入要件を、現在保存されているQ7情報から概算する。
+ * 収入850万円未満 または 所得655.5万円未満なら「確認できる範囲で満たす」。
+ * 基準以上でも、おおむね5年以内の収入低下見込み等の個別認定があり得るため、
+ * この関数だけで法的な不該当を確定するものではない。
+ */
+export function resolveSurvivorLivelihoodIncomeAssessment(input: {
+  recipient: FamilyMember;
+  incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: CashFlowInput['priorYearIncomeByMember'];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+}): SurvivorLivelihoodIncomeAssessment {
+  const incomeReferenceYear = input.death.year - 1;
+  const simulationStartYear = input.referenceDate.getFullYear();
+  const override = input.priorYearIncomeByMember?.[input.recipient.id];
+
+  let grossRevenueMan: number | null = null;
+  let totalIncomeMan: number | null = null;
+  let resolution: SurvivorLivelihoodIncomeAssessment['resolution'] =
+    'unavailable';
+
+  if (
+    incomeReferenceYear === simulationStartYear - 1 &&
+    override?.differsFromCurrentYear
+  ) {
+    const profile = buildMemberYearIncomeProfileFromOverride(override);
+    grossRevenueMan = profile.grossRevenueMan;
+    totalIncomeMan = profile.totalIncomeMan;
+    resolution = 'prior_year_override';
+  } else {
+    const entries = input.incomeByMember[input.recipient.id] ?? [];
+    if (entries.length > 0) {
+      const profile = resolveMemberYearIncomeProfile(
+        input.recipient,
+        entries,
+        input.referenceDate,
+        incomeReferenceYear,
+        1,
+        12,
+      );
+      if (profile.hasActiveIncomeBlock) {
+        grossRevenueMan = profile.grossRevenueMan;
+        totalIncomeMan = profile.totalIncomeMan;
+        resolution = 'q7_reference_year';
+      }
+    }
+  }
+
+  if (grossRevenueMan == null || totalIncomeMan == null) {
+    return {
+      status: 'unconfirmed',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  return {
+    status:
+      grossRevenueMan < 850 || totalIncomeMan < 655.5
+        ? 'met'
+        : 'not_met',
+    incomeReferenceYear,
+    grossRevenueMan,
+    totalIncomeMan,
+    resolution,
+  };
+}
+
+function isOnOrAfterSurvivorReformDate(date: CalendarYearMonth): boolean {
+  return date.year > 2028 || (date.year === 2028 && date.month >= 4);
 }
 
 export function createDefaultMemberWorkDesign(): RequiredCoverageMemberWorkDesign {
