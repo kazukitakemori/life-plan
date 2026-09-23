@@ -18,6 +18,7 @@ import {
   calcMiddleAgedWidowAddYenPerYear,
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
+  hasConfirmedLongTermSurvivorQualification,
   hasConfirmedNoUnpaidInRecentYear,
   hasConfirmedTwoThirdsPremiumRequirement,
   hasQualifyingSurvivorContinuationDisabilityPension,
@@ -31,6 +32,10 @@ import {
   resolveSurvivorEmployeesRecipient,
 } from '../src/lib/survivorEmployeesPension.ts';
 import { toMonthlyMan } from '../src/lib/pensionOldAge.ts';
+import {
+  isEligibleSurvivorBasicChild,
+  survivorBasicChildAddYenPerYear,
+} from '../src/lib/survivorBasicPension.ts';
 
 const referenceDate = new Date(2026, 5, 1);
 const death = { year: 2026, month: 7 };
@@ -234,6 +239,90 @@ const pension = createDefaultPensionMemberState();
     'long_term',
   );
   console.log('OK recorded teikibin months support conservative 2/3 and 25-year checks');
+}
+
+{
+  // 在職中の短期要件が確認できなくても、定期便で25年以上の長期要件を
+  // 確認できる場合は長期要件へフォールバックする。
+  const longTermWhileWorking = createDefaultPensionMemberState();
+  longTermWhileWorking.pastEnrollment = 'nenkin-teikibin-over50';
+  longTermWhileWorking.teikibinOver50.employeesPensionGeneralMonths = 324;
+  longTermWhileWorking.benefitSettings.survivorPremiumRequirement = 'not_met';
+  assert.equal(
+    hasConfirmedLongTermSurvivorQualification(longTermWhileWorking),
+    true,
+  );
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      head,
+      [headIncome],
+      longTermWhileWorking,
+      referenceDate,
+      death,
+    ),
+    'long_term',
+  );
+
+  // 障害厚生年金1・2級の受給権者の死亡は短期要件として扱う。
+  const disabledHead = member({
+    ...head,
+    id: 'disabled-head',
+    disability: 'has',
+    disabilityPension: 'employees_grade2',
+  });
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      disabledHead,
+      [],
+      createDefaultPensionMemberState(),
+      referenceDate,
+      death,
+    ),
+    'short_term',
+  );
+  console.log('OK long-term fallback and disability employees death qualification');
+}
+
+{
+  // 障害年金1・2級が明示された子は20歳未満まで対象。3級は延長しない。
+  const child19 = member({
+    id: 'child19',
+    role: 'child',
+    nickname: '19歳の子',
+    age: 19,
+    birthMonth: 4,
+    gender: 'female',
+    disability: 'has',
+    disabilityPension: 'basic_grade2',
+  });
+  assert.equal(
+    isEligibleSurvivorBasicChild(child19, referenceDate, 2026, 7),
+    true,
+  );
+  assert.equal(
+    isEligibleSurvivorBasicChild(
+      { ...child19, disabilityPension: 'employees_grade3' },
+      referenceDate,
+      2026,
+      7,
+    ),
+    false,
+  );
+  assert.equal(
+    isEligibleSurvivorBasicChild(child19, referenceDate, 2027, 7),
+    false,
+  );
+
+  // 2028年4月からは第3子以降も含め、子の加算を同額にする。
+  assert.equal(
+    survivorBasicChildAddYenPerYear(3, 2027, 4),
+    243_800 * 2 + 81_300,
+  );
+  assert.equal(
+    survivorBasicChildAddYenPerYear(3, 2028, 4),
+    292_500 * 3,
+  );
+  console.log('OK disabled-child extension and 2028 survivor child addition');
 }
 
 {
