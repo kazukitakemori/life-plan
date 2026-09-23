@@ -68,6 +68,8 @@ export function PensionStep({
   const memberState =
     pensionByMember[resolvedActiveId] ?? createDefaultPensionMemberState();
   const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
+  const hasCurrentDisabilityPension =
+    (activeMember?.disabilityPension ?? 'none') !== 'none';
   const hasUnconfirmedPensionChildResidence = members.some(
     (member) =>
       (member.role === 'child' ||
@@ -105,6 +107,12 @@ export function PensionStep({
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
           {purposeNote}
+        </p>
+      ) : null}
+
+      {hasCurrentDisabilityPension ? (
+        <p className="purpose-input-note" role="note">
+          Q1で障害年金の受給中が登録されています。現在の障害年金額は自動計算対象外のため、現時点ではQ8・キャッシュフローへ金額を自動反映していません。
         </p>
       ) : null}
 
