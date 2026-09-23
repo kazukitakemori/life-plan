@@ -129,6 +129,16 @@ export const DEPENDENT_PENSION_CUTOFF_AGE = 65;
 export const SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR = 243_800;
 export const SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR = 81_300;
 
+/**
+ * 2028年4月施行の子の加算拡充を、2026年度の実質水準へ換算した年額。
+ * 改正後の法定基準額 269,600円 ÷ 現行基準額 224,700円 ×
+ * 2026年度の第1・2子加算 243,800円 = 約292,500円（法定の100円丸め相当）。
+ * 改正後は第1子以降すべて同額。
+ */
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR = 292_500;
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR = 2028;
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH = 4;
+
 /** 障害のある子の遺族基礎の対象上限（20歳未満） */
 export const SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE = 20;
 
