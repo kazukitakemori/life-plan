@@ -17,6 +17,15 @@ function defaultGender(role: FamilyMemberRole) {
   return 'male' as const;
 }
 
+/** 年金制度上の配偶者候補。Q1で明示された事実婚（内縁）も含む。 */
+export function isPensionSpouseLikeMember(member: FamilyMember): boolean {
+  return (
+    member.role === 'spouse' ||
+    (member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner')
+  );
+}
+
 /** 生年月日（年齢・月・日）がすべて入力済みか */
 export function isMemberBirthComplete(
   member: Pick<FamilyMember, 'age' | 'birthMonth' | 'birthDay'>,
