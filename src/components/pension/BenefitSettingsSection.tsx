@@ -323,6 +323,43 @@ export function BenefitSettingsSection({
           <span className="benefit-survivor-summary-hint">入力する</span>
         </summary>
         <div className="benefit-survivor-details-body">
+          <div className="benefit-death-date">
+            <span className="benefit-death-date-label">故人の死亡年月</span>
+            <span className="benefit-date-field">
+              <select
+                className="pension-field-select pension-field-select--date"
+                value={settings.survivorDeathYear}
+                onChange={(e) =>
+                  update({ survivorDeathYear: Number(e.target.value) })
+                }
+                aria-label="故人の死亡年"
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              <span className="benefit-date-unit">年</span>
+            </span>
+            <span className="benefit-date-field">
+              <select
+                className="pension-field-select pension-field-select--date"
+                value={settings.survivorDeathMonth}
+                onChange={(e) =>
+                  update({ survivorDeathMonth: Number(e.target.value) })
+                }
+                aria-label="故人の死亡月"
+              >
+                {MONTH_OPTIONS.map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+              <span className="benefit-date-unit">月</span>
+            </span>
+          </div>
 
           <table className="benefit-survivor-table">
             <tbody>
