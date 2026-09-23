@@ -3,7 +3,10 @@
  * v1 簡略化: 物価スライド・障害/寡婦年金の自動計算は未対応。
  */
 import { resolveMemberBirthMonth } from './familyDefaults';
-import { calcBirthYear } from './birthDate';
+import {
+  calcBirthYear,
+  calendarYearFromAgeCalendarMonth,
+} from './birthDate';
 import { isEligibleSurvivorBasicChild } from './survivorBasicPension';
 import {
   calcTransitionalAdditionYenPerYear,
@@ -113,6 +116,182 @@ function normalizeOldAgeRowForMember(
     ),
   };
 }
+
+function pensionCalendarSerial(year: number, month: number): number {
+  return year * 12 + (month - 1);
+}
+
+function pensionCalendarFromSerial(serial: number): {
+  year: number;
+  month: number;
+} {
+  return {
+    year: Math.floor(serial / 12),
+    month: (serial % 12) + 1,
+  };
+}
+
+/**
+ * 年齢到達月（年齢計算上は誕生日の前日）を連続月番号で返す。
+ * 1日生まれは前月末に年齢到達するため1か月前、それ以外は誕生月。
+ * birthDay未入力は2日以後と同じ月単位概算とする。
+ */
+function getAgeReachedSerial(
+  member: FamilyMember,
+  referenceDate: Date,
+  targetAge: number,
+): number {
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const birthMonth = resolveMemberBirthMonth(member);
+  const nominalBirthdayMonth = pensionCalendarSerial(
+    birthYear + targetAge,
+    birthMonth,
+  );
+  return member.birthDay === 1
+    ? nominalBirthdayMonth - 1
+    : nominalBirthdayMonth;
+}
+
+/**
+ * Q8の受給設定は「その年齢・月数で請求する」時期として扱う。
+ * 年金は請求月の翌月分から発生するため、月次CFの受給権開始も翌月とする。
+ */
+function isOldAgeRowPaymentActive(
+  member: FamilyMember,
+  row: OldAgeBenefitRowSettings,
+  referenceDate: Date,
+  ageMonth: { age: number; month: number },
+): boolean {
+  const normalized = normalizeOldAgeRowForMember(member, row, referenceDate);
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const birthMonth = resolveMemberBirthMonth(member);
+  const currentYear = calendarYearFromAgeCalendarMonth(
+    birthYear,
+    birthMonth,
+    ageMonth.age,
+    ageMonth.month,
+  );
+  const currentSerial = pensionCalendarSerial(currentYear, ageMonth.month);
+  const claimSerial =
+    getAgeReachedSerial(member, referenceDate, normalized.startAge) +
+    (normalized.startMonth ?? 0);
+  return currentSerial >= claimSerial + 1;
+}
+
+/**
+ * 老齢厚生年金を繰下げる場合の「平均支給率」。
+ *
+ * 日本年金機構の式:
+ * 平均支給率 = 月単位の支給率の合計 ÷ 繰下げ待機期間
+ * 月単位の支給率 = 1 - 在職支給停止額 ÷ 65歳時点の老齢厚生年金額
+ *
+ * Q7の給与・賞与から各月の総報酬月額相当額を求め、
+ * 2026年度基準額で在職支給停止額を推計する。
+ */
+function calcDeferralAveragePaymentRate(
+  member: FamilyMember,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+  row: OldAgeBenefitRowSettings,
+  age65EmployeesBasicMonthlyMan: number,
+): number {
+  if (age65EmployeesBasicMonthlyMan <= 0) return 1;
+
+  const normalized = normalizeOldAgeRowForMember(member, row, referenceDate);
+  const deferralMonths =
+    normalized.startAge * 12 +
+    (normalized.startMonth ?? 0) -
+    STANDARD_OLD_AGE_START * 12;
+  if (deferralMonths <= 0) return 1;
+
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const birthMonth = resolveMemberBirthMonth(member);
+  const age65ReachedSerial = getAgeReachedSerial(
+    member,
+    referenceDate,
+    STANDARD_OLD_AGE_START,
+  );
+  const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
+
+  let paymentRateTotal = 0;
+  for (let offset = 1; offset <= deferralMonths; offset++) {
+    const serial = age65ReachedSerial + offset;
+    const { year, month } = pensionCalendarFromSerial(serial);
+    let age = year - birthYear;
+    if (month < birthMonth) age -= 1;
+
+    const remunerationMan = getActiveEmployeesTotalRemunerationMan(
+      incomeEntries,
+      age,
+      month,
+      birthYear,
+      birthMonth,
+    );
+    const excess =
+      age65EmployeesBasicMonthlyMan +
+      remunerationMan -
+      thresholdMan;
+    const suspensionMan =
+      remunerationMan > 0
+        ? Math.min(
+            Math.max(0, excess / 2),
+            age65EmployeesBasicMonthlyMan,
+          )
+        : 0;
+    paymentRateTotal +=
+      1 - suspensionMan / age65EmployeesBasicMonthlyMan;
+  }
+
+  return paymentRateTotal / deferralMonths;
+}
+
+/**
+ * 繰下げ加算額から、在職老齢年金で支給停止された報酬比例部分に対応する
+ * 「増額対象外」の分だけを除く。
+ * 経過的加算は平均支給率を掛けず、従来どおり全額を増額対象に残す。
+ */
+function applyDeferralAveragePaymentRate(
+  detail: GeneralEmployeesDetail | PublicServantDetail,
+  baseBasicMonthlyMan: number,
+  row: OldAgeBenefitRowSettings,
+  averagePaymentRate: number,
+): void {
+  const deferralMonths =
+    row.startAge * 12 +
+    (row.startMonth ?? 0) -
+    STANDARD_OLD_AGE_START * 12;
+  if (
+    deferralMonths <= 0 ||
+    detail.earlyPayment <= 0 ||
+    baseBasicMonthlyMan <= 0 ||
+    averagePaymentRate >= 1
+  ) {
+    return;
+  }
+
+  const increaseRate = deferralMonths * 0.007;
+  const excludedIncrease =
+    baseBasicMonthlyMan *
+    increaseRate *
+    (1 - Math.max(0, averagePaymentRate));
+  detail.earlyPayment = Math.max(
+    0,
+    detail.earlyPayment - excludedIncrease,
+  );
+}
+
 
 function isOnOrAfterMonth(
   calendarYear: number,
@@ -417,9 +596,24 @@ function calcOldAgeMonthlyManByRow(
     referenceDate,
   );
 
-  const basicActive   = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, bSetting.startAge, resolveMemberBirthMonth(member), bSetting.startMonth ?? 0);
-  const generalActive = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, gSetting.startAge, resolveMemberBirthMonth(member), gSetting.startMonth ?? 0);
-  const publicActive  = isOnOrAfterBenefitStart(ageMonth.age, ageMonth.month, pSetting.startAge, resolveMemberBirthMonth(member), pSetting.startMonth ?? 0);
+  const basicActive = isOldAgeRowPaymentActive(
+    member,
+    bSetting,
+    referenceDate,
+    ageMonth,
+  );
+  const generalActive = isOldAgeRowPaymentActive(
+    member,
+    gSetting,
+    referenceDate,
+    ageMonth,
+  );
+  const publicActive = isOldAgeRowPaymentActive(
+    member,
+    pSetting,
+    referenceDate,
+    ageMonth,
+  );
 
   if (!basicActive && !generalActive && !publicActive) {
     return createEmptyOldAgePensionBreakdown();
@@ -481,6 +675,29 @@ function calcOldAgeMonthlyManByRow(
     member.birthDay,
   );
 
+  const age65EmployeesBasicMonthlyMan =
+    autoBase.generalEmployees.basic + autoBase.publicServant.basic;
+  const generalAveragePaymentRate =
+    gSetting.amountMode === 'auto'
+      ? calcDeferralAveragePaymentRate(
+          member,
+          incomeEntries,
+          referenceDate,
+          gSetting,
+          age65EmployeesBasicMonthlyMan,
+        )
+      : 1;
+  const publicAveragePaymentRate =
+    pSetting.amountMode === 'auto'
+      ? calcDeferralAveragePaymentRate(
+          member,
+          incomeEntries,
+          referenceDate,
+          pSetting,
+          age65EmployeesBasicMonthlyMan,
+        )
+      : 1;
+
   if (basicActive) {
     let basic =
       bSetting.amountMode === 'manual'
@@ -519,6 +736,12 @@ function calcOldAgeMonthlyManByRow(
         earlyReductionPerMonth,
         maxDeferralAge,
       );
+      applyDeferralAveragePaymentRate(
+        general,
+        autoBase.generalEmployees.basic,
+        gSetting,
+        generalAveragePaymentRate,
+      );
     }
     result.generalEmployees = general;
   }
@@ -540,6 +763,12 @@ function calcOldAgeMonthlyManByRow(
         pSetting.startMonth ?? 0,
         earlyReductionPerMonth,
         maxDeferralAge,
+      );
+      applyDeferralAveragePaymentRate(
+        pub,
+        autoBase.publicServant.basic,
+        pSetting,
+        publicAveragePaymentRate,
       );
     }
     result.publicServant = pub;
