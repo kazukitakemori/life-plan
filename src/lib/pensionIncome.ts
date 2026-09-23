@@ -2089,102 +2089,139 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
     );
   }
 
-  // 加給年金: 世帯主の老齢厚生年金に、要件を満たす配偶者・子を加算
-  const headMember = familyMembers.find((m) => m.role === 'head');
-  const spouseMember = familyMembers.find((m) => m.role === 'spouse');
-  if (headMember && spouseMember) {
-    const headState =
-      pensionByMember[headMember.id] ?? createDefaultPensionMemberState();
-    const headEntries = incomeByMember[headMember.id] ?? [];
+  // 加給年金・子の加算は世帯主固定にせず、世帯主・配偶者のどちらが
+  // 年金受給者でも同じルールで判定する。
+  const adults = familyMembers.filter(
+    (member) => member.role === 'head' || member.role === 'spouse',
+  );
 
-    const dependentMonthlyMan = calcDependentSpousePensionMonthlyMan(
-      headMember,
-      headState,
-      headEntries,
-      spouseMember,
-      pensionByMember[spouseMember.id] ?? createDefaultPensionMemberState(),
-      incomeByMember[spouseMember.id] ?? [],
+  const addEmployeesDependent = (
+    pensioner: FamilyMember,
+    amountMan: number,
+  ): void => {
+    if (amountMan <= 0) return;
+    const state =
+      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+    const entries = incomeByMember[pensioner.id] ?? [];
+    const { general, publicServant } = getTotalEmployeesMonths(
+      pensioner,
+      state,
+      entries,
       referenceDate,
-      calendarYear,
-      calendarMonth,
     );
+    if (general >= publicServant) {
+      total.oldAge.generalEmployees.dependent += amountMan;
+    } else {
+      total.oldAge.publicServant.dependent += amountMan;
+    }
+  };
 
-    const childDependentMonthlyMan =
+  const employeeChildCandidates: Array<{
+    pensioner: FamilyMember;
+    amountMan: number;
+  }> = [];
+
+  for (const pensioner of adults) {
+    const state =
+      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+    const entries = incomeByMember[pensioner.id] ?? [];
+    const partner = adults.find((member) => member.id !== pensioner.id);
+
+    if (partner) {
+      const partnerState =
+        pensionByMember[partner.id] ?? createDefaultPensionMemberState();
+      const partnerEntries = incomeByMember[partner.id] ?? [];
+
+      const spouseAddition = calcDependentSpousePensionMonthlyMan(
+        pensioner,
+        state,
+        entries,
+        partner,
+        partnerState,
+        partnerEntries,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+      addEmployeesDependent(pensioner, spouseAddition);
+
+      // 振替加算も夫・妻の役割を固定せず、加給年金を受ける側→相手側の順に判定する。
+      const transfer = calcTransferAdditionMonthlyMan(
+        pensioner,
+        state,
+        entries,
+        partner,
+        partnerState,
+        partnerEntries,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+      if (transfer > 0) {
+        total.oldAge.basic.transfer += transfer;
+      }
+    }
+
+    const employeeChildAddition =
       calcDependentChildrenPensionMonthlyMan(
-        headMember,
-        headState,
-        headEntries,
+        pensioner,
+        state,
+        entries,
         familyMembers,
         referenceDate,
         calendarYear,
         calendarMonth,
       );
-    const totalDependentMonthlyMan =
-      dependentMonthlyMan + childDependentMonthlyMan;
-
-    if (totalDependentMonthlyMan > 0) {
-      // 一般厚生・公務員厚のどちらに加入月が多いかで振り分ける（通常推計を使用）
-      const { general, publicServant } = getTotalEmployeesMonths(
-        headMember,
-        headState,
-        headEntries,
-        referenceDate,
-      );
-      if (general >= publicServant) {
-        total.oldAge.generalEmployees.dependent += totalDependentMonthlyMan;
-      } else {
-        total.oldAge.publicServant.dependent += totalDependentMonthlyMan;
-      }
-    }
-
-    // 振替加算: 加給年金の支給要件を満たしていた世帯主の配偶者が65歳になった後、
-    // 配偶者の老齢基礎年金に加算される（生年月日による段階的な金額）
-    const spouseState =
-      pensionByMember[spouseMember.id] ?? createDefaultPensionMemberState();
-    const transferMonthlyMan = calcTransferAdditionMonthlyMan(
-      headMember,
-      headState,
-      headEntries,
-      spouseMember,
-      spouseState,
-      incomeByMember[spouseMember.id] ?? [],
-      referenceDate,
-      calendarYear,
-      calendarMonth,
-    );
-    if (transferMonthlyMan > 0) {
-      total.oldAge.basic.transfer += transferMonthlyMan;
+    if (employeeChildAddition > 0) {
+      employeeChildCandidates.push({
+        pensioner,
+        amountMan: employeeChildAddition,
+      });
     }
   }
 
+  // 同じ子について基礎・厚生、または父母双方へ重複して加算しない。
+  // 現在の保存データには「主として子を生計維持する親」の指定がないため、
+  // 両親とも厚生年金の子加算対象なら従来の世帯主優先で1人だけ計上する。
+  const selectedEmployeesChild =
+    employeeChildCandidates.find(
+      ({ pensioner }) => pensioner.role === 'head',
+    ) ?? employeeChildCandidates[0];
 
-  // 配偶者がいない世帯でも、要件を満たす子がいれば子の加給年金は対象。
-  if (headMember && !spouseMember) {
-    const headState =
-      pensionByMember[headMember.id] ?? createDefaultPensionMemberState();
-    const headEntries = incomeByMember[headMember.id] ?? [];
-    const childDependentMonthlyMan =
-      calcDependentChildrenPensionMonthlyMan(
-        headMember,
-        headState,
-        headEntries,
-        familyMembers,
-        referenceDate,
-        calendarYear,
-        calendarMonth,
-      );
-    if (childDependentMonthlyMan > 0) {
-      const { general, publicServant } = getTotalEmployeesMonths(
-        headMember,
-        headState,
-        headEntries,
-        referenceDate,
-      );
-      if (general >= publicServant) {
-        total.oldAge.generalEmployees.dependent += childDependentMonthlyMan;
-      } else {
-        total.oldAge.publicServant.dependent += childDependentMonthlyMan;
-      }
+  if (selectedEmployeesChild) {
+    addEmployeesDependent(
+      selectedEmployeesChild.pensioner,
+      selectedEmployeesChild.amountMan,
+    );
+  } else {
+    // 2028年4月以降、厚生年金側の子加算が付かない場合は
+    // 老齢基礎年金の新設された子加算を適用する。
+    const basicChildCandidates = adults
+      .map((pensioner) => {
+        const state =
+          pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+        const entries = incomeByMember[pensioner.id] ?? [];
+        return {
+          pensioner,
+          amountMan: calcOldAgeBasicChildrenPensionMonthlyMan(
+            pensioner,
+            state,
+            entries,
+            familyMembers,
+            referenceDate,
+            calendarYear,
+            calendarMonth,
+          ),
+        };
+      })
+      .filter(({ amountMan }) => amountMan > 0);
+
+    const selectedBasicChild =
+      basicChildCandidates.find(
+        ({ pensioner }) => pensioner.role === 'head',
+      ) ?? basicChildCandidates[0];
+    if (selectedBasicChild) {
+      total.oldAge.basic.children += selectedBasicChild.amountMan;
     }
   }
 
