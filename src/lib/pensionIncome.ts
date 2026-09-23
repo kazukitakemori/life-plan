@@ -21,6 +21,7 @@ import {
   getActiveEmployeesTotalRemunerationMan,
   estimatePost65EmployeesPensionIncreaseMan,
   getEmployeesEnrollmentMonthCounts,
+  getEstimatedOldAgeQualifyingMonthCount,
 } from './pensionEnrollmentEstimate';
 import {
   applyBasicDetailAdjustment,
@@ -1565,6 +1566,112 @@ export function getDependentSpousePensionYenPerYear(
   else if (onOrAfter(1934, 4, 2)) special = 36_000;
 
   return DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR + special;
+}
+
+function getOldAgeBasicChildAdditionQualifyingMonths(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+): number {
+  if (memberState.pastEnrollment === 'none') {
+    return getEstimatedOldAgeQualifyingMonthCount(
+      member,
+      incomeEntries,
+      referenceDate,
+    );
+  }
+
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-under50'
+      ? memberState.teikibinUnder50
+      : migrateTeikibinOver50Form(memberState.teikibinOver50);
+  const recorded = sumNullable([
+    form.nationalPensionType1Months,
+    form.nationalPensionType3Months,
+    form.seamenInsuranceMonths,
+    form.employeesPensionGeneralMonths,
+    form.employeesPensionPublicServantMonths,
+    form.employeesPensionPrivateSchoolMonths,
+  ]);
+  const future = estimateQ7FuturePensionAdditionsAfterDate(
+    member,
+    incomeEntries,
+    referenceDate,
+    form.recentMonthlyYear,
+    form.recentMonthlyMonth,
+  );
+  return Math.max(0, recorded + future.qualifyingMonths);
+}
+
+function calcOldAgeBasicChildrenPensionMonthlyMan(
+  pensioner: FamilyMember,
+  pensionerState: PensionMemberState,
+  pensionerIncomeEntries: IncomeEntry[],
+  familyMembers: FamilyMember[],
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  if (
+    pensionCalendarSerial(calendarYear, calendarMonth) <
+    dependentReformStartSerial()
+  ) {
+    return 0;
+  }
+
+  const ageMonth = getMemberAgeMonth(
+    pensioner,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return 0;
+
+  const settings =
+    pensionerState.benefitSettings ?? createDefaultBenefitSettings();
+  if (
+    !isOldAgeRowPaymentActive(
+      pensioner,
+      settings.oldAgeBasic,
+      referenceDate,
+      ageMonth,
+    )
+  ) {
+    return 0;
+  }
+
+  const count = familyMembers.filter((member) =>
+    isEligibleSurvivorBasicChild(
+      member,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    ),
+  ).length;
+  if (count <= 0) return 0;
+
+  // 令和7年改正後の老齢基礎年金の子加算は、納付済＋免除期間が
+  // 300月未満なら「月数 / 300」で按分する。
+  const qualifyingMonths = Math.min(
+    300,
+    getOldAgeBasicChildAdditionQualifyingMonths(
+      pensioner,
+      pensionerState,
+      pensionerIncomeEntries,
+      referenceDate,
+    ),
+  );
+  if (qualifyingMonths <= 0) return 0;
+
+  return toMonthlyMan(
+    survivorBasicChildAddYenPerYear(
+      count,
+      calendarYear,
+      calendarMonth,
+    ) *
+      (qualifyingMonths / 300),
+  );
 }
 
 function calcDependentChildrenPensionMonthlyMan(
