@@ -517,6 +517,22 @@ export function applySurvivorEmployeesOwnOldAgeOffsetMan(
   return Math.max(0, amount - ownEmployeesMonthlyMan);
 }
 
+/**
+ * 配偶者以外の65歳以上の受給権者は、按分後の遺族厚生年金から
+ * 自身の老齢厚生年金額に相当する部分を支給停止する。
+ */
+export function applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(
+  shareMonthlyMan: number,
+  ownEmployeesMonthlyMan: number,
+  recipientAge: number,
+): number {
+  if (shareMonthlyMan <= 0) return 0;
+  if (recipientAge < STANDARD_OLD_AGE_START || ownEmployeesMonthlyMan <= 0) {
+    return shareMonthlyMan;
+  }
+  return Math.max(0, shareMonthlyMan - ownEmployeesMonthlyMan);
+}
+
 function fiveYearEnd(startEvent: CalendarYearMonth): CalendarYearMonth {
   // 受給権取得日等から5年を経過した「日の属する月」までは有期給付。
   // CalendarYearMonth は日を持たないため、開始事由の月から60か月後を終端月とする。
@@ -1075,9 +1091,14 @@ function hasParentLikeSurvivorRightAtDeath(
     death.year,
     death.month,
   );
-  return Boolean(
-    deathAge && deathAge.age >= SURVIVOR_PARENT_MIN_AGE_AT_DEATH,
-  );
+  if (!deathAge) return false;
+
+  // 2028年4月改正後は、父母・祖父母は死亡時60歳以上で受給権が発生する。
+  // 改正前の「55歳以上で受給権を取得し、60歳まで支給停止」は廃止。
+  const minAgeAtDeath = isOnOrAfterSurvivorReform(death)
+    ? SURVIVOR_PARENT_PAYMENT_START_AGE
+    : SURVIVOR_PARENT_MIN_AGE_AT_DEATH;
+  return deathAge.age >= minAgeAtDeath;
 }
 
 function isParentLikePaymentActive(
@@ -1097,6 +1118,11 @@ function isParentLikePaymentActive(
   ) {
     return false;
   }
+
+  // 2028年4月改正後は死亡時60歳以上が受給権要件なので、
+  // 年齢による追加の支給停止期間はない（実支給は死亡月の翌月分から）。
+  if (isOnOrAfterSurvivorReform(death)) return true;
+
   return isMonthAfterAgeReached(
     member,
     referenceDate,
@@ -1877,8 +1903,6 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     );
   }
 
-    const recipientState =
-    input.pensionByMember[recipient.member.id] ?? createDefaultPensionMemberState();
   const recipientAge = getMemberAgeMonth(
     recipient.member,
     input.referenceDate,
@@ -1886,6 +1910,9 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     input.month,
   );
   if (recipient.kind === 'spouse' && recipientAge) {
+    const recipientState =
+      input.pensionByMember[recipient.member.id] ??
+      createDefaultPensionMemberState();
     const ownBreakdown = calcMemberMonthlyPensionBreakdownMan(
       recipient.member,
       recipientState,
@@ -1899,6 +1926,64 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
       ownOldAgeEmployeesWithoutDependentMan(ownBreakdown.oldAge),
       recipientAge.age,
     );
+  } else if (
+    recipient.kind === 'parent' ||
+    recipient.kind === 'grandparent'
+  ) {
+    const relationship = recipient.kind;
+    const rightHolders = remaining.filter((member) =>
+      hasParentLikeSurvivorRightAtDeath(
+        member,
+        relationship,
+        input.referenceDate,
+        input.death,
+      ),
+    );
+
+    // 同順位者が複数いる場合は、受給権者数でまず按分する。
+    // 改正前に60歳未満で支給停止中の者も「受給権者」なので分母に含める。
+    const shareMan =
+      rightHolders.length > 0 ? basicMan / rightHolders.length : basicMan;
+    basicMan = rightHolders.reduce((sum, current) => {
+      if (
+        !isParentLikePaymentActive(
+          current,
+          relationship,
+          input.referenceDate,
+          input.death,
+          now,
+        )
+      ) {
+        return sum;
+      }
+
+      const currentAge = getMemberAgeMonth(
+        current,
+        input.referenceDate,
+        input.year,
+        input.month,
+      );
+      if (!currentAge) return sum + shareMan;
+
+      const currentState =
+        input.pensionByMember[current.id] ?? createDefaultPensionMemberState();
+      const ownBreakdown = calcMemberMonthlyPensionBreakdownMan(
+        current,
+        currentState,
+        input.coverageIncomeByMember[current.id] ?? [],
+        input.referenceDate,
+        input.year,
+        input.month,
+      );
+      return (
+        sum +
+        applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(
+          shareMan,
+          ownOldAgeEmployeesWithoutDependentMan(ownBreakdown.oldAge),
+          currentAge.age,
+        )
+      );
+    }, 0);
   }
 
   let middleAgedMan = 0;
