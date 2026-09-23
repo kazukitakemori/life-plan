@@ -3,11 +3,7 @@ import {
   getWesternYearOptions,
   MONTH_OPTIONS,
 } from '../../lib/pensionTeikibinLabels';
-import {
-  EMPLOYEES_PENSION_CATEGORY_OPTIONS,
-  NATIONAL_PENSION_PAYMENT_OPTIONS,
-} from '../../lib/pensionTeikibinLabels';
-import type { NenkinTeikibinMonthlyFields } from '../../types/pension';
+import type { NenkinTeikibinMonthlyFields, NenkinTeikibinMonthlyRow } from '../../types/pension';
 
 interface RecentMonthlyTableProps {
   form: NenkinTeikibinMonthlyFields;
@@ -15,6 +11,16 @@ interface RecentMonthlyTableProps {
 }
 
 export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
+  const updateRow = (
+    index: number,
+    patch: Partial<NenkinTeikibinMonthlyRow>,
+  ) => {
+    const monthlyRows = form.monthlyRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row,
+    );
+    onChange({ monthlyRows });
+  };
+
   const monthLabels = buildMonthlyLabelsFromWestern(
     form.recentMonthlyYear,
     form.recentMonthlyMonth,
