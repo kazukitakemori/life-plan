@@ -1,6 +1,7 @@
 import type { FamilyMember } from '../../types/family';
 import { calcBirthYear } from '../../lib/birthDate';
 import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   getMaxOldAgeDeferralAgeByBirth,
   normalizeOldAgeBenefitStart,
@@ -27,7 +28,6 @@ interface BenefitSettingsSectionProps {
   member: FamilyMember;
   referenceDate: Date;
   settings: BenefitSettings;
-  headOfHouseholdLabel: string;
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -237,10 +237,10 @@ export function BenefitSettingsSection({
   member,
   referenceDate,
   settings,
-  headOfHouseholdLabel,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
+  const memberLabel = getMemberTabLabel(member);
   const memberBirthYear = calcBirthYear(
     member.age,
     member.birthMonth,
@@ -395,7 +395,7 @@ export function BenefitSettingsSection({
         <div className="pension-auto-benefit-note" role="note">
           <strong>万一の場合の年金</strong>
           <span>
-            {headOfHouseholdLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
+            {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
           </span>
         </div>
 
