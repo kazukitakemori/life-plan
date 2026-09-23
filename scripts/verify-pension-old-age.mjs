@@ -666,6 +666,73 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   );
 }
 
+// 障害年金受給権が確認できる場合の繰下げ制限。
+// 障害基礎年金のみなら老齢基礎は65歳、老齢厚生だけ繰下げ可能。
+{
+  const member = {
+    ...pensionMember({ birthDay: 2, age: 63 }),
+    disabilityPension: 'basic_grade2',
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.basicPension65 = 120_000;
+  state.teikibinOver50.general.oldAge65.proportional = 120_000;
+  state.benefitSettings.oldAgeBasic.startAge = 70;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 70;
+  state.benefitSettings.oldAgePublicPrivate.startAge = 70;
+
+  const age66 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2029,
+    5,
+  );
+  assert.ok(age66.oldAge.basic.basic > 0);
+  assert.equal(age66.oldAge.generalEmployees.basic, 0);
+
+  const age70 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2033,
+    5,
+  );
+  assert.ok(age70.oldAge.generalEmployees.basic > 0);
+  assert.ok(age70.oldAge.generalEmployees.earlyPayment > 0);
+}
+
+// 障害厚生年金の受給権が確認できる場合は、老齢基礎・厚生とも
+// 繰下げ不可として65歳からの金額を使う。
+{
+  const member = {
+    ...pensionMember({ birthDay: 2, age: 63 }),
+    disabilityPension: 'employees_grade3',
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.basicPension65 = 120_000;
+  state.teikibinOver50.general.oldAge65.proportional = 120_000;
+  state.benefitSettings.oldAgeBasic.startAge = 70;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 70;
+  state.benefitSettings.oldAgePublicPrivate.startAge = 70;
+
+  const age65 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.ok(age65.oldAge.basic.basic > 0);
+  assert.ok(age65.oldAge.generalEmployees.basic > 0);
+  assert.equal(age65.oldAge.basic.earlyPayment, 0);
+  assert.equal(age65.oldAge.generalEmployees.earlyPayment, 0);
+}
+
 // 繰下げ待機中の在職停止分は増額対象外。
 // 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
 // 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
