@@ -200,6 +200,7 @@ function findCareerEnd(entries: IncomeEntry[]): AgeMonth | null {
 import {
   resolvePensionStandardBonusYen,
   standardRemunerationYenFromMonthlyMan,
+  standardRemunerationYenFromMonthlyManAt,
 } from './standardRemuneration';
 
 function resolveEmployeesEnrollmentAtAgeMonth(
@@ -312,9 +313,10 @@ function accumulateEmployeesEnrollmentFromIncome(
       if (!enrollment) continue;
 
       const calendarYear = calcYearAtAge(birthYear, resolveMemberBirthMonth(member), age, month);
-      const remunerationYen = standardRemunerationYenFromMonthlyMan(
+      const remunerationYen = standardRemunerationYenFromMonthlyManAt(
         enrollment.monthlyAmountMan,
-        'pension',
+        calendarYear,
+        month,
       );
       const target =
         enrollment.kind === 'general' ? general : publicServant;
@@ -560,15 +562,15 @@ export function getActiveEmployeesTotalRemunerationMan(
   );
   if (!activeKind) return 0;
 
-  const standardMonthlyYen = standardRemunerationYenFromMonthlyMan(
-    active.monthlyAmountMan,
-    'pension',
-  );
-
   const currentCalendarYear = calcYearAtAge(
     birthYear,
     birthMonth,
     age,
+    calendarMonth,
+  );
+  const standardMonthlyYen = standardRemunerationYenFromMonthlyManAt(
+    active.monthlyAmountMan,
+    currentCalendarYear,
     calendarMonth,
   );
   const currentSerial = currentCalendarYear * 12 + (calendarMonth - 1);
@@ -732,9 +734,10 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
       if (employeesKind) {
         if (!isEmployeesPensionLiableAtAgeMonth(age, month, birthMonth)) continue;
         if (age < NATIONAL_PENSION_MANDATORY_END_AGE) basicMonths += 1;
-        const remunerationYen = standardRemunerationYenFromMonthlyMan(
+        const remunerationYen = standardRemunerationYenFromMonthlyManAt(
           active.monthlyAmountMan,
-          'pension',
+          calendarYear,
+          month,
         );
         addEmployeesEnrollmentMonth(
           employeesKind === 'general' ? general : publicServant,
@@ -992,9 +995,10 @@ export function estimatePost65EmployeesPensionIncreaseMan(
       );
       if (!kind) continue;
 
-      const remunerationYen = standardRemunerationYenFromMonthlyMan(
+      const remunerationYen = standardRemunerationYenFromMonthlyManAt(
         active.monthlyAmountMan,
-        'pension',
+        calendarYear,
+        month,
       );
       addEmployeesEnrollmentMonth(
         kind === 'publicServant' ? publicServant : general,
