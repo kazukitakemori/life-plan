@@ -287,6 +287,16 @@ const pension = createDefaultPensionMemberState();
     ),
     'short_term',
   );
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      { ...disabledHead, disabilityGrade: undefined },
+      [],
+      createDefaultPensionMemberState(),
+      referenceDate,
+      death,
+    ),
+    'short_term',
+  );
   console.log('OK long-term fallback and disability employees death qualification');
 }
 
