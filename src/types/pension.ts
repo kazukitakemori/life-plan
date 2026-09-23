@@ -133,7 +133,7 @@ export interface BenefitSettings {
    * 遺族厚生年金の保険料納付要件。
    * auto はねんきん定期便等から確認できる場合だけ確定し、確認できなければ未確認扱い。
    */
-  survivorPremiumRequirement: SurvivorPremiumRequirementSetting;
+  survivorPremiumRequirement?: SurvivorPremiumRequirementSetting;
   dependentSpousePension: DependentSpousePensionSettings;
 }
 
