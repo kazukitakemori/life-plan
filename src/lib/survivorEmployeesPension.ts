@@ -1188,7 +1188,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
         basic: toMonthlyMan(continuation.annualPensionYen),
       },
       recipientId: continuationAssessment.member.id,
-      continuationAssessment,
+      continuationAssessment: null,
     };
   }
 
