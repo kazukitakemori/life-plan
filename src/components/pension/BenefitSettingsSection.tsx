@@ -392,40 +392,44 @@ export function BenefitSettingsSection({
           </tbody>
         </table>
 
-        <div className="pension-auto-benefit-note" role="note">
-          <strong>万一の場合の年金</strong>
-          <span>
-            {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
-          </span>
-        </div>
+        {(member.role === 'head' || member.role === 'spouse') && (
+          <>
+            <div className="pension-auto-benefit-note" role="note">
+              <strong>万一の場合の年金</strong>
+              <span>
+                {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
+              </span>
+            </div>
 
-        <div className="benefit-survivor-premium-setting">
-          <label
-            className="pension-enrollment-label"
-            htmlFor={`survivor-premium-requirement-${member.id}`}
-          >
-            遺族年金の保険料納付要件
-          </label>
-          <select
-            id={`survivor-premium-requirement-${member.id}`}
-            className="pension-field-select"
-            value={settings.survivorPremiumRequirement ?? 'auto'}
-            onChange={(e) =>
-              update({
-                survivorPremiumRequirement:
-                  e.target.value as SurvivorPremiumRequirementSetting,
-              })
-            }
-          >
-            <option value="auto">ねんきん定期便から自動確認</option>
-            <option value="met">満たしている</option>
-            <option value="not_met">満たしていない</option>
-          </select>
-          <p className="ui-note">
-            自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
-            ねんきんネット等で要件を確認できる場合は手動で指定できます。
-          </p>
-        </div>
+            <div className="benefit-survivor-premium-setting">
+              <label
+                className="pension-enrollment-label"
+                htmlFor={`survivor-premium-requirement-${member.id}`}
+              >
+                遺族年金の保険料納付要件
+              </label>
+              <select
+                id={`survivor-premium-requirement-${member.id}`}
+                className="pension-field-select"
+                value={settings.survivorPremiumRequirement ?? 'auto'}
+                onChange={(e) =>
+                  update({
+                    survivorPremiumRequirement:
+                      e.target.value as SurvivorPremiumRequirementSetting,
+                  })
+                }
+              >
+                <option value="auto">ねんきん定期便から自動確認</option>
+                <option value="met">満たしている</option>
+                <option value="not_met">満たしていない</option>
+              </select>
+              <p className="ui-note">
+                自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
+                ねんきんネット等で要件を確認できる場合は手動で指定できます。
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       <details className="benefit-settings-block benefit-settings-block--optional benefit-survivor-details">
