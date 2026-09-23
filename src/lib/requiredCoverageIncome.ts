@@ -135,7 +135,17 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
   ) {
     const profile = buildMemberYearIncomeProfileFromOverride(override);
     grossRevenueMan = profile.grossRevenueMan;
-    totalIncomeMan = profile.totalIncomeMan;
+    // Q7の前年度上書きは「月額・収入区分」しか持たず、
+    // 自営業等の必要経費や雑所得等の所得計算材料までは保存していない。
+    // 給与系だけは給与所得控除から所得を概算できるが、それ以外は
+    // 850万円以上のときに655.5万円以上と断定しない。
+    const canEstimateTotalIncomeFromOverride =
+      override.category === 'employee' ||
+      override.category === 'civil_servant' ||
+      override.category === 'part_time';
+    totalIncomeMan = canEstimateTotalIncomeFromOverride
+      ? profile.totalIncomeMan
+      : null;
     resolution = 'prior_year_override';
   } else {
     const entries = input.incomeByMember[input.recipient.id] ?? [];
@@ -156,7 +166,7 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
     }
   }
 
-  if (grossRevenueMan == null || totalIncomeMan == null) {
+  if (grossRevenueMan == null) {
     return {
       status: 'unconfirmed',
       incomeReferenceYear,
@@ -166,9 +176,21 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
     };
   }
 
-  if (grossRevenueMan < 850 || totalIncomeMan < 655.5) {
+  if (grossRevenueMan < 850 || (totalIncomeMan != null && totalIncomeMan < 655.5)) {
     return {
       status: 'met',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  // 収入850万円以上でも所得額を確定できない場合は、
+  // 所得655.5万円未満の可能性が残るため不該当と断定しない。
+  if (totalIncomeMan == null) {
+    return {
+      status: 'unconfirmed',
       incomeReferenceYear,
       grossRevenueMan,
       totalIncomeMan,
