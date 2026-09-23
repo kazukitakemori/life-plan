@@ -798,6 +798,7 @@ function calcOldAgeMonthlyManByRow(
   referenceDate: Date,
   benefitSettings: BenefitSettings,
   ageMonth: { age: number; month: number },
+  applyZaishoku = true,
 ): OldAgePensionBreakdown {
   const bSetting = applyKnownDisabilityDeferralRestriction(
     member,
@@ -1188,6 +1189,7 @@ function calcOldAgeMonthlyManByRow(
   // ─ 在職老齢年金（60歳以上）: 就労収入があれば支給停止を適用 ─
   // 令和4年4月以降、60〜64歳も65歳以上と同じ基準で判定する。
   if (
+    applyZaishoku &&
     ageMonth.age >= 60 &&
     (regularGeneralActive || regularPublicActive || specialActive)
   ) {
@@ -1495,6 +1497,40 @@ export function calcMemberMonthlyPensionBreakdownMan(
   );
 
   return result;
+}
+
+/**
+ * 遺族厚生年金との65歳以降の併給調整に使う、受給権上の老齢年金内訳。
+ * 在職老齢年金による支給停止は適用しないが、受給開始時期、繰上げ・繰下げ、
+ * 在職定時改定など年金額そのものの改定は反映する。
+ */
+export function calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): OldAgePensionBreakdown {
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return createEmptyOldAgePensionBreakdown();
+
+  const benefitSettings =
+    memberState.benefitSettings ?? createDefaultBenefitSettings();
+  return calcOldAgeMonthlyManByRow(
+    member,
+    memberState,
+    incomeEntries,
+    referenceDate,
+    benefitSettings,
+    ageMonth,
+    false,
+  );
 }
 
 /**
