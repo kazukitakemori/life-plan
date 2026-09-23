@@ -509,34 +509,138 @@ function calcUnder50OldAgeAmounts(
 }
 
 // ─── 定期便（50 歳以上）─────────────────────────────────────────────────────────
+type Over50SpecialColumn = 'specialCol2' | 'specialCol3' | 'specialCol4';
+
+function hasOver50SpecialStageAges(form: NenkinTeikibinOver50Form): boolean {
+  return [
+    form.specialStartAgeCol2,
+    form.specialStartAgeCol3,
+    form.specialStartAgeCol4,
+  ].some((age) => age != null);
+}
+
 /**
- * 50 歳以上の定期便から老齢年金内訳を取得する。
- *
- * 受給開始年齢（startAge）が 65 歳未満 → 特別支給の老齢厚生年金を使用。
- * 受給開始年齢（startAge）が 65 歳以上 → 老齢厚生年金（65 歳以降）を使用。
- *
- * 一般厚生と公務員厚生/私学共済はそれぞれ独立した startAge を持つ。
- *
- * - 特別支給（payment）: 65 歳前のみ（specialCol3/4 の fixed 欄）
- * - 経過的加算（transitional）: 65 歳以降のみ（oldAge65 の transitionalAddition 欄）
- * - 職域加算（occupational）: 公務員厚生・私学共済のみ（65 歳以降）
+ * 50歳以上の定期便の65歳以降欄を、そのまま老齢年金の基礎額として取り込む。
+ * 65歳前の「特別支給」は別の段階表として扱い、ここには混ぜない。
  */
-function calcOver50OldAgeAmounts(
+function calcOver50OldAge65Amounts(
   form: NenkinTeikibinOver50Form,
-  generalStartAge: number,
-  publicPrivateStartAge: number,
 ): OldAgePensionBreakdown {
   const result = createEmptyOldAgePensionBreakdown();
 
   result.basic = {
     ...buildBasicDetailFromYen(form.basicPension65 ?? 0),
-    additional: toMonthlyMan(calcAdditionalPensionYenPerYear(form.additionalPremiumMonths)),
+    additional: toMonthlyMan(
+      calcAdditionalPensionYenPerYear(form.additionalPremiumMonths),
+    ),
   };
+  result.generalEmployees = oldAgePairToGeneralDetail(form.general.oldAge65);
+  addPublicServantDetail(
+    result.publicServant,
+    oldAgeTripleToPublicDetail(form.publicServant.oldAge65),
+  );
+  addPublicServantDetail(
+    result.publicServant,
+    oldAgeTripleToPublicDetail(form.privateSchool.oldAge65),
+  );
 
-  // 一般厚生
-  if (generalStartAge >= STANDARD_OLD_AGE_START) {
-    result.generalEmployees = oldAgePairToGeneralDetail(form.general.oldAge65);
-  } else {
+  return result;
+}
+
+function resolveOver50SpecialColumn(
+  form: NenkinTeikibinOver50Form,
+  member: FamilyMember,
+  referenceDate: Date,
+  ageMonth: { age: number; month: number },
+): Over50SpecialColumn | null {
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const birthMonth = resolveMemberBirthMonth(member);
+  const calendarYear = calendarYearFromAgeCalendarMonth(
+    birthYear,
+    birthMonth,
+    ageMonth.age,
+    ageMonth.month,
+  );
+  const currentSerial = pensionCalendarSerial(calendarYear, ageMonth.month);
+
+  // 特別支給は65歳の受給権発生月まで。翌月分からは65歳以降の
+  // 老齢基礎・老齢厚生年金へ切り替わる。
+  if (
+    currentSerial >
+    getAgeReachedSerial(member, referenceDate, STANDARD_OLD_AGE_START)
+  ) {
+    return null;
+  }
+
+  const stages: Array<{
+    column: Over50SpecialColumn;
+    age: number | null;
+    order: number;
+  }> = [
+    { column: 'specialCol2', age: form.specialStartAgeCol2, order: 2 },
+    { column: 'specialCol3', age: form.specialStartAgeCol3, order: 3 },
+    { column: 'specialCol4', age: form.specialStartAgeCol4, order: 4 },
+  ];
+
+  const active = stages
+    .filter(
+      (stage): stage is { column: Over50SpecialColumn; age: number; order: number } =>
+        stage.age != null &&
+        currentSerial >
+          getAgeReachedSerial(member, referenceDate, stage.age),
+    )
+    .sort((a, b) => a.age - b.age || a.order - b.order);
+
+  return active.at(-1)?.column ?? null;
+}
+
+function calcOver50SpecialColumnAmounts(
+  form: NenkinTeikibinOver50Form,
+  column: Over50SpecialColumn,
+  includeGeneral: boolean,
+  includePublicPrivate: boolean,
+): OldAgePensionBreakdown {
+  const result = createEmptyOldAgePensionBreakdown();
+
+  if (includeGeneral) {
+    if (column === 'specialCol3') {
+      result.generalEmployees = pairToGeneralDetail(form.general.specialCol3);
+    } else if (column === 'specialCol4') {
+      result.generalEmployees = pairToGeneralDetail(form.general.specialCol4);
+    }
+  }
+
+  if (includePublicPrivate) {
+    addPublicServantDetail(
+      result.publicServant,
+      tripleToPublicDetail(form.publicServant[column]),
+    );
+    addPublicServantDetail(
+      result.publicServant,
+      tripleToPublicDetail(form.privateSchool[column]),
+    );
+  }
+
+  return result;
+}
+
+/**
+ * 旧保存データには定期便の「○歳〜」3列の年齢が存在しない。
+ * その場合だけ、従来の startAge<65 を特別支給の開始指定として解釈し、
+ * 65歳まで従来計算を維持する。
+ */
+function calcLegacyOver50SpecialAmounts(
+  form: NenkinTeikibinOver50Form,
+  generalActive: boolean,
+  publicPrivateActive: boolean,
+): OldAgePensionBreakdown {
+  const result = createEmptyOldAgePensionBreakdown();
+
+  if (generalActive) {
     result.generalEmployees = pairToGeneralDetail(form.general.specialCol3);
     addGeneralEmployeesDetail(
       result.generalEmployees,
@@ -544,17 +648,7 @@ function calcOver50OldAgeAmounts(
     );
   }
 
-  // 公務員厚生・私学共済
-  if (publicPrivateStartAge >= STANDARD_OLD_AGE_START) {
-    addPublicServantDetail(
-      result.publicServant,
-      oldAgeTripleToPublicDetail(form.publicServant.oldAge65),
-    );
-    addPublicServantDetail(
-      result.publicServant,
-      oldAgeTripleToPublicDetail(form.privateSchool.oldAge65),
-    );
-  } else {
+  if (publicPrivateActive) {
     for (const triple of [
       form.publicServant.specialCol2,
       form.publicServant.specialCol3,
@@ -671,10 +765,8 @@ function calcOldAgeMonthlyManByRow(
         );
         break;
       case 'nenkin-teikibin-over50':
-        autoBase = calcOver50OldAgeAmounts(
+        autoBase = calcOver50OldAge65Amounts(
           migrateTeikibinOver50Form(memberState.teikibinOver50),
-          gSetting.startAge,
-          pSetting.startAge,
         );
         break;
       default: // none（定期便なし）
@@ -882,10 +974,8 @@ export function calcMemberOldAge65BaseBreakdownMan(
         );
         break;
       case 'nenkin-teikibin-over50':
-        autoBase = calcOver50OldAgeAmounts(
+        autoBase = calcOver50OldAge65Amounts(
           migrateTeikibinOver50Form(memberState.teikibinOver50),
-          STANDARD_OLD_AGE_START,
-          STANDARD_OLD_AGE_START,
         );
         break;
       default:
