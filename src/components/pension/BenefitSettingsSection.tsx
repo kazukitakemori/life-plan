@@ -517,6 +517,9 @@ export function BenefitSettingsSection({
             ※ 一般厚生と公務員厚生・私学共済は、老齢厚生年金の繰下げ請求を同時に行うため、開始年月を連動させています。
           </p>
         )}
+        <p className="ui-note">
+          加給年金や2028年4月以降の子の加算には、生計維持関係など個別確認が必要な条件があります。現在の入力だけで収入要件等を確定できない場合がありますので、対象外と確認できている場合は手入力で0円に調整してください。
+        </p>
         <table className="benefit-settings-table">
           <thead>
             <tr>
