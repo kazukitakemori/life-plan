@@ -464,8 +464,17 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
   let savingsResidualCash = 0;
   let savingsInitialized = false;
   const useSavingsProjection = hasSavingsEntries(input.savingsState);
+  // 開始年が1〜2月でも、2月支払には前年12月分が含まれる。
+  // 最初の年だけ前年分を空扱いせず、実際の前年12月受給権を初期値にする。
   let entitlementPreviousYearDecember =
-    createEmptyPensionBreakdown();
+    calcMonthlyPensionEntitlementBreakdownMan(
+      input.familyMembers,
+      input.pensionByMember,
+      input.incomeByMember,
+      input.referenceDate,
+      startYear - 1,
+      12,
+    );
 
   for (let year = startYear; year <= endYear; year++) {
     const incomeBreakdown = createEmptyIncomeBreakdown();
