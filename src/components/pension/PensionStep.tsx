@@ -127,6 +127,9 @@ export function PensionStep({
         member={activeMember}
         memberState={memberState}
         incomeEntries={incomeEntries}
+        familyMembers={members}
+        pensionByMember={pensionByMember}
+        incomeByMember={incomeByMember}
         referenceDate={referenceDate}
       />
     </div>
