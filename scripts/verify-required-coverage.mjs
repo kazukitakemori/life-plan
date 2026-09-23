@@ -1997,6 +1997,30 @@ console.log('OK survivor basic yen by child count');
   console.log('OK survivor livelihood income: low met, sustained high not met, post-death/planned drop stays unconfirmed');
 }
 
+{
+  const separateSpouse = {
+    ...spouse,
+    id: 'separate-spouse',
+    householdPeriod: { mode: 'custom', endAge: 30, endMonth: 12 },
+  };
+  const pension = createDefaultPensionByMember([head, separateSpouse]);
+  pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const outsideLivelihood = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, separateSpouse],
+      incomeByMember: { [head.id]: [headEmployee] },
+      pensionByMember: pension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.equal(outsideLivelihood.income.survivorBasic, 0);
+  assert.equal(outsideLivelihood.income.survivorEmployeesGross, 0);
+  console.log('OK head-death survivor eligibility respects Q1 livelihood period');
+}
+
 const survivorFamilyInput = buildInput({
   familyMembers: [head, spouse, child],
   incomeByMember: {
