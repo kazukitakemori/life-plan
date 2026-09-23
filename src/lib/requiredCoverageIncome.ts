@@ -37,7 +37,7 @@ import {
   calcCoverageSurvivorEmployeesDetail,
   hasConfirmedLongTermSurvivorQualification,
   isEmployeesInsuredAt,
-  isSurvivorEmployeesSpouseIncomeRequirementRemoved,
+  isSurvivorEmployeesSpouseIncomeRequirementRemovedAt,
   resolveSurvivorPremiumRequirementAssessment,
 } from './survivorEmployeesPension';
 import {
@@ -856,21 +856,7 @@ export function accumulateCoverageIncome(
         // 厚生年金加入中と確認できる場合に自動判定する。
         ((deceasedAge?.age ?? 99) < 60 || deceasedEmployeesInsured)));
 
-  const eligibleChildCountStart = listEligibleSurvivorBasicChildren(
-    input.familyMembers,
-    input.referenceDate,
-    start.year,
-    start.month,
-  ).length;
   const reformAtDeath = isOnOrAfterSurvivorReformDate(start);
-  const spouseEmployeesIncomeRequirementRemoved =
-    survivorSpouse != null &&
-    isSurvivorEmployeesSpouseIncomeRequirementRemoved(
-      survivorSpouse,
-      eligibleChildCountStart > 0,
-      input.referenceDate,
-      start,
-    );
   const livelihoodIncomeAssessmentByMember = new Map<
     string,
     SurvivorLivelihoodIncomeAssessment
@@ -895,17 +881,39 @@ export function accumulateCoverageIncome(
   // 生計維持の収入要件は配偶者だけでなく、子・父母・孫・祖父母にもある。
   // 「明らかに基準を満たさない」と確認できる候補だけ受給順位から外す。
   // 不明な場合は、必要保障額を制度上の個別認定で断定しないため候補に残す。
-  const survivorEmployeesFamilyMembers = input.familyMembers.filter((member) => {
-    if (member.role === 'pet' || member.id === deceased?.id) return true;
-    if (
-      survivorSpouse &&
-      member.id === survivorSpouse.id &&
-      spouseEmployeesIncomeRequirementRemoved
-    ) {
-      return true;
+  const survivorEmployeesBaseFamilyMembers = input.familyMembers.filter(
+    (member) => {
+      if (member.role === 'pet' || member.id === deceased?.id) return true;
+      // 配偶者の850万円基準は、2028年改正の有期給付へ移った時点で
+      // 月ごとに撤廃されるため、ここでは一旦残して後で判定する。
+      if (survivorSpouse && member.id === survivorSpouse.id) return true;
+      return getLivelihoodIncomeAssessment(member).status !== 'not_met';
+    },
+  );
+  const resolveSurvivorEmployeesFamilyMembers = (
+    year: number,
+    month: number,
+  ): FamilyMember[] => {
+    if (!survivorSpouse || !spouseIncomeClearlyNotMet) {
+      return survivorEmployeesBaseFamilyMembers;
     }
-    return getLivelihoodIncomeAssessment(member).status !== 'not_met';
-  });
+    const remaining = survivorEmployeesBaseFamilyMembers.filter(
+      (member) => member.id !== deceased?.id && member.role !== 'pet',
+    );
+    const incomeRequirementRemoved =
+      isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+        survivorSpouse,
+        remaining,
+        input.referenceDate,
+        start,
+        { year, month },
+      );
+    return incomeRequirementRemoved
+      ? survivorEmployeesBaseFamilyMembers
+      : survivorEmployeesBaseFamilyMembers.filter(
+          (member) => member.id !== survivorSpouse.id,
+        );
+  };
 
   // 遺族基礎年金の収入要件は2028年改正後も維持される。
   // 改正後は高収入の配偶者を外した上で、要件を満たす子自身が受給できる。
@@ -923,6 +931,12 @@ export function accumulateCoverageIncome(
     }
     return getLivelihoodIncomeAssessment(member).status !== 'not_met';
   });
+  const eligibleChildCountStart = listEligibleSurvivorBasicChildren(
+    survivorBasicFamilyMembers,
+    input.referenceDate,
+    start.year,
+    start.month,
+  ).length;
   const survivorBasicBlockedByIneligibleParent =
     Boolean(survivorSpouse) &&
     spouseIncomeClearlyNotMet &&
@@ -971,7 +985,7 @@ export function accumulateCoverageIncome(
       month,
       subject,
       start,
-      survivorEmployeesFamilyMembers,
+      resolveSurvivorEmployeesFamilyMembers(year, month),
     );
     pensionMonthCache.set(idx, next);
     return next;
@@ -1011,7 +1025,10 @@ export function accumulateCoverageIncome(
         target.month,
       );
       const employeesDetail = calcCoverageSurvivorEmployeesDetail({
-        familyMembers: survivorEmployeesFamilyMembers,
+        familyMembers: resolveSurvivorEmployeesFamilyMembers(
+          target.year,
+          target.month,
+        ),
         subject,
         pensionByMember: input.pensionByMember,
         originalIncomeByMember: input.incomeByMember,
