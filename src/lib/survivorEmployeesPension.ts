@@ -139,15 +139,11 @@ export function hasConfirmedNoUnpaidInRecentYear(
   deathMonth: number,
 ): boolean {
   if (memberState.pastEnrollment === 'none') return false;
-  const form =
-    memberState.pastEnrollment === 'nenkin-teikibin-under50'
-      ? memberState.teikibinUnder50
-      : migrateTeikibinOver50Form(memberState.teikibinOver50);
-
   // 通常のねんきん定期便は「最近の月別状況」を直近13月掲載する。
   // 現行データでは over50 のみ 12行 + recentMonthlyInputRow で13月目を保持する。
   // under50 は12行しか保持していないため、ここでは特例成立を断定しない。
   if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') return false;
+  const form = migrateTeikibinOver50Form(memberState.teikibinOver50);
 
   const rows = [...form.monthlyRows.slice(0, 12), form.recentMonthlyInputRow];
   if (rows.length !== 13) return false;
