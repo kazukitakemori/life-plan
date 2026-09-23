@@ -2063,6 +2063,32 @@ console.log('OK coverage survivor basic from eligible child');
   assert.equal(preReform.income.survivorBasic, 0);
   assert.ok(preReform.income.survivorEmployeesGross > 0);
 
+  // 必要保障額の「万一後は働かない」は仮想シナリオであり、
+  // 死亡時点の生計維持（収入要件）を後から満たした扱いにはしない。
+  const childlessPreReformPension = createDefaultPensionByMember([head, spouse]);
+  childlessPreReformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const childlessPreReformStopWork = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse],
+      incomeByMember: {
+        [head.id]: [headEmployee],
+        [spouse.id]: [highSpouseIncome],
+      },
+      pensionByMember: childlessPreReformPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+      workDesigns: {
+        ...createDefaultWorkDesigns(),
+        head: {
+          [spouse.id]: { mode: 'stop', entries: [] },
+        },
+      },
+    },
+  );
+  assert.equal(childlessPreReformStopWork.income.survivorEmployeesGross, 0);
+
   const reformReferenceDate = new Date(2028, 3, 1);
   const reformPension = createDefaultPensionByMember([head, spouse, child]);
   reformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
