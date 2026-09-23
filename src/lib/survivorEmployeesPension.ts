@@ -36,7 +36,7 @@ import {
 } from './pensionEnrollmentEstimate';
 import {
   calcMemberEmployeesProportionalYenPerYear,
-  calcMemberMonthlyPensionBreakdownMan,
+  calcMemberMonthlyOldAgePensionBeforeZaishokuMan,
   getTotalEmployeesMonths,
 } from './pensionIncome';
 import { toMonthlyMan } from './pensionOldAge';
@@ -1913,7 +1913,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     const recipientState =
       input.pensionByMember[recipient.member.id] ??
       createDefaultPensionMemberState();
-    const ownBreakdown = calcMemberMonthlyPensionBreakdownMan(
+    const ownOldAge = calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
       recipient.member,
       recipientState,
       input.coverageIncomeByMember[recipient.member.id] ?? [],
@@ -1923,7 +1923,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     );
     basicMan = applySurvivorEmployeesOwnOldAgeOffsetMan(
       basicMan,
-      ownOldAgeEmployeesWithoutDependentMan(ownBreakdown.oldAge),
+      ownOldAgeEmployeesWithoutDependentMan(ownOldAge),
       recipientAge.age,
     );
   } else if (
@@ -1967,7 +1967,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
 
       const currentState =
         input.pensionByMember[current.id] ?? createDefaultPensionMemberState();
-      const ownBreakdown = calcMemberMonthlyPensionBreakdownMan(
+      const ownOldAge = calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
         current,
         currentState,
         input.coverageIncomeByMember[current.id] ?? [],
@@ -1979,7 +1979,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
         sum +
         applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(
           shareMan,
-          ownOldAgeEmployeesWithoutDependentMan(ownBreakdown.oldAge),
+          ownOldAgeEmployeesWithoutDependentMan(ownOldAge),
           currentAge.age,
         )
       );
