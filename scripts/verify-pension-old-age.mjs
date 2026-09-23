@@ -154,6 +154,7 @@ function pensionMember({ birthDay = 2, age = 66 } = {}) {
     birthDay,
     expectedLifespan: 90,
     disability: 'none',
+    pensionChildResidence: 'japan',
     hobbies: [],
     householdPeriod: { mode: 'lifetime', endAge: 90, endMonth: 12 },
   };
@@ -507,6 +508,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     birthDay: 2,
     expectedLifespan: 90,
     disability: 'none',
+    pensionChildResidence: 'japan',
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -552,6 +554,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     birthDay: 2,
     expectedLifespan: 90,
     disability: 'none',
+    pensionChildResidence: 'japan',
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -608,6 +611,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     birthDay: 2,
     expectedLifespan: 90,
     disability: 'none',
+    pensionChildResidence: 'japan',
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
