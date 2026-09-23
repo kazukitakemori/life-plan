@@ -992,6 +992,7 @@ export function countQ7EmployeesMonthsAfterDate(
   referenceDate: Date,
   afterYear: number,
   afterMonth: number,
+  maxAgeExclusive = EMPLOYEES_PENSION_MAX_INSURED_AGE,
 ): { general: number; publicServant: number } {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   let general = 0;
@@ -1007,7 +1008,7 @@ export function countQ7EmployeesMonthsAfterDate(
 
       for (
         let age = period.startAge;
-        age <= period.endAge;
+        age <= period.endAge && age < maxAgeExclusive;
         age++
       ) {
         const mStart = age === period.startAge ? period.startMonth : 1;
