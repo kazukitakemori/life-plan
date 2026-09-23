@@ -111,7 +111,7 @@ export function PensionStep({
 
       {hasCurrentDisabilityPension ? (
         <p className="purpose-input-note" role="note">
-          Q1で障害年金の受給中が登録されています。現在の障害年金額は自動計算対象外のため、現時点ではQ8・キャッシュフローへ金額を自動反映していません。
+          Q1で障害年金の受給権が登録されています。障害年金額は自動計算対象外のため、現時点ではQ8・キャッシュフローへ金額を自動反映していません。
         </p>
       ) : null}
 
