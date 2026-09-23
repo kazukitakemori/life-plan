@@ -221,6 +221,32 @@ function PensionBenefitTooltip({
   );
 }
 
+function PensionMobileAgeTick({
+  x = 0,
+  y = 0,
+  payload,
+}: {
+  x?: string | number;
+  y?: string | number;
+  payload?: { value: number };
+}) {
+  if (!payload) return null;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={18}
+        textAnchor="middle"
+        fill="#64748b"
+        fontSize={11}
+      >
+        {payload.value}
+      </text>
+    </g>
+  );
+}
+
 export function PensionBenefitEstimatePanel({
   member,
   memberState,
@@ -360,15 +386,19 @@ export function PensionBenefitEstimatePanel({
               scale="linear"
               domain={[plotMinHeadAge, plotMaxHeadAge]}
               allowDataOverflow
-              padding={{ left: 0, right: 0 }}
+              padding={isMobile ? { left: 8, right: 8 } : { left: 0, right: 0 }}
               ticks={tickAges}
               interval={0}
               stroke="#94a3b8"
               fontSize={11}
               height={xAxisHeight}
-              tick={(props) => (
-                <DualAgeAxisTick {...props} points={visiblePoints} />
-              )}
+              tick={(props) =>
+                isMobile ? (
+                  <PensionMobileAgeTick {...props} />
+                ) : (
+                  <DualAgeAxisTick {...props} points={visiblePoints} />
+                )
+              }
             />
             <YAxis
               yAxisId="main"
