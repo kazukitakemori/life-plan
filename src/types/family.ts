@@ -4,6 +4,13 @@ export type Gender = 'male' | 'female';
 
 export type DisabilityStatus = 'none' | 'has';
 
+export type DisabilityGrade =
+  | 'none'
+  | 'grade1'
+  | 'grade2'
+  | 'grade3'
+  | 'other';
+
 export type DisabilityPensionStatus =
   | 'none'
   | 'basic_grade1'
@@ -50,6 +57,12 @@ export interface FamilyMember {
   expectedLifespan: number;
   disability: DisabilityStatus;
   /**
+   * 現在の障害等級・状態。
+   * 子の年金加算等では「1級・2級の障害状態」を判定するために使用する。
+   * 未入力・旧データはnoneとして扱い、障害ありだけから等級を推測しない。
+   */
+  disabilityGrade?: DisabilityGrade;
+  /**
    * 現在の障害年金受給状況。
    * 未入力・旧データはnoneとして扱い、障害があるだけで受給権を推測しない。
    */
@@ -93,4 +106,12 @@ export const DISABILITY_PENSION_LABELS: Record<DisabilityPensionStatus, string> 
   employees_grade1: '障害厚生年金 1級',
   employees_grade2: '障害厚生年金 2級',
   employees_grade3: '障害厚生年金 3級',
+};
+
+export const DISABILITY_GRADE_LABELS: Record<DisabilityGrade, string> = {
+  none: '等級なし・不明',
+  grade1: '1級',
+  grade2: '2級',
+  grade3: '3級',
+  other: 'その他・等級外',
 };
