@@ -862,6 +862,44 @@ function calcOldAgeMonthlyManByRow(
       : null;
   const hasSpecialStageAges =
     over50Form != null && hasOver50SpecialStageAges(over50Form);
+  const generalSpecialStartAge =
+    over50Form && hasSpecialStageAges
+      ? resolveOver50GeneralSpecialStartAge(over50Form)
+      : null;
+  const publicSpecialStartAge =
+    over50Form && hasSpecialStageAges
+      ? resolveOver50PublicPrivateSpecialStartAge(over50Form)
+      : null;
+
+  const generalStartMonths =
+    gSetting.startAge * 12 + (gSetting.startMonth ?? 0);
+  const publicStartMonths =
+    pSetting.startAge * 12 + (pSetting.startMonth ?? 0);
+  const generalSpecialStartMonths =
+    generalSpecialStartAge == null ? null : generalSpecialStartAge * 12;
+  const publicSpecialStartMonths =
+    publicSpecialStartAge == null ? null : publicSpecialStartAge * 12;
+
+  // 特別支給の本来開始前に請求した場合だけ「老齢厚生年金の繰上げ」。
+  // 本来開始後〜65歳の設定は、厚生年金を繰上げ扱いせず特別支給を継続する。
+  const generalSpecialEarlyClaim =
+    gSetting.amountMode === 'auto' &&
+    generalSpecialStartMonths != null &&
+    generalStartMonths < generalSpecialStartMonths;
+  const publicSpecialEarlyClaim =
+    pSetting.amountMode === 'auto' &&
+    publicSpecialStartMonths != null &&
+    publicStartMonths < publicSpecialStartMonths;
+  const generalInvalidSpecialStartSetting =
+    gSetting.amountMode === 'auto' &&
+    generalSpecialStartMonths != null &&
+    generalStartMonths >= generalSpecialStartMonths &&
+    generalStartMonths < STANDARD_OLD_AGE_START * 12;
+  const publicInvalidSpecialStartSetting =
+    pSetting.amountMode === 'auto' &&
+    publicSpecialStartMonths != null &&
+    publicStartMonths >= publicSpecialStartMonths &&
+    publicStartMonths < STANDARD_OLD_AGE_START * 12;
 
   const memberBirthYearForCurrentMonth = calcBirthYear(
     member.age,
@@ -914,16 +952,13 @@ function calcOldAgeMonthlyManByRow(
         ageMonth,
       );
       if (specialColumn) {
-        // 段階別年齢を入力した新データでは、受給設定が65歳以上なら
-        // 定期便どおり特別支給を自動反映する。65歳未満を明示した場合は
-        // 通常の繰上げ設定を優先し、二重計上しない。
+        // 本来の特別支給開始前に老齢厚生年金を繰り上げた場合だけ、
+        // 定期便の特別支給を置き換える。本来開始後は特別支給をそのまま使う。
         specialBase = calcOver50SpecialColumnAmounts(
           over50Form,
           specialColumn,
-          gSetting.amountMode === 'auto' &&
-            gSetting.startAge >= STANDARD_OLD_AGE_START,
-          pSetting.amountMode === 'auto' &&
-            pSetting.startAge >= STANDARD_OLD_AGE_START,
+          gSetting.amountMode === 'auto' && !generalSpecialEarlyClaim,
+          pSetting.amountMode === 'auto' && !publicSpecialEarlyClaim,
         );
       }
     } else {
@@ -936,9 +971,13 @@ function calcOldAgeMonthlyManByRow(
   }
 
   const regularGeneralActive =
-    generalActive && !legacyGeneralSpecialActive;
+    generalActive &&
+    !legacyGeneralSpecialActive &&
+    !(generalInvalidSpecialStartSetting && inSpecialPaymentPeriod);
   const regularPublicActive =
-    publicActive && !legacyPublicSpecialActive;
+    publicActive &&
+    !legacyPublicSpecialActive &&
+    !(publicInvalidSpecialStartSetting && inSpecialPaymentPeriod);
   const specialActive = sumOldAgePension(specialBase) !== 0;
 
   if (
@@ -1051,15 +1090,30 @@ function calcOldAgeMonthlyManByRow(
       gSetting.amountMode === 'manual'
         ? buildGeneralDetailFromYen(gSetting.manualAmountPerYear ?? 0)
         : autoBase.generalEmployees;
-    const gStartMonths = gSetting.startAge * 12 + (gSetting.startMonth ?? 0);
-    if (gSetting.amountMode !== 'manual' && gStartMonths !== STANDARD_OLD_AGE_START * 12) {
-      general = applyGeneralDetailAdjustment(
-        general,
-        gSetting.startAge,
-        gSetting.startMonth ?? 0,
-        earlyReductionPerMonth,
-        maxDeferralAge,
-      );
+    const gEffectiveStartMonths = generalInvalidSpecialStartSetting
+      ? STANDARD_OLD_AGE_START * 12
+      : generalStartMonths;
+    if (
+      gSetting.amountMode !== 'manual' &&
+      gEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
+    ) {
+      general =
+        generalSpecialEarlyClaim && generalSpecialStartAge != null
+          ? applyGeneralDetailEarlyClaimToOriginalStart(
+              general,
+              gSetting.startAge,
+              gSetting.startMonth ?? 0,
+              generalSpecialStartAge,
+              0,
+              earlyReductionPerMonth,
+            )
+          : applyGeneralDetailAdjustment(
+              general,
+              gSetting.startAge,
+              gSetting.startMonth ?? 0,
+              earlyReductionPerMonth,
+              maxDeferralAge,
+            );
       applyDeferralAveragePaymentRate(
         general,
         autoBase.generalEmployees.basic,
@@ -1075,15 +1129,30 @@ function calcOldAgeMonthlyManByRow(
       pSetting.amountMode === 'manual'
         ? buildPublicServantDetailFromYen(pSetting.manualAmountPerYear ?? 0)
         : autoBase.publicServant;
-    const pStartMonths = pSetting.startAge * 12 + (pSetting.startMonth ?? 0);
-    if (pSetting.amountMode !== 'manual' && pStartMonths !== STANDARD_OLD_AGE_START * 12) {
-      pub = applyPublicDetailAdjustment(
-        pub,
-        pSetting.startAge,
-        pSetting.startMonth ?? 0,
-        earlyReductionPerMonth,
-        maxDeferralAge,
-      );
+    const pEffectiveStartMonths = publicInvalidSpecialStartSetting
+      ? STANDARD_OLD_AGE_START * 12
+      : publicStartMonths;
+    if (
+      pSetting.amountMode !== 'manual' &&
+      pEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
+    ) {
+      pub =
+        publicSpecialEarlyClaim && publicSpecialStartAge != null
+          ? applyPublicDetailEarlyClaimToOriginalStart(
+              pub,
+              pSetting.startAge,
+              pSetting.startMonth ?? 0,
+              publicSpecialStartAge,
+              0,
+              earlyReductionPerMonth,
+            )
+          : applyPublicDetailAdjustment(
+              pub,
+              pSetting.startAge,
+              pSetting.startMonth ?? 0,
+              earlyReductionPerMonth,
+              maxDeferralAge,
+            );
       applyDeferralAveragePaymentRate(
         pub,
         autoBase.publicServant.basic,
