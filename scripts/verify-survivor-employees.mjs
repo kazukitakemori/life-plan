@@ -518,7 +518,10 @@ const pension = createDefaultPensionMemberState();
     requirement: 'short_term',
     deceasedEmployeesMonths: 200,
   });
-  assert.equal(afterChild, MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR);
+  assert.equal(
+    Math.round(afterChild),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.692),
+  );
   console.log('OK middle-aged widow addition');
 }
 
@@ -622,7 +625,7 @@ const pension = createDefaultPensionMemberState();
   });
   assert.equal(
     Math.round(reformAfterChild),
-    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.962),
+    Math.round(MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR * 0.692),
   );
 
   const phase2030 = calcMiddleAgedWidowAddYenPerYear({
@@ -683,7 +686,7 @@ const pension = createDefaultPensionMemberState();
       'head',
       referenceDate,
       reformDeath,
-      { year: 2033, month: 3 },
+      { year: 2033, month: 4 },
     ),
     null,
   );
@@ -692,13 +695,13 @@ const pension = createDefaultPensionMemberState();
     'head',
     referenceDate,
     reformDeath,
-    { year: 2033, month: 4 },
+    { year: 2033, month: 5 },
   );
   assert.equal(continuationTarget?.member.id, wife38.id);
   assert.deepEqual(continuationTarget?.finiteBenefitStart, reformDeath);
   assert.deepEqual(continuationTarget?.finiteBenefitEnd, {
     year: 2033,
-    month: 3,
+    month: 4,
   });
   assert.equal(continuationTarget?.assessmentEndAge, 65);
   assert.equal(continuationTarget?.reason, 'income_or_disability');
@@ -721,7 +724,7 @@ const pension = createDefaultPensionMemberState();
     'spouse',
     referenceDate,
     reformDeath,
-    { year: 2033, month: 4 },
+    { year: 2033, month: 5 },
   );
   assert.equal(maleContinuationTarget?.member.id, husband40.id);
 
@@ -1012,7 +1015,7 @@ const pension = createDefaultPensionMemberState();
 
   const domesticState = createDefaultPensionMemberState();
   domesticState.benefitSettings.survivorPremiumRequirement = 'met';
-  const domestic = calcCoverageSurvivorEmployeesDetail({
+  const deathMonth = calcCoverageSurvivorEmployeesDetail({
     familyMembers: [head, wife38, domesticChild],
     subject: 'head',
     pensionByMember: { [head.id]: domesticState },
@@ -1022,6 +1025,20 @@ const pension = createDefaultPensionMemberState();
     death: reformDeath,
     year: 2028,
     month: 4,
+  });
+  assert.equal(deathMonth.detail.basic, 0);
+  assert.equal(deathMonth.detail.children, 0);
+
+  const domestic = calcCoverageSurvivorEmployeesDetail({
+    familyMembers: [head, wife38, domesticChild],
+    subject: 'head',
+    pensionByMember: { [head.id]: domesticState },
+    originalIncomeByMember: { [head.id]: [headIncome] },
+    coverageIncomeByMember: {},
+    referenceDate,
+    death: reformDeath,
+    year: 2028,
+    month: 5,
   });
   assert.ok(domestic.detail.children > 0);
 
@@ -1034,10 +1051,10 @@ const pension = createDefaultPensionMemberState();
     referenceDate,
     death: reformDeath,
     year: 2028,
-    month: 4,
+    month: 5,
   });
   assert.equal(unknown.detail.children, 0);
-  console.log('OK 2028 survivor employees child addition requires domestic/exception residence');
+  console.log('OK survivor employees starts after death month and child addition requires domestic/exception residence');
 }
 
 assert.equal(CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE, 30);
