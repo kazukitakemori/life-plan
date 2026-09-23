@@ -333,6 +333,52 @@ function isOnOrAfterAge(
   return ageMonth.age > minAge || ageMonth.age === minAge;
 }
 
+function isOnOrAfterSurvivorReform(death: CalendarYearMonth): boolean {
+  return (
+    death.year > 2028 ||
+    (death.year === 2028 && death.month >= 4)
+  );
+}
+
+function survivorReformWifeFiniteMaxAge(death: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(death)) return CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
+  // 2028年度は40歳未満から開始し、その後5年ごとに5歳ずつ引上げ。
+  const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
+  if (fiscalYear < 2033) return 40;
+  if (fiscalYear < 2038) return 45;
+  if (fiscalYear < 2043) return 50;
+  if (fiscalYear < 2048) return 55;
+  return 60;
+}
+
+function isSpouseFiniteSurvivorEmployeesBenefit(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+  receivesSurvivorBasicNow: boolean,
+  survivorBasicLoss: CalendarYearMonth | null,
+): boolean {
+  if (receivesSurvivorBasicNow) return false;
+  const start =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+  const startAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    start.year,
+    start.month,
+  );
+  if (!startAge) return false;
+
+  if (isOnOrAfterSurvivorReform(death)) {
+    if (spouse.gender === 'male') return startAge.age < 60;
+    return startAge.age < survivorReformWifeFiniteMaxAge(death);
+  }
+  return spouse.gender === 'female' &&
+    startAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
+}
+
 export function isSurvivingSpouseEligibleForEmployees(
   spouse: FamilyMember,
   hadEligibleChildrenAtDeath: boolean,
@@ -364,7 +410,7 @@ export function isSurvivingSpouseEligibleForEmployees(
     );
     if (
       fiveYearStartAge &&
-      fiveYearStartAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE
+      fiveYearStartAge.age < survivorReformWifeFiniteMaxAge(death)
     ) {
       const end = fiveYearEnd(fiveYearStart);
       return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
@@ -372,7 +418,12 @@ export function isSurvivingSpouseEligibleForEmployees(
     return true;
   }
 
-  if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
+  if (isOnOrAfterSurvivorReform(death) && deathAge.age < 60) {
+    const end = fiveYearEnd(fiveYearStart);
+    return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
+  }
+
+    if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
   if (receivesSurvivorBasicNow && isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH)) {
     return true;
   }
@@ -630,6 +681,50 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   );
 
   let basicMan = toMonthlyMan(baseYen);
+  // 2028年4月以降の5年間の有期給付には、死亡者の老齢厚生年金
+  // 報酬比例部分の1/4相当を上乗せし、合計4/4相当とする。
+  if (recipient.kind === 'spouse' && isOnOrAfterSurvivorReform(input.death)) {
+    const survivorRole = input.subject === 'head' ? 'spouse' : 'head';
+    const spouse = remaining.find((member) => member.role === survivorRole);
+    const receivesSurvivorBasicNow =
+      childrenNow.length > 0 && Boolean(spouse);
+    let survivorBasicLoss: CalendarYearMonth | null = null;
+    if (childrenAtDeath.length > 0) {
+      const start = calendarIndex(input.death.year, input.death.month);
+      for (let offset = 1; offset <= 25 * 12; offset++) {
+        const serial = start + offset;
+        const year = Math.floor((serial - 1) / 12);
+        const month = ((serial - 1) % 12) + 1;
+        if (
+          listEligibleSurvivorBasicChildren(
+            remaining,
+            input.referenceDate,
+            year,
+            month,
+          ).length === 0
+        ) {
+          survivorBasicLoss = { year, month };
+          break;
+        }
+      }
+    }
+    if (
+      isSpouseFiniteSurvivorEmployeesBenefit(
+        recipient.member,
+        childrenAtDeath.length > 0,
+        input.referenceDate,
+        input.death,
+        now,
+        receivesSurvivorBasicNow,
+        survivorBasicLoss,
+      )
+    ) {
+      basicMan += toMonthlyMan(
+        baseYen / SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE * 0.25,
+      );
+    }
+  }
+
   const recipientState =
     input.pensionByMember[recipient.member.id] ?? createDefaultPensionMemberState();
   const recipientAge = getMemberAgeMonth(
