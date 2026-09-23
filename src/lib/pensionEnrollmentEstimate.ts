@@ -1,5 +1,10 @@
 import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
-import { calcBirthYear, calcYearAtAge, isAgeCalendarMonthInRange } from './birthDate';
+import {
+  calcBirthYear,
+  calcYearAtAge,
+  calendarYearFromAgeCalendarMonth,
+  isAgeCalendarMonthInRange,
+} from './birthDate';
 import {
   careerAnnualIncomeToMonthlyMan,
   getCareerStartAnnualYen,
@@ -937,7 +942,7 @@ export function estimatePost65EmployeesPensionIncreaseMan(
 
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const birthMonth = member.birthMonth ?? 1;
-  const currentYear = calcYearAtAge(
+  const currentYear = calendarYearFromAgeCalendarMonth(
     birthYear,
     birthMonth,
     currentAge,
@@ -949,14 +954,16 @@ export function estimatePost65EmployeesPensionIncreaseMan(
   // 70歳以降は70歳到達月までを最終的に反映済みとして扱う。
   let reflectedThroughYear: number;
   let reflectedThroughMonth: number;
-  if (currentAge >= EMPLOYEES_PENSION_MAX_INSURED_AGE + 1) {
-    reflectedThroughYear = calcYearAtAge(
-      birthYear,
-      birthMonth,
-      EMPLOYEES_PENSION_MAX_INSURED_AGE + 1,
-      1,
-    );
-    reflectedThroughMonth = birthMonth;
+  if (currentAge >= EMPLOYEES_PENSION_MAX_INSURED_AGE) {
+    // 70歳到達月の前月までを被保険者期間として反映。
+    const age70Year = birthYear + EMPLOYEES_PENSION_MAX_INSURED_AGE;
+    if (birthMonth === 1) {
+      reflectedThroughYear = age70Year - 1;
+      reflectedThroughMonth = 12;
+    } else {
+      reflectedThroughYear = age70Year;
+      reflectedThroughMonth = birthMonth - 1;
+    }
   } else if (currentMonth >= 10) {
     reflectedThroughYear = currentYear;
     reflectedThroughMonth = 8;
@@ -976,7 +983,12 @@ export function estimatePost65EmployeesPensionIncreaseMan(
     age++
   ) {
     for (let month = 1; month <= 12; month++) {
-      const calendarYear = calcYearAtAge(birthYear, birthMonth, age, month);
+      const calendarYear = calendarYearFromAgeCalendarMonth(
+        birthYear,
+        birthMonth,
+        age,
+        month,
+      );
       const serial = calendarYear * 12 + (month - 1);
       if (serial > reflectedThroughSerial) continue;
 
