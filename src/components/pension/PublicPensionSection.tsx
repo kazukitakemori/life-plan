@@ -142,7 +142,7 @@ export function PublicPensionSection({
               <details className="pension-assumption-details">
                 <summary>概算の前提を見る</summary>
                 <p>
-                  現在の推定では、大卒22歳4月就職を想定し、20歳4月〜22歳3月の24か月は大学在学中の国民年金猶予（保険料未納）として老齢基礎年金の算定から除外します。
+                  現在の推定では、大卒22歳4月就職を想定し、20歳4月〜22歳3月の24か月は学生納付特例等を利用し、追納していない期間として老齢基礎年金額の算定から除外します。
                 </p>
               </details>
             </div>
