@@ -27,7 +27,9 @@ import {
 import {
   applyBasicDetailAdjustment,
   applyGeneralDetailAdjustment,
+  applyGeneralDetailEarlyClaimToOriginalStart,
   applyPublicDetailAdjustment,
+  applyPublicDetailEarlyClaimToOriginalStart,
   canDeferOldAgeWithDisabilityPension,
   buildBasicDetailFromYen,
   buildGeneralDetailFromYen,
@@ -536,6 +538,86 @@ function hasOver50SpecialStageAges(form: NenkinTeikibinOver50Form): boolean {
     form.specialStartAgeCol3,
     form.specialStartAgeCol4,
   ].some((age) => age != null);
+}
+
+function hasPairAmount(pair: TeikibinOver50AmountPair): boolean {
+  return (pair.proportional ?? 0) > 0 || (pair.fixed ?? 0) > 0;
+}
+
+function hasTripleAmount(triple: TeikibinOver50AmountTriple): boolean {
+  return (
+    (triple.proportional ?? 0) > 0 ||
+    (triple.fixed ?? 0) > 0 ||
+    (triple.transitionalOccupational ?? 0) > 0
+  );
+}
+
+function resolveOver50GeneralSpecialStartAge(
+  form: NenkinTeikibinOver50Form,
+): number | null {
+  const candidates = [
+    {
+      age: form.specialStartAgeCol3,
+      active: hasPairAmount(form.general.specialCol3),
+    },
+    {
+      age: form.specialStartAgeCol4,
+      active: hasPairAmount(form.general.specialCol4),
+    },
+  ]
+    .filter(
+      (row): row is { age: number; active: true } =>
+        row.active && row.age != null,
+    )
+    .map((row) => row.age);
+
+  return candidates.length > 0 ? Math.min(...candidates) : null;
+}
+
+function resolveOver50PublicPrivateSpecialStartAge(
+  form: NenkinTeikibinOver50Form,
+): number | null {
+  const columns: Array<{
+    age: number | null;
+    publicServant: TeikibinOver50AmountTriple;
+    privateSchool: TeikibinOver50AmountTriple;
+  }> = [
+    {
+      age: form.specialStartAgeCol2,
+      publicServant: form.publicServant.specialCol2,
+      privateSchool: form.privateSchool.specialCol2,
+    },
+    {
+      age: form.specialStartAgeCol3,
+      publicServant: form.publicServant.specialCol3,
+      privateSchool: form.privateSchool.specialCol3,
+    },
+    {
+      age: form.specialStartAgeCol4,
+      publicServant: form.publicServant.specialCol4,
+      privateSchool: form.privateSchool.specialCol4,
+    },
+  ];
+  const candidates = columns
+    .filter(
+      (row): row is typeof row & { age: number } =>
+        row.age != null &&
+        (hasTripleAmount(row.publicServant) ||
+          hasTripleAmount(row.privateSchool)),
+    )
+    .map((row) => row.age);
+
+  return candidates.length > 0 ? Math.min(...candidates) : null;
+}
+
+function resolveOver50AnySpecialStartAge(
+  form: NenkinTeikibinOver50Form,
+): number | null {
+  const candidates = [
+    resolveOver50GeneralSpecialStartAge(form),
+    resolveOver50PublicPrivateSpecialStartAge(form),
+  ].filter((age): age is number => age != null);
+  return candidates.length > 0 ? Math.min(...candidates) : null;
 }
 
 /**
