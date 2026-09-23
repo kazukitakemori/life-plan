@@ -1,4 +1,4 @@
-import { getMemberAgeMonth } from './birthDate';
+import { calcBirthYear, getMemberAgeMonth } from './birthDate';
 import { calcHouseholdMonthlyChildAllowanceMan } from './childAllowance';
 import {
   calcMonthlyEarnedIncomeBreakdown,
@@ -30,7 +30,12 @@ import {
   calcSurvivorBasicYenPerYear,
   listEligibleSurvivorBasicChildren,
 } from './survivorBasicPension';
-import { calcCoverageSurvivorEmployeesDetail } from './survivorEmployeesPension';
+import {
+  calcCoverageSurvivorEmployeesDetail,
+  hasConfirmedLongTermSurvivorQualification,
+  isEmployeesInsuredAt,
+  resolveSurvivorPremiumRequirementAssessment,
+} from './survivorEmployeesPension';
 import {
   createEmptyPensionBreakdown,
   createEmptySurvivorEmployeesDetail,
@@ -635,16 +640,68 @@ export function accumulateCoverageIncome(
   const spouseReceives = input.familyMembers.some(
     (member) => member.role === survivorRole,
   );
+  const deceased = input.familyMembers.find((member) => member.role === subject);
+  const deceasedState = deceased
+    ? input.pensionByMember[deceased.id] ?? createDefaultPensionMemberState()
+    : null;
+  const deceasedEntries = deceased
+    ? input.incomeByMember[deceased.id] ?? []
+    : [];
+  const deceasedAge = deceased
+    ? getMemberAgeMonth(
+        deceased,
+        input.referenceDate,
+        start.year,
+        start.month,
+      )
+    : null;
+  const deceasedEmployeesInsured =
+    deceased && deceasedAge
+      ? isEmployeesInsuredAt(
+          deceasedEntries,
+          deceasedAge.age,
+          deceasedAge.month,
+          calcBirthYear(
+            deceased.age,
+            deceased.birthMonth,
+            input.referenceDate,
+          ),
+          deceased.birthMonth ?? 1,
+        )
+      : false;
+  const survivorPremiumAssessment =
+    deceased && deceasedState
+      ? resolveSurvivorPremiumRequirementAssessment(
+          deceased,
+          deceasedState,
+          input.referenceDate,
+          start,
+        )
+      : null;
+  const survivorBasicDeathRequirementMet =
+    deceasedState != null &&
+    (hasConfirmedLongTermSurvivorQualification(deceasedState) ||
+      ((deceasedAge?.age ?? 99) < 65 &&
+        survivorPremiumAssessment?.status === 'met' &&
+        // 20〜59歳は国民年金の強制加入年齢。60〜64歳は、少なくとも
+        // 厚生年金加入中と確認できる場合に自動判定する。
+        ((deceasedAge?.age ?? 99) < 60 || deceasedEmployeesInsured)));
+
   const eligibleChildCountStart = listEligibleSurvivorBasicChildren(
     input.familyMembers,
     input.referenceDate,
     start.year,
     start.month,
   ).length;
-  const survivorBasicYenPerYearStart = calcSurvivorBasicYenPerYear(
-    eligibleChildCountStart,
-    spouseReceives,
-  );
+  const survivorBasicYenPerYearStart = survivorBasicDeathRequirementMet
+    ? calcSurvivorBasicYenPerYear(
+        eligibleChildCountStart,
+        spouseReceives,
+        undefined,
+        start.year,
+        start.month,
+      )
+    : 0;
   const byMemberAmounts: Record<string, number> = {};
   const byYearEarned: Record<number, number> = {};
   const byYearSurvivorBasic: Record<number, number> = {};
@@ -706,13 +763,16 @@ export function accumulateCoverageIncome(
     const survivorBasicEntitlement = (calendarIdx: number): PensionBreakdown => {
       const target = indexToYearMonth(calendarIdx);
       const entitlement = createEmptyPensionBreakdown();
-      entitlement.survivor.basic.basic = calcCoverageSurvivorBasicMonthlyMan(
-        input.familyMembers,
-        subject,
-        input.referenceDate,
-        target.year,
-        target.month,
-      );
+      entitlement.survivor.basic.basic =
+        survivorBasicDeathRequirementMet
+          ? calcCoverageSurvivorBasicMonthlyMan(
+              input.familyMembers,
+              subject,
+              input.referenceDate,
+              target.year,
+              target.month,
+            )
+          : 0;
       return entitlement;
     };
     const survivorBasicPayment = calcPensionPaymentFromEntitlements(
