@@ -353,7 +353,6 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
   hadEligibleChildrenAtDeath: boolean,
   referenceDate: Date,
   death: CalendarYearMonth,
-  now: CalendarYearMonth,
   receivesSurvivorBasicNow: boolean,
   survivorBasicLoss: CalendarYearMonth | null,
 ): boolean {
@@ -723,7 +722,6 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
         childrenAtDeath.length > 0,
         input.referenceDate,
         input.death,
-        now,
         receivesSurvivorBasicNow,
         survivorBasicLoss,
       )
