@@ -760,13 +760,6 @@ export function hasQualifyingSurvivorContinuationDisabilityPension(
   }
 }
 
-function isOnOrAfterAge(
-  ageMonth: { age: number; month: number },
-  minAge: number,
-): boolean {
-  return ageMonth.age > minAge || ageMonth.age === minAge;
-}
-
 function isOnOrAfterSurvivorReform(death: CalendarYearMonth): boolean {
   return (
     death.year > 2028 ||
