@@ -19,6 +19,8 @@ import {
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
   isSurvivingSpouseEligibleForEmployees,
+  isSurvivingSpouseInContinuationAssessmentWindow,
+  resolveSurvivorContinuationAnnualPensionYen,
   resolveSurvivorContinuationIncomeBasis,
   resolveSurvivorContinuationIncomeReferenceYear,
   resolveSurvivorEmployeesDeathRequirement,
@@ -375,6 +377,177 @@ const pension = createDefaultPensionMemberState();
   assert.equal(unavailableBasis.totalIncomeYen, null);
 
   console.log('OK 2028 continuation: prior-income reference is separated from resident-tax proxy');
+}
+
+{
+  const reformDeath = { year: 2028, month: 4 };
+
+  // 子なし・60歳未満の有期給付は60か月で終了し、その翌月から継続給付の判定期間に入る。
+  assert.equal(
+    isSurvivingSpouseInContinuationAssessmentWindow(
+      wife28,
+      false,
+      referenceDate,
+      reformDeath,
+      { year: 2033, month: 3 },
+    ),
+    false,
+  );
+  assert.equal(
+    isSurvivingSpouseInContinuationAssessmentWindow(
+      wife28,
+      false,
+      referenceDate,
+      reformDeath,
+      { year: 2033, month: 4 },
+    ),
+    true,
+  );
+
+  // 改正前の死亡は新しい継続給付の対象として扱わない。
+  assert.equal(
+    isSurvivingSpouseInContinuationAssessmentWindow(
+      wife28,
+      false,
+      referenceDate,
+      death,
+      { year: 2033, month: 4 },
+    ),
+    false,
+  );
+
+  // 女性の段階移行は、子の遺族基礎年金を失う時点で判定する。
+  // このケースは有期対象年齢を超えているため5年打切りにせず、従来型の期間を維持する。
+  const transitionalChildLoss = { year: 2033, month: 4 };
+  assert.equal(
+    isSurvivingSpouseInContinuationAssessmentWindow(
+      wife45,
+      true,
+      referenceDate,
+      reformDeath,
+      { year: 2039, month: 4 },
+      transitionalChildLoss,
+    ),
+    false,
+  );
+  assert.equal(
+    isSurvivingSpouseEligibleForEmployees(
+      wife45,
+      true,
+      referenceDate,
+      reformDeath,
+      { year: 2039, month: 4 },
+      false,
+      transitionalChildLoss,
+    ),
+    true,
+  );
+
+  // 子の年金が60歳以後に失権する配偶者は、新たな5年有期へ切り替えない。
+  const lossAfterSixty = { year: 2046, month: 7 };
+  assert.equal(
+    isSurvivingSpouseInContinuationAssessmentWindow(
+      husband40,
+      true,
+      referenceDate,
+      reformDeath,
+      { year: 2052, month: 7 },
+      lossAfterSixty,
+    ),
+    false,
+  );
+  assert.equal(
+    isSurvivingSpouseEligibleForEmployees(
+      husband40,
+      true,
+      referenceDate,
+      reformDeath,
+      { year: 2052, month: 7 },
+      false,
+      lossAfterSixty,
+    ),
+    true,
+  );
+
+  console.log('OK 2028 continuation: five-year end and child-loss transition window');
+}
+
+{
+  const enhancedAnnualPensionYen = 1_200_000;
+
+  // 障害による継続は、障害年金受給権等を別途確認できた場合だけ明示的に通す。
+  const disabilityContinuation = resolveSurvivorContinuationAnnualPensionYen({
+    recipient: wife38,
+    incomeByMember: {},
+    referenceDate,
+    paymentYear: 2034,
+    paymentMonth: 4,
+    enhancedAnnualPensionYen,
+    hasQualifyingDisabilityPensionEntitlement: true,
+  });
+  assert.equal(disabilityContinuation.resolution, 'qualifying_disability');
+  assert.equal(disabilityContinuation.annualPensionYen, enhancedAnnualPensionYen);
+  assert.equal(disabilityContinuation.suspensionYen, 0);
+
+  // 政令の所得基準額が無い段階では、見込み値で受給額を作らない。
+  const thresholdsUnavailable = resolveSurvivorContinuationAnnualPensionYen({
+    recipient: head,
+    incomeByMember: { [head.id]: [headIncome] },
+    referenceDate,
+    paymentYear: 2028,
+    paymentMonth: 9,
+    enhancedAnnualPensionYen,
+    hasQualifyingDisabilityPensionEntitlement: false,
+  });
+  assert.equal(thresholdsUnavailable.resolution, 'thresholds_unavailable');
+  assert.equal(thresholdsUnavailable.annualPensionYen, null);
+
+  // 基準額が確定しても参照所得を作れない場合は0円所得とみなさない。
+  const incomeUnavailable = resolveSurvivorContinuationAnnualPensionYen({
+    recipient: wife38,
+    incomeByMember: {},
+    referenceDate,
+    paymentYear: 2034,
+    paymentMonth: 4,
+    enhancedAnnualPensionYen,
+    thresholds: { first: 900_000, second: 1_800_000 },
+    hasQualifyingDisabilityPensionEntitlement: false,
+  });
+  assert.equal(incomeUnavailable.resolution, 'income_unavailable');
+  assert.equal(incomeUnavailable.annualPensionYen, null);
+
+  // 公式基準額を注入できる場合だけ、前年所得と法律の停止式から継続給付額を解決する。
+  const thresholds = { first: 900_000, second: 1_800_000 };
+  const adjusted = resolveSurvivorContinuationAnnualPensionYen({
+    recipient: head,
+    incomeByMember: { [head.id]: [headIncome] },
+    referenceDate,
+    paymentYear: 2028,
+    paymentMonth: 9,
+    enhancedAnnualPensionYen,
+    thresholds,
+    hasQualifyingDisabilityPensionEntitlement: false,
+  });
+  const basis = resolveSurvivorContinuationIncomeBasis({
+    recipient: head,
+    incomeByMember: { [head.id]: [headIncome] },
+    referenceDate,
+    paymentYear: 2028,
+    paymentMonth: 9,
+  });
+  const expectedSuspension = calcSurvivorContinuationSuspensionYen({
+    priorIncomeYen: basis.totalIncomeYen ?? 0,
+    annualPensionYen: enhancedAnnualPensionYen,
+    thresholds,
+  });
+  assert.equal(adjusted.resolution, 'income_adjusted');
+  assert.equal(adjusted.suspensionYen, expectedSuspension);
+  assert.equal(
+    adjusted.annualPensionYen,
+    Math.max(0, enhancedAnnualPensionYen - expectedSuspension),
+  );
+
+  console.log('OK 2028 continuation: amount resolver never guesses missing legal inputs');
 }
 
 {
