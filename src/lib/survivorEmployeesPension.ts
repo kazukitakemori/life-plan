@@ -9,6 +9,7 @@
  * 平成19年4月1日前の65歳以上の選択、物価スライド。
  */
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
+import { isPensionSpouseLikeMember } from './familyDefaults';
 import {
   CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH,
   CHILDLESS_HUSBAND_PAYMENT_START_AGE,
@@ -69,6 +70,15 @@ import type { RequiredCoverageSubject } from '../types/requiredCoverage';
 
 function calendarIndex(year: number, month: number): number {
   return year * 12 + month;
+}
+
+function findSurvivorSpouseLike(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+): FamilyMember | undefined {
+  return subject === 'head'
+    ? familyMembers.find((member) => isPensionSpouseLikeMember(member))
+    : familyMembers.find((member) => member.role === 'head');
 }
 
 function ageMonthIndex(age: number, month: number): number {
@@ -856,8 +866,7 @@ export function resolveSurvivorContinuationAssessmentTarget(
   const remaining = familyMembers.filter(
     (member) => member.role !== 'pet' && member.id !== deceased.id,
   );
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const spouse = remaining.find((member) => member.role === survivorRole);
+  const spouse = findSurvivorSpouseLike(remaining, subject);
   if (!spouse) return null;
 
   const childrenAtDeath = listEligibleSurvivorBasicChildren(
@@ -1076,8 +1085,7 @@ export function resolveSurvivorEmployeesRecipient(
   const childrenNow = remaining.filter((member) =>
     isEligibleSurvivorBasicChild(member, referenceDate, now.year, now.month),
   );
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const spouse = remaining.find((member) => member.role === survivorRole);
+  const spouse = findSurvivorSpouseLike(remaining, subject);
   const receivesSurvivorBasicNow = childrenNow.length > 0 && Boolean(spouse);
   let survivorBasicLoss: CalendarYearMonth | null = null;
   if (spouse && childrenAtDeath.length > 0) {
@@ -1370,8 +1378,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   // 2028年4月以降の5年間の有期給付には、死亡者の老齢厚生年金
   // 報酬比例部分の1/4相当を上乗せし、合計4/4相当とする。
   if (recipient.kind === 'spouse' && isOnOrAfterSurvivorReform(input.death)) {
-    const survivorRole = input.subject === 'head' ? 'spouse' : 'head';
-    const spouse = remaining.find((member) => member.role === survivorRole);
+    const spouse = findSurvivorSpouseLike(remaining, input.subject);
     const receivesSurvivorBasicNow =
       childrenNow.length > 0 && Boolean(spouse);
     let survivorBasicLoss: CalendarYearMonth | null = null;
