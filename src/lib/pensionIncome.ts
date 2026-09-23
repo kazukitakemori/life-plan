@@ -610,7 +610,7 @@ function resolveOver50PublicPrivateSpecialStartAge(
   return candidates.length > 0 ? Math.min(...candidates) : null;
 }
 
-function resolveOver50AnySpecialStartAge(
+export function resolveOver50AnySpecialStartAge(
   form: NenkinTeikibinOver50Form,
 ): number | null {
   const candidates = [
