@@ -552,6 +552,15 @@ function yearMonthWhenAgeReached(
   };
 }
 
+function middleAgedWidowAddPhaseRatio(death: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(death)) return 1;
+  const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
+  // 2028年度から2053年度にかけて25年で新規裁定額を段階的に縮小。
+  // 新規発生年度の額はその受給終了まで固定する。
+  if (fiscalYear >= 2053) return 0;
+  return Math.max(0, Math.min(1, (2053 - fiscalYear) / 25));
+}
+
 export function calcMiddleAgedWidowAddYenPerYear(input: {
   wife: FamilyMember;
   remainingFamilyMembers: FamilyMember[];
@@ -586,7 +595,10 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
 
   if (!input.hadEligibleChildrenAtDeath) {
     if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE && deathAge < STANDARD_OLD_AGE_START) {
-      return MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR;
+      return (
+    MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
+    middleAgedWidowAddPhaseRatio(input.death)
+  );
     }
     return 0;
   }
