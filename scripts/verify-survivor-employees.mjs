@@ -274,6 +274,7 @@ const pension = createDefaultPensionMemberState();
     // 受給権が明示されていれば、古いJSON等で総合フラグがずれていても
     // 遺族厚生年金の死亡要件を落とさない。
     disability: 'none',
+    disabilityGrade: 'grade2',
     disabilityPension: 'employees_grade2',
   });
   assert.equal(
