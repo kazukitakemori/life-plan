@@ -49,13 +49,11 @@ export function isEligibleSurvivorBasicChild(
     return true;
   }
 
-  const hasGradeOneOrTwoDisabilityPension =
+  const hasGradeOneOrTwoDisability =
     member.disability === 'has' &&
-    (member.disabilityPension === 'basic_grade1' ||
-      member.disabilityPension === 'basic_grade2' ||
-      member.disabilityPension === 'employees_grade1' ||
-      member.disabilityPension === 'employees_grade2');
-  return hasGradeOneOrTwoDisabilityPension && ageMonth.age < 20;
+    (member.disabilityGrade === 'grade1' ||
+      member.disabilityGrade === 'grade2');
+  return hasGradeOneOrTwoDisability && ageMonth.age < 20;
 }
 
 export function listEligibleSurvivorBasicChildren(
