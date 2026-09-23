@@ -1,6 +1,7 @@
 import {
   DEFERRAL_INCREASE_PER_MONTH,
   EARLY_CLAIM_REDUCTION_PER_MONTH,
+  EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
   STANDARD_OLD_AGE_START,
 } from './pensionConstants';
 import {
@@ -15,16 +16,35 @@ import {
  * 受給開始年齢（年＋月オフセット）に対する増減率（65歳0ヶ月満額を1とする）。
  * startMonth: 0〜11 の月数オフセット（0 = startAge の誕生月と同月）。
  */
-export function getOldAgeAmountFactor(startAge: number, startMonth: number = 0): number {
+export function getOldAgeAmountFactor(
+  startAge: number,
+  startMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
+): number {
   const startAgeMonths = startAge * 12 + startMonth;
   const standardMonths = STANDARD_OLD_AGE_START * 12;
   if (startAgeMonths === standardMonths) return 1;
   if (startAgeMonths < standardMonths) {
     const monthsEarly = standardMonths - startAgeMonths;
-    return Math.max(0, 1 - monthsEarly * EARLY_CLAIM_REDUCTION_PER_MONTH);
+    return Math.max(0, 1 - monthsEarly * earlyReductionPerMonth);
   }
   const monthsDeferred = startAgeMonths - standardMonths;
   return 1 + monthsDeferred * DEFERRAL_INCREASE_PER_MONTH;
+}
+
+/**
+ * 生年月から繰上げ減額率を返す。
+ * 昭和37年4月2日が制度境界だが本アプリは日を保持しないため、1962年4月生まれは
+ * 現行率0.4%として扱う。1962年3月以前は旧率0.5%、1962年5月以降は0.4%。
+ */
+export function getEarlyClaimReductionPerMonthByBirth(
+  birthYear: number,
+  birthMonth: number,
+): number {
+  if (birthYear < 1962 || (birthYear === 1962 && birthMonth < 4)) {
+    return EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY;
+  }
+  return EARLY_CLAIM_REDUCTION_PER_MONTH;
 }
 
 /**
@@ -143,8 +163,9 @@ function applyDetailScale(
   detail: Record<string, number>,
   startAge: number,
   startMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
 ): void {
-  const factor = getOldAgeAmountFactor(startAge, startMonth);
+  const factor = getOldAgeAmountFactor(startAge, startMonth, earlyReductionPerMonth);
   if (factor === 1) return;
   scaleDetailFields(detail, factor, 'earlyPayment');
 }
@@ -154,9 +175,10 @@ export function applyBasicDetailAdjustment(
   detail: OldAgeBasicDetail,
   startAge: number,
   startMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
 ): OldAgeBasicDetail {
   const result = { ...detail };
-  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth);
+  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth, earlyReductionPerMonth);
   return result;
 }
 
@@ -165,9 +187,10 @@ export function applyGeneralDetailAdjustment(
   detail: GeneralEmployeesDetail,
   startAge: number,
   startMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
 ): GeneralEmployeesDetail {
   const result = { ...detail };
-  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth);
+  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth, earlyReductionPerMonth);
   return result;
 }
 
@@ -176,9 +199,10 @@ export function applyPublicDetailAdjustment(
   detail: PublicServantDetail,
   startAge: number,
   startMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
 ): PublicServantDetail {
   const result = { ...detail };
-  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth);
+  applyDetailScale(result as unknown as Record<string, number>, startAge, startMonth, earlyReductionPerMonth);
   return result;
 }
 
