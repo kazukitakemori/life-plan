@@ -62,6 +62,7 @@ export function migrateFamilyMember(member: FamilyMember): FamilyMember {
   return {
     ...member,
     birthDay: member.birthDay ?? null,
+    disabilityGrade: member.disabilityGrade ?? 'none',
     disabilityPension: member.disabilityPension ?? 'none',
   };
 }
@@ -81,6 +82,7 @@ export function createFamilyMember(role: FamilyMemberRole): FamilyMember {
     gender: defaultGender(role),
     expectedLifespan: 90,
     disability: 'none',
+    disabilityGrade: 'none',
     disabilityPension: 'none',
     hobbies: [],
     householdPeriod: defaultHouseholdPeriod(role),
