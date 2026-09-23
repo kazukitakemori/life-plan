@@ -192,7 +192,7 @@ function DependentSpousePensionRow({
               onChange={() => setMode('auto')}
             />
             <span className="benefit-amount-option-label benefit-amount-option-label--auto">
-              自動計算（厚生年金20年以上・配偶者65歳未満の間）
+              自動計算（厚生年金20年以上・配偶者65歳未満など）
             </span>
           </label>
           <label className="benefit-amount-option">
@@ -220,6 +220,9 @@ function DependentSpousePensionRow({
             </span>
           </label>
         </div>
+        <p className="ui-note">
+          配偶者が65歳に達した場合や、一定の老齢厚生年金・障害年金の受給権がある場合は支給停止を反映します。
+        </p>
       </td>
     </tr>
   );
