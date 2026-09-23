@@ -342,13 +342,10 @@ function isOnOrAfterSurvivorReform(death: CalendarYearMonth): boolean {
 
 function survivorReformWifeFiniteMaxAge(death: CalendarYearMonth): number {
   if (!isOnOrAfterSurvivorReform(death)) return CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
-  // 2028年度は40歳未満から開始し、その後5年ごとに5歳ずつ引上げ。
+  // 2028年度は40歳未満から開始し、対象生年月日を固定することで
+  // その後は毎年度1歳ずつ上限年齢が上がり、2048年度に60歳未満へ到達する。
   const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
-  if (fiscalYear < 2033) return 40;
-  if (fiscalYear < 2038) return 45;
-  if (fiscalYear < 2043) return 50;
-  if (fiscalYear < 2048) return 55;
-  return 60;
+  return Math.min(60, 40 + Math.max(0, fiscalYear - 2028));
 }
 
 function isSpouseFiniteSurvivorEmployeesBenefit(
