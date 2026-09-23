@@ -3,7 +3,11 @@ import type {
   PastEnrollmentMode,
   PensionMemberState,
 } from '../../types/pension';
-import { resolveOver50AnySpecialStartAge } from '../../lib/pensionIncome';
+import {
+  resolveOver50AnySpecialStartAge,
+  resolveOver50GeneralSpecialStartAge,
+  resolveOver50PublicPrivateSpecialStartAge,
+} from '../../lib/pensionIncome';
 import {
   createDefaultBenefitSettings,
   createDefaultTeikibinOver50Form,
@@ -63,6 +67,14 @@ export function PublicPensionSection({
   const specialEmployeesStartAge =
     pastEnrollment === 'nenkin-teikibin-over50'
       ? resolveOver50AnySpecialStartAge(resolvedTeikibinOver50)
+      : null;
+  const generalSpecialStartAge =
+    pastEnrollment === 'nenkin-teikibin-over50'
+      ? resolveOver50GeneralSpecialStartAge(resolvedTeikibinOver50)
+      : null;
+  const publicSpecialStartAge =
+    pastEnrollment === 'nenkin-teikibin-over50'
+      ? resolveOver50PublicPrivateSpecialStartAge(resolvedTeikibinOver50)
       : null;
 
   const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
@@ -189,6 +201,8 @@ export function PublicPensionSection({
         referenceDate={referenceDate}
         settings={resolvedBenefitSettings}
         specialEmployeesStartAge={specialEmployeesStartAge}
+        generalSpecialStartAge={generalSpecialStartAge}
+        publicSpecialStartAge={publicSpecialStartAge}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
