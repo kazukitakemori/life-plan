@@ -4,6 +4,9 @@ import {
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
   SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR,
   SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
 } from './pensionConstants';
 import { toMonthlyMan } from './pensionOldAge';
@@ -38,13 +41,21 @@ export function isEligibleSurvivorBasicChild(
   if (member.role !== 'child') return false;
   const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
   if (!ageMonth) return false;
-  // 遺族基礎年金で20歳未満まで対象となるのは、障害年金の障害等級
-  // 1級または2級の状態にある子。家族タブの disability は等級を保持しない
-  // 一般的な「障害あり」フラグのため、20歳延長の根拠には使わない。
-  // 等級データがない現状では過大計算を避け、通常の18歳年度末要件で判定する。
+  // 通常は18歳到達年度末まで。障害年金1級・2級の受給状況が
+  // Q1で明示されている場合だけ、制度どおり20歳未満まで延長する。
   const end = survivorChildOrdinaryEnd(member, referenceDate);
   if (!end) return false;
-  return calendarIndex(year, month) <= calendarIndex(end.year, end.month);
+  if (calendarIndex(year, month) <= calendarIndex(end.year, end.month)) {
+    return true;
+  }
+
+  const hasGradeOneOrTwoDisabilityPension =
+    member.disability === 'has' &&
+    (member.disabilityPension === 'basic_grade1' ||
+      member.disabilityPension === 'basic_grade2' ||
+      member.disabilityPension === 'employees_grade1' ||
+      member.disabilityPension === 'employees_grade2');
+  return hasGradeOneOrTwoDisabilityPension && ageMonth.age < 20;
 }
 
 export function listEligibleSurvivorBasicChildren(
@@ -58,35 +69,62 @@ export function listEligibleSurvivorBasicChildren(
   );
 }
 
-export function survivorBasicChildAddYenPerYear(childCount: number): number {
+function isOnOrAfterSurvivorChildAddReform(
+  year: number,
+  month: number,
+): boolean {
+  return (
+    year > SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR ||
+    (year === SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR &&
+      month >= SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH)
+  );
+}
+
+export function survivorBasicChildAddYenPerYear(
+  childCount: number,
+  year = 2026,
+  month = 4,
+): number {
   const count = Math.max(0, Math.floor(childCount));
   if (count <= 0) return 0;
-  const firstTwo = Math.min(count, 2) * SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
+
+  if (isOnOrAfterSurvivorChildAddReform(year, month)) {
+    return (
+      count * SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR
+    );
+  }
+
+  const firstTwo =
+    Math.min(count, 2) * SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
   const rest =
-    Math.max(0, count - 2) * SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
+    Math.max(0, count - 2) *
+    SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
   return firstTwo + rest;
 }
 
 /**
  * その月の遺族基礎年金額（円/年の12分の1を万円）。
  * 残る配偶者がいて対象の子がいれば配偶者が受給。配偶者がいなければ子が受給。
- * 対象の子がいなければ 0。遺族厚生・保険料納付要件は未対応。
+ * 対象の子がいなければ 0。死亡した方の受給要件・保険料納付要件は
+ * 必要保障額側の呼び出し元で確認する。
  */
 export function calcSurvivorBasicYenPerYear(
   eligibleChildCount: number,
   spouseReceives: boolean,
   spouseFullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
+  year = 2026,
+  month = 4,
 ): number {
   if (eligibleChildCount <= 0) return 0;
   if (spouseReceives) {
     return (
       spouseFullBasicPensionYenPerYear +
-      survivorBasicChildAddYenPerYear(eligibleChildCount)
+      survivorBasicChildAddYenPerYear(eligibleChildCount, year, month)
     );
   }
   return (
     FULL_BASIC_PENSION_YEN_PER_YEAR +
-    survivorBasicChildAddYenPerYear(eligibleChildCount - 1)
+    survivorBasicChildAddYenPerYear(eligibleChildCount - 1, year, month)
   );
 }
 
@@ -122,6 +160,8 @@ export function calcCoverageSurvivorBasicMonthlyMan(
     children.length,
     survivorSpouse,
     spouseFullBasicPensionYenPerYear,
+    year,
+    month,
   );
   return toMonthlyMan(yen);
 }
