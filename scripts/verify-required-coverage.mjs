@@ -1937,6 +1937,24 @@ console.log('OK survivor basic yen by child count');
   });
   assert.equal(lowAssessment.status, 'met');
 
+  const selfEmployedOverrideAssessment =
+    resolveSurvivorLivelihoodIncomeAssessment({
+      recipient: spouse,
+      incomeByMember: {},
+      priorYearIncomeByMember: {
+        [spouse.id]: {
+          differsFromCurrentYear: true,
+          category: 'self_employed',
+          monthlyAmountMan: 100,
+        },
+      },
+      referenceDate,
+      death: { year: 2026, month: 7 },
+    });
+  assert.equal(selfEmployedOverrideAssessment.grossRevenueMan, 1200);
+  assert.equal(selfEmployedOverrideAssessment.totalIncomeMan, null);
+  assert.equal(selfEmployedOverrideAssessment.status, 'unconfirmed');
+
   const highIncome = createIncomeEntry(spouse.id, 'employee', 20, 1, spouse);
   highIncome.periods[0].startAge = 20;
   highIncome.periods[0].startMonth = 1;
