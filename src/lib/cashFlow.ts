@@ -48,14 +48,10 @@ import {
   sumVehicleExpenseDetail,
 } from '../types/cashFlow';
 import {
-  calcMemberMonthlyPensionBreakdownMan,
+  calcMemberAnnualTaxableOldAgePensionPaymentManByMember,
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
-import { createDefaultPensionMemberState } from './pensionDefaults';
-import {
-  calcPensionPaymentFromEntitlements,
-  calcTaxableOldAgePensionPaymentMan,
-} from './pensionPaymentSchedule';
+import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
 import { calcMemberMonthlyEducationYen, yenToMan } from './educationCashFlow';
 import type { FamilyMember } from '../types/family';
 import type { EducationByMember } from '../types/education';
@@ -520,71 +516,18 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
     }
 
     // ── メンバー別年間課税年金額（税計算用）──────────────────────────────
-    // 税務上の収入時期に合わせ、実際の偶数月支払ベースで老齢年金だけを集計する。
-    // 非課税の遺族年金・障害年金は含めない。
-    // 加給年金・振替加算など世帯単位の老齢年金加算分は世帯主へ帰属させる。
-    const memberAnnualPensionMan: Record<string, number> = {};
-    for (const member of input.familyMembers) {
-      if (member.role === 'pet') continue;
-      const memberState =
-        input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
-      const incomeEntries = input.incomeByMember[member.id] ?? [];
-      const memberEntitlements: IncomeBreakdown['pension'][] = [];
-      memberEntitlements[0] = calcMemberMonthlyPensionBreakdownMan(
-        member,
-        memberState,
-        incomeEntries,
-        input.referenceDate,
-        year - 1,
-        12,
-      );
-      for (let month = 1; month <= 12; month++) {
-        memberEntitlements[month] = calcMemberMonthlyPensionBreakdownMan(
-          member,
-          memberState,
-          incomeEntries,
-          input.referenceDate,
-          year,
-          month,
-        );
-      }
-
-      let memberTaxablePension = 0;
-      for (let month = monthStart; month <= monthEnd; month++) {
-        memberTaxablePension += calcTaxableOldAgePensionPaymentMan(
-          month,
-          memberEntitlements[month - 1] ?? createEmptyPensionBreakdown(),
-          memberEntitlements[month - 2] ?? createEmptyPensionBreakdown(),
-        );
-      }
-      memberAnnualPensionMan[member.id] = memberTaxablePension;
-    }
-
-    const householdTaxablePensionTotal = Array.from(
-      { length: monthEnd - monthStart + 1 },
-      (_, i) => monthStart + i,
-    ).reduce(
-      (sum, month) =>
-        sum +
-        calcTaxableOldAgePensionPaymentMan(
-          month,
-          entitlementsByMonth[month - 1] ?? createEmptyPensionBreakdown(),
-          entitlementsByMonth[month - 2] ?? createEmptyPensionBreakdown(),
-        ),
-      0,
-    );
-    const memberTaxablePensionTotal = Object.values(memberAnnualPensionMan).reduce(
-      (sum, value) => sum + value,
-      0,
-    );
-    const taxableOldAgeAdditions = Math.max(
-      0,
-      householdTaxablePensionTotal - memberTaxablePensionTotal,
-    );
-    if (taxableOldAgeAdditions > 0) {
-      memberAnnualPensionMan[head.id] =
-        (memberAnnualPensionMan[head.id] ?? 0) + taxableOldAgeAdditions;
-    }
+    // 税務上の実支払時期に合わせ、非課税の遺族・障害年金を除外しつつ、
+    // 加給年金・子の加算・振替加算も実際の受給者本人へ帰属させる。
+    const memberAnnualPensionMan =
+      calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+        familyMembers: input.familyMembers,
+        incomeByMember: input.incomeByMember,
+        pensionByMember: input.pensionByMember,
+        referenceDate: input.referenceDate,
+        calendarYear: year,
+        monthStart,
+        monthEnd,
+      });
 
     for (let month = monthStart; month <= monthEnd; month++) {
       const pensionPayment = calcPensionPaymentFromEntitlements(
