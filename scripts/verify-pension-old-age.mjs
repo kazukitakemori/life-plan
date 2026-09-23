@@ -11,7 +11,12 @@ import {
   applyBasicDetailAdjustment,
   applyGeneralDetailAdjustment,
 } from '../src/lib/pensionOldAge.ts';
-import { estimatePost65EmployeesPensionIncreaseMan } from '../src/lib/pensionEnrollmentEstimate.ts';
+import {
+  estimateOldAgeAmountsFromIncome,
+  estimatePost65EmployeesPensionIncreaseMan,
+  getEstimatedOldAgeQualifyingMonthCount,
+  getNationalPensionCreditedMonthCount,
+} from '../src/lib/pensionEnrollmentEstimate.ts';
 import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionPremium.ts';
 import { calcMemberMonthlyPensionBreakdownMan } from '../src/lib/pensionIncome.ts';
 import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
@@ -406,6 +411,81 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.ok(
     Math.abs(working.oldAge.generalEmployees.earlyPayment - 0.084) < 1e-9,
   );
+}
+
+// 定期便なし: Q7から見積もる場合も、老齢年金は受給資格期間10年以上が前提。
+// 学生納付特例の想定期間は資格期間には入るが、追納なし前提では年金額に反映しない。
+{
+  const young = pensionMember({ age: 25 });
+  const noIncome = [];
+  assert.equal(
+    getEstimatedOldAgeQualifyingMonthCount(young, noIncome, referenceDate),
+    24,
+  );
+  assert.equal(
+    getNationalPensionCreditedMonthCount(young, noIncome, referenceDate),
+    0,
+  );
+  const amount = estimateOldAgeAmountsFromIncome(
+    young,
+    noIncome,
+    referenceDate,
+  );
+  assert.equal(amount.basicYenPerYear, 0);
+  assert.equal(amount.generalEmployeesYenPerYear, 0);
+  assert.equal(amount.publicServantYenPerYear, 0);
+}
+
+// 20〜59歳までQ7に厚生年金加入が明示されている場合は、大学在学想定の24月を
+// 二重に差し引かず、老齢基礎年金の算定月数は480月まで積み上がる。
+{
+  const fullCareer = pensionMember({ age: 60 });
+  const entries = [{
+    id: 'full-career',
+    memberId: fullCareer.id,
+    category: 'employee',
+    periods: [{
+      id: 'full-career-period',
+      startAge: 20,
+      startMonth: 1,
+      endAge: 59,
+      endMonth: 12,
+      streamType: 'salary_social_insurance',
+      monthlyAmountMan: 40,
+      bonuses: [],
+      annualAmountMan: 480,
+      dependentStatus: 'none',
+      taxDependent: false,
+      socialInsuranceDependent: false,
+      spouseContingencyRate: null,
+      annualIncreaseRate: null,
+      lumpSumRestoreEndAge: null,
+      lumpSumRestoreEndMonth: null,
+    }],
+  }];
+  assert.equal(
+    getEstimatedOldAgeQualifyingMonthCount(
+      fullCareer,
+      entries,
+      referenceDate,
+    ),
+    480,
+  );
+  assert.equal(
+    getNationalPensionCreditedMonthCount(
+      fullCareer,
+      entries,
+      referenceDate,
+    ),
+    480,
+  );
+  const amount = estimateOldAgeAmountsFromIncome(
+    fullCareer,
+    entries,
+    referenceDate,
+  );
+  assert.ok(amount.basicYenPerYear > 0);
+  assert.ok(amount.generalEmployeesYenPerYear > 0);
 }
 
 console.log('verify-pension-old-age: all passed');
