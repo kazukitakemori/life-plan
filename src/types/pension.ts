@@ -67,6 +67,13 @@ export interface TeikibinOver50OldAgeTriple {
 
 export interface NenkinTeikibinOver50AmountFields {
   basicPension65: number | null;
+  /**
+   * 50歳以上のねんきん定期便に印字される、65歳前の3つの
+   * 「受給開始年齢 ○歳〜」欄。空欄の列は null。
+   */
+  specialStartAgeCol2: number | null;
+  specialStartAgeCol3: number | null;
+  specialStartAgeCol4: number | null;
   general: {
     specialCol3: TeikibinOver50AmountPair;
     specialCol4: TeikibinOver50AmountPair;
