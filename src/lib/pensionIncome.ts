@@ -2,10 +2,7 @@
  * 公的年金（老齢）の月次内訳計算。
  * v1 簡略化: 物価スライド・障害/寡婦年金の自動計算は未対応。
  */
-import {
-  isPensionSpouseLikeMember,
-  resolveMemberBirthMonth,
-} from './familyDefaults';
+import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcBirthYear,
   calendarYearFromAgeCalendarMonth,
