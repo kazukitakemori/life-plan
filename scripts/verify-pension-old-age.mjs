@@ -12,6 +12,8 @@ import {
   applyGeneralDetailAdjustment,
 } from '../src/lib/pensionOldAge.ts';
 import { estimatePost65EmployeesPensionIncreaseMan } from '../src/lib/pensionEnrollmentEstimate.ts';
+import { calcMemberMonthlyPensionBreakdownMan } from '../src/lib/pensionIncome.ts';
+import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
   EARLY_CLAIM_REDUCTION_PER_MONTH,
   EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
@@ -130,13 +132,13 @@ assert.deepEqual(
 }
 
 
-function pensionMember({ birthDay = 2 } = {}) {
+function pensionMember({ birthDay = 2, age = 66 } = {}) {
   return {
     id: 'member',
     role: 'head',
     nickname: '本人',
     gender: 'male',
-    age: 66,
+    age,
     birthMonth: 4,
     birthDay,
     expectedLifespan: 90,
@@ -289,6 +291,110 @@ const referenceDate = new Date(2026, 8, 1);
 
   assert.ok(day1April > day1March);
   assert.ok(day2May > day1April);
+}
+
+
+// 老齢年金は請求月の翌月分から発生。
+// 4月1日生まれは3月31日に65歳到達→4月分から、4月2日生まれは4月1日到達→5月分から。
+{
+  const makeManualState = () => {
+    const state = createDefaultPensionMemberState();
+    state.benefitSettings.oldAgeBasic = {
+      startAge: 65,
+      startMonth: 0,
+      amountMode: 'manual',
+      manualAmountPerYear: 120_000,
+    };
+    state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+    state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 0;
+    state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+    state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+    return state;
+  };
+
+  const day1 = pensionMember({ birthDay: 1, age: 65 });
+  const day2 = pensionMember({ birthDay: 2, age: 65 });
+
+  const day1April = calcMemberMonthlyPensionBreakdownMan(
+    day1,
+    makeManualState(),
+    [],
+    referenceDate,
+    2026,
+    4,
+  );
+  const day2April = calcMemberMonthlyPensionBreakdownMan(
+    day2,
+    makeManualState(),
+    [],
+    referenceDate,
+    2026,
+    4,
+  );
+  const day2May = calcMemberMonthlyPensionBreakdownMan(
+    day2,
+    makeManualState(),
+    [],
+    referenceDate,
+    2026,
+    5,
+  );
+
+  assert.ok(day1April.oldAge.basic.basic > 0);
+  assert.equal(day2April.oldAge.basic.basic, 0);
+  assert.ok(day2May.oldAge.basic.basic > 0);
+}
+
+// 繰下げ待機中の在職停止分は増額対象外。
+// 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
+// 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
+{
+  const member = pensionMember({ birthDay: 2, age: 66 });
+
+  const makeOver50State = () => {
+    const state = createDefaultPensionMemberState();
+    state.pastEnrollment = 'nenkin-teikibin-over50';
+    state.teikibinOver50.general.oldAge65.proportional = 1_200_000;
+    state.teikibinOver50.general.oldAge65.transitionalAddition = 120_000;
+    state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+    state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+    state.benefitSettings.oldAgeGeneralEmployees.startAge = 66;
+    state.benefitSettings.oldAgeGeneralEmployees.startMonth = 0;
+    state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'auto';
+    state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+    state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+    return state;
+  };
+
+  const noWork = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    makeOver50State(),
+    [],
+    referenceDate,
+    2026,
+    5,
+  );
+
+  const highIncome = employeeIncome();
+  highIncome[0].periods[0].monthlyAmountMan = 100;
+  const working = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    makeOver50State(),
+    highIncome,
+    referenceDate,
+    2026,
+    5,
+  );
+
+  // 在職なし: (10万円 + 1万円) × 8.4% = 0.924万円/月
+  assert.ok(
+    Math.abs(noWork.oldAge.generalEmployees.earlyPayment - 0.924) < 1e-9,
+  );
+  // 報酬比例10万円/月が全額停止なら、その増額0.84万円は除外。
+  // 経過的加算1万円/月 × 8.4% = 0.084万円/月だけが増額対象。
+  assert.ok(
+    Math.abs(working.oldAge.generalEmployees.earlyPayment - 0.084) < 1e-9,
+  );
 }
 
 console.log('verify-pension-old-age: all passed');
