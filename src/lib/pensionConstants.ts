@@ -8,6 +8,8 @@ export const PENSION_STANDARD_YEAR = 2026;
 export const FULL_BASIC_PENSION_YEN_PER_MONTH = 70_608;
 /** 公表年額を直接保持（月額×12の丸め差を持ち込まない） */
 export const FULL_BASIC_PENSION_YEN_PER_YEAR = 847_300;
+/** 2026年度・昭和31年4月1日以前生まれの基礎年金満額 */
+export const FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY = 844_900;
 
 /** 国民年金保険料（第1号被保険者・2026年度） */
 export const NATIONAL_PENSION_MONTHLY_YEN = 17_920;
