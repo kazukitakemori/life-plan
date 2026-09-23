@@ -755,6 +755,8 @@ export interface FuturePensionAdditionsYen {
   basicYenPerYear: number;
   generalEmployeesYenPerYear: number;
   publicServantYenPerYear: number;
+  /** 老齢年金の10年受給資格期間へ加える将来月数 */
+  qualifyingMonths: number;
 }
 
 /**
@@ -774,6 +776,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
   const general = createEmptyProportionalAccumulation();
   const publicServant = createEmptyProportionalAccumulation();
   let basicMonths = 0;
+  let qualifyingMonths = 0;
 
   for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
     for (let month = 1; month <= 12; month++) {
@@ -803,6 +806,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
           birthMonth,
           member.birthDay,
         )) continue;
+        qualifyingMonths += 1;
         if (age < NATIONAL_PENSION_MANDATORY_END_AGE) basicMonths += 1;
         const remunerationYen = standardRemunerationYenFromMonthlyManAt(
           active.monthlyAmountMan,
@@ -824,6 +828,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
         isNationalPensionOnlyIncome(active.category, active.streamType)
       ) {
         basicMonths += 1;
+        qualifyingMonths += 1;
       }
     }
   }
@@ -834,6 +839,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
       FULL_BASIC_PENSION_YEN_PER_YEAR,
     generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
     publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
+    qualifyingMonths,
   };
 }
 
