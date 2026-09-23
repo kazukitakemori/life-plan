@@ -146,6 +146,9 @@ export function createDefaultTeikibinOver50Form(): NenkinTeikibinOver50Form {
   return {
     ...createDefaultParticipationFields(),
     basicPension65: null,
+    specialStartAgeCol2: null,
+    specialStartAgeCol3: null,
+    specialStartAgeCol4: null,
     general: {
       specialCol3: createDefaultAmountPair(),
       specialCol4: createDefaultAmountPair(),
