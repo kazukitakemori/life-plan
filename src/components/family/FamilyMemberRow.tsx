@@ -19,6 +19,7 @@ import type {
   DisabilityGrade,
   DisabilityPensionStatus,
   FamilyMember,
+  PensionChildResidenceStatus,
   HouseholdPeriodMode,
   OtherRelationship,
 } from '../../types/family';
@@ -26,6 +27,7 @@ import {
   DISABILITY_GRADE_LABELS,
   DISABILITY_PENSION_LABELS,
   OTHER_RELATIONSHIP_LABELS,
+  PENSION_CHILD_RESIDENCE_LABELS,
   ROLE_LABELS,
 } from '../../types/family';
 import {
@@ -493,7 +495,36 @@ export function FamilyMemberRow({
               </div>
             )}
 
-            <div className="family-hobbies-block">
+            {(member.role === 'child' ||
+              (member.role === 'other' &&
+                member.otherRelationship === 'grandchild')) && (
+              <div className="family-disability-pension-block">
+                <FormField label="年金上の居住状況">
+                  <FormSelect
+                    wide
+                    value={member.pensionChildResidence ?? 'unknown'}
+                    onValueChange={(raw) =>
+                      onChange({
+                        ...member,
+                        pensionChildResidence:
+                          raw as PensionChildResidenceStatus,
+                      })
+                    }
+                    options={(
+                      Object.entries(PENSION_CHILD_RESIDENCE_LABELS) as Array<
+                        [PensionChildResidenceStatus, string]
+                      >
+                    ).map(([value, label]) => ({ value, label }))}
+                  />
+                </FormField>
+                <p className="ui-note">
+                  2028年4月以降の年金の子の加算に使います。海外でも、
+                  留学など日本国内に生活の基礎があると認められる場合は例外対象です。
+                </p>
+              </div>
+            )}
+
+                        <div className="family-hobbies-block">
               <div className="family-panel-title-row">
                 <h4 className="family-section-label">趣味・関心</h4>
                 <button
