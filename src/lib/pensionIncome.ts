@@ -1454,10 +1454,44 @@ function calcSurvivorMonthlyManByRow(
     return result;
   }
 
-  result.basic.basic = toMonthlyMan(benefitSettings.survivorBasicPerYear);
-  result.employees.basic = toMonthlyMan(
-    benefitSettings.survivorEmployeesMutualPerYear,
-  );
+  const isAfterOptionalEndMonth = (
+    endYear?: number | null,
+    endMonth?: number | null,
+  ): boolean => {
+    if (
+      typeof endYear !== 'number' ||
+      typeof endMonth !== 'number' ||
+      !Number.isInteger(endYear) ||
+      !Number.isInteger(endMonth) ||
+      endMonth < 1 ||
+      endMonth > 12
+    ) {
+      return false;
+    }
+    return (
+      pensionCalendarSerial(calendarYear, calendarMonth) >
+      pensionCalendarSerial(endYear, endMonth)
+    );
+  };
+
+  if (
+    !isAfterOptionalEndMonth(
+      benefitSettings.survivorBasicEndYear,
+      benefitSettings.survivorBasicEndMonth,
+    )
+  ) {
+    result.basic.basic = toMonthlyMan(benefitSettings.survivorBasicPerYear);
+  }
+  if (
+    !isAfterOptionalEndMonth(
+      benefitSettings.survivorEmployeesMutualEndYear,
+      benefitSettings.survivorEmployeesMutualEndMonth,
+    )
+  ) {
+    result.employees.basic = toMonthlyMan(
+      benefitSettings.survivorEmployeesMutualPerYear,
+    );
+  }
 
   return result;
 }

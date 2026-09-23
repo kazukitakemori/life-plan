@@ -99,7 +99,11 @@ export function createDefaultBenefitSettings(): BenefitSettings {
     survivorDeathYear: 2024,
     survivorDeathMonth: 1,
     survivorBasicPerYear: null,
+    survivorBasicEndYear: null,
+    survivorBasicEndMonth: null,
     survivorEmployeesMutualPerYear: null,
+    survivorEmployeesMutualEndYear: null,
+    survivorEmployeesMutualEndMonth: null,
     survivorPremiumRequirement: 'auto',
     dependentSpousePension: createDefaultDependentSpousePension(),
   };

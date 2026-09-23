@@ -391,6 +391,33 @@
   margin: 14px 0 12px;
 }
 
+.pension-step .benefit-survivor-end-date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--ui-text-muted, #65726b);
+}
+
+.pension-step .benefit-survivor-end-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pension-step .benefit-survivor-end-input {
+  width: 170px;
+  max-width: 100%;
+}
+
+.pension-step .benefit-survivor-end-help {
+  white-space: nowrap;
+}
+
+.pension-step .benefit-survivor-end-note {
+  margin: 10px 0 0;
+}
+
 @media (max-width: 768px) {
   .pension-step .pension-source-option-title,
   .pension-step .benefit-row-label,
@@ -422,6 +449,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     align-items: end;
+  }
+
+  .pension-step .benefit-survivor-end-date {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .pension-step .benefit-survivor-end-input {
+    width: 100%;
   }
 
   .pension-step .benefit-death-date-label {

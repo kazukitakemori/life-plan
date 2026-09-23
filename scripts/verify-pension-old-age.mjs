@@ -932,6 +932,64 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.equal(april.survivor.employees.basic, 0);
   assert.ok(may.survivor.basic.basic > 0);
   assert.ok(may.survivor.employees.basic > 0);
+
+  state.benefitSettings.survivorBasicEndYear = 2026;
+  state.benefitSettings.survivorBasicEndMonth = 6;
+  state.benefitSettings.survivorEmployeesMutualEndYear = 2026;
+  state.benefitSettings.survivorEmployeesMutualEndMonth = 7;
+
+  const june = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    6,
+  );
+  const july = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    7,
+  );
+  const august = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    8,
+  );
+
+  assert.ok(june.survivor.basic.basic > 0);
+  assert.ok(june.survivor.employees.basic > 0);
+  assert.equal(july.survivor.basic.basic, 0);
+  assert.ok(july.survivor.employees.basic > 0);
+  assert.equal(august.survivor.basic.basic, 0);
+  assert.equal(august.survivor.employees.basic, 0);
+
+  const legacyState = createDefaultPensionMemberState();
+  legacyState.benefitSettings.survivorDeathYear = 2026;
+  legacyState.benefitSettings.survivorDeathMonth = 4;
+  legacyState.benefitSettings.survivorBasicPerYear = 120_000;
+  legacyState.benefitSettings.survivorEmployeesMutualPerYear = 240_000;
+  delete legacyState.benefitSettings.survivorBasicEndYear;
+  delete legacyState.benefitSettings.survivorBasicEndMonth;
+  delete legacyState.benefitSettings.survivorEmployeesMutualEndYear;
+  delete legacyState.benefitSettings.survivorEmployeesMutualEndMonth;
+
+  const legacyFuture = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    legacyState,
+    [],
+    referenceDate,
+    2036,
+    8,
+  );
+  assert.ok(legacyFuture.survivor.basic.basic > 0);
+  assert.ok(legacyFuture.survivor.employees.basic > 0);
 }
 
 // 繰下げ待機中の在職停止分は増額対象外。

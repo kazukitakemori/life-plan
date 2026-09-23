@@ -135,7 +135,19 @@ export interface BenefitSettings {
   survivorDeathYear: number;
   survivorDeathMonth: number;
   survivorBasicPerYear: number | null;
+  /**
+   * Q8で手入力した受給中の遺族基礎年金の最終支給月。
+   * 年・月が両方ある場合のみ、その月分まで計上する。旧データの未設定は終了なしとして扱う。
+   */
+  survivorBasicEndYear?: number | null;
+  survivorBasicEndMonth?: number | null;
   survivorEmployeesMutualPerYear: number | null;
+  /**
+   * Q8で手入力した受給中の遺族厚生・共済年金の最終支給月。
+   * 年・月が両方ある場合のみ、その月分まで計上する。旧データの未設定は終了なしとして扱う。
+   */
+  survivorEmployeesMutualEndYear?: number | null;
+  survivorEmployeesMutualEndMonth?: number | null;
   /**
    * 遺族基礎年金・遺族厚生年金の保険料納付要件。
    * auto はねんきん定期便等から確認できる場合だけ確定し、確認できなければ未確認扱い。

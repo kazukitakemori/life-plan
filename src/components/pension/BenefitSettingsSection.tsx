@@ -257,6 +257,36 @@ function DependentSpousePensionRow({
   );
 }
 
+function formatOptionalYearMonth(
+  year?: number | null,
+  month?: number | null,
+): string {
+  if (
+    typeof year !== 'number' ||
+    typeof month !== 'number' ||
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  ) {
+    return '';
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function parseOptionalYearMonth(
+  value: string,
+): { year: number | null; month: number | null } {
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  if (!match) return { year: null, month: null };
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || month < 1 || month > 12) {
+    return { year: null, month: null };
+  }
+  return { year, month };
+}
+
 /** 60〜64才（繰上げ）かどうか */
 function isEarlyStart(age: number) {
   return age < 65;
@@ -294,6 +324,32 @@ export function BenefitSettingsSection({
 
   const update = (patch: Partial<BenefitSettings>) => {
     onChange({ ...settings, ...patch });
+  };
+
+  const survivorBasicEndValue = formatOptionalYearMonth(
+    settings.survivorBasicEndYear,
+    settings.survivorBasicEndMonth,
+  );
+  const survivorEmployeesEndValue = formatOptionalYearMonth(
+    settings.survivorEmployeesMutualEndYear,
+    settings.survivorEmployeesMutualEndMonth,
+  );
+  const handleSurvivorEndChange = (
+    kind: 'basic' | 'employees',
+    value: string,
+  ) => {
+    const { year, month } = parseOptionalYearMonth(value);
+    if (kind === 'basic') {
+      update({
+        survivorBasicEndYear: year,
+        survivorBasicEndMonth: month,
+      });
+      return;
+    }
+    update({
+      survivorEmployeesMutualEndYear: year,
+      survivorEmployeesMutualEndMonth: month,
+    });
   };
 
   /**
@@ -596,6 +652,23 @@ export function BenefitSettingsSection({
                   <span className="benefit-survivor-suffix">
                     円/年（実際の受給年額・子の加算を含む合計額）
                   </span>
+                  <label className="benefit-survivor-end-date">
+                    <span className="benefit-survivor-end-label">
+                      終了予定年月（任意）
+                    </span>
+                    <input
+                      type="month"
+                      className="pension-field-input benefit-survivor-end-input"
+                      value={survivorBasicEndValue}
+                      onChange={(e) =>
+                        handleSurvivorEndChange('basic', e.target.value)
+                      }
+                      aria-label="遺族基礎年金の終了予定年月"
+                    />
+                    <span className="benefit-survivor-end-help">
+                      この月分まで
+                    </span>
+                  </label>
                 </td>
               </tr>
               <tr>
@@ -619,10 +692,30 @@ export function BenefitSettingsSection({
                   <span className="benefit-survivor-suffix">
                     円/年（実際の受給年額・遺族厚生年金と共済年金の合計）
                   </span>
+                  <label className="benefit-survivor-end-date">
+                    <span className="benefit-survivor-end-label">
+                      終了予定年月（任意）
+                    </span>
+                    <input
+                      type="month"
+                      className="pension-field-input benefit-survivor-end-input"
+                      value={survivorEmployeesEndValue}
+                      onChange={(e) =>
+                        handleSurvivorEndChange('employees', e.target.value)
+                      }
+                      aria-label="遺族厚生・共済年金の終了予定年月"
+                    />
+                    <span className="benefit-survivor-end-help">
+                      この月分まで
+                    </span>
+                  </label>
                 </td>
               </tr>
             </tbody>
           </table>
+          <p className="ui-note benefit-survivor-end-note">
+            終了予定年月は分かる場合だけ設定してください。設定した月分まで計上し、翌月から0円にします。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。
+          </p>
         </div>
       </details>
     </div>
