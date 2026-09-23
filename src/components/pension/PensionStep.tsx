@@ -68,6 +68,13 @@ export function PensionStep({
   const memberState =
     pensionByMember[resolvedActiveId] ?? createDefaultPensionMemberState();
   const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
+  const hasUnconfirmedPensionChildResidence = members.some(
+    (member) =>
+      (member.role === 'child' ||
+        (member.role === 'other' &&
+          member.otherRelationship === 'grandchild')) &&
+      (member.pensionChildResidence ?? 'unknown') === 'unknown',
+  );
 
   const updateMemberState = (
     memberId: string,
@@ -98,6 +105,12 @@ export function PensionStep({
       {purposeNote ? (
         <p className="purpose-input-note" role="note">
           {purposeNote}
+        </p>
+      ) : null}
+
+      {hasUnconfirmedPensionChildResidence ? (
+        <p className="purpose-input-note" role="note">
+          2028年4月以降の「子の加算」を正確に試算するには、Q1「家族」の詳細設定で対象となる子の「年金上の居住状況」を確認してください。未確認のままでは加算を自動計上しません。
         </p>
       ) : null}
 
