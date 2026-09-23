@@ -340,6 +340,7 @@ export function isSurvivingSpouseEligibleForEmployees(
   death: CalendarYearMonth,
   now: CalendarYearMonth,
   receivesSurvivorBasicNow: boolean,
+  survivorBasicLoss: CalendarYearMonth | null = null,
 ): boolean {
   const deathAge = getMemberAgeMonth(spouse, referenceDate, death.year, death.month);
   const nowAge = getMemberAgeMonth(spouse, referenceDate, now.year, now.month);
@@ -348,13 +349,24 @@ export function isSurvivingSpouseEligibleForEmployees(
     return false;
   }
 
-  // 子がいる配偶者でも、子が遺族基礎年金の対象でなくなった後は
-  // 子のない配偶者として年齢要件・5年有期要件を判定する。
+  // 子がいる間は現行どおり受給。子の資格終了後に有期給付となる場合は、
+  // 「死亡から5年」ではなく遺族基礎年金の失権時から5年を数える。
   if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) return true;
+  const fiveYearStart =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
 
   if (spouse.gender === 'female') {
-    if (deathAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE) {
-      const end = fiveYearEnd(death);
+    const fiveYearStartAge = getMemberAgeMonth(
+      spouse,
+      referenceDate,
+      fiveYearStart.year,
+      fiveYearStart.month,
+    );
+    if (
+      fiveYearStartAge &&
+      fiveYearStartAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE
+    ) {
+      const end = fiveYearEnd(fiveYearStart);
       return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
     }
     return true;
@@ -411,6 +423,27 @@ export function resolveSurvivorEmployeesRecipient(
   const survivorRole = subject === 'head' ? 'spouse' : 'head';
   const spouse = remaining.find((member) => member.role === survivorRole);
   const receivesSurvivorBasicNow = childrenNow.length > 0 && Boolean(spouse);
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (spouse && childrenAtDeath.length > 0) {
+    // 最後の対象児が遺族基礎年金の対象外となる最初の月を求める。
+    // 障害児は20歳未満まで対象となり得るため、死亡月から25年を上限に走査する。
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset++) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      const eligible = listEligibleSurvivorBasicChildren(
+        remaining,
+        referenceDate,
+        year,
+        month,
+      );
+      if (eligible.length === 0) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
 
   if (
     spouse &&
@@ -421,6 +454,7 @@ export function resolveSurvivorEmployeesRecipient(
       death,
       now,
       receivesSurvivorBasicNow,
+      survivorBasicLoss,
     )
   ) {
     return { member: spouse, kind: 'spouse' };
