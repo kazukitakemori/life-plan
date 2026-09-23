@@ -348,7 +348,9 @@ export function isSurvivingSpouseEligibleForEmployees(
     return false;
   }
 
-  if (hadEligibleChildrenAtDeath) return true;
+  // 子がいる配偶者でも、子が遺族基礎年金の対象でなくなった後は
+  // 子のない配偶者として年齢要件・5年有期要件を判定する。
+  if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) return true;
 
   if (spouse.gender === 'female') {
     if (deathAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE) {
