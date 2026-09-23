@@ -1,6 +1,7 @@
 import {
   addPensionBreakdown,
   createEmptyPensionBreakdown,
+  sumOldAgePension,
   type PensionBreakdown,
 } from '../types/cashFlow';
 
@@ -28,4 +29,24 @@ export function calcPensionPaymentFromEntitlements(
   addPensionBreakdown(result, entitlementTwoMonthsAgo);
 
   return result;
+}
+
+
+/**
+ * 税計算へ渡す老齢年金の実支払額（月額・万円）。
+ *
+ * 老齢年金だけを対象にし、非課税の遺族年金・障害年金は含めない。
+ * 支払時期は calcPensionPaymentFromEntitlements と同じ偶数月・前2か月分。
+ */
+export function calcTaxableOldAgePensionPaymentMan(
+  paymentCalendarMonth: number,
+  entitlementOneMonthAgo: PensionBreakdown,
+  entitlementTwoMonthsAgo: PensionBreakdown,
+): number {
+  const payment = calcPensionPaymentFromEntitlements(
+    paymentCalendarMonth,
+    entitlementOneMonthAgo,
+    entitlementTwoMonthsAgo,
+  );
+  return sumOldAgePension(payment.oldAge);
 }
