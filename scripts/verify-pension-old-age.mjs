@@ -1292,7 +1292,9 @@ assert.equal(
     id: 'kakyu-spouse',
     role: 'spouse',
     gender: 'female',
-    disability: 'has',
+    // 広い「障害あり」フラグが旧データ等でずれていても、
+    // 明示された受給権と現在等級が一致すれば停止判定する。
+    disability: 'none',
     disabilityGrade: 'grade2',
     disabilityPension: 'basic_grade2',
   };
@@ -1316,6 +1318,22 @@ assert.equal(
   );
   assert.equal(result.oldAge.generalEmployees.dependent, 0);
   assert.equal(result.oldAge.publicServant.dependent, 0);
+
+  const mismatchedGrade = {
+    ...spouse,
+    disability: 'has',
+    disabilityGrade: 'grade3',
+    disabilityPension: 'basic_grade2',
+  };
+  const mismatchResult = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, mismatchedGrade],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2026,
+    10,
+  );
+  assert.ok(mismatchResult.oldAge.generalEmployees.dependent > 0);
 }
 
 // 世帯単位の加給・子加算は、実際の年金受給者本人へ税務上も帰属する。
