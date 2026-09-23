@@ -26,7 +26,7 @@ import {
 } from './pensionIncome';
 import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
 import {
-  calcCoverageSurvivorBasicMonthlyMan,
+  calcCoverageSurvivorBasicDetailMonthlyMan,
   calcSurvivorBasicYenPerYear,
   listEligibleSurvivorBasicChildren,
 } from './survivorBasicPension';
@@ -763,16 +763,33 @@ export function accumulateCoverageIncome(
     const survivorBasicEntitlement = (calendarIdx: number): PensionBreakdown => {
       const target = indexToYearMonth(calendarIdx);
       const entitlement = createEmptyPensionBreakdown();
-      entitlement.survivor.basic.basic =
-        survivorBasicDeathRequirementMet
-          ? calcCoverageSurvivorBasicMonthlyMan(
-              input.familyMembers,
-              subject,
-              input.referenceDate,
-              target.year,
-              target.month,
-            )
-          : 0;
+      if (!survivorBasicDeathRequirementMet) return entitlement;
+
+      const basicDetail = calcCoverageSurvivorBasicDetailMonthlyMan(
+        input.familyMembers,
+        subject,
+        input.referenceDate,
+        target.year,
+        target.month,
+      );
+      const employeesDetail = calcCoverageSurvivorEmployeesDetail({
+        familyMembers: input.familyMembers,
+        subject,
+        pensionByMember: input.pensionByMember,
+        originalIncomeByMember: input.incomeByMember,
+        coverageIncomeByMember: incomeByMember,
+        referenceDate: input.referenceDate,
+        death: start,
+        year: target.year,
+        month: target.month,
+      }).detail;
+
+      // 2028年4月以降の子の加算は、基礎・厚生の両方に該当する場合
+      // 厚生年金側を優先して同じ子を二重加算しない。
+      if (employeesDetail.children > 0) {
+        basicDetail.children = 0;
+      }
+      entitlement.survivor.basic = basicDetail;
       return entitlement;
     };
     const survivorBasicPayment = calcPensionPaymentFromEntitlements(
