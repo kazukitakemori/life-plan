@@ -997,7 +997,7 @@ export function estimatePost65EmployeesPensionIncreaseMan(
         'pension',
       );
       addEmployeesEnrollmentMonth(
-        kind === 'public_servant' ? publicServant : general,
+        kind === 'publicServant' ? publicServant : general,
         calendarYear,
         month,
         remunerationYen,
