@@ -124,15 +124,55 @@ export function hasTwoThirdsPremiumPaid(
   return credited * 3 >= possible * 2;
 }
 
+function isUnpaidNationalPensionStatus(status: string): boolean {
+  return (
+    status === 'unpaid' ||
+    status === 'half-unpaid' ||
+    status === 'three-quarter-unpaid' ||
+    status === 'quarter-unpaid'
+  );
+}
+
+function hasConfirmedNoUnpaidInRecentYear(
+  memberState: PensionMemberState,
+  deathYear: number,
+  deathMonth: number,
+): boolean {
+  if (memberState.pastEnrollment === 'none') return false;
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-under50'
+      ? memberState.teikibinUnder50
+      : migrateTeikibinOver50Form(memberState.teikibinOver50);
+
+  // 定期便の「最近の月別状況」は選択年月の直前12か月。
+  // 特例は死亡月の前々月までの直近12か月なので、期間が一致する場合だけ判定する。
+  const endSerial = deathYear * 12 + (deathMonth - 1) - 2;
+  const teikibinEndSerial = form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1) - 1;
+  if (endSerial !== teikibinEndSerial || form.monthlyRows.length < 12) return false;
+
+  const rows = form.monthlyRows.slice(0, 12);
+  // 空欄・確認中は「未納なし」と断定できない。
+  if (rows.some((row) => !row.nationalPensionStatus || row.nationalPensionStatus === 'pending')) {
+    return false;
+  }
+  return rows.every((row) => !isUnpaidNationalPensionStatus(row.nationalPensionStatus));
+}
+
 function isWithinOneYearPremiumException(
+  memberState: PensionMemberState,
   deathYear: number,
   deathMonth: number,
   deceasedAge: number,
 ): boolean {
   if (deceasedAge >= STANDARD_OLD_AGE_START) return false;
-  if (deathYear < SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR) return true;
   if (deathYear > SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR) return false;
-  return deathMonth <= SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH;
+  if (
+    deathYear === SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR &&
+    deathMonth > SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH
+  ) {
+    return false;
+  }
+  return hasConfirmedNoUnpaidInRecentYear(memberState, deathYear, deathMonth);
 }
 
 export type SurvivorEmployeesDeathRequirement = 'short_term' | 'long_term' | 'none';
@@ -156,7 +196,12 @@ export function resolveSurvivorEmployeesDeathRequirement(
   );
   if (insured) {
     if (
-      isWithinOneYearPremiumException(death.year, death.month, deathAge.age) ||
+      isWithinOneYearPremiumException(
+        memberState,
+        death.year,
+        death.month,
+        deathAge.age,
+      ) ||
       hasTwoThirdsPremiumPaid(deceased, entries, referenceDate, deathAge)
     ) {
       return 'short_term';
