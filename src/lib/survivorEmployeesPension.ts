@@ -622,8 +622,9 @@ function yearMonthWhenAgeReached(
 function middleAgedWidowAddPhaseRatio(death: CalendarYearMonth): number {
   if (!isOnOrAfterSurvivorReform(death)) return 1;
   const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
-  // 2028年度から2053年度にかけて25年で新規裁定額を段階的に縮小。
-  // 新規発生年度の額はその受給終了まで固定する。
+  // 2028年度以降の新規裁定は25年かけて段階的に縮小し、
+  // 2052年度の新規裁定で終了する。受給開始後の額は固定する。
+  // 2028年度を25/25、2052年度を1/25、2053年度以降を0とする。
   if (fiscalYear >= 2053) return 0;
   return Math.max(0, Math.min(1, (2053 - fiscalYear) / 25));
 }
