@@ -18,6 +18,8 @@ import {
   calcMiddleAgedWidowAddYenPerYear,
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
+  hasConfirmedNoUnpaidInRecentYear,
+  hasConfirmedTwoThirdsPremiumRequirement,
   hasQualifyingSurvivorContinuationDisabilityPension,
   isSurvivingSpouseEligibleForEmployees,
   resolveSurvivorContinuationAnnualPensionYen,
@@ -25,6 +27,7 @@ import {
   resolveSurvivorContinuationIncomeBasis,
   resolveSurvivorContinuationIncomeReferenceYear,
   resolveSurvivorEmployeesDeathRequirement,
+  resolveSurvivorPremiumRequirementAssessment,
   resolveSurvivorEmployeesRecipient,
 } from '../src/lib/survivorEmployeesPension.ts';
 import { toMonthlyMan } from '../src/lib/pensionOldAge.ts';
@@ -92,10 +95,32 @@ headIncome.periods[0].monthlyAmountMan = 50;
 const pension = createDefaultPensionMemberState();
 
 {
+  // Q7で会社員と分かっても、過去の納付実績までは推測しない。
+  const autoAssessment = resolveSurvivorPremiumRequirementAssessment(
+    head,
+    pension,
+    referenceDate,
+    death,
+  );
+  assert.equal(autoAssessment.status, 'unconfirmed');
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      head,
+      [headIncome],
+      pension,
+      referenceDate,
+      death,
+    ),
+    'none',
+  );
+
+  // ねんきんネット等で納付要件を確認できた場合は手動確定できる。
+  const confirmedPension = createDefaultPensionMemberState();
+  confirmedPension.benefitSettings.survivorPremiumRequirement = 'met';
   const requirement = resolveSurvivorEmployeesDeathRequirement(
     head,
     [headIncome],
-    pension,
+    confirmedPension,
     referenceDate,
     death,
   );
@@ -103,7 +128,7 @@ const pension = createDefaultPensionMemberState();
   const months = calcEmployeesMonthsUntilDeath(
     head,
     [headIncome],
-    pension,
+    confirmedPension,
     referenceDate,
     death,
   );
@@ -112,7 +137,7 @@ const pension = createDefaultPensionMemberState();
   const proportional = calcDeceasedProportionalYenPerYearUntilDeath(
     head,
     [headIncome],
-    pension,
+    confirmedPension,
     referenceDate,
     death,
   );
@@ -127,7 +152,88 @@ const pension = createDefaultPensionMemberState();
     (SURVIVOR_EMPLOYEES_DEEMED_MONTHS / months) *
     SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE;
   assert.equal(Math.round(base), Math.round(expected));
-  console.log('OK 3/4 with 300-month deeming while insured');
+
+  confirmedPension.benefitSettings.survivorPremiumRequirement = 'not_met';
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      head,
+      [headIncome],
+      confirmedPension,
+      referenceDate,
+      death,
+    ),
+    'none',
+  );
+  console.log('OK premium requirement is not inferred from Q7; manual confirmation controls eligibility');
+}
+
+{
+  // 直近1年特例: 死亡月の前々月まで12か月に未納がなければ自動確認。
+  // 厚生年金加入月は国民年金欄が空でも納付済期間として扱える。
+  const recent = createDefaultPensionMemberState();
+  recent.pastEnrollment = 'nenkin-teikibin-over50';
+  recent.teikibinOver50.recentMonthlyYear = 2026;
+  recent.teikibinOver50.recentMonthlyMonth = 6;
+  recent.teikibinOver50.monthlyRows = recent.teikibinOver50.monthlyRows.map(
+    (row, index) => ({
+      ...row,
+      nationalPensionStatus: index === 2 ? 'student-special' : '',
+      employeesPensionCategory: index === 2 ? '' : 'employees',
+    }),
+  );
+  assert.equal(hasConfirmedNoUnpaidInRecentYear(recent, 2026, 7), true);
+  assert.deepEqual(
+    resolveSurvivorPremiumRequirementAssessment(
+      head,
+      recent,
+      referenceDate,
+      death,
+    ),
+    { status: 'met', basis: 'one_year_no_unpaid' },
+  );
+
+  recent.teikibinOver50.monthlyRows[5].nationalPensionStatus = 'unpaid';
+  recent.teikibinOver50.monthlyRows[5].employeesPensionCategory = '';
+  assert.equal(hasConfirmedNoUnpaidInRecentYear(recent, 2026, 7), false);
+  console.log('OK one-year exception counts employees coverage and approved student special, but rejects unpaid months');
+}
+
+{
+  // 定期便の累計加入期間だけでも、最大24か月の前納分を控除した下限で
+  // 3分の2以上が明らかな場合は自動確認できる。
+  const aggregate = createDefaultPensionMemberState();
+  aggregate.pastEnrollment = 'nenkin-teikibin-over50';
+  aggregate.teikibinOver50.employeesPensionGeneralMonths = 300;
+  assert.equal(
+    hasConfirmedTwoThirdsPremiumRequirement(
+      head,
+      aggregate,
+      referenceDate,
+      death,
+    ),
+    true,
+  );
+
+  // 老齢厚生年金の25年資格による長期要件も、Q7推計ではなく定期便の記録で確認する。
+  const olderHead = member({
+    ...head,
+    id: 'older-head',
+    age: 60,
+  });
+  const longTerm = createDefaultPensionMemberState();
+  longTerm.pastEnrollment = 'nenkin-teikibin-over50';
+  longTerm.teikibinOver50.employeesPensionGeneralMonths = 324;
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      olderHead,
+      [],
+      longTerm,
+      referenceDate,
+      death,
+    ),
+    'long_term',
+  );
+  console.log('OK recorded teikibin months support conservative 2/3 and 25-year checks');
 }
 
 {
