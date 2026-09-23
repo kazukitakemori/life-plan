@@ -943,11 +943,172 @@ export function estimateOldAgeAmountsFromIncome(
 }
 
 /**
- * 65歳以降の厚生年金加入分のうち、指定月までに在職定時改定・70歳到達改定で
- * 年金額へ反映済みとなる報酬比例部分（年額・円）を返す。
+ * 暦年月を比較用の連続月番号へ変換する。
+ */
+function pensionCalendarSerial(year: number, month: number): number {
+  return year * 12 + (month - 1);
+}
+
+function pensionCalendarFromSerial(serial: number): {
+  year: number;
+  month: number;
+} {
+  return {
+    year: Math.floor(serial / 12),
+    month: (serial % 12) + 1,
+  };
+}
+
+function pensionAgeAtCalendarMonth(
+  birthYear: number,
+  birthMonth: number,
+  year: number,
+  month: number,
+): number {
+  let age = year - birthYear;
+  if (month < birthMonth) age -= 1;
+  return age;
+}
+
+/**
+ * 70歳到達に伴う厚生年金被保険者期間の最終月と、
+ * 70歳到達改定が年金額へ反映される最初の月を返す。
+ *
+ * 年齢は誕生日の前日に到達するため、1日生まれだけ月境界が1か月前へずれる。
+ * birthDay が未入力の場合は、2日以後生まれと同じ月単位の概算とする。
+ */
+function getAge70RevisionBoundarySerials(
+  member: FamilyMember,
+  birthYear: number,
+  birthMonth: number,
+): {
+  lastInsuredSerial: number;
+  revisionStartSerial: number;
+} {
+  const birthdayMonthSerial = pensionCalendarSerial(
+    birthYear + EMPLOYEES_PENSION_MAX_INSURED_AGE,
+    birthMonth,
+  );
+  const age70ReachedMonthSerial =
+    member.birthDay === 1 ? birthdayMonthSerial - 1 : birthdayMonthSerial;
+
+  return {
+    // 70歳到達日（厚生年金資格喪失日）が属する月は被保険者期間へ算入しない。
+    lastInsuredSerial: age70ReachedMonthSerial - 1,
+    // 70歳到達時の再計算は、70歳に到達した月の翌月分から反映。
+    revisionStartSerial: age70ReachedMonthSerial + 1,
+  };
+}
+
+function hasEmployeesPensionAtSerial(
+  entries: IncomeEntry[],
+  birthYear: number,
+  birthMonth: number,
+  serial: number,
+  lastInsuredSerial: number,
+): boolean {
+  if (serial > lastInsuredSerial) return false;
+
+  const { year, month } = pensionCalendarFromSerial(serial);
+  const age = pensionAgeAtCalendarMonth(
+    birthYear,
+    birthMonth,
+    year,
+    month,
+  );
+
+  for (const entry of entries) {
+    for (const period of entry.periods) {
+      if (
+        isAgeCalendarMonthInRange(
+          age,
+          month,
+          period.startAge,
+          period.startMonth,
+          period.endAge,
+          period.endMonth,
+          birthYear,
+          birthMonth,
+        ) &&
+        classifyEmployeesEnrollmentFromIncome(
+          entry.category,
+          period.streamType,
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * 65〜69歳の退職改定で年金額へ反映済みとなる、直近の被保険者最終月。
+ *
+ * Q7は月単位の就労期間なので「終了月の月末退職」として扱う。
+ * 翌月も厚生年金加入が続く場合は、1か月以内の再就職相当として退職改定を発生させない。
+ * 70歳到達による資格喪失は退職改定とは分け、70歳到達改定の境界で処理する。
+ */
+function findLatestRetirementRevisionThroughSerial(
+  entries: IncomeEntry[],
+  birthYear: number,
+  birthMonth: number,
+  currentSerial: number,
+  lastInsuredSerial: number,
+): number | null {
+  const startSerial = pensionCalendarSerial(
+    birthYear + STANDARD_OLD_AGE_START,
+    birthMonth,
+  );
+  const scanEnd = Math.min(currentSerial - 1, lastInsuredSerial);
+  let latest: number | null = null;
+
+  for (let serial = startSerial; serial <= scanEnd; serial++) {
+    if (
+      !hasEmployeesPensionAtSerial(
+        entries,
+        birthYear,
+        birthMonth,
+        serial,
+        lastInsuredSerial,
+      )
+    ) {
+      continue;
+    }
+
+    // 最終被保険者月の次月が70歳到達による資格喪失月なら、
+    // 退職改定ではなく70歳到達改定として扱う。
+    if (serial === lastInsuredSerial) {
+      continue;
+    }
+
+    const nextSerial = serial + 1;
+    if (nextSerial > currentSerial) continue;
+
+    if (
+      !hasEmployeesPensionAtSerial(
+        entries,
+        birthYear,
+        birthMonth,
+        nextSerial,
+        lastInsuredSerial,
+      )
+    ) {
+      latest = serial;
+    }
+  }
+
+  return latest;
+}
+
+/**
+ * 65歳以降の厚生年金加入分のうち、指定月までに
+ * 在職定時改定・退職改定・70歳到達時の改定で年金額へ反映済みとなる
+ * 報酬比例部分（年額・円）を返す。
  *
  * - 65〜69歳の在職中: 毎年10月に前年9月〜当年8月分を追加
- * - 70歳到達後: 70歳到達月までの未反映分も追加
+ * - 65〜69歳で退職: 1か月以内に再加入しない場合、退職翌月分から未反映期間を追加
+ * - 70歳到達: 70歳到達月の翌月分から、被保険者最終月までの未反映期間を追加
  * - Q7の給与・賞与から標準報酬月額・標準賞与額を用いて推計
  */
 export function estimatePost65EmployeesPensionIncreaseMan(
@@ -972,77 +1133,100 @@ export function estimatePost65EmployeesPensionIncreaseMan(
     currentAge,
     currentMonth,
   );
+  const currentSerial = pensionCalendarSerial(currentYear, currentMonth);
 
-  // 在職定時改定で反映済みとなる最終月を決める。
-  // 65〜69歳は当年10月以降なら当年8月まで、9月以前なら前年8月まで。
-  // 70歳以降は70歳到達月までを最終的に反映済みとして扱う。
-  let reflectedThroughYear: number;
-  let reflectedThroughMonth: number;
-  if (currentAge >= EMPLOYEES_PENSION_MAX_INSURED_AGE) {
-    // 70歳到達月の前月までを被保険者期間として反映。
-    const age70Year = birthYear + EMPLOYEES_PENSION_MAX_INSURED_AGE;
-    if (birthMonth === 1) {
-      reflectedThroughYear = age70Year - 1;
-      reflectedThroughMonth = 12;
-    } else {
-      reflectedThroughYear = age70Year;
-      reflectedThroughMonth = birthMonth - 1;
-    }
-  } else if (currentMonth >= 10) {
-    reflectedThroughYear = currentYear;
-    reflectedThroughMonth = 8;
-  } else {
-    reflectedThroughYear = currentYear - 1;
-    reflectedThroughMonth = 8;
+  const age70Boundary = getAge70RevisionBoundarySerials(
+    member,
+    birthYear,
+    birthMonth,
+  );
+
+  // 在職定時改定:
+  // 10月分から当年8月まで、それ以前は前年8月までを反映済みとする。
+  const annualRevisionThroughSerial =
+    currentMonth >= 10
+      ? pensionCalendarSerial(currentYear, 8)
+      : pensionCalendarSerial(currentYear - 1, 8);
+
+  let reflectedThroughSerial = annualRevisionThroughSerial;
+
+  // 退職改定:
+  // Q7上で厚生年金加入が終了し、翌月も再加入していない場合は、
+  // その終了月までを退職翌月分から反映する。
+  const retirementThroughSerial = findLatestRetirementRevisionThroughSerial(
+    entries,
+    birthYear,
+    birthMonth,
+    currentSerial,
+    age70Boundary.lastInsuredSerial,
+  );
+  if (retirementThroughSerial != null) {
+    reflectedThroughSerial = Math.max(
+      reflectedThroughSerial,
+      retirementThroughSerial,
+    );
   }
 
-  const reflectedThroughSerial =
-    reflectedThroughYear * 12 + (reflectedThroughMonth - 1);
+  // 70歳到達時の改定:
+  // 誕生日の前日に70歳へ到達し、その「翌月分」から最終被保険者月までを反映する。
+  if (currentSerial >= age70Boundary.revisionStartSerial) {
+    reflectedThroughSerial = Math.max(
+      reflectedThroughSerial,
+      age70Boundary.lastInsuredSerial,
+    );
+  }
+
+  const firstPost65Serial = pensionCalendarSerial(
+    birthYear + STANDARD_OLD_AGE_START,
+    birthMonth,
+  );
+  const accumulationEndSerial = Math.min(
+    reflectedThroughSerial,
+    age70Boundary.lastInsuredSerial,
+  );
+
   const general = createEmptyProportionalAccumulation();
   const publicServant = createEmptyProportionalAccumulation();
 
   for (
-    let age = STANDARD_OLD_AGE_START;
-    age <= EMPLOYEES_PENSION_MAX_INSURED_AGE;
-    age++
+    let serial = firstPost65Serial;
+    serial <= accumulationEndSerial;
+    serial++
   ) {
-    for (let month = 1; month <= 12; month++) {
-      const calendarYear = calendarYearFromAgeCalendarMonth(
-        birthYear,
-        birthMonth,
-        age,
-        month,
-      );
-      const serial = calendarYear * 12 + (month - 1);
-      if (serial > reflectedThroughSerial) continue;
+    const { year: calendarYear, month } = pensionCalendarFromSerial(serial);
+    const age = pensionAgeAtCalendarMonth(
+      birthYear,
+      birthMonth,
+      calendarYear,
+      month,
+    );
 
-      const active = findActiveIncomeAtAgeMonth(
-        entries,
-        age,
-        month,
-        birthYear,
-        birthMonth,
-      );
-      if (!active) continue;
-      const kind = classifyEmployeesEnrollmentFromIncome(
-        active.category,
-        active.streamType,
-      );
-      if (!kind) continue;
+    const active = findActiveIncomeAtAgeMonth(
+      entries,
+      age,
+      month,
+      birthYear,
+      birthMonth,
+    );
+    if (!active) continue;
+    const kind = classifyEmployeesEnrollmentFromIncome(
+      active.category,
+      active.streamType,
+    );
+    if (!kind) continue;
 
-      const remunerationYen = standardRemunerationYenFromMonthlyManAt(
-        active.monthlyAmountMan,
-        calendarYear,
-        month,
-      );
-      addEmployeesEnrollmentMonth(
-        kind === 'publicServant' ? publicServant : general,
-        calendarYear,
-        month,
-        remunerationYen,
-        active.standardBonusYen,
-      );
-    }
+    const remunerationYen = standardRemunerationYenFromMonthlyManAt(
+      active.monthlyAmountMan,
+      calendarYear,
+      month,
+    );
+    addEmployeesEnrollmentMonth(
+      kind === 'publicServant' ? publicServant : general,
+      calendarYear,
+      month,
+      remunerationYen,
+      active.standardBonusYen,
+    );
   }
 
   return {
