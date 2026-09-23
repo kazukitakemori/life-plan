@@ -1173,14 +1173,44 @@ function yearMonthWhenAgeReached(
   };
 }
 
+const MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR: Record<number, number> = {
+  2028: 0.962,
+  2029: 0.923,
+  2030: 0.885,
+  2031: 0.846,
+  2032: 0.808,
+  2033: 0.769,
+  2034: 0.731,
+  2035: 0.692,
+  2036: 0.654,
+  2037: 0.615,
+  2038: 0.577,
+  2039: 0.538,
+  2040: 0.5,
+  2041: 0.462,
+  2042: 0.423,
+  2043: 0.385,
+  2044: 0.346,
+  2045: 0.308,
+  2046: 0.269,
+  2047: 0.231,
+  2048: 0.192,
+  2049: 0.154,
+  2050: 0.115,
+  2051: 0.077,
+  2052: 0.038,
+};
+
 function middleAgedWidowAddPhaseRatio(death: CalendarYearMonth): number {
   if (!isOnOrAfterSurvivorReform(death)) return 1;
   const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
-  // 2028年度以降の新規裁定は25年かけて段階的に縮小し、
-  // 2052年度の新規裁定で終了する。受給開始後の額は固定する。
-  // 2028年度を25/25、2052年度を1/25、2053年度以降を0とする。
+  if (fiscalYear < 2028) return 1;
   if (fiscalYear >= 2053) return 0;
-  return Math.max(0, Math.min(1, (2053 - fiscalYear) / 25));
+
+  // 令和7年法律74号附則別表第一の法定率。
+  // 法律上は2028年4月1日までは1.000、4月2日から0.962だが、
+  // 本ソフトの死亡日は月単位のため2028年4月は改正後の0.962として扱う。
+  return MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR[fiscalYear] ?? 0;
 }
 
 const TRANSITIONAL_WIDOW_ADD_2026_TABLE: Array<{
