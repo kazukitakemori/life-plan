@@ -855,6 +855,44 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.ok(Math.abs(regularTotal - 1) < 1e-9);
 }
 
+// Q8で手入力する受給中の遺族年金は、故人の死亡月ではなく翌月分から発生する。
+{
+  const member = pensionMember({ birthDay: 2, age: 65 });
+  const state = createDefaultPensionMemberState();
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+  state.benefitSettings.survivorDeathYear = 2026;
+  state.benefitSettings.survivorDeathMonth = 4;
+  state.benefitSettings.survivorBasicPerYear = 120_000;
+  state.benefitSettings.survivorEmployeesMutualPerYear = 240_000;
+
+  const april = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    4,
+  );
+  const may = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    5,
+  );
+
+  assert.equal(april.survivor.basic.basic, 0);
+  assert.equal(april.survivor.employees.basic, 0);
+  assert.ok(may.survivor.basic.basic > 0);
+  assert.ok(may.survivor.employees.basic > 0);
+}
+
 // 繰下げ待機中の在職停止分は増額対象外。
 // 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
 // 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
