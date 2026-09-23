@@ -271,7 +271,9 @@ const pension = createDefaultPensionMemberState();
   const disabledHead = member({
     ...head,
     id: 'disabled-head',
-    disability: 'has',
+    // 受給権が明示されていれば、古いJSON等で総合フラグがずれていても
+    // 遺族厚生年金の死亡要件を落とさない。
+    disability: 'none',
     disabilityPension: 'employees_grade2',
   });
   assert.equal(
@@ -865,7 +867,8 @@ const pension = createDefaultPensionMemberState();
     calcTransitionalWidowAddYenPerYear({
       wife: {
         ...born19550402,
-        disability: 'has',
+        // 経過的寡婦加算の停止は障害基礎年金の受給権で判定する。
+        disability: 'none',
         disabilityGrade: 'grade2',
         disabilityPension: 'basic_grade2',
       },
@@ -1131,18 +1134,21 @@ const pension = createDefaultPensionMemberState();
 
 {
   const qualifyingStatuses = [
-    'basic_grade1',
-    'basic_grade2',
-    'employees_grade1',
-    'employees_grade2',
-    'employees_grade3',
+    ['basic_grade1', 'grade1'],
+    ['basic_grade2', 'grade2'],
+    ['employees_grade1', 'grade1'],
+    ['employees_grade2', 'grade2'],
+    ['employees_grade3', 'grade3'],
   ];
-  for (const disabilityPension of qualifyingStatuses) {
+  for (const [disabilityPension, disabilityGrade] of qualifyingStatuses) {
     assert.equal(
       hasQualifyingSurvivorContinuationDisabilityPension(
         member({
           ...wife38,
-          disability: 'has',
+          // 継続給付は「受給権」＋「現に該当する障害等級」で判定し、
+          // 総合的な「障害あり」フラグだけには依存しない。
+          disability: 'none',
+          disabilityGrade,
           disabilityPension,
         }),
       ),
@@ -1154,7 +1160,8 @@ const pension = createDefaultPensionMemberState();
       member({
         ...wife38,
         disability: 'has',
-        disabilityPension: 'none',
+        disabilityGrade: 'none',
+        disabilityPension: 'employees_grade3',
       }),
     ),
     false,
@@ -1163,13 +1170,14 @@ const pension = createDefaultPensionMemberState();
     hasQualifyingSurvivorContinuationDisabilityPension(
       member({
         ...wife38,
-        disability: 'none',
-        disabilityPension: 'employees_grade3',
+        disability: 'has',
+        disabilityGrade: 'grade2',
+        disabilityPension: 'none',
       }),
     ),
     false,
   );
-  console.log('OK 2028 continuation: basic grades 1-2 and employees grades 1-3 qualify');
+  console.log('OK 2028 continuation requires matching disability-pension entitlement and current grade');
 }
 
 {
