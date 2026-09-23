@@ -33,6 +33,7 @@ export interface TeikibinRecentMonthlyInputRow {
   employeesPensionCategory: string;
   standardRemuneration: string;
   standardBonus: string;
+  premiumPayment: string;
 }
 
 export interface NenkinTeikibinUnder50AmountFields {
