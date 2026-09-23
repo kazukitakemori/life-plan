@@ -144,9 +144,9 @@ function OldAgeBenefitRow({
       normalized.startAge < 65;
     onChange({
       ...row,
-      ...(!allowDeferral && normalized.startAge > 65) || specialRestricted
+      ...((!allowDeferral && normalized.startAge > 65) || specialRestricted
         ? { startAge: 65, startMonth: 0 }
-        : normalized,
+        : normalized),
     });
   };
 
