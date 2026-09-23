@@ -321,16 +321,6 @@ function applyDeferralAveragePaymentRate(
 }
 
 
-function isOnOrAfterMonth(
-  calendarYear: number,
-  calendarMonth: number,
-  startYear: number,
-  startMonth: number,
-): boolean {
-  if (calendarYear > startYear) return true;
-  if (calendarYear < startYear) return false;
-  return calendarMonth >= startMonth;
-}
 
 function pairToGeneralDetail(pair: TeikibinOver50AmountPair): GeneralEmployeesDetail {
   return {
@@ -1451,10 +1441,10 @@ function calcSurvivorMonthlyManByRow(
 ): PensionBreakdown['survivor'] {
   const result = createEmptyPensionBreakdown().survivor;
 
+  // 遺族年金は死亡月の翌月分から発生する。
   if (
-    !isOnOrAfterMonth(
-      calendarYear,
-      calendarMonth,
+    pensionCalendarSerial(calendarYear, calendarMonth) <=
+    pensionCalendarSerial(
       benefitSettings.survivorDeathYear,
       benefitSettings.survivorDeathMonth,
     )
