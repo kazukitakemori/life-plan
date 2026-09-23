@@ -144,18 +144,44 @@ export function hasConfirmedNoUnpaidInRecentYear(
       ? memberState.teikibinUnder50
       : migrateTeikibinOver50Form(memberState.teikibinOver50);
 
-  // 定期便の「最近の月別状況」は選択年月の直前12か月。
-  // 特例は死亡月の前々月までの直近12か月なので、期間が一致する場合だけ判定する。
-  const endSerial = deathYear * 12 + (deathMonth - 1) - 2;
-  const teikibinEndSerial = form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1) - 1;
-  if (endSerial !== teikibinEndSerial || form.monthlyRows.length < 12) return false;
+  // 通常のねんきん定期便は「最近の月別状況」を直近13月掲載する。
+  // 現行データでは over50 のみ 12行 + recentMonthlyInputRow で13月目を保持する。
+  // under50 は12行しか保持していないため、ここでは特例成立を断定しない。
+  if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') return false;
 
-  const rows = form.monthlyRows.slice(0, 12);
-  // 空欄・確認中は「未納なし」と断定できない。
-  if (rows.some((row) => !row.nationalPensionStatus || row.nationalPensionStatus === 'pending')) {
+  const rows = [...form.monthlyRows.slice(0, 12), form.recentMonthlyInputRow];
+  if (rows.length !== 13) return false;
+
+  // recentMonthlyYear/month は13月目（最新月）の年月。
+  // 死亡月の前々月までの直近12月を13月の記録から切り出せる場合だけ判定する。
+  const latestSerial =
+    form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1);
+  const requiredEndSerial = deathYear * 12 + (deathMonth - 1) - 2;
+  const startSerial = latestSerial - 12;
+  if (requiredEndSerial < startSerial + 11 || requiredEndSerial > latestSerial) {
     return false;
   }
-  return rows.every((row) => !isUnpaidNationalPensionStatus(row.nationalPensionStatus));
+
+  const requiredStartSerial = requiredEndSerial - 11;
+  const selected = rows.filter((_, index) => {
+    const serial = startSerial + index;
+    return serial >= requiredStartSerial && serial <= requiredEndSerial;
+  });
+  if (selected.length !== 12) return false;
+
+  // 空欄・確認中は「未納なし」と断定できない。
+  if (
+    selected.some(
+      (row) =>
+        !row.nationalPensionStatus ||
+        row.nationalPensionStatus === 'pending',
+    )
+  ) {
+    return false;
+  }
+  return selected.every(
+    (row) => !isUnpaidNationalPensionStatus(row.nationalPensionStatus),
+  );
 }
 
 export function isWithinOneYearPremiumException(
