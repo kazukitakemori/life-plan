@@ -4,6 +4,7 @@ import {
   EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
   STANDARD_OLD_AGE_START,
 } from './pensionConstants';
+import type { DisabilityPensionStatus } from '../types/family';
 import {
   createEmptyOldAgePensionBreakdown,
   type GeneralEmployeesDetail,
@@ -16,6 +17,25 @@ export const OLD_AGE_EARLIEST_START_AGE = 60;
 export const OLD_AGE_DEFERRAL_FIRST_AGE = 66;
 export const OLD_AGE_DEFERRAL_MAX_AGE = 75;
 export const OLD_AGE_DEFERRAL_MAX_AGE_LEGACY = 70;
+
+export type OldAgeDeferralKind = 'basic' | 'employees';
+
+/**
+ * 現在確認できている障害年金受給権から、老齢年金の繰下げ可否を返す。
+ * 障害基礎年金のみの受給権者は老齢厚生年金だけ繰下げ可能。
+ * 障害厚生年金の受給権がある場合は、老齢基礎・老齢厚生とも繰下げ不可。
+ */
+export function canDeferOldAgeWithDisabilityPension(
+  status: DisabilityPensionStatus | undefined,
+  kind: OldAgeDeferralKind,
+): boolean {
+  const resolved = status ?? 'none';
+  if (resolved === 'none') return true;
+  if (resolved === 'basic_grade1' || resolved === 'basic_grade2') {
+    return kind === 'employees';
+  }
+  return false;
+}
 
 /**
  * 繰下げ上限年齢を生年月日から返す。
