@@ -372,6 +372,9 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
   if (!startAge) return false;
 
   if (isOnOrAfterSurvivorReform(death)) {
+    // 改正後、子を養育していた配偶者は遺族基礎年金の失権後さらに5年間、
+    // 増額された有期給付の対象となる。
+    if (hadEligibleChildrenAtDeath && survivorBasicLoss) return true;
     if (spouse.gender === 'male') return startAge.age < 60;
     return startAge.age < survivorReformWifeFiniteMaxAge(death);
   }
@@ -400,6 +403,15 @@ export function isSurvivingSpouseEligibleForEmployees(
   if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) return true;
   const fiveYearStart =
     hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+
+  if (
+    isOnOrAfterSurvivorReform(death) &&
+    hadEligibleChildrenAtDeath &&
+    survivorBasicLoss
+  ) {
+    const end = fiveYearEnd(survivorBasicLoss);
+    return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
+  }
 
   if (spouse.gender === 'female') {
     const fiveYearStartAge = getMemberAgeMonth(
