@@ -394,9 +394,9 @@ const pension = createDefaultPensionMemberState();
       death,
       true,
     ),
-    true,
+    false,
   );
-  console.log('OK spouse duration: childless wife under 30 is 5 years; childless husband under 55 is out');
+  console.log('OK spouse duration: childless wife under 30 is 5 years; husband under 55 has no survivor-employees right even with child');
 }
 
 {
@@ -477,6 +477,238 @@ const pension = createDefaultPensionMemberState();
   );
   assert.equal(childOnly?.kind, 'child');
   console.log('OK recipient priority: spouse with child, then child');
+}
+
+{
+  // 受給順位は死亡時に固定する。55〜59歳の夫は受給権を取得しても
+  // 60歳まで支給停止となり、その間に父母へ順位を移さない。
+  const husband58 = member({
+    id: 'husband58',
+    role: 'head',
+    nickname: '夫',
+    age: 58,
+    birthMonth: 4,
+    birthDay: 1,
+    gender: 'male',
+  });
+  const deceasedWife = member({
+    id: 'deceased-wife',
+    role: 'spouse',
+    nickname: '妻',
+    age: 40,
+    birthMonth: 4,
+    gender: 'female',
+  });
+  const parent70 = member({
+    id: 'parent70',
+    role: 'other',
+    otherRelationship: 'parent',
+    nickname: '親',
+    age: 70,
+    birthMonth: 4,
+  });
+
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [husband58, deceasedWife, parent70],
+      'spouse',
+      referenceDate,
+      death,
+      { year: 2027, month: 7 },
+    ),
+    null,
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [husband58, deceasedWife, parent70],
+      'spouse',
+      referenceDate,
+      death,
+      { year: 2028, month: 4 },
+    )?.member.id,
+    husband58.id,
+  );
+
+  // 父母が死亡時55歳以上なら、60歳まで支給停止でも孫へ順位を移さない。
+  const parent58 = member({
+    id: 'parent58',
+    role: 'other',
+    otherRelationship: 'parent',
+    nickname: '親',
+    age: 58,
+    birthMonth: 4,
+    birthDay: 1,
+  });
+  const grandchild10 = member({
+    id: 'grandchild10',
+    role: 'other',
+    otherRelationship: 'grandchild',
+    nickname: '孫',
+    age: 10,
+    birthMonth: 4,
+  });
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, parent58, grandchild10],
+      'head',
+      referenceDate,
+      death,
+      { year: 2027, month: 7 },
+    ),
+    null,
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, parent58, grandchild10],
+      'head',
+      referenceDate,
+      death,
+      { year: 2028, month: 4 },
+    )?.member.id,
+    parent58.id,
+  );
+
+  // 孫が死亡時の上位順位を占めた場合、後に年齢要件を外れても祖父母へ移さない。
+  const grandchild17 = member({
+    id: 'grandchild17',
+    role: 'other',
+    otherRelationship: 'grandchild',
+    nickname: '孫',
+    age: 17,
+    birthMonth: 4,
+  });
+  const grandparent70 = member({
+    id: 'grandparent70',
+    role: 'other',
+    otherRelationship: 'grandparent',
+    nickname: '祖父母',
+    age: 70,
+    birthMonth: 4,
+  });
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, grandchild17, grandparent70],
+      'head',
+      referenceDate,
+      death,
+      death,
+    )?.member.id,
+    grandchild17.id,
+  );
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, grandchild17, grandparent70],
+      'head',
+      referenceDate,
+      death,
+      { year: 2028, month: 4 },
+    ),
+    null,
+  );
+
+  // 配偶者の5年有期給付が終わっても、死亡時に下位だった父母へ承継しない。
+  assert.equal(
+    resolveSurvivorEmployeesRecipient(
+      [head, wife28, parent70],
+      'head',
+      referenceDate,
+      death,
+      { year: 2031, month: 8 },
+    ),
+    null,
+  );
+
+  console.log('OK survivor employees keeps death-time priority during suspension and after expiry');
+}
+
+{
+  // 65歳到達による中高齢寡婦加算→経過的寡婦加算の切替は翌月。
+  // 4月2日生まれは4月に65歳到達するため、4月は中高齢、5月から経過的。
+  const historicalReference = new Date(2020, 2, 1);
+  const widowDay2 = member({
+    id: 'widow-day2',
+    role: 'spouse',
+    nickname: '妻',
+    age: 64,
+    birthMonth: 4,
+    birthDay: 2,
+    gender: 'female',
+  });
+  const historicalDeath = { year: 2019, month: 7 };
+  const aprilMiddle = calcMiddleAgedWidowAddYenPerYear({
+    wife: widowDay2,
+    remainingFamilyMembers: [widowDay2],
+    referenceDate: historicalReference,
+    death: historicalDeath,
+    now: { year: 2020, month: 4 },
+    hadEligibleChildrenAtDeath: false,
+    hasEligibleChildrenNow: false,
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  const aprilTransitional = calcTransitionalWidowAddYenPerYear({
+    wife: widowDay2,
+    remainingFamilyMembers: [widowDay2],
+    referenceDate: historicalReference,
+    death: historicalDeath,
+    now: { year: 2020, month: 4 },
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  const mayMiddle = calcMiddleAgedWidowAddYenPerYear({
+    wife: widowDay2,
+    remainingFamilyMembers: [widowDay2],
+    referenceDate: historicalReference,
+    death: historicalDeath,
+    now: { year: 2020, month: 5 },
+    hadEligibleChildrenAtDeath: false,
+    hasEligibleChildrenNow: false,
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  const mayTransitional = calcTransitionalWidowAddYenPerYear({
+    wife: widowDay2,
+    remainingFamilyMembers: [widowDay2],
+    referenceDate: historicalReference,
+    death: historicalDeath,
+    now: { year: 2020, month: 5 },
+    requirement: 'short_term',
+    deceasedEmployeesMonths: 200,
+  });
+  assert.ok(aprilMiddle > 0);
+  assert.equal(aprilTransitional, 0);
+  assert.equal(mayMiddle, 0);
+  assert.ok(mayTransitional > 0);
+
+  // 4月1日生まれは3月31日に65歳到達するため、4月から経過的へ切り替わる。
+  const widowDay1 = { ...widowDay2, id: 'widow-day1', birthDay: 1 };
+  assert.equal(
+    calcMiddleAgedWidowAddYenPerYear({
+      wife: widowDay1,
+      remainingFamilyMembers: [widowDay1],
+      referenceDate: historicalReference,
+      death: historicalDeath,
+      now: { year: 2020, month: 4 },
+      hadEligibleChildrenAtDeath: false,
+      hasEligibleChildrenNow: false,
+      requirement: 'short_term',
+      deceasedEmployeesMonths: 200,
+    }),
+    0,
+  );
+  assert.ok(
+    calcTransitionalWidowAddYenPerYear({
+      wife: widowDay1,
+      remainingFamilyMembers: [widowDay1],
+      referenceDate: historicalReference,
+      death: historicalDeath,
+      now: { year: 2020, month: 4 },
+      requirement: 'short_term',
+      deceasedEmployeesMonths: 200,
+    }) > 0,
+  );
+
+  console.log('OK widow additions switch in the month after legal age-65 attainment');
 }
 
 {
