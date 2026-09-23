@@ -718,6 +718,119 @@ export function isSurvivingSpouseInContinuationAssessmentWindow(
   return calendarIndex(now.year, now.month) > calendarIndex(end.year, end.month);
 }
 
+export interface SurvivorContinuationAssessmentTarget {
+  member: FamilyMember;
+  finiteBenefitStart: CalendarYearMonth;
+  finiteBenefitEnd: CalendarYearMonth;
+  assessmentEndAge: number;
+  /**
+   * 現行保存データだけでは所得基準額・障害年金受給権を確定できないため、
+   * この段階では支給可否ではなく「継続給付の判定対象」であることだけを示す。
+   */
+  reason: 'income_or_disability';
+}
+
+/**
+ * 2028年改正の5年有期給付が終了した後、最長65歳までの継続給付を
+ * 判定する必要がある配偶者を特定する。
+ *
+ * ここでは所得基準額や障害年金受給権を推測せず、判定対象の時間軸だけを確定する。
+ */
+export function resolveSurvivorContinuationAssessmentTarget(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+): SurvivorContinuationAssessmentTarget | null {
+  if (!isOnOrAfterSurvivorReform(death)) return null;
+
+  const deceased = familyMembers.find((member) => member.role === subject);
+  if (!deceased) return null;
+  const remaining = familyMembers.filter(
+    (member) => member.role !== 'pet' && member.id !== deceased.id,
+  );
+  const survivorRole = subject === 'head' ? 'spouse' : 'head';
+  const spouse = remaining.find((member) => member.role === survivorRole);
+  if (!spouse) return null;
+
+  const childrenAtDeath = listEligibleSurvivorBasicChildren(
+    remaining,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  const childrenNow = listEligibleSurvivorBasicChildren(
+    remaining,
+    referenceDate,
+    now.year,
+    now.month,
+  );
+  const receivesSurvivorBasicNow = childrenNow.length > 0;
+
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (childrenAtDeath.length > 0) {
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset++) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      if (
+        listEligibleSurvivorBasicChildren(
+          remaining,
+          referenceDate,
+          year,
+          month,
+        ).length === 0
+      ) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
+
+  if (
+    !isSpouseFiniteSurvivorEmployeesBenefit(
+      spouse,
+      childrenAtDeath.length > 0,
+      referenceDate,
+      death,
+      receivesSurvivorBasicNow,
+      survivorBasicLoss,
+    )
+  ) {
+    return null;
+  }
+
+  const finiteBenefitStart =
+    childrenAtDeath.length > 0 && survivorBasicLoss
+      ? survivorBasicLoss
+      : death;
+  const finiteBenefitEnd = fiveYearEnd(finiteBenefitStart);
+  if (
+    calendarIndex(now.year, now.month) <=
+    calendarIndex(finiteBenefitEnd.year, finiteBenefitEnd.month)
+  ) {
+    return null;
+  }
+
+  const nowAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    now.year,
+    now.month,
+  );
+  if (!nowAge || nowAge.age >= STANDARD_OLD_AGE_START) return null;
+
+  return {
+    member: spouse,
+    finiteBenefitStart,
+    finiteBenefitEnd,
+    assessmentEndAge: STANDARD_OLD_AGE_START,
+    reason: 'income_or_disability',
+  };
+}
+
 export function isSurvivingSpouseEligibleForEmployees(
   spouse: FamilyMember,
   hadEligibleChildrenAtDeath: boolean,
@@ -986,10 +1099,15 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   death: CalendarYearMonth;
   year: number;
   month: number;
-}): { detail: SurvivorEmployeesDetail; recipientId: string | null } {
+}): {
+  detail: SurvivorEmployeesDetail;
+  recipientId: string | null;
+  continuationAssessment: SurvivorContinuationAssessmentTarget | null;
+} {
   const empty = {
     detail: createEmptySurvivorEmployeesDetail(),
     recipientId: null,
+    continuationAssessment: null,
   };
   const deceased = input.familyMembers.find((member) => member.role === input.subject);
   if (!deceased) return empty;
@@ -1007,6 +1125,20 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   if (requirement === 'none') return empty;
 
   const now: CalendarYearMonth = { year: input.year, month: input.month };
+  const continuationAssessment =
+    resolveSurvivorContinuationAssessmentTarget(
+      input.familyMembers,
+      input.subject,
+      input.referenceDate,
+      input.death,
+      now,
+    );
+  // 5年有期給付終了後は、所得基準額・障害年金受給権を確認できるまで
+  // 給付額を推測しない。同時に後順位の遺族へ誤って給付を移さない。
+  if (continuationAssessment) {
+    return { ...empty, continuationAssessment };
+  }
+
   const recipient = resolveSurvivorEmployeesRecipient(
     input.familyMembers,
     input.subject,
@@ -1145,6 +1277,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
       middleAged: middleAgedMan,
     },
     recipientId: recipient.member.id,
+    continuationAssessment: null,
   };
 }
 
