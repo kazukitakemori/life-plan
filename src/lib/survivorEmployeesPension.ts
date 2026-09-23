@@ -1001,6 +1001,38 @@ export function isSurvivingSpouseEligibleForEmployees(
   return isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_PAYMENT_START_AGE);
 }
 
+function isEligibleSurvivorEmployeesGrandchild(
+  member: FamilyMember,
+  referenceDate: Date,
+  year: number,
+  month: number,
+): boolean {
+  if (
+    member.role !== 'other' ||
+    member.otherRelationship !== 'grandchild'
+  ) {
+    return false;
+  }
+  const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
+  if (!ageMonth) return false;
+
+  const ordinaryEnd = survivorChildOrdinaryEnd(member, referenceDate);
+  if (
+    ordinaryEnd &&
+    calendarIndex(year, month) <=
+      calendarIndex(ordinaryEnd.year, ordinaryEnd.month)
+  ) {
+    return true;
+  }
+
+  return (
+    member.disability === 'has' &&
+    (member.disabilityGrade === 'grade1' ||
+      member.disabilityGrade === 'grade2') &&
+    ageMonth.age < 20
+  );
+}
+
 function isParentLikeEligible(
   member: FamilyMember,
   minRelationship: 'parent' | 'grandparent',
@@ -1019,7 +1051,7 @@ function isParentLikeEligible(
 
 export interface SurvivorEmployeesRecipient {
   member: FamilyMember;
-  kind: 'spouse' | 'child' | 'parent' | 'grandparent';
+  kind: 'spouse' | 'child' | 'parent' | 'grandchild' | 'grandparent';
 }
 
 export function resolveSurvivorEmployeesRecipient(
@@ -1090,6 +1122,18 @@ export function resolveSurvivorEmployeesRecipient(
     isParentLikeEligible(member, 'parent', referenceDate, death, now),
   );
   if (parent) return { member: parent, kind: 'parent' };
+
+  const grandchild = remaining.find((member) =>
+    isEligibleSurvivorEmployeesGrandchild(
+      member,
+      referenceDate,
+      now.year,
+      now.month,
+    ),
+  );
+  if (grandchild) {
+    return { member: grandchild, kind: 'grandchild' };
+  }
 
   const grandparent = remaining.find((member) =>
     isParentLikeEligible(member, 'grandparent', referenceDate, death, now),
