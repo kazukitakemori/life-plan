@@ -22,7 +22,6 @@ import {
 } from './housingLoanAmortization';
 import { createDefaultPensionMemberState } from './pensionDefaults';
 import {
-  calcMemberMonthlyPensionBreakdownMan,
   calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan,
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
@@ -714,8 +713,6 @@ export function accumulateCoverageIncome(
     subject,
   );
   const taxHousehold = buildCoverageTaxHousehold(input.familyMembers, subject);
-  const taxHead =
-    taxHousehold.find((member) => member.role === 'head') ?? taxHousehold[0];
   const pensionMonthCache = new Map<
     number,
     { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth }
