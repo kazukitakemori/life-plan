@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import type { CashFlowInput } from '../../lib/cashFlow';
 import type { CashFlowTableData } from '../../types/cashFlow';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
+import { resolveMemberPriorYearIncomeProfile } from '../../lib/priorYearIncomeResolution';
 import {
   REQUIRED_COVERAGE_CUSTOM_OPTION,
   buildRequiredCoverageResult,
@@ -171,6 +172,33 @@ export function RequiredCoverageView({
     : '配偶者さん';
   const hasSpouse = spouseMember != null;
   const subjectLabel = subject === 'spouse' ? spouseLabel : headLabel;
+  const survivorMember =
+    subject === 'head'
+      ? (spouseMember ??
+        cashFlowInput.familyMembers.find(
+          (member) =>
+            member.role === 'other' &&
+            member.otherRelationship === 'common_law_partner',
+        ))
+      : headMember;
+  const survivorIncomeProfile = survivorMember
+    ? resolveMemberPriorYearIncomeProfile({
+        member: survivorMember,
+        incomeByMember: cashFlowInput.incomeByMember,
+        priorYearIncomeByMember: cashFlowInput.priorYearIncomeByMember ?? {},
+        referenceDate: cashFlowInput.referenceDate,
+        incomeReferenceYear: result.coverageStart.year - 1,
+        assessmentCalendarYear: result.coverageStart.year,
+        simulationStartYear: result.coverageStart.year,
+      })
+    : null;
+  const shouldWarnSurvivorLivelihoodIncome =
+    survivorIncomeProfile?.hasActiveIncomeBlock === true &&
+    survivorIncomeProfile.grossIncomeMan >= 850 &&
+    survivorIncomeProfile.totalIncomeMan >= 655.5;
+  const survivorLabel = survivorMember
+    ? getMemberTabLabel(survivorMember)
+    : '残されたご家族';
   const chartKey = `${result.coverageStart.year}-${result.coverageEnd?.year ?? 0}-${result.coverageEnd?.month ?? 0}`;
   const showExpenseForm = detailPane === 'expense';
   const showIncomeForm = detailPane === 'income';
@@ -499,6 +527,11 @@ export function RequiredCoverageView({
               </header>
 
               <div className="required-coverage-body">
+                {shouldWarnSurvivorLivelihoodIncome ? (
+                  <p className="required-coverage-card-note" role="note">
+                    Q7の入力からみると、{survivorLabel}の前年相当の収入・所得が、遺族年金の生計維持に使う基準（収入850万円未満または所得655.5万円未満）を超える可能性があります。定年退職などでおおむね5年以内に基準未満となる場合等は認定されることもあるため、この画面では自動失権にはしていません。自動計上されている遺族年金は個別確認が必要です。
+                  </p>
+                ) : null}
                 {showForm ? (
                   <>
                     <div className="required-coverage-detail-forms">
