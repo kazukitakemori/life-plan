@@ -9,6 +9,7 @@ import {
   countQ7EmployeesMonthsAfterDate,
   estimateEmployeesMonthsForDependentQualification,
   estimateOldAgeAmountsFromIncome,
+  estimateQ7FuturePensionAdditionsAfterDate,
   getActiveEmployeesMonthlyRemunerationMan,
   getEmployeesEnrollmentMonthCounts,
 } from './pensionEnrollmentEstimate';
@@ -19,6 +20,7 @@ import {
   buildBasicDetailFromYen,
   buildGeneralDetailFromYen,
   buildPublicServantDetailFromYen,
+  getEarlyClaimReductionPerMonthByBirth,
   isOnOrAfterBenefitStart,
   toMonthlyMan,
 } from './pensionOldAge';
@@ -200,7 +202,10 @@ function calcNoneOldAgeAmounts(
  *   （定期便記載の老齢基礎年金額 → 逆算した算定基礎月数 vs 厚生年金加入月数の差）
  */
 function calcUnder50OldAgeAmounts(
+  member: FamilyMember,
   form: NenkinTeikibinUnder50Form,
+  incomeEntries: IncomeEntry[],
+  referenceDate: Date,
 ): OldAgePensionBreakdown {
   const basicYen = form.oldAgeBasicPensionYen ?? 0;
   const generalYen = form.oldAgeEmployeesGeneralYen ?? 0;
@@ -208,6 +213,17 @@ function calcUnder50OldAgeAmounts(
     form.oldAgeEmployeesPublicServantYen,
     form.oldAgeEmployeesPrivateSchoolYen,
   ]);
+  const future = estimateQ7FuturePensionAdditionsAfterDate(
+    member,
+    incomeEntries,
+    referenceDate,
+    form.recentMonthlyYear,
+    form.recentMonthlyMonth,
+  );
+  const projectedBasicYen = Math.min(
+    FULL_BASIC_PENSION_YEN_PER_YEAR,
+    basicYen + future.basicYenPerYear,
+  );
 
   // 定期便の厚生年金加入月数
   const generalMonths = form.employeesPensionGeneralMonths ?? 0;
@@ -235,15 +251,15 @@ function calcUnder50OldAgeAmounts(
 
   return {
     basic: {
-      ...buildBasicDetailFromYen(basicYen),
+      ...buildBasicDetailFromYen(projectedBasicYen),
       additional: toMonthlyMan(calcAdditionalPensionYenPerYear(form.additionalPremiumMonths)),
     },
     generalEmployees: {
-      ...buildGeneralDetailFromYen(generalYen),
+      ...buildGeneralDetailFromYen(generalYen + future.generalEmployeesYenPerYear),
       transitional: toMonthlyMan(generalTransitional),
     },
     publicServant: {
-      ...buildPublicServantDetailFromYen(publicYen),
+      ...buildPublicServantDetailFromYen(publicYen + future.publicServantYenPerYear),
       transitional: toMonthlyMan(totalTransitional - generalTransitional),
     },
   };
@@ -356,7 +372,12 @@ function calcOldAgeMonthlyManByRow(
   if (needsAuto) {
     switch (memberState.pastEnrollment) {
       case 'nenkin-teikibin-under50':
-        autoBase = calcUnder50OldAgeAmounts(memberState.teikibinUnder50);
+        autoBase = calcUnder50OldAgeAmounts(
+          member,
+          memberState.teikibinUnder50,
+          incomeEntries,
+          referenceDate,
+        );
         break;
       case 'nenkin-teikibin-over50':
         autoBase = calcOver50OldAgeAmounts(
@@ -380,6 +401,10 @@ function calcOldAgeMonthlyManByRow(
 
   // ─ 各行に manual/auto を適用し、繰上繰下調整 ─
   const result = createEmptyOldAgePensionBreakdown();
+  const earlyReductionPerMonth = getEarlyClaimReductionPerMonthByBirth(
+    calcBirthYear(member.age, member.birthMonth, referenceDate),
+    resolveMemberBirthMonth(member),
+  );
 
   if (basicActive) {
     let basic =
@@ -389,7 +414,12 @@ function calcOldAgeMonthlyManByRow(
     // manual は手入力値そのままのため調整しない
     const bStartMonths = bSetting.startAge * 12 + (bSetting.startMonth ?? 0);
     if (bSetting.amountMode !== 'manual' && bStartMonths !== STANDARD_OLD_AGE_START * 12) {
-      basic = applyBasicDetailAdjustment(basic, bSetting.startAge, bSetting.startMonth ?? 0);
+      basic = applyBasicDetailAdjustment(
+        basic,
+        bSetting.startAge,
+        bSetting.startMonth ?? 0,
+        earlyReductionPerMonth,
+      );
     }
     result.basic = basic;
   }
@@ -406,7 +436,12 @@ function calcOldAgeMonthlyManByRow(
       gSetting.startAge < STANDARD_OLD_AGE_START;
     const gStartMonths = gSetting.startAge * 12 + (gSetting.startMonth ?? 0);
     if (!isOver50Special && gSetting.amountMode !== 'manual' && gStartMonths !== STANDARD_OLD_AGE_START * 12) {
-      general = applyGeneralDetailAdjustment(general, gSetting.startAge, gSetting.startMonth ?? 0);
+      general = applyGeneralDetailAdjustment(
+        general,
+        gSetting.startAge,
+        gSetting.startMonth ?? 0,
+        earlyReductionPerMonth,
+      );
     }
     result.generalEmployees = general;
   }
@@ -422,14 +457,19 @@ function calcOldAgeMonthlyManByRow(
       pSetting.startAge < STANDARD_OLD_AGE_START;
     const pStartMonths = pSetting.startAge * 12 + (pSetting.startMonth ?? 0);
     if (!isOver50Special && pSetting.amountMode !== 'manual' && pStartMonths !== STANDARD_OLD_AGE_START * 12) {
-      pub = applyPublicDetailAdjustment(pub, pSetting.startAge, pSetting.startMonth ?? 0);
+      pub = applyPublicDetailAdjustment(
+        pub,
+        pSetting.startAge,
+        pSetting.startMonth ?? 0,
+        earlyReductionPerMonth,
+      );
     }
     result.publicServant = pub;
   }
 
-  // ─ 在職老齢年金（65歳以上）: 就労収入があれば支給停止を適用 ─
-  // 65歳未満は低在老が廃止済み（令和4年4月〜）のため対象外
-  if (ageMonth.age >= STANDARD_OLD_AGE_START && (generalActive || publicActive)) {
+  // ─ 在職老齢年金（60歳以上）: 就労収入があれば支給停止を適用 ─
+  // 令和4年4月以降、60〜64歳も65歳以上と同じ基準で判定する。
+  if (ageMonth.age >= 60 && (generalActive || publicActive)) {
     const remunerationMan = getActiveEmployeesMonthlyRemunerationMan(
       incomeEntries,
       ageMonth.age,
@@ -469,7 +509,12 @@ export function calcMemberOldAge65BaseBreakdownMan(
   if (needsAuto) {
     switch (memberState.pastEnrollment) {
       case 'nenkin-teikibin-under50':
-        autoBase = calcUnder50OldAgeAmounts(memberState.teikibinUnder50);
+        autoBase = calcUnder50OldAgeAmounts(
+          member,
+          memberState.teikibinUnder50,
+          incomeEntries,
+          referenceDate,
+        );
         break;
       case 'nenkin-teikibin-over50':
         autoBase = calcOver50OldAgeAmounts(
@@ -527,7 +572,7 @@ export function calcMemberEmployeesProportionalYenPerYear(
  * 在職老齢年金（65歳以上）の支給停止を老齢厚生年金内訳に適用する。
  *
  * 支給停止ルール（令和8年度基準額 65万円/月）:
- *   超過額 = 基本月額 + 総報酬月額相当額 − 50万円
+ *   超過額 = 基本月額 + 総報酬月額相当額 − 65万円
  *   支給停止額 = max(0, 超過額 / 2)
  *
  * 基本月額 = generalEmployees + publicServant の合計（dependent/加給年金を除く全フィールド）。
