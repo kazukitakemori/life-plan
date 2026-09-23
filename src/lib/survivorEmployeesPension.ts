@@ -1180,6 +1180,180 @@ function middleAgedWidowAddPhaseRatio(death: CalendarYearMonth): number {
   return Math.max(0, Math.min(1, (2053 - fiscalYear) / 25));
 }
 
+const TRANSITIONAL_WIDOW_ADD_2026_TABLE: Array<{
+  from: [number, number, number] | null;
+  amountYen: number;
+}> = [
+  { from: null, amountYen: 633_700 },
+  { from: [1926, 4, 2], amountYen: 633_700 },
+  { from: [1927, 4, 2], amountYen: 601_204 },
+  { from: [1928, 4, 2], amountYen: 571_115 },
+  { from: [1929, 4, 2], amountYen: 543_175 },
+  { from: [1930, 4, 2], amountYen: 517_162 },
+  { from: [1931, 4, 2], amountYen: 492_883 },
+  { from: [1932, 4, 2], amountYen: 470_171 },
+  { from: [1933, 4, 2], amountYen: 448_878 },
+  { from: [1934, 4, 2], amountYen: 428_876 },
+  { from: [1935, 4, 2], amountYen: 410_050 },
+  { from: [1936, 4, 2], amountYen: 392_300 },
+  { from: [1937, 4, 2], amountYen: 375_536 },
+  { from: [1938, 4, 2], amountYen: 359_678 },
+  { from: [1939, 4, 2], amountYen: 344_655 },
+  { from: [1940, 4, 2], amountYen: 330_403 },
+  { from: [1941, 4, 2], amountYen: 316_862 },
+  { from: [1942, 4, 2], amountYen: 295_740 },
+  { from: [1943, 4, 2], amountYen: 274_617 },
+  { from: [1944, 4, 2], amountYen: 253_495 },
+  { from: [1945, 4, 2], amountYen: 232_372 },
+  { from: [1946, 4, 2], amountYen: 211_250 },
+  { from: [1947, 4, 2], amountYen: 190_127 },
+  { from: [1948, 4, 2], amountYen: 169_005 },
+  { from: [1949, 4, 2], amountYen: 147_882 },
+  { from: [1950, 4, 2], amountYen: 126_760 },
+  { from: [1951, 4, 2], amountYen: 105_637 },
+  { from: [1952, 4, 2], amountYen: 84_515 },
+  { from: [1953, 4, 2], amountYen: 63_392 },
+  { from: [1954, 4, 2], amountYen: 42_270 },
+  { from: [1955, 4, 2], amountYen: 21_147 },
+];
+
+function compareBirthDate(
+  year: number,
+  month: number,
+  day: number,
+  target: [number, number, number],
+): number {
+  if (year !== target[0]) return year - target[0];
+  if (month !== target[1]) return month - target[1];
+  return day - target[2];
+}
+
+/** 2026年度価格の経過的寡婦加算額。昭和31年4月2日以後生まれは対象外。 */
+export function getTransitionalWidowAddYenPerYear(
+  wife: FamilyMember,
+  referenceDate: Date,
+): number {
+  if (wife.gender !== 'female' || wife.age == null || wife.birthMonth == null) {
+    return 0;
+  }
+  const birthYear = calcBirthYear(wife.age, wife.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(wife);
+  const birthDay = wife.birthDay ?? (birthMonth === 4 ? 2 : 1);
+  if (compareBirthDate(birthYear, birthMonth, birthDay, [1956, 4, 2]) >= 0) {
+    return 0;
+  }
+
+  let amountYen = TRANSITIONAL_WIDOW_ADD_2026_TABLE[0].amountYen;
+  for (const row of TRANSITIONAL_WIDOW_ADD_2026_TABLE) {
+    if (!row.from) continue;
+    if (compareBirthDate(birthYear, birthMonth, birthDay, row.from) >= 0) {
+      amountYen = row.amountYen;
+    } else {
+      break;
+    }
+  }
+  return amountYen;
+}
+
+function hadMiddleAgedWidowAdditionBefore65(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  requirement: SurvivorEmployeesDeathRequirement;
+  deceasedEmployeesMonths: number;
+}): boolean {
+  const age65 = yearMonthWhenAgeReached(
+    input.wife,
+    input.referenceDate,
+    STANDARD_OLD_AGE_START,
+  );
+  if (!age65) return false;
+  const before65 = addCalendarMonths(age65, -1);
+  const childrenBefore65 =
+    listEligibleSurvivorBasicChildren(
+      input.remainingFamilyMembers,
+      input.referenceDate,
+      before65.year,
+      before65.month,
+    ).length > 0;
+  const childrenAtDeath =
+    listEligibleSurvivorBasicChildren(
+      input.remainingFamilyMembers,
+      input.referenceDate,
+      input.death.year,
+      input.death.month,
+    ).length > 0;
+  return (
+    calcMiddleAgedWidowAddYenPerYear({
+      wife: input.wife,
+      remainingFamilyMembers: input.remainingFamilyMembers,
+      referenceDate: input.referenceDate,
+      death: input.death,
+      now: before65,
+      hadEligibleChildrenAtDeath: childrenAtDeath,
+      hasEligibleChildrenNow: childrenBefore65,
+      requirement: input.requirement,
+      deceasedEmployeesMonths: input.deceasedEmployeesMonths,
+    }) > 0
+  );
+}
+
+export function calcTransitionalWidowAddYenPerYear(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  now: CalendarYearMonth;
+  requirement: SurvivorEmployeesDeathRequirement;
+  deceasedEmployeesMonths: number;
+}): number {
+  const nowAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.now.year,
+    input.now.month,
+  );
+  if (nowAge == null || nowAge < STANDARD_OLD_AGE_START) return 0;
+
+  const amount = getTransitionalWidowAddYenPerYear(
+    input.wife,
+    input.referenceDate,
+  );
+  if (amount <= 0) return 0;
+
+  // 障害基礎年金の受給権がある間は経過的寡婦加算を停止する。
+  if (
+    input.wife.disability === 'has' &&
+    (input.wife.disabilityPension === 'basic_grade1' ||
+      input.wife.disabilityPension === 'basic_grade2')
+  ) {
+    return 0;
+  }
+
+  if (
+    input.requirement === 'long_term' &&
+    input.deceasedEmployeesMonths < DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
+    return 0;
+  }
+
+  const deathAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.death.year,
+    input.death.month,
+  );
+  if (deathAge == null) return 0;
+
+  // 65歳以上で初めて遺族厚生年金の受給権が発生した場合。
+  if (deathAge >= STANDARD_OLD_AGE_START) return amount;
+
+  // 65歳未満で発生した場合は、中高齢寡婦加算が65歳直前まで
+  // 実際に付いていた妻が65歳到達後に経過的寡婦加算へ移る。
+  return hadMiddleAgedWidowAdditionBefore65(input) ? amount : 0;
+}
+
 export function calcMiddleAgedWidowAddYenPerYear(input: {
   wife: FamilyMember;
   remainingFamilyMembers: FamilyMember[];
@@ -1468,6 +1642,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   }
 
   let middleAgedMan = 0;
+  let transitionalMan = 0;
   if (recipient.kind === 'spouse') {
     middleAgedMan = toMonthlyMan(
       calcMiddleAgedWidowAddYenPerYear({
@@ -1482,6 +1657,17 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
         deceasedEmployeesMonths: monthsUntilDeath,
       }),
     );
+    transitionalMan = toMonthlyMan(
+      calcTransitionalWidowAddYenPerYear({
+        wife: recipient.member,
+        remainingFamilyMembers: remaining,
+        referenceDate: input.referenceDate,
+        death: input.death,
+        now,
+        requirement,
+        deceasedEmployeesMonths: monthsUntilDeath,
+      }),
+    );
   }
 
   return {
@@ -1490,6 +1676,7 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
       basic: basicMan,
       children: childrenMan,
       middleAged: middleAgedMan,
+      transitional: transitionalMan,
     },
     recipientId: recipient.member.id,
     continuationAssessment: null,
@@ -1500,5 +1687,12 @@ export function calcCoverageSurvivorEmployeesMonthlyMan(
   input: Parameters<typeof calcCoverageSurvivorEmployeesDetail>[0],
 ): number {
   const { detail } = calcCoverageSurvivorEmployeesDetail(input);
-  return detail.basic + detail.middleAged + detail.occupational + detail.transitional + detail.payment;
+  return (
+    detail.basic +
+    detail.children +
+    detail.middleAged +
+    detail.occupational +
+    detail.transitional +
+    detail.payment
+  );
 }
