@@ -460,25 +460,35 @@ function calcUnder50OldAgeAmounts(
     basicYen + future.basicYenPerYear,
   );
 
-  // 定期便の厚生年金加入月数
-  const generalMonths = form.employeesPensionGeneralMonths ?? 0;
-  const publicMonths =
+  // 定期便記載までの加入月数に、その後Q7で見込む60歳未満の
+  // 厚生年金加入月数だけを足し、65歳時点の経過的加算を公式式で計算する。
+  // 50歳未満の定期便に記載済みの厚生年金月数は、すべて20〜59歳の範囲。
+  const recordedGeneralMonths = form.employeesPensionGeneralMonths ?? 0;
+  const recordedPublicMonths =
     (form.employeesPensionPublicServantMonths ?? 0) +
     (form.employeesPensionPrivateSchoolMonths ?? 0);
+  const futureEmployeesUnder60 = countQ7EmployeesMonthsAfterDate(
+    incomeEntries,
+    member,
+    referenceDate,
+    form.recentMonthlyYear,
+    form.recentMonthlyMonth,
+    60,
+  );
+  const generalMonths =
+    recordedGeneralMonths + futureEmployeesUnder60.general;
+  const publicMonths =
+    recordedPublicMonths + futureEmployeesUnder60.publicServant;
   const totalEmployeesMonths = generalMonths + publicMonths;
 
-  // 老齢基礎年金額から算定基礎月数を逆算（入力がない場合は経過的加算を 0 とする）
-  const basicCreditedMonths =
-    basicYen > 0
-      ? Math.round((basicYen / FULL_BASIC_PENSION_YEN_PER_YEAR) * FULL_BASIC_PENSION_MONTHS)
-      : totalEmployeesMonths; // 入力なし → 差分なし
-
-  const totalTransitional = calcTransitionalAdditionYenPerYear(
+  const totalTransitional = calcTransitionalAdditionYenPerYear({
+    member,
+    referenceDate,
     totalEmployeesMonths,
-    basicCreditedMonths,
-  );
+    employeesMonthsAge20To59: totalEmployeesMonths,
+  });
 
-  // 経過的加算を加入月数の比率で一般・公務員に按分
+  // 経過的加算を一般・公務員の加入月数比率で按分
   const generalTransitional =
     totalEmployeesMonths > 0
       ? totalTransitional * (generalMonths / totalEmployeesMonths)
