@@ -459,7 +459,7 @@ export function FamilyMemberRow({
                   子の年金加算などでは、1級・2級の障害状態かどうかを使います。
                 </p>
 
-                <FormField label="障害年金（現在）">
+                <FormField label="障害年金の受給権（現在）">
                   <FormSelect
                     wide
                     value={member.disabilityPension ?? 'none'}
@@ -489,8 +489,7 @@ export function FamilyMemberRow({
                   />
                 </FormField>
                 <p className="ui-note">
-                  遺族厚生年金の5年後の継続給付では、障害状態だけでなく、
-                  障害年金の受給権も確認して判定します。
+                  現在は受給権の種類だけを保存します。障害年金の年額・初診日・障害認定日・受給開始／失権年月は未入力のため、障害年金額そのものはQ8・キャッシュフローへ自動反映しません。遺族厚生年金の5年後の継続給付や、老齢年金の繰下げ可否など、受給権だけで確定できる判定に使用します。
                 </p>
               </div>
             )}
