@@ -733,6 +733,128 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.equal(age65.oldAge.generalEmployees.earlyPayment, 0);
 }
 
+// 特別支給世代の繰上げは、老齢厚生年金だけ本来の特別支給開始年齢までを減額月数にする。
+// 63歳開始の人が60歳で繰上げる場合、厚生は36か月×0.4%=14.4%減、基礎は60か月×0.4%=24%減。
+{
+  const member = pensionMember({ birthDay: 2, age: 63 });
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.specialStartAgeCol3 = 63;
+  state.teikibinOver50.general.specialCol3.proportional = 120_000;
+  state.teikibinOver50.basicPension65 = 120_000;
+  state.teikibinOver50.general.oldAge65.proportional = 120_000;
+  state.benefitSettings.oldAgeBasic.startAge = 60;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 60;
+  state.benefitSettings.oldAgePublicPrivate.startAge = 60;
+
+  const age60 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2023,
+    5,
+  );
+  const basicTotal = Object.values(age60.oldAge.basic).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const generalTotal = Object.values(age60.oldAge.generalEmployees).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  assert.ok(Math.abs(basicTotal - 0.76) < 1e-9);
+  assert.ok(Math.abs(generalTotal - 0.856) < 1e-9);
+
+  const age65 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    5,
+  );
+  const generalAt65 = Object.values(age65.oldAge.generalEmployees).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  assert.ok(Math.abs(generalAt65 - 0.856) < 1e-9);
+}
+
+// 本来の特別支給開始年齢に到達した後は、特別支給を継続したまま
+// 老齢基礎年金だけを65歳前に繰り上げられる。
+{
+  const member = pensionMember({ birthDay: 2, age: 63 });
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.specialStartAgeCol3 = 63;
+  state.teikibinOver50.general.specialCol3.proportional = 120_000;
+  state.teikibinOver50.basicPension65 = 120_000;
+  state.teikibinOver50.general.oldAge65.proportional = 120_000;
+  state.benefitSettings.oldAgeBasic.startAge = 64;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 65;
+  state.benefitSettings.oldAgePublicPrivate.startAge = 65;
+
+  const age64 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2027,
+    5,
+  );
+  const basicTotal = Object.values(age64.oldAge.basic).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const generalTotal = Object.values(age64.oldAge.generalEmployees).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  assert.ok(Math.abs(basicTotal - 0.952) < 1e-9);
+  assert.ok(Math.abs(generalTotal - 1) < 1e-9);
+}
+
+// 旧UI等で特別支給開始後〜65歳の厚生年金開始年齢が保存されていても、
+// その設定を65歳基準の繰上げとして過大減額せず、特別支給→65歳年金へつなぐ。
+{
+  const member = pensionMember({ birthDay: 2, age: 63 });
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.specialStartAgeCol3 = 63;
+  state.teikibinOver50.general.specialCol3.proportional = 120_000;
+  state.teikibinOver50.general.oldAge65.proportional = 120_000;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 64;
+
+  const age64 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2027,
+    5,
+  );
+  const specialTotal = Object.values(age64.oldAge.generalEmployees).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  assert.ok(Math.abs(specialTotal - 1) < 1e-9);
+
+  const age65 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    5,
+  );
+  const regularTotal = Object.values(age65.oldAge.generalEmployees).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  assert.ok(Math.abs(regularTotal - 1) < 1e-9);
+}
+
 // 繰下げ待機中の在職停止分は増額対象外。
 // 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
 // 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
