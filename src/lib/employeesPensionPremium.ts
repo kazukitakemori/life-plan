@@ -4,19 +4,34 @@ import type { MemberSalaryBonusBreakdownYen } from './memberYearIncome';
 import { EMPLOYEES_PENSION_MAX_INSURED_AGE } from './pensionConstants';
 
 /**
- * 厚生年金の被保険者資格が残る年齢か。
- * 各月の満年齢が 70 歳未満の間だけ保険料を計上する。
+ * 厚生年金の被保険者資格が残る月か。
+ *
+ * 原則は70歳未満だが、年齢は誕生日の前日に到達する。
+ * そのため1日生まれは、70歳の誕生月の前月に資格喪失日が到来し、
+ * その月は被保険者期間（保険料算定月）へ算入しない。
+ *
+ * birthDay 未入力の旧データは、月単位で過大に早く資格喪失させないため
+ * 2日以後生まれと同じ扱いで概算する。
  */
 export function isEmployeesPensionLiableAtAgeMonth(
   age: number,
-  _month: number,
-  _birthMonth: number | null | undefined,
+  month: number,
+  birthMonth: number | null | undefined,
+  birthDay?: number | null,
 ): boolean {
-  return age < EMPLOYEES_PENSION_MAX_INSURED_AGE;
+  if (age < EMPLOYEES_PENSION_MAX_INSURED_AGE - 1) return true;
+  if (age >= EMPLOYEES_PENSION_MAX_INSURED_AGE) return false;
+
+  if (birthDay !== 1) return true;
+
+  const safeBirthMonth = birthMonth ?? 1;
+  const age70ReachedMonth = safeBirthMonth === 1 ? 12 : safeBirthMonth - 1;
+  return month !== age70ReachedMonth;
 }
 
 export function isEmployeesPensionLiableAtCalendarMonth(
-  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'> &
+    Partial<Pick<FamilyMember, 'birthDay'>>,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -32,11 +47,13 @@ export function isEmployeesPensionLiableAtCalendarMonth(
     ageMonth.age,
     ageMonth.month,
     member.birthMonth,
+    member.birthDay,
   );
 }
 
 export function countEmployeesPensionLiableMonthsInRange(
-  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'> &
+    Partial<Pick<FamilyMember, 'birthDay'>>,
   referenceDate: Date,
   calendarYear: number,
   monthStart: number,
