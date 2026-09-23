@@ -358,9 +358,8 @@ export function resolveSurvivorEmployeesDeathRequirement(
   // 1級・2級の障害厚生年金受給権者の死亡は、保険料納付要件を別途求めず
   // 短期要件と同じ300月みなしの対象となる。
   const disabilityEmployeesQualification =
-    deceased.disability === 'has' &&
-    (deceased.disabilityPension === 'employees_grade1' ||
-      deceased.disabilityPension === 'employees_grade2');
+    deceased.disabilityPension === 'employees_grade1' ||
+    deceased.disabilityPension === 'employees_grade2';
   if (disabilityEmployeesQualification) {
     return 'short_term';
   }
@@ -763,14 +762,17 @@ export function resolveSurvivorContinuationAnnualPensionYen(input: {
 export function hasQualifyingSurvivorContinuationDisabilityPension(
   member: FamilyMember,
 ): boolean {
-  if (member.disability !== 'has') return false;
-  switch (member.disabilityPension ?? 'none') {
+  const status = member.disabilityPension ?? 'none';
+  const grade = member.disabilityGrade ?? 'none';
+  switch (status) {
     case 'basic_grade1':
-    case 'basic_grade2':
     case 'employees_grade1':
+      return grade === 'grade1';
+    case 'basic_grade2':
     case 'employees_grade2':
+      return grade === 'grade2';
     case 'employees_grade3':
-      return true;
+      return grade === 'grade3';
     default:
       return false;
   }
@@ -1530,9 +1532,8 @@ export function calcTransitionalWidowAddYenPerYear(input: {
 
   // 障害基礎年金の受給権がある間は経過的寡婦加算を停止する。
   if (
-    input.wife.disability === 'has' &&
-    (input.wife.disabilityPension === 'basic_grade1' ||
-      input.wife.disabilityPension === 'basic_grade2')
+    input.wife.disabilityPension === 'basic_grade1' ||
+    input.wife.disabilityPension === 'basic_grade2'
   ) {
     return 0;
   }
