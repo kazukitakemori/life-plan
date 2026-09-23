@@ -731,7 +731,7 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
       );
       if (employeesKind) {
         if (!isEmployeesPensionLiableAtAgeMonth(age, month, birthMonth)) continue;
-        basicMonths += 1;
+        if (age < NATIONAL_PENSION_MANDATORY_END_AGE) basicMonths += 1;
         const remunerationYen = standardRemunerationYenFromMonthlyMan(
           active.monthlyAmountMan,
           'pension',
@@ -746,7 +746,10 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
         continue;
       }
 
-      if (isNationalPensionOnlyIncome(active.category, active.streamType)) {
+      if (
+        age < NATIONAL_PENSION_MANDATORY_END_AGE &&
+        isNationalPensionOnlyIncome(active.category, active.streamType)
+      ) {
         basicMonths += 1;
       }
     }
