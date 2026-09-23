@@ -7,7 +7,7 @@ import {
   EMPLOYEES_PENSION_CATEGORY_OPTIONS,
   NATIONAL_PENSION_PAYMENT_OPTIONS,
 } from '../../lib/pensionTeikibinLabels';
-import type { NenkinTeikibinMonthlyFields, NenkinTeikibinMonthlyRow } from '../../types/pension';
+import type { NenkinTeikibinMonthlyFields } from '../../types/pension';
 
 interface RecentMonthlyTableProps {
   form: NenkinTeikibinMonthlyFields;
@@ -15,16 +15,6 @@ interface RecentMonthlyTableProps {
 }
 
 export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
-  const updateRow = (
-    index: number,
-    patch: Partial<NenkinTeikibinMonthlyRow>,
-  ) => {
-    const monthlyRows = form.monthlyRows.map((row, rowIndex) =>
-      rowIndex === index ? { ...row, ...patch } : row,
-    );
-    onChange({ monthlyRows });
-  };
-
   const monthLabels = buildMonthlyLabelsFromWestern(
     form.recentMonthlyYear,
     form.recentMonthlyMonth,
@@ -57,30 +47,8 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
               return (
                 <tr key={label}>
                   <td className="teikibin-monthly-label">{label}</td>
-                  <td className="teikibin-monthly-input-cell">
-                    <select
-                      className="pension-field-select pension-field-select--table"
-                      value={row.nationalPensionStatus}
-                      onChange={(e) => updateRow(index, { nationalPensionStatus: e.target.value })}
-                      aria-label={`${label} 国民年金納付状況`}
-                    >
-                      {NATIONAL_PENSION_PAYMENT_OPTIONS.map((opt) => (
-                        <option key={opt.value || 'empty'} value={opt.value}>{opt.label || '　'}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="teikibin-monthly-input-cell">
-                    <select
-                      className="pension-field-select pension-field-select--table"
-                      value={row.employeesPensionCategory}
-                      onChange={(e) => updateRow(index, { employeesPensionCategory: e.target.value })}
-                      aria-label={`${label} 厚生年金加入区分`}
-                    >
-                      {EMPLOYEES_PENSION_CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt.value || 'empty'} value={opt.value}>{opt.label || '　'}</option>
-                      ))}
-                    </select>
-                  </td>
+                  <td className="teikibin-monthly-readonly">{row.nationalPensionStatus || '—'}</td>
+                  <td className="teikibin-monthly-readonly">{row.employeesPensionCategory || '—'}</td>
                   <td className="teikibin-monthly-input-cell">
                     <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
                       value={row.standardRemuneration}
@@ -137,7 +105,7 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
                 <span className="teikibin-monthly-date-unit">月</span>
               </td>
               <td colSpan={5} className="teikibin-monthly-readonly">
-                上の12か月欄へ、ねんきん定期便に記載された内容を入力してください
+                最近の月別状況は詳細入力です。未入力でも年金概算は利用できます
               </td>
             </tr>
           </tbody>
