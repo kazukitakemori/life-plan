@@ -1,5 +1,5 @@
 import { calcBirthYear } from './birthDate';
-import { calcMemberMonthlyPensionBreakdownMan } from './pensionIncome';
+import { calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan } from './pensionIncome';
 import { resolveSimulationStartYear } from './simulationTiming';
 import {
   sumGeneralEmployeesDetail,
@@ -7,8 +7,8 @@ import {
   sumPublicServantDetail,
 } from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
-import type { IncomeEntry } from '../types/income';
-import type { PensionMemberState } from '../types/pension';
+import type { IncomeByMember, IncomeEntry } from '../types/income';
+import type { PensionByMember, PensionMemberState } from '../types/pension';
 
 export const PENSION_BENEFIT_CHART_END_AGE = 95;
 
@@ -29,6 +29,9 @@ export function buildPensionBenefitChartPoints(input: {
   member: FamilyMember;
   memberState: PensionMemberState;
   incomeEntries: IncomeEntry[];
+  familyMembers: FamilyMember[];
+  pensionByMember: PensionByMember;
+  incomeByMember: IncomeByMember;
   referenceDate: Date;
   endAge?: number;
 }): PensionBenefitChartPoint[] {
@@ -48,14 +51,18 @@ export function buildPensionBenefitChartPoints(input: {
     let publicServant = 0;
 
     for (let month = 1; month <= 12; month++) {
-      const oldAge = calcMemberMonthlyPensionBreakdownMan(
-        input.member,
-        input.memberState,
-        input.incomeEntries,
-        input.referenceDate,
-        year,
-        month,
-      ).oldAge;
+      const oldAge =
+        calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+          input.member,
+          input.memberState,
+          input.incomeEntries,
+          input.familyMembers,
+          input.pensionByMember,
+          input.incomeByMember,
+          input.referenceDate,
+          year,
+          month,
+        ).oldAge;
       basic += sumOldAgeBasicDetail(oldAge.basic);
       general += sumGeneralEmployeesDetail(oldAge.generalEmployees);
       publicServant += sumPublicServantDetail(oldAge.publicServant);
