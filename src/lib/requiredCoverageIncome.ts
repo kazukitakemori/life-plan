@@ -712,7 +712,6 @@ export function accumulateCoverageIncome(
     input.familyMembers,
     subject,
   );
-  const taxHousehold = buildCoverageTaxHousehold(input.familyMembers, subject);
   const pensionMonthCache = new Map<
     number,
     { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth }
