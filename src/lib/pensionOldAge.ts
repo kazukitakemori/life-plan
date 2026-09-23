@@ -266,6 +266,89 @@ function applyDetailScale(
   scaleDetailFields(detail, factor, 'earlyPayment');
 }
 
+/**
+ * 特別支給の老齢厚生年金を受けられる方が、本来の特別支給開始前に
+ * 老齢厚生年金を繰り上げる場合の減額率。
+ * 老齢基礎年金のように65歳までではなく、本来の特別支給開始年齢までの
+ * 月数だけを減額対象とする。
+ */
+export function getEarlyClaimFactorToOriginalStart(
+  claimAge: number,
+  claimMonth: number,
+  originalStartAge: number,
+  originalStartMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
+): number {
+  const claimMonths = claimAge * 12 + Math.min(11, Math.max(0, claimMonth || 0));
+  const originalMonths =
+    originalStartAge * 12 +
+    Math.min(11, Math.max(0, originalStartMonth || 0));
+  if (claimMonths >= originalMonths) return 1;
+  return Math.max(
+    0,
+    1 - (originalMonths - claimMonths) * earlyReductionPerMonth,
+  );
+}
+
+function applyDetailEarlyClaimToOriginalStart(
+  detail: Record<string, number>,
+  claimAge: number,
+  claimMonth: number,
+  originalStartAge: number,
+  originalStartMonth: number,
+  earlyReductionPerMonth: number,
+): void {
+  const factor = getEarlyClaimFactorToOriginalStart(
+    claimAge,
+    claimMonth,
+    originalStartAge,
+    originalStartMonth,
+    earlyReductionPerMonth,
+  );
+  if (factor === 1) return;
+  scaleDetailFields(detail, factor, 'earlyPayment');
+}
+
+export function applyGeneralDetailEarlyClaimToOriginalStart(
+  detail: GeneralEmployeesDetail,
+  claimAge: number,
+  claimMonth: number,
+  originalStartAge: number,
+  originalStartMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
+): GeneralEmployeesDetail {
+  const result = { ...detail };
+  applyDetailEarlyClaimToOriginalStart(
+    result as unknown as Record<string, number>,
+    claimAge,
+    claimMonth,
+    originalStartAge,
+    originalStartMonth,
+    earlyReductionPerMonth,
+  );
+  return result;
+}
+
+export function applyPublicDetailEarlyClaimToOriginalStart(
+  detail: PublicServantDetail,
+  claimAge: number,
+  claimMonth: number,
+  originalStartAge: number,
+  originalStartMonth: number = 0,
+  earlyReductionPerMonth: number = EARLY_CLAIM_REDUCTION_PER_MONTH,
+): PublicServantDetail {
+  const result = { ...detail };
+  applyDetailEarlyClaimToOriginalStart(
+    result as unknown as Record<string, number>,
+    claimAge,
+    claimMonth,
+    originalStartAge,
+    originalStartMonth,
+    earlyReductionPerMonth,
+  );
+  return result;
+}
+
 /** 老齢基礎年金内訳に繰上げ・繰下げを反映する */
 export function applyBasicDetailAdjustment(
   detail: OldAgeBasicDetail,
