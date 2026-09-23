@@ -576,7 +576,11 @@ function calcOldAgeMonthlyManByRow(
       resolveMemberBirthMonth(member),
     );
     if (remunerationMan > 0) {
-      return applyZaishokuSuspension(result, remunerationMan);
+      return applyZaishokuSuspension(
+        result,
+        remunerationMan,
+        ageMonth.age,
+      );
     }
   }
 
@@ -667,25 +671,93 @@ export function calcMemberEmployeesProportionalYenPerYear(
 }
 
 /**
+ * 65歳以降の在職老齢年金で支給停止対象となる報酬比例部分を返す。
+ *
+ * 65歳以降は経過的加算・繰下げ加算は支給停止対象外。
+ * 繰上げ減額（earlyPayment < 0）の場合は、減額分を元の内訳比率で
+ * 報酬比例部分にも配分し、減額後の報酬比例部分を停止計算の母数とする。
+ */
+function calcPost65SuspendibleEmployeesMan(
+  detail: GeneralEmployeesDetail | PublicServantDetail,
+): number {
+  const rawBasic = Math.max(0, detail.basic);
+  const originalTotal = Object.entries(detail).reduce((sum, [key, value]) => {
+    if (key === 'dependent' || key === 'earlyPayment') return sum;
+    return sum + value;
+  }, 0);
+
+  if (detail.earlyPayment >= 0 || originalTotal <= 0) {
+    return rawBasic;
+  }
+
+  const basicReduction =
+    detail.earlyPayment * (rawBasic / originalTotal);
+  return Math.max(0, rawBasic + basicReduction);
+}
+
+/**
  * 在職老齢年金（60歳以上）の支給停止を老齢厚生年金内訳に適用する。
  *
  * 支給停止ルール（令和8年度基準額 65万円/月）:
  *   超過額 = 基本月額 + 総報酬月額相当額 − 65万円
  *   支給停止額 = max(0, 超過額 / 2)
  *
- * 基本月額 = generalEmployees + publicServant の合計（dependent/加給年金を除く全フィールド）。
- * 支給停止額は一般厚生・公務員厚生に比率按分して各フィールドへ反映。
- * 加給年金（dependent）は老齢厚生が全額停止のときのみ連動停止。
+ * 65歳以降の基本月額は報酬比例部分を母数とし、
+ * 経過的加算・繰下げ加算は支給停止しない。
+ * 60〜64歳は特別支給の内訳を含む従来計算を維持する。
  */
 function applyZaishokuSuspension(
   breakdown: OldAgePensionBreakdown,
   totalRemunerationMan: number,
+  age: number,
 ): OldAgePensionBreakdown {
   if (totalRemunerationMan <= 0) return breakdown;
 
   const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
 
-  // 加給年金を除いた老齢厚生合計（基本月額）
+  if (age >= STANDARD_OLD_AGE_START) {
+    const generalSuspendible =
+      calcPost65SuspendibleEmployeesMan(breakdown.generalEmployees);
+    const publicSuspendible =
+      calcPost65SuspendibleEmployeesMan(breakdown.publicServant);
+    const basicMonthlyMan = generalSuspendible + publicSuspendible;
+
+    const excess = basicMonthlyMan + totalRemunerationMan - thresholdMan;
+    if (excess <= 0 || basicMonthlyMan <= 0) return breakdown;
+
+    const suspensionMan = Math.min(excess / 2, basicMonthlyMan);
+    const generalRatio = generalSuspendible / basicMonthlyMan;
+    const generalSuspension = suspensionMan * generalRatio;
+    const publicSuspension = suspensionMan - generalSuspension;
+    const fullySuspended = suspensionMan >= basicMonthlyMan;
+
+    return {
+      basic: breakdown.basic,
+      generalEmployees: {
+        ...breakdown.generalEmployees,
+        basic: Math.max(
+          0,
+          breakdown.generalEmployees.basic - generalSuspension,
+        ),
+        // 加給年金は老齢厚生の報酬比例部分が全額停止のとき連動停止。
+        dependent: fullySuspended
+          ? 0
+          : breakdown.generalEmployees.dependent,
+      },
+      publicServant: {
+        ...breakdown.publicServant,
+        basic: Math.max(
+          0,
+          breakdown.publicServant.basic - publicSuspension,
+        ),
+        dependent: fullySuspended
+          ? 0
+          : breakdown.publicServant.dependent,
+      },
+    };
+  }
+
+  // 60〜64歳: 特別支給の老齢厚生年金の内訳全体を従来どおり停止対象とする。
   const generalNonDep =
     breakdown.generalEmployees.basic +
     breakdown.generalEmployees.transitional +
@@ -700,16 +772,13 @@ function applyZaishokuSuspension(
   const basicMonthlyMan = generalNonDep + publicNonDep;
 
   const excess = basicMonthlyMan + totalRemunerationMan - thresholdMan;
-  if (excess <= 0) return breakdown; // 支給停止なし
+  if (excess <= 0) return breakdown;
 
   const suspensionMan = Math.min(excess / 2, basicMonthlyMan);
-
-  // 一般・公務員に比率按分
   const generalRatio = basicMonthlyMan > 0 ? generalNonDep / basicMonthlyMan : 0;
   const generalSuspension = suspensionMan * generalRatio;
   const publicSuspension = suspensionMan - generalSuspension;
 
-  // 各フィールドをスケールダウン（加給年金は除外）
   const scaleDown = (fields: number, suspension: number): number => {
     if (fields <= 0) return 1;
     return Math.max(0, (fields - suspension) / fields);
@@ -718,15 +787,17 @@ function applyZaishokuSuspension(
   const gFactor = scaleDown(generalNonDep, generalSuspension);
   const pFactor = scaleDown(publicNonDep, publicSuspension);
 
-  const result: OldAgePensionBreakdown = {
+  return {
     basic: breakdown.basic,
     generalEmployees: {
       basic: breakdown.generalEmployees.basic * gFactor,
       transitional: breakdown.generalEmployees.transitional * gFactor,
       payment: breakdown.generalEmployees.payment * gFactor,
       earlyPayment: breakdown.generalEmployees.earlyPayment * gFactor,
-      // 老齢厚生が全額停止の場合のみ加給年金も停止
-      dependent: suspensionMan >= basicMonthlyMan ? 0 : breakdown.generalEmployees.dependent,
+      dependent:
+        suspensionMan >= basicMonthlyMan
+          ? 0
+          : breakdown.generalEmployees.dependent,
     },
     publicServant: {
       basic: breakdown.publicServant.basic * pFactor,
@@ -734,11 +805,12 @@ function applyZaishokuSuspension(
       occupational: breakdown.publicServant.occupational * pFactor,
       payment: breakdown.publicServant.payment * pFactor,
       earlyPayment: breakdown.publicServant.earlyPayment * pFactor,
-      dependent: suspensionMan >= basicMonthlyMan ? 0 : breakdown.publicServant.dependent,
+      dependent:
+        suspensionMan >= basicMonthlyMan
+          ? 0
+          : breakdown.publicServant.dependent,
     },
   };
-
-  return result;
 }
 
 function calcSurvivorMonthlyManByRow(
