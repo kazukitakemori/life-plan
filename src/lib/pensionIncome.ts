@@ -8,6 +8,7 @@ import {
   calendarYearFromAgeCalendarMonth,
 } from './birthDate';
 import {
+  isEligiblePensionChildAdditionResidence,
   isEligibleSurvivorBasicChild,
   survivorBasicChildAddYenPerYear,
 } from './survivorBasicPension';
@@ -1641,13 +1642,19 @@ function calcOldAgeBasicChildrenPensionMonthlyMan(
     return 0;
   }
 
-  const count = familyMembers.filter((member) =>
-    isEligibleSurvivorBasicChild(
-      member,
-      referenceDate,
-      calendarYear,
-      calendarMonth,
-    ),
+  const count = familyMembers.filter(
+    (member) =>
+      isEligibleSurvivorBasicChild(
+        member,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      ) &&
+      isEligiblePensionChildAdditionResidence(
+        member,
+        calendarYear,
+        calendarMonth,
+      ),
   ).length;
   if (count <= 0) return 0;
 
@@ -1737,13 +1744,19 @@ function calcDependentChildrenPensionMonthlyMan(
     return 0;
   }
 
-  const count = familyMembers.filter((member) =>
-    isEligibleSurvivorBasicChild(
-      member,
-      referenceDate,
-      calendarYear,
-      calendarMonth,
-    ),
+  const count = familyMembers.filter(
+    (member) =>
+      isEligibleSurvivorBasicChild(
+        member,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      ) &&
+      isEligiblePensionChildAdditionResidence(
+        member,
+        calendarYear,
+        calendarMonth,
+      ),
   ).length;
   if (count <= 0) return 0;
   // 2028年4月以降は令和7年改正により、子の加算は第何子かに
