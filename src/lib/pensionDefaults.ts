@@ -71,6 +71,7 @@ function createDefaultRecentMonthlyInputRow(): TeikibinRecentMonthlyInputRow {
     employeesPensionCategory: '',
     standardRemuneration: '',
     standardBonus: '',
+    premiumPayment: '',
   };
 }
 
