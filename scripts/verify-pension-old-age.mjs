@@ -18,6 +18,7 @@ import {
   getNationalPensionCreditedMonthCount,
 } from '../src/lib/pensionEnrollmentEstimate.ts';
 import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionPremium.ts';
+import { buildPensionBenefitChartPoints } from '../src/lib/pensionBenefitChartData.ts';
 import {
   calcMemberAnnualTaxableOldAgePensionPaymentManByMember,
   calcMemberMonthlyPensionBreakdownMan,
@@ -752,6 +753,71 @@ assert.equal(
   assert.ok(
     (withChild[olderSpouse.id] ?? 0) >
       (withoutChild[olderSpouse.id] ?? 0),
+  );
+}
+
+// Q8の本人別グラフも、税計算と同じ受給者帰属で子の加算を反映する。
+{
+  const head = {
+    ...pensionMember({ age: 50 }),
+    id: 'chart-head',
+    role: 'head',
+  };
+  const spouse = {
+    ...pensionMember({ age: 63 }),
+    id: 'chart-spouse',
+    role: 'spouse',
+    gender: 'female',
+  };
+  const child = {
+    id: 'chart-child',
+    role: 'child',
+    nickname: '子',
+    gender: 'male',
+    age: 8,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    pensionChildResidence: 'japan',
+    hobbies: [],
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+  };
+  const spouseState = createDefaultPensionMemberState();
+  spouseState.pastEnrollment = 'nenkin-teikibin-over50';
+  spouseState.teikibinOver50.employeesPensionGeneralMonths = 120;
+  spouseState.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  spouseState.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  spouseState.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  spouseState.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const withoutChild = buildPensionBenefitChartPoints({
+    member: spouse,
+    memberState: spouseState,
+    incomeEntries: [],
+    familyMembers: [head, spouse],
+    pensionByMember: { [spouse.id]: spouseState },
+    incomeByMember: {},
+    referenceDate,
+  }).find((point) => point.calendarYear === 2028);
+
+  const withChild = buildPensionBenefitChartPoints({
+    member: spouse,
+    memberState: spouseState,
+    incomeEntries: [],
+    familyMembers: [head, spouse, child],
+    pensionByMember: { [spouse.id]: spouseState },
+    incomeByMember: {},
+    referenceDate,
+  }).find((point) => point.calendarYear === 2028);
+
+  assert.ok(withoutChild);
+  assert.ok(withChild);
+  assert.ok(
+    withChild.oldAgeEmployeesGeneral >
+      withoutChild.oldAgeEmployeesGeneral,
   );
 }
 
