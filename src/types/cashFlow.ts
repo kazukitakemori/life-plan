@@ -340,7 +340,7 @@ export const DISABILITY_BASIC_DETAIL_ROWS: {
 
   { key: 'basic', label: '基本' },
 
-  { key: 'children', label: '子の' },
+  { key: 'children', label: '子の加算' },
 
 ];
 
