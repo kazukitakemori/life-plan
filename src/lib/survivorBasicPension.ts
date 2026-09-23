@@ -67,6 +67,24 @@ export function listEligibleSurvivorBasicChildren(
   );
 }
 
+export function isEligiblePensionChildAdditionResidence(
+  member: FamilyMember,
+  year: number,
+  month: number,
+): boolean {
+  if (
+    year < SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR ||
+    (year === SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR &&
+      month < SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH)
+  ) {
+    return true;
+  }
+  return (
+    member.pensionChildResidence === 'japan' ||
+    member.pensionChildResidence === 'overseas_exception'
+  );
+}
+
 function isOnOrAfterSurvivorChildAddReform(
   year: number,
   month: number,
@@ -112,17 +130,22 @@ export function calcSurvivorBasicYenPerYear(
   spouseFullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
   year = 2026,
   month = 4,
+  childAdditionCount = eligibleChildCount,
 ): number {
   if (eligibleChildCount <= 0) return 0;
   if (spouseReceives) {
     return (
       spouseFullBasicPensionYenPerYear +
-      survivorBasicChildAddYenPerYear(eligibleChildCount, year, month)
+      survivorBasicChildAddYenPerYear(childAdditionCount, year, month)
     );
   }
   return (
     FULL_BASIC_PENSION_YEN_PER_YEAR +
-    survivorBasicChildAddYenPerYear(eligibleChildCount - 1, year, month)
+    survivorBasicChildAddYenPerYear(
+      Math.max(0, childAdditionCount - 1),
+      year,
+      month,
+    )
   );
 }
 
@@ -154,12 +177,16 @@ export function calcCoverageSurvivorBasicMonthlyMan(
       ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
       : FULL_BASIC_PENSION_YEN_PER_YEAR;
   })();
+  const childAdditionCount = children.filter((member) =>
+    isEligiblePensionChildAdditionResidence(member, year, month),
+  ).length;
   const yen = calcSurvivorBasicYenPerYear(
     children.length,
     survivorSpouse,
     spouseFullBasicPensionYenPerYear,
     year,
     month,
+    childAdditionCount,
   );
   return toMonthlyMan(yen);
 }
