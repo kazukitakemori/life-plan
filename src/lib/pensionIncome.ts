@@ -33,7 +33,6 @@ import {
   buildPublicServantDetailFromYen,
   getEarlyClaimReductionPerMonthByBirth,
   getMaxOldAgeDeferralAgeByBirth,
-  isOnOrAfterBenefitStart,
   normalizeOldAgeBenefitStart,
   toMonthlyMan,
 } from './pensionOldAge';
@@ -1376,6 +1375,59 @@ function resolveOldAgeEmployeesRightStartSerial(
   return start;
 }
 
+function isOldAgeEmployeesPaymentActiveAtCalendarMonth(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): boolean {
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  if (!ageMonth) return false;
+
+  const settings =
+    memberState.benefitSettings ?? createDefaultBenefitSettings();
+  return [
+    settings.oldAgeGeneralEmployees,
+    settings.oldAgePublicPrivate,
+  ].some((row) =>
+    isOldAgeRowPaymentActive(
+      member,
+      row,
+      referenceDate,
+      ageMonth,
+    ),
+  );
+}
+
+/**
+ * 配偶者加給の支給停止判定用。
+ * 老齢厚生年金を繰下げても受給権は原則65歳で発生するため、
+ * Q8の実際の受取開始時期ではなく受給権取得時点を使う。
+ * 月次給付への反映は、受給権が発生した月の翌月からとする。
+ */
+function isOldAgeEmployeesRightEffectiveForCalendarMonth(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): boolean {
+  return (
+    pensionCalendarSerial(calendarYear, calendarMonth) >
+    resolveOldAgeEmployeesRightStartSerial(
+      member,
+      memberState,
+      referenceDate,
+    )
+  );
+}
+
 function usesReformedDependentChildQualification(
   member: FamilyMember,
   memberState: PensionMemberState,
@@ -1405,44 +1457,22 @@ function hadSpouseDependentAdditionBeforeReform(
 ): boolean {
   const checkYear = PENSION_CHILD_ADD_REFORM_START_YEAR;
   const checkMonth = PENSION_CHILD_ADD_REFORM_START_MONTH - 1;
-  const pensionerAgeMonth = getMemberAgeMonth(
-    pensioner,
-    referenceDate,
-    checkYear,
-    checkMonth,
-  );
   const spouseAgeMonth = getMemberAgeMonth(
     spouse,
     referenceDate,
     checkYear,
     checkMonth,
   );
-  if (!pensionerAgeMonth || !spouseAgeMonth) return false;
+  if (!spouseAgeMonth) return false;
   if (spouseAgeMonth.age >= DEPENDENT_PENSION_CUTOFF_AGE) return false;
 
-  const settings =
-    pensionerState.benefitSettings ?? createDefaultBenefitSettings();
-  const gSet = normalizeOldAgeRowForMember(
-    pensioner,
-    settings.oldAgeGeneralEmployees,
-    referenceDate,
-  );
-  const pSet = normalizeOldAgeRowForMember(
-    pensioner,
-    settings.oldAgePublicPrivate,
-    referenceDate,
-  );
-  const start = Math.min(
-    gSet.startAge * 12 + (gSet.startMonth ?? 0),
-    pSet.startAge * 12 + (pSet.startMonth ?? 0),
-  );
   if (
-    !isOnOrAfterBenefitStart(
-      pensionerAgeMonth.age,
+    !isOldAgeEmployeesPaymentActiveAtCalendarMonth(
+      pensioner,
+      pensionerState,
+      referenceDate,
+      checkYear,
       checkMonth,
-      Math.floor(start / 12),
-      resolveMemberBirthMonth(pensioner),
-      start % 12,
     )
   ) {
     return false;
@@ -1471,29 +1501,13 @@ function hadSpouseDependentAdditionBeforeReform(
     spouseMonths.general + spouseMonths.publicServant >=
     DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
   ) {
-    const spouseSettings =
-      spouseState.benefitSettings ?? createDefaultBenefitSettings();
-    const sg = normalizeOldAgeRowForMember(
-      spouse,
-      spouseSettings.oldAgeGeneralEmployees,
-      referenceDate,
-    );
-    const sp = normalizeOldAgeRowForMember(
-      spouse,
-      spouseSettings.oldAgePublicPrivate,
-      referenceDate,
-    );
-    const spouseStart = Math.min(
-      sg.startAge * 12 + (sg.startMonth ?? 0),
-      sp.startAge * 12 + (sp.startMonth ?? 0),
-    );
     if (
-      isOnOrAfterBenefitStart(
-        spouseAgeMonth.age,
+      isOldAgeEmployeesRightEffectiveForCalendarMonth(
+        spouse,
+        spouseState,
+        referenceDate,
+        checkYear,
         checkMonth,
-        Math.floor(spouseStart / 12),
-        resolveMemberBirthMonth(spouse),
-        spouseStart % 12,
       )
     ) {
       return false;
@@ -1665,37 +1679,13 @@ function calcDependentChildrenPensionMonthlyMan(
   calendarYear: number,
   calendarMonth: number,
 ): number {
-  const benefitSettings =
-    pensionerState.benefitSettings ?? createDefaultBenefitSettings();
-  const birthYear = calcBirthYear(
-    pensioner.age,
-    pensioner.birthMonth,
-    referenceDate,
-  );
-  let age = calendarYear - birthYear;
-  if (calendarMonth < resolveMemberBirthMonth(pensioner)) age--;
-
-  const gSet = normalizeOldAgeRowForMember(
-    pensioner,
-    benefitSettings.oldAgeGeneralEmployees,
-    referenceDate,
-  );
-  const pSet = normalizeOldAgeRowForMember(
-    pensioner,
-    benefitSettings.oldAgePublicPrivate,
-    referenceDate,
-  );
-  const start = Math.min(
-    gSet.startAge * 12 + (gSet.startMonth ?? 0),
-    pSet.startAge * 12 + (pSet.startMonth ?? 0),
-  );
   if (
-    !isOnOrAfterBenefitStart(
-      age,
+    !isOldAgeEmployeesPaymentActiveAtCalendarMonth(
+      pensioner,
+      pensionerState,
+      referenceDate,
+      calendarYear,
       calendarMonth,
-      Math.floor(start / 12),
-      resolveMemberBirthMonth(pensioner),
-      start % 12,
     )
   ) {
     return 0;
@@ -1755,38 +1745,14 @@ function calcDependentSpousePensionMonthlyMan(
   const benefitSettings =
     headMemberState.benefitSettings ?? createDefaultBenefitSettings();
 
-  // 受給者が老齢厚生年金受給中か（一般厚生・公務員厚のいずれか開始年齢に達しているか）
-  const headBirthYear = calcBirthYear(
-    headMember.age,
-    headMember.birthMonth,
-    referenceDate,
-  );
-  let headAge = calendarYear - headBirthYear;
-  if (calendarMonth < resolveMemberBirthMonth(headMember)) headAge--;
-
-  const gSet = normalizeOldAgeRowForMember(
-    headMember,
-    benefitSettings.oldAgeGeneralEmployees,
-    referenceDate,
-  );
-  const pSet = normalizeOldAgeRowForMember(
-    headMember,
-    benefitSettings.oldAgePublicPrivate,
-    referenceDate,
-  );
-  const empStartMonths = Math.min(
-    gSet.startAge * 12 + (gSet.startMonth ?? 0),
-    pSet.startAge * 12 + (pSet.startMonth ?? 0),
-  );
-  const empStartAge = Math.floor(empStartMonths / 12);
-  const empStartMonth = empStartMonths % 12;
+  // 加給年金も老齢厚生年金本体と同じく、受給権発生月の翌月分から加算する。
   if (
-    !isOnOrAfterBenefitStart(
-      headAge,
+    !isOldAgeEmployeesPaymentActiveAtCalendarMonth(
+      headMember,
+      headMemberState,
+      referenceDate,
+      calendarYear,
       calendarMonth,
-      empStartAge,
-      resolveMemberBirthMonth(headMember),
-      empStartMonth,
     )
   ) {
     return 0;
@@ -1837,29 +1803,13 @@ function calcDependentSpousePensionMonthlyMan(
     spouseEmployees.general + spouseEmployees.publicServant >=
     DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
   ) {
-    const spouseBenefitSettings =
-      spouseMemberState.benefitSettings ?? createDefaultBenefitSettings();
-    const spouseGeneralStart = normalizeOldAgeRowForMember(
-      spouseMember,
-      spouseBenefitSettings.oldAgeGeneralEmployees,
-      referenceDate,
-    );
-    const spousePublicStart = normalizeOldAgeRowForMember(
-      spouseMember,
-      spouseBenefitSettings.oldAgePublicPrivate,
-      referenceDate,
-    );
-    const spouseEmployeesStart = Math.min(
-      spouseGeneralStart.startAge * 12 + (spouseGeneralStart.startMonth ?? 0),
-      spousePublicStart.startAge * 12 + (spousePublicStart.startMonth ?? 0),
-    );
     if (
-      isOnOrAfterBenefitStart(
-        spouseAge,
+      isOldAgeEmployeesRightEffectiveForCalendarMonth(
+        spouseMember,
+        spouseMemberState,
+        referenceDate,
+        calendarYear,
         calendarMonth,
-        Math.floor(spouseEmployeesStart / 12),
-        resolveMemberBirthMonth(spouseMember),
-        spouseEmployeesStart % 12,
       )
     ) {
       return 0;
