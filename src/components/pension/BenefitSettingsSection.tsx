@@ -314,91 +314,63 @@ export function BenefitSettingsSection({
         </div>
       </div>
 
-      <div className="benefit-settings-block benefit-settings-block--optional">
-        <h5 className="benefit-settings-block-title">
-          <span>受給中の遺族年金・寡婦年金</span>
-          <span className="benefit-optional-badge">該当する場合のみ</span>
-          <span className="benefit-death-date">
-            【 故人の死亡年月：
-            <select
-              className="pension-field-select pension-field-select--date"
-              value={settings.survivorDeathYear}
-              onChange={(e) =>
-                update({ survivorDeathYear: Number(e.target.value) })
-              }
-              aria-label="故人の死亡年"
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            年
-            <select
-              className="pension-field-select pension-field-select--date"
-              value={settings.survivorDeathMonth}
-              onChange={(e) =>
-                update({ survivorDeathMonth: Number(e.target.value) })
-              }
-              aria-label="故人の死亡月"
-            >
-              {MONTH_OPTIONS.map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
-            </select>
-            月 】
+      <details className="benefit-settings-block benefit-settings-block--optional benefit-survivor-details">
+        <summary className="benefit-survivor-summary">
+          <span className="benefit-survivor-summary-copy">
+            <span className="benefit-survivor-summary-title">受給中の遺族年金・寡婦年金</span>
+            <span className="benefit-optional-badge">該当する場合のみ</span>
           </span>
-        </h5>
+          <span className="benefit-survivor-summary-hint">入力する</span>
+        </summary>
+        <div className="benefit-survivor-details-body">
 
-        <table className="benefit-survivor-table">
-          <tbody>
-            <tr>
-              <th className="benefit-row-label">遺族基礎</th>
-              <td className="benefit-survivor-input-cell">
-                <input
-                  type="text"
-                  className="pension-field-input pension-field-input--benefit-wide"
-                  value={formatNumericDisplay(settings.survivorBasicPerYear)}
-                  onChange={(e) =>
-                    update({
-                      survivorBasicPerYear: parseNumericInput(e.target.value),
-                    })
-                  }
-                />
-                <span className="benefit-survivor-suffix">
-                  円/年（子の加算を除いた額）
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <th className="benefit-row-label">遺族厚生・共済</th>
-              <td className="benefit-survivor-input-cell">
-                <span className="benefit-receiving-label">受給中</span>
-                <input
-                  type="text"
-                  className="pension-field-input pension-field-input--benefit-wide"
-                  value={formatNumericDisplay(
-                    settings.survivorEmployeesMutualPerYear,
-                  )}
-                  onChange={(e) =>
-                    update({
-                      survivorEmployeesMutualPerYear: parseNumericInput(
-                        e.target.value,
-                      ),
-                    })
-                  }
-                />
-                <span className="benefit-survivor-suffix">
-                  円/年（遺族厚生年金と遺族共済年金の合計）
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <table className="benefit-survivor-table">
+            <tbody>
+              <tr>
+                <th className="benefit-row-label">遺族基礎</th>
+                <td className="benefit-survivor-input-cell">
+                  <input
+                    type="text"
+                    className="pension-field-input pension-field-input--benefit-wide"
+                    value={formatNumericDisplay(settings.survivorBasicPerYear)}
+                    onChange={(e) =>
+                      update({
+                        survivorBasicPerYear: parseNumericInput(e.target.value),
+                      })
+                    }
+                  />
+                  <span className="benefit-survivor-suffix">
+                    円/年（子の加算を除いた額）
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th className="benefit-row-label">遺族厚生・共済</th>
+                <td className="benefit-survivor-input-cell">
+                  <span className="benefit-receiving-label">受給中</span>
+                  <input
+                    type="text"
+                    className="pension-field-input pension-field-input--benefit-wide"
+                    value={formatNumericDisplay(
+                      settings.survivorEmployeesMutualPerYear,
+                    )}
+                    onChange={(e) =>
+                      update({
+                        survivorEmployeesMutualPerYear: parseNumericInput(
+                          e.target.value,
+                        ),
+                      })
+                    }
+                  />
+                  <span className="benefit-survivor-suffix">
+                    円/年（遺族厚生年金と遺族共済年金の合計）
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }
