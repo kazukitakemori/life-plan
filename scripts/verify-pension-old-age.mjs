@@ -515,6 +515,157 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.equal(may.oldAge.generalEmployees.dependent, 0);
 }
 
+// 50歳以上の定期便は、65歳前の「○歳〜」3列を段階別の年額として扱う。
+// 複数列を合算せず、現在の年齢段階に対応する1列だけを使う。
+{
+  const member = pensionMember({ birthDay: 2, age: 63 });
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.specialStartAgeCol2 = 62;
+  state.teikibinOver50.specialStartAgeCol3 = 63;
+  state.teikibinOver50.specialStartAgeCol4 = 64;
+  state.teikibinOver50.general.specialCol3.proportional = 120_000;
+  state.teikibinOver50.general.specialCol3.fixed = 12_000;
+  state.teikibinOver50.general.specialCol4.proportional = 240_000;
+  state.teikibinOver50.general.specialCol4.fixed = 24_000;
+  state.teikibinOver50.publicServant.specialCol2.proportional = 60_000;
+  state.teikibinOver50.publicServant.specialCol3.proportional = 180_000;
+  state.teikibinOver50.publicServant.specialCol4.proportional = 300_000;
+  state.teikibinOver50.general.oldAge65.proportional = 360_000;
+  state.teikibinOver50.publicServant.oldAge65.proportional = 120_000;
+
+  const age63May = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    5,
+  );
+  assert.ok(
+    Math.abs(
+      age63May.oldAge.generalEmployees.basic -
+        120_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(
+      age63May.oldAge.generalEmployees.payment -
+        12_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(
+      age63May.oldAge.publicServant.basic -
+        180_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+
+  const age64May = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2027,
+    5,
+  );
+  assert.ok(
+    Math.abs(
+      age64May.oldAge.generalEmployees.basic -
+        240_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(
+      age64May.oldAge.publicServant.basic -
+        300_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+
+  // 4月2日生まれは4月1日に65歳到達。4月分までは特別支給、
+  // 5月分から65歳以降欄へ切り替わる。
+  const age65April = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    4,
+  );
+  const age65May = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.ok(
+    Math.abs(
+      age65April.oldAge.generalEmployees.basic -
+        240_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(
+      age65May.oldAge.generalEmployees.basic -
+        360_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(
+      age65May.oldAge.publicServant.basic -
+        120_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+}
+
+// 段階年齢を持たない旧保存データは、startAge<65 を従来どおり
+// 特別支給の開始指定として読み、65歳到達後だけ正規の65歳欄へ切り替える。
+{
+  const member = pensionMember({ birthDay: 2, age: 63 });
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.general.specialCol3.proportional = 120_000;
+  state.teikibinOver50.general.specialCol4.proportional = 240_000;
+  state.teikibinOver50.general.oldAge65.proportional = 360_000;
+  state.benefitSettings.oldAgeGeneralEmployees.startAge = 63;
+  state.benefitSettings.oldAgeGeneralEmployees.startMonth = 0;
+  state.benefitSettings.oldAgeBasic.startAge = 63;
+  state.benefitSettings.oldAgeBasic.startMonth = 0;
+  state.benefitSettings.oldAgePublicPrivate.startAge = 63;
+  state.benefitSettings.oldAgePublicPrivate.startMonth = 0;
+
+  const legacy63 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2026,
+    5,
+  );
+  assert.ok(
+    Math.abs(
+      legacy63.oldAge.generalEmployees.basic -
+        360_000 / 12 / 10_000,
+    ) < 1e-9,
+  );
+
+  const after65 = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    [],
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.ok(after65.oldAge.generalEmployees.basic > 0);
+  assert.notEqual(
+    after65.oldAge.generalEmployees.basic,
+    legacy63.oldAge.generalEmployees.basic,
+  );
+}
+
 // 繰下げ待機中の在職停止分は増額対象外。
 // 報酬比例120万円/年＋経過的加算12万円/年を66歳0か月まで繰下げる例で、
 // 高報酬により報酬比例部分が全額停止なら、増額は経過的加算分だけ残る。
