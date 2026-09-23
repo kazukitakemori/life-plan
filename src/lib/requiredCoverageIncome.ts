@@ -115,7 +115,10 @@ export interface SurvivorLivelihoodIncomeAssessment {
  */
 export function resolveSurvivorLivelihoodIncomeAssessment(input: {
   recipient: FamilyMember;
+  /** 死亡前の前年収入判定に使うQ7収入 */
   incomeByMember: IncomeByMember;
+  /** 死亡後おおむね5年以内の収入低下見込みに使う収入。未指定時はQ7を使用。 */
+  futureIncomeByMember?: IncomeByMember;
   priorYearIncomeByMember?: CashFlowInput['priorYearIncomeByMember'];
   referenceDate: Date;
   death: CalendarYearMonth;
@@ -200,8 +203,11 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
 
   // 基準以上でも、おおむね5年以内に基準未満へ下がる見込みがあれば
   // 生計維持として認定され得る。Q7でその可能性が見える場合は不該当と断定しない。
-  const entries = input.incomeByMember[input.recipient.id] ?? [];
-  if (entries.length === 0) {
+  const futureEntries =
+    input.futureIncomeByMember?.[input.recipient.id] ??
+    input.incomeByMember[input.recipient.id] ??
+    [];
+  if (futureEntries.length === 0) {
     return {
       status: 'unconfirmed',
       incomeReferenceYear,
@@ -213,7 +219,7 @@ export function resolveSurvivorLivelihoodIncomeAssessment(input: {
   for (let year = input.death.year; year <= input.death.year + 5; year += 1) {
     const profile = resolveMemberYearIncomeProfile(
       input.recipient,
-      entries,
+      futureEntries,
       input.referenceDate,
       year,
       1,
@@ -795,6 +801,7 @@ export function accumulateCoverageIncome(
     ? resolveSurvivorLivelihoodIncomeAssessment({
         recipient: survivorSpouse,
         incomeByMember: input.incomeByMember,
+        futureIncomeByMember: incomeByMember,
         priorYearIncomeByMember: input.priorYearIncomeByMember,
         referenceDate: input.referenceDate,
         death: start,
