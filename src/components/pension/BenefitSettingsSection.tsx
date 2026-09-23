@@ -1,3 +1,10 @@
+import type { FamilyMember } from '../../types/family';
+import { calcBirthYear } from '../../lib/birthDate';
+import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
+import {
+  getMaxOldAgeDeferralAgeByBirth,
+  normalizeOldAgeBenefitStart,
+} from '../../lib/pensionOldAge';
 import {
   formatNumericDisplay,
   getWesternYearOptions,
@@ -16,6 +23,8 @@ import {
 } from '../../types/pension';
 
 interface BenefitSettingsSectionProps {
+  member: FamilyMember;
+  referenceDate: Date;
   settings: BenefitSettings;
   headOfHouseholdLabel: string;
   onChange: (settings: BenefitSettings) => void;
@@ -79,13 +88,40 @@ function OldAgeBenefitRow({
   rowId,
   label,
   row,
+  maxDeferralAge,
   onChange,
 }: {
   rowId: string;
   label: string;
   row: OldAgeBenefitRowSettings;
+  maxDeferralAge: number;
   onChange: (row: OldAgeBenefitRowSettings) => void;
 }) {
+  const normalizedStart = normalizeOldAgeBenefitStart(
+    row.startAge,
+    row.startMonth ?? 0,
+    maxDeferralAge,
+  );
+  const ageOptions = PENSION_START_AGE_OPTIONS.filter(
+    (age) => age <= maxDeferralAge,
+  );
+  const monthOptions =
+    normalizedStart.startAge === 65 ||
+    normalizedStart.startAge === maxDeferralAge
+      ? [0]
+      : PENSION_START_MONTH_OPTIONS;
+
+  const updateStart = (startAge: number, startMonth: number) => {
+    onChange({
+      ...row,
+      ...normalizeOldAgeBenefitStart(
+        startAge,
+        startMonth,
+        maxDeferralAge,
+      ),
+    });
+  };
+
   return (
     <tr>
       <th className="benefit-row-label">{label}</th>
@@ -93,12 +129,12 @@ function OldAgeBenefitRow({
         <div className="benefit-start-age-inner">
           <select
             className="pension-field-select pension-field-select--benefit"
-            value={row.startAge}
+            value={normalizedStart.startAge}
             onChange={(e) =>
-              onChange({ ...row, startAge: Number(e.target.value) })
+              updateStart(Number(e.target.value), normalizedStart.startMonth)
             }
           >
-            {PENSION_START_AGE_OPTIONS.map((age) => (
+            {ageOptions.map((age) => (
               <option key={age} value={age}>
                 {age}才
               </option>
@@ -106,12 +142,13 @@ function OldAgeBenefitRow({
           </select>
           <select
             className="pension-field-select pension-field-select--benefit-month"
-            value={row.startMonth ?? 0}
+            value={normalizedStart.startMonth}
+            disabled={monthOptions.length === 1}
             onChange={(e) =>
-              onChange({ ...row, startMonth: Number(e.target.value) })
+              updateStart(normalizedStart.startAge, Number(e.target.value))
             }
           >
-            {PENSION_START_MONTH_OPTIONS.map((m) => (
+            {monthOptions.map((m) => (
               <option key={m} value={m}>
                 {m}ヶ月
               </option>
@@ -193,11 +230,23 @@ function isEarlyStart(age: number) {
 }
 
 export function BenefitSettingsSection({
+  member,
+  referenceDate,
   settings,
   headOfHouseholdLabel,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
+  const memberBirthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const maxDeferralAge = getMaxOldAgeDeferralAgeByBirth(
+    memberBirthYear,
+    resolveMemberBirthMonth(member),
+    member.birthDay,
+  );
   const update = (patch: Partial<BenefitSettings>) => {
     onChange({ ...settings, ...patch });
   };
@@ -274,12 +323,14 @@ export function BenefitSettingsSection({
               rowId="basic"
               label="老齢基礎"
               row={settings.oldAgeBasic}
+              maxDeferralAge={maxDeferralAge}
               onChange={(row) => handleOldAgeChange('oldAgeBasic', row)}
             />
             <OldAgeBenefitRow
               rowId="general"
               label="一般厚生"
               row={settings.oldAgeGeneralEmployees}
+              maxDeferralAge={maxDeferralAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgeGeneralEmployees', row)
               }
@@ -288,6 +339,7 @@ export function BenefitSettingsSection({
               rowId="public-private"
               label="公務員厚生・私学共済"
               row={settings.oldAgePublicPrivate}
+              maxDeferralAge={maxDeferralAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgePublicPrivate', row)
               }
