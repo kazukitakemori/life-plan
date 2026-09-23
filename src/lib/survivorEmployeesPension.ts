@@ -671,7 +671,10 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
   }
 
   if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE) {
-    return MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR;
+    return (
+      MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
+      middleAgedWidowAddPhaseRatio(input.death)
+    );
   }
 
   const atForty = yearMonthWhenAgeReached(
@@ -687,7 +690,10 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
       atForty.year,
       atForty.month,
     ).length > 0;
-  return hadChildrenAtForty ? MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR : 0;
+  return hadChildrenAtForty
+    ? MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
+        middleAgedWidowAddPhaseRatio(input.death)
+    : 0;
 }
 
 export function calcCoverageSurvivorEmployeesDetail(input: {
