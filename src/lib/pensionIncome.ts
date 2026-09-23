@@ -4,6 +4,7 @@
  */
 import { resolveMemberBirthMonth } from './familyDefaults';
 import { calcBirthYear } from './birthDate';
+import { isEligibleSurvivorBasicChild } from './survivorBasicPension';
 import {
   calcTransitionalAdditionYenPerYear,
   countQ7EmployeesMonthsAfterDate,
@@ -62,7 +63,9 @@ import {
   ADDITIONAL_PENSION_UNIT_YEN_PER_MONTH,
   DEPENDENT_PENSION_CUTOFF_AGE,
   DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS,
-  DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR,
+  DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR,
+  DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR,
+  DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   STANDARD_OLD_AGE_START,
@@ -885,6 +888,55 @@ function getTotalEmployeesMonthsForDependentQualification(
  *
  * manual モード: ユーザー入力額を使用。
  */
+function getDependentSpousePensionYenPerYear(
+  pensioner: FamilyMember,
+  referenceDate: Date,
+): number {
+  const birthYear = calcBirthYear(
+    pensioner.age,
+    pensioner.birthMonth,
+    referenceDate,
+  );
+  const birthMonth = resolveMemberBirthMonth(pensioner);
+  const birthDay = pensioner.birthDay ?? 1;
+  const onOrAfter = (year: number, month: number, day: number): boolean =>
+    birthYear > year ||
+    (birthYear === year &&
+      (birthMonth > month ||
+        (birthMonth === month && birthDay >= day)));
+
+  let special = 0;
+  if (onOrAfter(1943, 4, 2)) special = 179_900;
+  else if (onOrAfter(1942, 4, 2)) special = 143_900;
+  else if (onOrAfter(1941, 4, 2)) special = 108_000;
+  else if (onOrAfter(1940, 4, 2)) special = 71_900;
+  else if (onOrAfter(1934, 4, 2)) special = 36_000;
+
+  return DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR + special;
+}
+
+function calcDependentChildrenPensionMonthlyMan(
+  familyMembers: FamilyMember[],
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  const count = familyMembers.filter((member) =>
+    isEligibleSurvivorBasicChild(
+      member,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    ),
+  ).length;
+  if (count <= 0) return 0;
+  const firstTwo =
+    Math.min(count, 2) * DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
+  const rest =
+    Math.max(0, count - 2) * DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
+  return toMonthlyMan(firstTwo + rest);
+}
+
 function calcDependentSpousePensionMonthlyMan(
   headMember: FamilyMember,
   headMemberState: PensionMemberState,
@@ -968,7 +1020,9 @@ function calcDependentSpousePensionMonthlyMan(
     return 0;
   }
 
-  return toMonthlyMan(DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR);
+  return toMonthlyMan(
+    getDependentSpousePensionYenPerYear(headMember, referenceDate),
+  );
 }
 
 /**
@@ -1129,7 +1183,7 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
     );
   }
 
-  // 加給年金（配偶者分）: 世帯主が老齢厚生受給中かつ配偶者が65歳未満の間に加算
+  // 加給年金: 世帯主の老齢厚生年金に、要件を満たす配偶者・子を加算
   const headMember = familyMembers.find((m) => m.role === 'head');
   const spouseMember = familyMembers.find((m) => m.role === 'spouse');
   if (headMember && spouseMember) {
@@ -1147,7 +1201,17 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
       calendarMonth,
     );
 
-    if (dependentMonthlyMan > 0) {
+    const childDependentMonthlyMan =
+      calcDependentChildrenPensionMonthlyMan(
+        familyMembers,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+    const totalDependentMonthlyMan =
+      dependentMonthlyMan + childDependentMonthlyMan;
+
+    if (totalDependentMonthlyMan > 0) {
       // 一般厚生・公務員厚のどちらに加入月が多いかで振り分ける（通常推計を使用）
       const { general, publicServant } = getTotalEmployeesMonths(
         headMember,
@@ -1156,9 +1220,9 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
         referenceDate,
       );
       if (general >= publicServant) {
-        total.oldAge.generalEmployees.dependent += dependentMonthlyMan;
+        total.oldAge.generalEmployees.dependent += totalDependentMonthlyMan;
       } else {
-        total.oldAge.publicServant.dependent += dependentMonthlyMan;
+        total.oldAge.publicServant.dependent += totalDependentMonthlyMan;
       }
     }
 
