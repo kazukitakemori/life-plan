@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -80,6 +80,76 @@ const SERIES: SeriesItem[] = [
 
 /** Recharts は先頭が底。凡例上→下と同じ見た目になるよう下→上に積む */
 const STACK_ORDER: SeriesKey[] = [...SERIES.map((item) => item.key)].reverse();
+
+const MOBILE_CHART_MEDIA_QUERY = '(max-width: 768px)';
+
+function useMobileChartLayout(): boolean {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia(MOBILE_CHART_MEDIA_QUERY).matches
+      : false,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_CHART_MEDIA_QUERY);
+    const update = () => setIsMobile(mediaQuery.matches);
+
+    update();
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
+
+  return isMobile;
+}
+
+function limitTicks(ticks: number[], maxTicks: number): number[] {
+  if (ticks.length <= maxTicks) return ticks;
+  if (maxTicks <= 1) return [ticks[0]];
+
+  const result: number[] = [];
+  const lastIndex = ticks.length - 1;
+
+  for (let index = 0; index < maxTicks; index += 1) {
+    const sourceIndex = Math.round((index * lastIndex) / (maxTicks - 1));
+    const value = ticks[sourceIndex];
+    if (result[result.length - 1] !== value) result.push(value);
+  }
+
+  return result;
+}
+
+function PensionLegend({
+  visible,
+  onToggle,
+}: {
+  visible: Record<SeriesKey, boolean>;
+  onToggle: (key: SeriesKey) => void;
+}) {
+  return (
+    <ul className="education-chart-legend pension-chart-legend">
+      {SERIES.map((item) => (
+        <li
+          key={item.key}
+          className={`education-chart-legend-item pension-chart-legend-item${visible[item.key] ? '' : ' is-hidden'}`}
+        >
+          <label className="pension-chart-legend-toggle">
+            <input
+              type="checkbox"
+              checked={visible[item.key]}
+              onChange={() => onToggle(item.key)}
+            />
+            <span
+              className="education-chart-legend-icon education-chart-legend-icon--bar"
+              style={{ backgroundColor: item.color }}
+              aria-hidden
+            />
+            <span className="education-chart-legend-label">{item.label}</span>
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function allVisible(): Record<SeriesKey, boolean> {
   return {
@@ -166,6 +236,7 @@ export function PensionBenefitEstimatePanel({
 }: PensionBenefitEstimatePanelProps) {
   const [visible, setVisible] =
     useState<Record<SeriesKey, boolean>>(allVisible);
+  const isMobile = useMobileChartLayout();
 
   const points = useMemo(
     () =>
@@ -194,10 +265,10 @@ export function PensionBenefitEstimatePanel({
 
   const minHeadAge = visiblePoints[0]?.headAge ?? 0;
   const maxHeadAge = visiblePoints[visiblePoints.length - 1]?.headAge ?? 0;
-  const tickAges = useMemo(
-    () => getTickAges(visiblePoints),
-    [visiblePoints],
-  );
+  const tickAges = useMemo(() => {
+    const ticks = getTickAges(visiblePoints);
+    return isMobile ? limitTicks(ticks, 7) : ticks;
+  }, [visiblePoints, isMobile]);
   const { plotMinHeadAge, plotMaxHeadAge } = useMemo(
     () => getLifetimeChartPlotAgeDomain(minHeadAge, maxHeadAge),
     [minHeadAge, maxHeadAge],
@@ -215,185 +286,154 @@ export function PensionBenefitEstimatePanel({
   );
   const xAxisHeight = xAxisTotalHeight(1);
   const plotHeight = useFullscreenPlotHeight(
-    CHART_HEIGHT,
+    isMobile ? 360 : CHART_HEIGHT,
     CHART_HEIGHT_FULLSCREEN,
   );
   const seriesByKey = new Map(SERIES.map((item) => [item.key, item]));
 
+  const toggleSeries = (key: SeriesKey) => {
+    setVisible((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
+
   return (
-    <section className="pension-estimate-panel" aria-label="年金試算結果">
-      <div className="lifetime-chart-header">
-        <div className="lifetime-chart-header-left">
-          <h3 className="lifetime-chart-title">試算結果（老齢年金・60歳以降）</h3>
+    <section
+      className="pension-estimate-panel education-chart-card pension-chart-card"
+      aria-label="年金試算結果"
+    >
+      <div className="pension-chart-title-row">
+        <h3 className="education-chart-title pension-chart-title">
+          老齢年金のグラフ
+        </h3>
+        <div className="pension-chart-desktop-controls">
+          <CoverageChartZoomToolbar
+            canZoomIn={canZoomIn}
+            canZoomOut={canZoomOut}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onReset={reset}
+          />
         </div>
-        <CoverageChartZoomToolbar
-          canZoomIn={canZoomIn}
-          canZoomOut={canZoomOut}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onReset={reset}
-        />
       </div>
 
-      <div className="lifetime-simulation-panel required-coverage-chart-panel">
-        <div className="lifetime-simulation-align">
-          <div
-            className="sim-align-label sim-chart-label-spacer"
-            aria-hidden="true"
-          />
-          <div className="sim-align-plot lifetime-chart-plot">
-            <p className="lifetime-chart-y-unit" aria-hidden>
-              （万円）
-            </p>
-            <ResponsiveContainer
-              width="100%"
-              height={plotHeight + xAxisHeight}
-            >
-              <ComposedChart
-                data={visiblePoints}
-                barCategoryGap={getSimulationBarCategoryGapPx(
-                  visiblePoints.length,
-                )}
-                barGap={0}
-                maxBarSize={EXPENSE_BAR_MAX_SIZE}
-                margin={{
-                  top: CHART_MARGIN_TOP,
-                  right: SIMULATION_CHART_MARGIN_RIGHT,
-                  left: 0,
-                  bottom: xAxisHeight,
-                }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#e5e7eb"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="headAge"
-                  type="number"
-                  scale="linear"
-                  domain={[plotMinHeadAge, plotMaxHeadAge]}
-                  allowDataOverflow
-                  padding={{ left: 0, right: 0 }}
-                  ticks={tickAges}
-                  interval={0}
-                  stroke="#64748b"
-                  fontSize={11}
-                  height={xAxisHeight}
-                  tick={(props) => (
-                    <DualAgeAxisTick {...props} points={visiblePoints} />
-                  )}
-                />
-                <YAxis
-                  yAxisId="main"
-                  tickFormatter={formatAxisMan}
-                  ticks={yTicks}
-                  stroke="#64748b"
-                  fontSize={11}
-                  width={CHART_MARGIN_LEFT}
-                  domain={[0, axisMax]}
-                />
-                <ReferenceLine
-                  yAxisId="main"
-                  y={0}
-                  stroke="#cbd5e1"
-                  strokeWidth={1}
-                />
-                <Tooltip
-                  content={(props) => (
-                    <PensionBenefitTooltip
-                      active={props.active}
-                      label={props.label as number | undefined}
-                      payload={
-                        props.payload as ReadonlyArray<{
-                          payload?: PensionBenefitChartPoint;
-                        }>
-                      }
-                      points={visiblePoints}
-                      visible={visible}
-                    />
-                  )}
-                />
-                {STACK_ORDER.map((key) => {
-                  const item = seriesByKey.get(key);
-                  if (!item) return null;
-                  return (
-                    <Bar
-                      key={key}
-                      yAxisId="main"
-                      dataKey={key}
-                      name={item.label}
-                      stackId="pension"
-                      fill={item.color}
-                      hide={!visible[key]}
-                      isAnimationActive={false}
-                    />
-                  );
-                })}
-              </ComposedChart>
-            </ResponsiveContainer>
+      {isMobile && (
+        <div className="pension-chart-mobile-summary">
+          <PensionLegend visible={visible} onToggle={toggleSeries} />
+          <div className="pension-chart-mobile-meta">
+            <span>横軸：年齢（60歳以降）</span>
+            <span>縦軸：年額（万円）</span>
           </div>
-          <div className="sim-align-gap" aria-hidden="true" />
-          <aside className="sim-align-sidebar lifetime-chart-sidebar">
-            <div className="lifetime-chart-legend-panel">
-              <h3 className="lifetime-chart-legend-title">凡例</h3>
-              <div className="lifetime-chart-legend-bulk">
-                <button
-                  type="button"
-                  className="lifetime-chart-legend-bulk-btn"
-                  onClick={() => setVisible(allVisible())}
-                >
-                  全表示
-                </button>
-                <button
-                  type="button"
-                  className="lifetime-chart-legend-bulk-btn"
-                  onClick={() => setVisible(noneVisible())}
-                >
-                  全解除
-                </button>
-              </div>
-              <ul className="lifetime-chart-legend">
-                {SERIES.map((item) => {
-                  const checked = visible[item.key];
-                  return (
-                    <li
-                      key={item.key}
-                      className={
-                        checked
-                          ? 'lifetime-chart-legend-item'
-                          : 'lifetime-chart-legend-item is-hidden'
-                      }
-                    >
-                      <label className="lifetime-chart-legend-toggle">
-                        <input
-                          type="checkbox"
-                          className="lifetime-chart-legend-check"
-                          checked={checked}
-                          onChange={() =>
-                            setVisible((current) => ({
-                              ...current,
-                              [item.key]: !current[item.key],
-                            }))
-                          }
-                        />
-                        <span
-                          className="lifetime-chart-legend-icon lifetime-chart-legend-icon--bar"
-                          style={{ backgroundColor: item.color }}
-                          aria-hidden
-                        />
-                        <span className="lifetime-chart-legend-label">
-                          {item.label}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </aside>
+          <p className="pension-chart-mobile-hint">
+            グラフをタップすると西暦・年齢・年金額の詳細を確認できます
+          </p>
         </div>
+      )}
+
+      <div className="education-chart-container pension-chart-container">
+        <ResponsiveContainer width="100%" height={plotHeight + xAxisHeight}>
+          <ComposedChart
+            data={visiblePoints}
+            barCategoryGap={getSimulationBarCategoryGapPx(
+              visiblePoints.length,
+            )}
+            barGap={0}
+            maxBarSize={EXPENSE_BAR_MAX_SIZE}
+            margin={
+              isMobile
+                ? {
+                    top: 8,
+                    right: 0,
+                    left: 0,
+                    bottom: xAxisHeight,
+                  }
+                : {
+                    top: CHART_MARGIN_TOP,
+                    right: SIMULATION_CHART_MARGIN_RIGHT,
+                    left: 0,
+                    bottom: xAxisHeight,
+                  }
+            }
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={isMobile ? '#cbd5e1' : '#e5e7eb'}
+              vertical={!isMobile}
+            />
+            <XAxis
+              dataKey="headAge"
+              type="number"
+              scale="linear"
+              domain={[plotMinHeadAge, plotMaxHeadAge]}
+              allowDataOverflow
+              padding={{ left: 0, right: 0 }}
+              ticks={tickAges}
+              interval={0}
+              stroke="#94a3b8"
+              fontSize={11}
+              height={xAxisHeight}
+              tick={(props) => (
+                <DualAgeAxisTick {...props} points={visiblePoints} />
+              )}
+            />
+            <YAxis
+              yAxisId="main"
+              tickFormatter={formatAxisMan}
+              ticks={yTicks}
+              stroke="#64748b"
+              fontSize={isMobile ? 11 : 13}
+              width={isMobile ? 38 : CHART_MARGIN_LEFT}
+              domain={[0, axisMax]}
+            />
+            <ReferenceLine
+              yAxisId="main"
+              y={0}
+              stroke="#cbd5e1"
+              strokeWidth={1}
+            />
+            <Tooltip
+              content={(props) => (
+                <PensionBenefitTooltip
+                  active={props.active}
+                  label={props.label as number | undefined}
+                  payload={
+                    props.payload as ReadonlyArray<{
+                      payload?: PensionBenefitChartPoint;
+                    }>
+                  }
+                  points={visiblePoints}
+                  visible={visible}
+                />
+              )}
+            />
+            {STACK_ORDER.map((key, index) => {
+              const item = seriesByKey.get(key);
+              if (!item) return null;
+              return (
+                <Bar
+                  key={key}
+                  yAxisId="main"
+                  dataKey={key}
+                  name={item.label}
+                  stackId="pension"
+                  fill={item.color}
+                  hide={!visible[key]}
+                  isAnimationActive={false}
+                  radius={
+                    index === STACK_ORDER.length - 1
+                      ? [2, 2, 0, 0]
+                      : [0, 0, 0, 0]
+                  }
+                />
+              );
+            })}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
+
+      {!isMobile && (
+        <PensionLegend visible={visible} onToggle={toggleSeries} />
+      )}
     </section>
-  );
-}
+  );}
