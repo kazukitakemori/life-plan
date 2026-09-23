@@ -743,7 +743,97 @@ function calcOldAgeMonthlyManByRow(
     ageMonth,
   );
 
-  if (!basicActive && !generalActive && !publicActive) {
+  const over50Form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : null;
+  const hasSpecialStageAges =
+    over50Form != null && hasOver50SpecialStageAges(over50Form);
+
+  const memberBirthYearForCurrentMonth = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+  );
+  const memberBirthMonthForCurrentMonth = resolveMemberBirthMonth(member);
+  const currentCalendarYear = calendarYearFromAgeCalendarMonth(
+    memberBirthYearForCurrentMonth,
+    memberBirthMonthForCurrentMonth,
+    ageMonth.age,
+    ageMonth.month,
+  );
+  const currentSerial = pensionCalendarSerial(
+    currentCalendarYear,
+    ageMonth.month,
+  );
+  const age65ReachedSerial = getAgeReachedSerial(
+    member,
+    referenceDate,
+    STANDARD_OLD_AGE_START,
+  );
+  const inSpecialPaymentPeriod =
+    over50Form != null && currentSerial <= age65ReachedSerial;
+
+  // 旧データには定期便の段階別開始年齢がないため、従来どおり
+  // startAge<65 を特別支給の開始指定として65歳までだけ解釈する。
+  const legacyGeneralSpecialActive =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    inSpecialPaymentPeriod &&
+    gSetting.amountMode === 'auto' &&
+    gSetting.startAge < STANDARD_OLD_AGE_START &&
+    generalActive;
+  const legacyPublicSpecialActive =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    inSpecialPaymentPeriod &&
+    pSetting.amountMode === 'auto' &&
+    pSetting.startAge < STANDARD_OLD_AGE_START &&
+    publicActive;
+
+  let specialBase = createEmptyOldAgePensionBreakdown();
+  if (over50Form && inSpecialPaymentPeriod) {
+    if (hasSpecialStageAges) {
+      const specialColumn = resolveOver50SpecialColumn(
+        over50Form,
+        member,
+        referenceDate,
+        ageMonth,
+      );
+      if (specialColumn) {
+        // 段階別年齢を入力した新データでは、受給設定が65歳以上なら
+        // 定期便どおり特別支給を自動反映する。65歳未満を明示した場合は
+        // 通常の繰上げ設定を優先し、二重計上しない。
+        specialBase = calcOver50SpecialColumnAmounts(
+          over50Form,
+          specialColumn,
+          gSetting.amountMode === 'auto' &&
+            gSetting.startAge >= STANDARD_OLD_AGE_START,
+          pSetting.amountMode === 'auto' &&
+            pSetting.startAge >= STANDARD_OLD_AGE_START,
+        );
+      }
+    } else {
+      specialBase = calcLegacyOver50SpecialAmounts(
+        over50Form,
+        legacyGeneralSpecialActive,
+        legacyPublicSpecialActive,
+      );
+    }
+  }
+
+  const regularGeneralActive =
+    generalActive && !legacyGeneralSpecialActive;
+  const regularPublicActive =
+    publicActive && !legacyPublicSpecialActive;
+  const specialActive = sumOldAgePension(specialBase) !== 0;
+
+  if (
+    !basicActive &&
+    !regularGeneralActive &&
+    !regularPublicActive &&
+    !specialActive
+  ) {
     return createEmptyOldAgePensionBreakdown();
   }
 
@@ -843,18 +933,13 @@ function calcOldAgeMonthlyManByRow(
     result.basic = basic;
   }
 
-  if (generalActive) {
+  if (regularGeneralActive) {
     let general =
       gSetting.amountMode === 'manual'
         ? buildGeneralDetailFromYen(gSetting.manualAmountPerYear ?? 0)
         : autoBase.generalEmployees;
-    // over50 特別支給（65 歳前）は定期便記載額そのまま → 繰上繰下調整なし
-    const isOver50Special =
-      memberState.pastEnrollment === 'nenkin-teikibin-over50' &&
-      gSetting.amountMode !== 'manual' &&
-      gSetting.startAge < STANDARD_OLD_AGE_START;
     const gStartMonths = gSetting.startAge * 12 + (gSetting.startMonth ?? 0);
-    if (!isOver50Special && gSetting.amountMode !== 'manual' && gStartMonths !== STANDARD_OLD_AGE_START * 12) {
+    if (gSetting.amountMode !== 'manual' && gStartMonths !== STANDARD_OLD_AGE_START * 12) {
       general = applyGeneralDetailAdjustment(
         general,
         gSetting.startAge,
@@ -872,17 +957,13 @@ function calcOldAgeMonthlyManByRow(
     result.generalEmployees = general;
   }
 
-  if (publicActive) {
+  if (regularPublicActive) {
     let pub =
       pSetting.amountMode === 'manual'
         ? buildPublicServantDetailFromYen(pSetting.manualAmountPerYear ?? 0)
         : autoBase.publicServant;
-    const isOver50Special =
-      memberState.pastEnrollment === 'nenkin-teikibin-over50' &&
-      pSetting.amountMode !== 'manual' &&
-      pSetting.startAge < STANDARD_OLD_AGE_START;
     const pStartMonths = pSetting.startAge * 12 + (pSetting.startMonth ?? 0);
-    if (!isOver50Special && pSetting.amountMode !== 'manual' && pStartMonths !== STANDARD_OLD_AGE_START * 12) {
+    if (pSetting.amountMode !== 'manual' && pStartMonths !== STANDARD_OLD_AGE_START * 12) {
       pub = applyPublicDetailAdjustment(
         pub,
         pSetting.startAge,
@@ -900,13 +981,25 @@ function calcOldAgeMonthlyManByRow(
     result.publicServant = pub;
   }
 
+  // ─ 65歳前の特別支給 ─
+  // 定期便の「○歳〜」は段階ごとの年額なので、該当列だけを加える。
+  // 65歳の受給権発生月まで反映し、その翌月分から65歳以降欄へ切り替える。
+  addGeneralEmployeesDetail(
+    result.generalEmployees,
+    specialBase.generalEmployees,
+  );
+  addPublicServantDetail(
+    result.publicServant,
+    specialBase.publicServant,
+  );
+
   // ─ 65歳以降の在職定時改定 ─
   // 65歳時点の年金額へ将来の65〜69歳加入分を先取りせず、
   // 毎年10月に前年9月〜当年8月の加入実績を追加する。
   // 70歳到達時は残る未反映期間を退職改定相当として反映する。
   if (
     ageMonth.age >= STANDARD_OLD_AGE_START &&
-    (generalActive || publicActive) &&
+    (regularGeneralActive || regularPublicActive) &&
     memberState.pastEnrollment !== 'nenkin-teikibin-over50'
   ) {
     const post65 = calcPost65EmployeesPensionIncreaseMan(
@@ -922,7 +1015,10 @@ function calcOldAgeMonthlyManByRow(
 
   // ─ 在職老齢年金（60歳以上）: 就労収入があれば支給停止を適用 ─
   // 令和4年4月以降、60〜64歳も65歳以上と同じ基準で判定する。
-  if (ageMonth.age >= 60 && (generalActive || publicActive)) {
+  if (
+    ageMonth.age >= 60 &&
+    (regularGeneralActive || regularPublicActive || specialActive)
+  ) {
     const remunerationMan = getActiveEmployeesTotalRemunerationMan(
       incomeEntries,
       ageMonth.age,
