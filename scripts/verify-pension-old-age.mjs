@@ -12,6 +12,7 @@ import {
   applyGeneralDetailAdjustment,
 } from '../src/lib/pensionOldAge.ts';
 import { estimatePost65EmployeesPensionIncreaseMan } from '../src/lib/pensionEnrollmentEstimate.ts';
+import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionPremium.ts';
 import { calcMemberMonthlyPensionBreakdownMan } from '../src/lib/pensionIncome.ts';
 import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
@@ -238,6 +239,16 @@ const referenceDate = new Date(2026, 8, 1);
   ).generalEmployeesYenPerYear;
   assert.equal(april, march);
 }
+
+// 厚生年金の被保険者月境界も70歳到達日（誕生日の前日）に合わせる。
+// 4月1日生まれは3月31日に70歳到達となるため3月分は算入しない。
+// 4月2日生まれは4月1日到達なので3月分までは算入する。
+assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 2, 4, 1), true);
+assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, 1), false);
+assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, 2), true);
+assert.equal(isEmployeesPensionLiableAtAgeMonth(70, 4, 4, 2), false);
+// 生年月日の日が未入力の旧データは過大に早く喪失させず、2日以後相当で概算する。
+assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
 
 // 70歳到達改定: 2日以後生まれは誕生月の翌月分から最終加入月までを反映する。
 {
