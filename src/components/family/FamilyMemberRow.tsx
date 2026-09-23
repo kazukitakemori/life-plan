@@ -232,16 +232,17 @@ export function FamilyMemberRow({
   };
 
   const detailSummaryParts: string[] = [];
+  const disabilityPensionStatus = member.disabilityPension ?? 'none';
   if (member.disability === 'has') {
     const grade = member.disabilityGrade ?? 'none';
-    const pensionStatus = member.disabilityPension ?? 'none';
     if (grade !== 'none') {
       detailSummaryParts.push(`障害${DISABILITY_GRADE_LABELS[grade]}`);
-    } else if (pensionStatus !== 'none') {
-      detailSummaryParts.push(DISABILITY_PENSION_LABELS[pensionStatus]);
     } else {
       detailSummaryParts.push('障害あり');
     }
+  }
+  if (disabilityPensionStatus !== 'none') {
+    detailSummaryParts.push(DISABILITY_PENSION_LABELS[disabilityPensionStatus]);
   }
   if (member.hobbies.length > 0) {
     detailSummaryParts.push(`趣味${member.hobbies.length}`);
@@ -422,10 +423,7 @@ export function FamilyMemberRow({
                     ...member,
                     disability,
                     ...(disability === 'none'
-                      ? {
-                          disabilityGrade: 'none' as const,
-                          disabilityPension: 'none' as const,
-                        }
+                      ? { disabilityGrade: 'none' as const }
                       : {}),
                   });
                 }}
@@ -436,63 +434,53 @@ export function FamilyMemberRow({
               />
             </FormField>
 
-            {member.disability === 'has' && (
-              <div className="family-disability-pension-block">
-                <FormField label="障害等級・状態">
-                  <FormSelect
-                    wide
-                    value={member.disabilityGrade ?? 'none'}
-                    onValueChange={(raw) =>
-                      onChange({
-                        ...member,
-                        disabilityGrade: raw as DisabilityGrade,
-                      })
-                    }
-                    options={(
-                      Object.entries(DISABILITY_GRADE_LABELS) as Array<
-                        [DisabilityGrade, string]
-                      >
-                    ).map(([value, label]) => ({ value, label }))}
-                  />
-                </FormField>
-                <p className="ui-note">
-                  子の年金加算などでは、1級・2級の障害状態かどうかを使います。
-                </p>
+            <div className="family-disability-pension-block">
+              {member.disability === 'has' && (
+                <>
+                  <FormField label="障害等級・状態">
+                    <FormSelect
+                      wide
+                      value={member.disabilityGrade ?? 'none'}
+                      onValueChange={(raw) =>
+                        onChange({
+                          ...member,
+                          disabilityGrade: raw as DisabilityGrade,
+                        })
+                      }
+                      options={(
+                        Object.entries(DISABILITY_GRADE_LABELS) as Array<
+                          [DisabilityGrade, string]
+                        >
+                      ).map(([value, label]) => ({ value, label }))}
+                    />
+                  </FormField>
+                  <p className="ui-note">
+                    子の年金加算などでは、1級・2級の障害状態かどうかを使います。
+                  </p>
+                </>
+              )}
 
-                <FormField label="障害年金の受給権（現在）">
-                  <FormSelect
-                    wide
-                    value={member.disabilityPension ?? 'none'}
-                    onValueChange={(raw) => {
-                      const disabilityPension = raw as DisabilityPensionStatus;
-                      const grade: DisabilityGrade =
-                        disabilityPension === 'basic_grade1' ||
-                        disabilityPension === 'employees_grade1'
-                          ? 'grade1'
-                          : disabilityPension === 'basic_grade2' ||
-                              disabilityPension === 'employees_grade2'
-                            ? 'grade2'
-                            : disabilityPension === 'employees_grade3'
-                              ? 'grade3'
-                              : (member.disabilityGrade ?? 'none');
-                      onChange({
-                        ...member,
-                        disabilityGrade: grade,
-                        disabilityPension,
-                      });
-                    }}
-                    options={(
-                      Object.entries(DISABILITY_PENSION_LABELS) as Array<
-                        [DisabilityPensionStatus, string]
-                      >
-                    ).map(([value, label]) => ({ value, label }))}
-                  />
-                </FormField>
-                <p className="ui-note">
-                  現在は受給権の種類を保存し、障害等級・状態と組み合わせて制度判定に使います。障害年金の年額・初診日・障害認定日・受給開始／失権年月は未入力のため、障害年金額そのものはQ8・キャッシュフローへ自動反映しません。遺族厚生年金の5年後の継続給付や、老齢年金の繰下げ可否など、現在確認できる範囲だけに反映します。
-                </p>
-              </div>
-            )}
+              <FormField label="障害年金の受給権（現在）">
+                <FormSelect
+                  wide
+                  value={member.disabilityPension ?? 'none'}
+                  onValueChange={(raw) =>
+                    onChange({
+                      ...member,
+                      disabilityPension: raw as DisabilityPensionStatus,
+                    })
+                  }
+                  options={(
+                    Object.entries(DISABILITY_PENSION_LABELS) as Array<
+                      [DisabilityPensionStatus, string]
+                    >
+                  ).map(([value, label]) => ({ value, label }))}
+                />
+              </FormField>
+              <p className="ui-note">
+                現在の障害状態と障害年金の受給権は別々に保存します。障害の程度が軽くなって支給停止中でも受給権が残る場合があるため、「障害なし」にしても受給権は自動で消しません。障害年金の年額・初診日・障害認定日・受給開始／失権年月・全額支給停止の状況は未入力のため、障害年金額そのものはQ8・キャッシュフローへ自動反映しません。
+              </p>
+            </div>
 
             {(member.role === 'child' ||
               (member.role === 'other' &&
