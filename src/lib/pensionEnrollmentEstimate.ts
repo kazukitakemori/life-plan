@@ -217,7 +217,12 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   careerEnd: AgeMonth | null,
   birthYear: number,
 ): { kind: EmployeesEnrollmentKind; monthlyAmountMan: number; standardBonusYen: number } | null {
-  if (!isEmployeesPensionLiableAtAgeMonth(age, month, resolveMemberBirthMonth(member))) {
+  if (!isEmployeesPensionLiableAtAgeMonth(
+    age,
+    month,
+    resolveMemberBirthMonth(member),
+    member.birthDay,
+  )) {
     return null;
   }
 
@@ -754,7 +759,12 @@ export function estimateQ7FuturePensionAdditionsAfterDate(
         active.streamType,
       );
       if (employeesKind) {
-        if (!isEmployeesPensionLiableAtAgeMonth(age, month, birthMonth)) continue;
+        if (!isEmployeesPensionLiableAtAgeMonth(
+          age,
+          month,
+          birthMonth,
+          member.birthDay,
+        )) continue;
         if (age < NATIONAL_PENSION_MANDATORY_END_AGE) basicMonths += 1;
         const remunerationYen = standardRemunerationYenFromMonthlyManAt(
           active.monthlyAmountMan,
@@ -826,7 +836,12 @@ export function countQ7EmployeesMonthsAfterDate(
             calYear > afterYear ||
             (calYear === afterYear && month > afterMonth);
           if (!isAfter) continue;
-          if (!isEmployeesPensionLiableAtAgeMonth(age, month, resolveMemberBirthMonth(member))) {
+          if (!isEmployeesPensionLiableAtAgeMonth(
+            age,
+            month,
+            resolveMemberBirthMonth(member),
+            member.birthDay,
+          )) {
             continue;
           }
 
