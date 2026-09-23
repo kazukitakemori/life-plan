@@ -1113,6 +1113,25 @@ const pension = createDefaultPensionMemberState();
   assert.equal(overrideBasis.isEstimate, true);
   assert.ok((overrideBasis.totalIncomeYen ?? 0) > 0);
 
+  const selfEmployedOverrideBasis = resolveSurvivorContinuationIncomeBasis({
+    recipient: head,
+    incomeByMember: {},
+    priorYearIncomeByMember: {
+      [head.id]: {
+        differsFromCurrentYear: true,
+        category: 'self_employed',
+        monthlyAmountMan: 100,
+      },
+    },
+    referenceDate,
+    paymentYear: 2026,
+    paymentMonth: 10,
+  });
+  assert.equal(selfEmployedOverrideBasis.incomeReferenceYear, 2025);
+  assert.equal(selfEmployedOverrideBasis.resolution, 'unavailable');
+  assert.equal(selfEmployedOverrideBasis.totalIncomeYen, null);
+
+
   // 元データが無い場合は0円と決めつけず、判定不能にする。
   const unavailableBasis = resolveSurvivorContinuationIncomeBasis({
     recipient: wife38,
