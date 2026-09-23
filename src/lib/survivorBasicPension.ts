@@ -1,5 +1,8 @@
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
-import { resolveMemberBirthMonth } from './familyDefaults';
+import {
+  isPensionSpouseLikeMember,
+  resolveMemberBirthMonth,
+} from './familyDefaults';
 import {
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
@@ -161,10 +164,10 @@ export function calcCoverageSurvivorBasicDetailMonthlyMan(
   month: number,
 ): SurvivorBasicDetail {
   const detail = createEmptySurvivorBasicDetail();
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const survivorSpouse = familyMembers.some(
-    (member) => member.role === survivorRole,
-  );
+  const survivorSpouse =
+    subject === 'head'
+      ? familyMembers.some((member) => isPensionSpouseLikeMember(member))
+      : familyMembers.some((member) => member.role === 'head');
   const children = listEligibleSurvivorBasicChildren(
     familyMembers,
     referenceDate,
@@ -173,7 +176,10 @@ export function calcCoverageSurvivorBasicDetailMonthlyMan(
   );
   if (children.length <= 0) return detail;
 
-  const spouse = familyMembers.find((member) => member.role === survivorRole);
+  const spouse =
+    subject === 'head'
+      ? familyMembers.find((member) => isPensionSpouseLikeMember(member))
+      : familyMembers.find((member) => member.role === 'head');
   const spouseFullBasicPensionYenPerYear = (() => {
     if (!spouse) return FULL_BASIC_PENSION_YEN_PER_YEAR;
     const birthYear = calcBirthYear(spouse.age, spouse.birthMonth, referenceDate);
