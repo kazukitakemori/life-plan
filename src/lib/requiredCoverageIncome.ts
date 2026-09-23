@@ -536,6 +536,7 @@ function extractSurvivorEmployeesPaymentParts(breakdown: PensionBreakdown): {
   const detail = breakdown.survivor.employees;
   const basic =
     detail.basic +
+    detail.children +
     detail.occupational +
     detail.transitional +
     detail.payment;
