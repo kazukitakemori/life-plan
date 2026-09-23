@@ -1814,13 +1814,24 @@ function isOldAgeEmployeesPaymentActiveAtCalendarMonth(
     settings.oldAgePublicPrivate,
     referenceDate,
   );
+  const generalSpecialStartAge = resolveOver50GeneralSpecialStartAge(form);
+  const publicSpecialStartAge =
+    resolveOver50PublicPrivateSpecialStartAge(form);
+  const generalIsEarlyClaim =
+    general.amountMode === 'auto' &&
+    generalSpecialStartAge != null &&
+    general.startAge * 12 + (general.startMonth ?? 0) <
+      generalSpecialStartAge * 12;
+  const publicIsEarlyClaim =
+    publicPrivate.amountMode === 'auto' &&
+    publicSpecialStartAge != null &&
+    publicPrivate.startAge * 12 + (publicPrivate.startMonth ?? 0) <
+      publicSpecialStartAge * 12;
   const special = calcOver50SpecialColumnAmounts(
     form,
     specialColumn,
-    general.amountMode === 'auto' &&
-      general.startAge >= STANDARD_OLD_AGE_START,
-    publicPrivate.amountMode === 'auto' &&
-      publicPrivate.startAge >= STANDARD_OLD_AGE_START,
+    general.amountMode === 'auto' && !generalIsEarlyClaim,
+    publicPrivate.amountMode === 'auto' && !publicIsEarlyClaim,
   );
   return sumOldAgePension(special) !== 0;
 }
