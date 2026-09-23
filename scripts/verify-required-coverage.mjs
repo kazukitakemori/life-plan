@@ -2060,6 +2060,41 @@ assert.ok(
 console.log('OK coverage survivor basic from eligible child');
 
 {
+  // 60〜64歳で国民年金の被保険者だった人は、日本国内住所が死亡要件の一部。
+  // 成人の住所を現データで確認できないため、納付要件だけで自動成立させない。
+  const formerNationalHead = {
+    ...head,
+    id: 'former-national-head',
+    age: 62,
+  };
+  const formerNationalPension = createDefaultPensionByMember([
+    formerNationalHead,
+    spouse,
+    child,
+  ]);
+  formerNationalPension[
+    formerNationalHead.id
+  ].benefitSettings.survivorPremiumRequirement = 'met';
+
+  const formerNationalResult = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [formerNationalHead, spouse, child],
+      incomeByMember: {
+        [spouse.id]: [spousePartTime],
+      },
+      pensionByMember: formerNationalPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.equal(formerNationalResult.income.survivorBasic, 0);
+  console.log('OK survivor basic: former national pension age 60-64 requires unrecorded domestic-address confirmation');
+}
+
+
+{
   const highSpouseIncome = createIncomeEntry(spouse.id, 'employee', 20, 1, spouse);
   highSpouseIncome.periods[0].startAge = 20;
   highSpouseIncome.periods[0].startMonth = 1;
