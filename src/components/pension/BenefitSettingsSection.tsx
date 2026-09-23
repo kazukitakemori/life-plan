@@ -464,6 +464,15 @@ export function BenefitSettingsSection({
     canDeferEmployees &&
     (settings.oldAgeGeneralEmployees.startAge > 65 ||
       settings.oldAgePublicPrivate.startAge > 65);
+  const hasSurvivorPensionInput =
+    settings.survivorBasicPerYear != null ||
+    settings.survivorEmployeesMutualPerYear != null;
+  const hasOldAgeDeferral =
+    settings.oldAgeBasic.startAge > 65 ||
+    settings.oldAgeGeneralEmployees.startAge > 65 ||
+    settings.oldAgePublicPrivate.startAge > 65;
+  const shouldWarnSurvivorDeferral =
+    hasSurvivorPensionInput && hasOldAgeDeferral;
 
   return (
     <div className="pension-subsection benefit-settings">
@@ -478,6 +487,11 @@ export function BenefitSettingsSection({
             {canDeferEmployees
               ? '※ Q1で障害基礎年金の受給権が設定されているため、老齢基礎年金は繰下げ不可として65才から計算します。老齢厚生年金は繰下げを選べます。'
               : '※ Q1で障害厚生年金の受給権が設定されているため、老齢基礎・老齢厚生年金は繰下げ不可として65才から計算します。'}
+          </p>
+        )}
+        {shouldWarnSurvivorDeferral && (
+          <p className="benefit-early-pension-note">
+            ※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・時期・請求状況で変わります。2028年4月以降は、遺族厚生年金の受給権者でも老齢基礎年金は繰下げ可能となり、老齢厚生年金は遺族厚生年金を請求していない場合に限り繰下げ可能となります。Q8の「受給中」入力だけでは経過措置まで確定できないため、開始年齢は自動変更せず選択値のまま試算します。
           </p>
         )}
         {isEarlyPension && (
@@ -714,7 +728,7 @@ export function BenefitSettingsSection({
             </tbody>
           </table>
           <p className="ui-note benefit-survivor-end-note">
-            終了予定年月は分かる場合だけ設定してください。設定した月分まで計上し、翌月から0円にします。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。
+            終了予定年月は分かる場合だけ設定してください。設定した月分までを対象とし、翌月分から終了として扱います。実際の入金は支給月の都合で後の月に現れる場合があります。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。
           </p>
         </div>
       </details>
