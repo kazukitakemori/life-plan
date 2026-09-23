@@ -30,6 +30,8 @@ interface BenefitSettingsSectionProps {
   referenceDate: Date;
   settings: BenefitSettings;
   specialEmployeesStartAge?: number | null;
+  generalSpecialStartAge?: number | null;
+  publicSpecialStartAge?: number | null;
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -265,6 +267,8 @@ export function BenefitSettingsSection({
   referenceDate,
   settings,
   specialEmployeesStartAge = null,
+  generalSpecialStartAge = null,
+  publicSpecialStartAge = null,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -314,36 +318,61 @@ export function BenefitSettingsSection({
     if (isEarlyStart(newRow.startAge)) {
       const startMonths =
         newRow.startAge * 12 + (newRow.startMonth ?? 0);
-      const specialStartMonths =
+      const earliestSpecialStartMonths =
         specialEmployeesStartAge == null
           ? null
           : specialEmployeesStartAge * 12;
+      const generalSpecialStartMonths =
+        generalSpecialStartAge == null
+          ? null
+          : generalSpecialStartAge * 12;
+      const publicSpecialStartMonths =
+        publicSpecialStartAge == null
+          ? null
+          : publicSpecialStartAge * 12;
+      const canStillEarlyClaim = (
+        specialStartMonths: number | null,
+      ) =>
+        specialStartMonths == null || startMonths < specialStartMonths;
 
-      // 特別支給の開始後は、老齢厚生年金を改めて繰上げるのではなく、
-      // 特別支給を受けながら老齢基礎年金だけを65歳前に繰上げられる。
-      if (
-        changedKey === 'oldAgeBasic' &&
-        specialStartMonths != null &&
-        startMonths >= specialStartMonths
-      ) {
-        update({ oldAgeBasic: newRow });
+      // いずれかの特別支給が始まった後に基礎年金を繰り上げる場合は、
+      // 厚生年金側を動かさず、特別支給を継続する。
+      if (changedKey === 'oldAgeBasic') {
+        if (
+          earliestSpecialStartMonths != null &&
+          startMonths >= earliestSpecialStartMonths
+        ) {
+          update({ oldAgeBasic: newRow });
+          return;
+        }
+        onChange({
+          ...settings,
+          oldAgeBasic: newRow,
+          oldAgeGeneralEmployees: syncStart(
+            settings.oldAgeGeneralEmployees,
+          ),
+          oldAgePublicPrivate: syncStart(settings.oldAgePublicPrivate),
+        });
         return;
       }
 
+      // 複数制度のうち既に本来の特別支給開始年齢へ到達している制度は、
+      // その特別支給を維持し、まだ開始前の制度だけを同時繰上げする。
       onChange({
         ...settings,
-        oldAgeBasic:
-          changedKey === 'oldAgeBasic'
-            ? newRow
-            : syncStart(settings.oldAgeBasic),
+        oldAgeBasic: syncStart(settings.oldAgeBasic),
         oldAgeGeneralEmployees:
           changedKey === 'oldAgeGeneralEmployees'
             ? newRow
-            : syncStart(settings.oldAgeGeneralEmployees),
+            : canStillEarlyClaim(generalSpecialStartMonths)
+              ? syncStart(settings.oldAgeGeneralEmployees)
+              : settings.oldAgeGeneralEmployees,
         oldAgePublicPrivate:
           changedKey === 'oldAgePublicPrivate'
             ? newRow
-            : syncStart(settings.oldAgePublicPrivate),
+            : canStillEarlyClaim(publicSpecialStartMonths)
+              ? syncStart(settings.oldAgePublicPrivate)
+              : settings.oldAgePublicPrivate,
       });
       return;
     }
@@ -432,7 +461,7 @@ export function BenefitSettingsSection({
               row={settings.oldAgeGeneralEmployees}
               maxDeferralAge={maxDeferralAge}
               allowDeferral={canDeferEmployees}
-              earlyClaimCutoffAge={specialEmployeesStartAge}
+              earlyClaimCutoffAge={generalSpecialStartAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgeGeneralEmployees', row)
               }
@@ -443,7 +472,7 @@ export function BenefitSettingsSection({
               row={settings.oldAgePublicPrivate}
               maxDeferralAge={maxDeferralAge}
               allowDeferral={canDeferEmployees}
-              earlyClaimCutoffAge={specialEmployeesStartAge}
+              earlyClaimCutoffAge={publicSpecialStartAge}
               onChange={(row) =>
                 handleOldAgeChange('oldAgePublicPrivate', row)
               }
