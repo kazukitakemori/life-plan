@@ -48,8 +48,8 @@ export function isEligibleSurvivorBasicChild(
   if (member.role !== 'child') return false;
   const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
   if (!ageMonth) return false;
-  // 通常は18歳到達年度末まで。障害年金1級・2級の受給状況が
-  // Q1で明示されている場合だけ、制度どおり20歳未満まで延長する。
+  // 通常は18歳到達年度末まで。Q1で障害等級1級・2級の状態が
+  // 明示されている場合だけ、制度どおり20歳未満まで延長する。
   const end = survivorChildOrdinaryEnd(member, referenceDate);
   if (!end) return false;
   if (calendarIndex(year, month) <= calendarIndex(end.year, end.month)) {
