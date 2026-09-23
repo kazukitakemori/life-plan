@@ -46,6 +46,7 @@ import {
   isEligibleSurvivorBasicChild,
   survivorBasicChildAddYenPerYear,
   survivorChildOrdinaryEnd,
+  survivorChildOrdinaryEnd,
 } from './survivorBasicPension';
 import {
   createEmptySurvivorEmployeesDetail,
