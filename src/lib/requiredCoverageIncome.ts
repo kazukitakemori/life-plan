@@ -23,6 +23,7 @@ import {
 import { createDefaultPensionMemberState } from './pensionDefaults';
 import {
   calcMemberMonthlyPensionBreakdownMan,
+  calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan,
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
 import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
@@ -553,7 +554,6 @@ function calcCoveragePensionEntitlementMonth(
   input: Pick<CashFlowInput, 'pensionByMember' | 'referenceDate' | 'incomeByMember' | 'familyMembers'>,
   incomeByMember: IncomeByMember,
   household: FamilyMember[],
-  taxHeadId: string,
   calendarYear: number,
   calendarMonth: number,
   subject: RequiredCoverageSubject,
@@ -581,30 +581,23 @@ function calcCoveragePensionEntitlementMonth(
   });
   entitlement.survivor.employees = survivorAuto.detail;
   const allOldAgeMan: Record<string, number> = {};
-  let memberAllOldAge = 0;
 
   for (const member of household) {
-    if (member.role !== 'head' && member.role !== 'spouse') continue;
     const memberState =
       input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
-    const memberBreakdown = calcMemberMonthlyPensionBreakdownMan(
-      member,
-      memberState,
-      incomeByMember[member.id] ?? [],
-      input.referenceDate,
-      calendarYear,
-      calendarMonth,
-    );
-    const allOldAge = sumOldAgePension(memberBreakdown.oldAge);
-    allOldAgeMan[member.id] = allOldAge;
-    memberAllOldAge += allOldAge;
-  }
-
-  const householdAllOldAge = sumOldAgePension(entitlement.oldAge);
-  const allOldAgeAdditions = Math.max(0, householdAllOldAge - memberAllOldAge);
-  if (allOldAgeAdditions > 0) {
-    allOldAgeMan[taxHeadId] =
-      (allOldAgeMan[taxHeadId] ?? 0) + allOldAgeAdditions;
+    const memberBreakdown =
+      calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+        member,
+        memberState,
+        incomeByMember[member.id] ?? [],
+        household,
+        input.pensionByMember,
+        incomeByMember,
+        input.referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+    allOldAgeMan[member.id] = sumOldAgePension(memberBreakdown.oldAge);
   }
 
   return {
@@ -723,7 +716,6 @@ export function accumulateCoverageIncome(
   const taxHousehold = buildCoverageTaxHousehold(input.familyMembers, subject);
   const taxHead =
     taxHousehold.find((member) => member.role === 'head') ?? taxHousehold[0];
-  const taxHeadId = taxHead?.id ?? '';
   const pensionMonthCache = new Map<
     number,
     { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth }
@@ -736,7 +728,6 @@ export function accumulateCoverageIncome(
       input,
       incomeByMember,
       pensionHousehold,
-      taxHeadId,
       year,
       month,
       subject,
