@@ -431,7 +431,7 @@ export function BenefitSettingsSection({
       <details className="benefit-settings-block benefit-settings-block--optional benefit-survivor-details">
         <summary className="benefit-survivor-summary">
           <span className="benefit-survivor-summary-copy">
-            <span className="benefit-survivor-summary-title">受給中の遺族年金・寡婦年金</span>
+            <span className="benefit-survivor-summary-title">受給中の遺族年金</span>
             <span className="benefit-optional-badge">該当する場合のみ</span>
           </span>
           <span className="benefit-survivor-summary-hint">入力する</span>
