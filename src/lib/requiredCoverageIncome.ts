@@ -727,7 +727,6 @@ export function accumulateCoverageIncome(
       year,
       month,
     );
-    const pensionMonth = getPensionMonth(idx);
     const pensionPayment = calcPensionPaymentFromEntitlements(
       month,
       getPensionMonth(prevCalendarIndex(idx)).entitlement,
