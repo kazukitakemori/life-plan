@@ -2,7 +2,10 @@
  * 公的年金（老齢）の月次内訳計算。
  * v1 簡略化: 物価スライド・障害/寡婦年金の自動計算は未対応。
  */
-import { resolveMemberBirthMonth } from './familyDefaults';
+import {
+  isPensionSpouseLikeMember,
+  resolveMemberBirthMonth,
+} from './familyDefaults';
 import {
   calcBirthYear,
   calendarYearFromAgeCalendarMonth,
@@ -2104,8 +2107,16 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
 
   // 加給年金・子の加算は世帯主固定にせず、世帯主・配偶者のどちらが
   // 年金受給者でも同じルールで判定する。
-  const adults = familyMembers.filter(
-    (member) => member.role === 'head' || member.role === 'spouse',
+  const headMember = familyMembers.find((member) => member.role === 'head');
+  const formalSpouse = familyMembers.find((member) => member.role === 'spouse');
+  const commonLawPartner = familyMembers.find(
+    (member) =>
+      member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner',
+  );
+  const partner = formalSpouse ?? commonLawPartner;
+  const adults = [headMember, partner].filter(
+    (member): member is FamilyMember => Boolean(member),
   );
 
   const addEmployeesDependent = (
