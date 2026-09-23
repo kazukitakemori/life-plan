@@ -18,6 +18,9 @@ export const NATIONAL_PENSION_ANNUAL_YEN = NATIONAL_PENSION_MONTHLY_YEN * 12;
 /** 老齢基礎年金の満額算定に必要な加入月数 */
 export const FULL_BASIC_PENSION_MONTHS = 480;
 
+/** 老齢基礎・老齢厚生年金の受給資格期間（10年） */
+export const OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS = 120;
+
 /**
  * 4年生大学在学中の国民年金猶予（ねんきん定期便なし推計時）。
  * 20歳4月〜22歳3月の24か月は保険料未納（学生納付特例）として算入しない。
