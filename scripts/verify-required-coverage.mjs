@@ -1970,6 +1970,15 @@ console.log('OK survivor basic yen by child count');
   });
   assert.equal(highAssessment.status, 'not_met');
 
+  const postDeathStopAssessment = resolveSurvivorLivelihoodIncomeAssessment({
+    recipient: spouse,
+    incomeByMember: { [spouse.id]: [highIncome] },
+    futureIncomeByMember: { [spouse.id]: [] },
+    referenceDate,
+    death: { year: 2026, month: 7 },
+  });
+  assert.equal(postDeathStopAssessment.status, 'unconfirmed');
+
   const retiringHighIncome = {
     ...highIncome,
     periods: highIncome.periods.map((period) => ({
@@ -1985,7 +1994,7 @@ console.log('OK survivor basic yen by child count');
     death: { year: 2026, month: 7 },
   });
   assert.equal(retirementAssessment.status, 'unconfirmed');
-  console.log('OK survivor livelihood income: low met, sustained high not met, planned drop stays unconfirmed');
+  console.log('OK survivor livelihood income: low met, sustained high not met, post-death/planned drop stays unconfirmed');
 }
 
 const survivorFamilyInput = buildInput({
