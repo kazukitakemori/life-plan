@@ -607,6 +607,31 @@ export function resolveSurvivorContinuationAnnualPensionYen(input: {
   };
 }
 
+/**
+ * 所得判定を免除して継続給付を全額支給できる障害年金の受給状況か。
+ *
+ * 2028年改正後の厚生年金保険法65条4項は、
+ * - 障害基礎年金: 1級・2級
+ * - 障害厚生年金: 1級・2級・3級
+ * の受給権者で、現に障害等級に該当する状態にある場合を対象とする。
+ * 「障害あり」だけでは受給権を推測しない。
+ */
+export function hasQualifyingSurvivorContinuationDisabilityPension(
+  member: FamilyMember,
+): boolean {
+  if (member.disability !== 'has') return false;
+  switch (member.disabilityPension ?? 'none') {
+    case 'basic_grade1':
+    case 'basic_grade2':
+    case 'employees_grade1':
+    case 'employees_grade2':
+    case 'employees_grade3':
+      return true;
+    default:
+      return false;
+  }
+}
+
 function isOnOrAfterAge(
   ageMonth: { age: number; month: number },
   minAge: number,
@@ -1102,20 +1127,19 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
       input.death,
       now,
     );
-  // 5年有期給付終了後は、所得基準額・障害年金受給権を確認できるまで
-  // 給付額を推測しない。同時に後順位の遺族へ誤って給付を移さない。
-  if (continuationAssessment) {
-    return { ...empty, continuationAssessment };
-  }
 
-  const recipient = resolveSurvivorEmployeesRecipient(
-    input.familyMembers,
-    input.subject,
-    input.referenceDate,
-    input.death,
-    now,
-  );
-  if (!recipient) return empty;
+  // 継続給付の判定期間中は、後順位の遺族へ受給者を移さない。
+  // 障害年金の受給権を確認できる場合だけ、この後で全額継続へ解決する。
+  const recipient = continuationAssessment
+    ? null
+    : resolveSurvivorEmployeesRecipient(
+        input.familyMembers,
+        input.subject,
+        input.referenceDate,
+        input.death,
+        now,
+      );
+  if (!continuationAssessment && !recipient) return empty;
 
   const monthsUntilDeath = calcEmployeesMonthsUntilDeath(
     deceased,
@@ -1137,6 +1161,38 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     requirement,
   });
   if (baseYen <= 0) return empty;
+
+  if (continuationAssessment) {
+    const continuation = resolveSurvivorContinuationAnnualPensionYen({
+      recipient: continuationAssessment.member,
+      incomeByMember: input.coverageIncomeByMember,
+      referenceDate: input.referenceDate,
+      paymentYear: input.year,
+      paymentMonth: input.month,
+      enhancedAnnualPensionYen:
+        baseYen / SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE,
+      hasQualifyingDisabilityPensionEntitlement:
+        hasQualifyingSurvivorContinuationDisabilityPension(
+          continuationAssessment.member,
+        ),
+    });
+
+    // 障害年金受給権を確認できれば所得に関係なく全額継続。
+    // それ以外は政令の所得基準額が公式確定するまで推測額を計上しない。
+    if (continuation.annualPensionYen == null) {
+      return { ...empty, continuationAssessment };
+    }
+    return {
+      detail: {
+        ...createEmptySurvivorEmployeesDetail(),
+        basic: toMonthlyMan(continuation.annualPensionYen),
+      },
+      recipientId: continuationAssessment.member.id,
+      continuationAssessment,
+    };
+  }
+
+  if (!recipient) return empty;
 
   const remaining = input.familyMembers.filter(
     (member) => member.role !== 'pet' && member.id !== deceased.id,
