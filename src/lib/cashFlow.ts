@@ -53,7 +53,10 @@ import {
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
 import { createDefaultPensionMemberState } from './pensionDefaults';
-import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
+import {
+  calcPensionPaymentFromEntitlements,
+  calcTaxableOldAgePensionPaymentMan,
+} from './pensionPaymentSchedule';
 import { calcMemberMonthlyEducationYen, yenToMan } from './educationCashFlow';
 import type { FamilyMember } from '../types/family';
 import type { EducationByMember } from '../types/education';
@@ -508,47 +511,71 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         );
     }
 
-    // ── メンバー別年間年金受給額（税計算用）────────────────────────────────
-    // 課税標準は支払ベースではなく受給権ベース（毎月の受給額合計）で近似する。
-    // 加給年金・振替加算などの世帯加算分は世帯主に帰属させる。
+    // ── メンバー別年間課税年金額（税計算用）──────────────────────────────
+    // 税務上の収入時期に合わせ、実際の偶数月支払ベースで老齢年金だけを集計する。
+    // 非課税の遺族年金・障害年金は含めない。
+    // 加給年金・振替加算など世帯単位の老齢年金加算分は世帯主へ帰属させる。
     const memberAnnualPensionMan: Record<string, number> = {};
     for (const member of input.familyMembers) {
       if (member.role === 'pet') continue;
       const memberState =
         input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
       const incomeEntries = input.incomeByMember[member.id] ?? [];
-      let memberPension = 0;
-      for (let month = monthStart; month <= monthEnd; month++) {
-        memberPension += sumPensionBreakdown(
-          calcMemberMonthlyPensionBreakdownMan(
-            member,
-            memberState,
-            incomeEntries,
-            input.referenceDate,
-            year,
-            month,
-          ),
+      const memberEntitlements: IncomeBreakdown['pension'][] = [];
+      memberEntitlements[0] = calcMemberMonthlyPensionBreakdownMan(
+        member,
+        memberState,
+        incomeEntries,
+        input.referenceDate,
+        year - 1,
+        12,
+      );
+      for (let month = 1; month <= 12; month++) {
+        memberEntitlements[month] = calcMemberMonthlyPensionBreakdownMan(
+          member,
+          memberState,
+          incomeEntries,
+          input.referenceDate,
+          year,
+          month,
         );
       }
-      memberAnnualPensionMan[member.id] = memberPension;
+
+      let memberTaxablePension = 0;
+      for (let month = monthStart; month <= monthEnd; month++) {
+        memberTaxablePension += calcTaxableOldAgePensionPaymentMan(
+          month,
+          memberEntitlements[month - 1] ?? createEmptyPensionBreakdown(),
+          memberEntitlements[month - 2] ?? createEmptyPensionBreakdown(),
+        );
+      }
+      memberAnnualPensionMan[member.id] = memberTaxablePension;
     }
-    // 世帯合計（加給年金・振替加算を含む）と個人合計の差を世帯主に帰属
-    const householdPensionTotal = Array.from(
+
+    const householdTaxablePensionTotal = Array.from(
       { length: monthEnd - monthStart + 1 },
       (_, i) => monthStart + i,
     ).reduce(
-      (sum, m) =>
-        sum + sumPensionBreakdown(entitlementsByMonth[m] ?? createEmptyPensionBreakdown()),
+      (sum, month) =>
+        sum +
+        calcTaxableOldAgePensionPaymentMan(
+          month,
+          entitlementsByMonth[month - 1] ?? createEmptyPensionBreakdown(),
+          entitlementsByMonth[month - 2] ?? createEmptyPensionBreakdown(),
+        ),
       0,
     );
-    const memberPensionTotal = Object.values(memberAnnualPensionMan).reduce(
-      (sum, v) => sum + v,
+    const memberTaxablePensionTotal = Object.values(memberAnnualPensionMan).reduce(
+      (sum, value) => sum + value,
       0,
     );
-    const pensionAdditions = Math.max(0, householdPensionTotal - memberPensionTotal);
-    if (pensionAdditions > 0) {
+    const taxableOldAgeAdditions = Math.max(
+      0,
+      householdTaxablePensionTotal - memberTaxablePensionTotal,
+    );
+    if (taxableOldAgeAdditions > 0) {
       memberAnnualPensionMan[head.id] =
-        (memberAnnualPensionMan[head.id] ?? 0) + pensionAdditions;
+        (memberAnnualPensionMan[head.id] ?? 0) + taxableOldAgeAdditions;
     }
 
     for (let month = monthStart; month <= monthEnd; month++) {
