@@ -577,7 +577,7 @@ export function BenefitSettingsSection({
             <div className="pension-auto-benefit-note" role="note">
               <strong>万一の場合の年金</strong>
               <span>
-                {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから自動計算します。
+                {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから確認できる範囲を自動計算します。遺族側の生計維持関係・収入要件や、厚生年金加入中の傷病が原因で初診から5年以内に亡くなるケースなど、現在の入力だけで確定できない要件は自動成立扱いにしません。
               </span>
             </div>
 
