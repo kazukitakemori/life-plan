@@ -1539,6 +1539,22 @@ function resolveOldAgeEmployeesRightStartSerial(
   let start = getAgeReachedSerial(member, referenceDate, STANDARD_OLD_AGE_START);
   if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') return start;
 
+  const form = migrateTeikibinOver50Form(memberState.teikibinOver50);
+  if (hasOver50SpecialStageAges(form)) {
+    for (const specialAge of [
+      form.specialStartAgeCol2,
+      form.specialStartAgeCol3,
+      form.specialStartAgeCol4,
+    ]) {
+      if (specialAge != null) {
+        start = Math.min(
+          start,
+          getAgeReachedSerial(member, referenceDate, specialAge),
+        );
+      }
+    }
+  }
+
   const settings =
     memberState.benefitSettings ?? createDefaultBenefitSettings();
   for (const row of [
@@ -1578,7 +1594,7 @@ function isOldAgeEmployeesPaymentActiveAtCalendarMonth(
 
   const settings =
     memberState.benefitSettings ?? createDefaultBenefitSettings();
-  return [
+  const regularActive = [
     settings.oldAgeGeneralEmployees,
     settings.oldAgePublicPrivate,
   ].some((row) =>
@@ -1589,6 +1605,43 @@ function isOldAgeEmployeesPaymentActiveAtCalendarMonth(
       ageMonth,
     ),
   );
+  if (regularActive) return true;
+
+  if (memberState.pastEnrollment !== 'nenkin-teikibin-over50') {
+    return false;
+  }
+
+  const form = migrateTeikibinOver50Form(memberState.teikibinOver50);
+  if (!hasOver50SpecialStageAges(form)) {
+    return false;
+  }
+  const specialColumn = resolveOver50SpecialColumn(
+    form,
+    member,
+    referenceDate,
+    ageMonth,
+  );
+  if (!specialColumn) return false;
+
+  const general = normalizeOldAgeRowForMember(
+    member,
+    settings.oldAgeGeneralEmployees,
+    referenceDate,
+  );
+  const publicPrivate = normalizeOldAgeRowForMember(
+    member,
+    settings.oldAgePublicPrivate,
+    referenceDate,
+  );
+  const special = calcOver50SpecialColumnAmounts(
+    form,
+    specialColumn,
+    general.amountMode === 'auto' &&
+      general.startAge >= STANDARD_OLD_AGE_START,
+    publicPrivate.amountMode === 'auto' &&
+      publicPrivate.startAge >= STANDARD_OLD_AGE_START,
+  );
+  return sumOldAgePension(special) !== 0;
 }
 
 /**
