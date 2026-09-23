@@ -19,6 +19,7 @@ import {
   EMPLOYEES_PENSION_MAX_INSURED_AGE,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
+  NATIONAL_PENSION_MANDATORY_END_AGE,
   PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
   UNIVERSITY_EXEMPTION_END_AGE,
@@ -440,10 +441,14 @@ export function getNationalPensionCreditedMonthCount(
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const untilIndex = untilAgeMonth
     ? ageMonthIndex(untilAgeMonth.age, untilAgeMonth.month)
-    : ageMonthIndex(STANDARD_OLD_AGE_START, 12);
+    : ageMonthIndex(NATIONAL_PENSION_MANDATORY_END_AGE - 1, 12);
   let count = 0;
 
-  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
+  for (
+    let age = PENSION_ENROLLMENT_START_AGE;
+    age < NATIONAL_PENSION_MANDATORY_END_AGE;
+    age++
+  ) {
     for (let month = 1; month <= 12; month++) {
       if (ageMonthIndex(age, month) > untilIndex) continue;
       if (isUniversityExemptionMonth(age, month)) {
