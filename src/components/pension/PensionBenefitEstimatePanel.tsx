@@ -23,8 +23,8 @@ import {
   getSimulationBarCategoryGapPx,
 } from '../../lib/simulationLayout';
 import type { FamilyMember } from '../../types/family';
-import type { IncomeEntry } from '../../types/income';
-import type { PensionMemberState } from '../../types/pension';
+import type { IncomeByMember, IncomeEntry } from '../../types/income';
+import type { PensionByMember, PensionMemberState } from '../../types/pension';
 import {
   CHART_HEIGHT,
   CHART_HEIGHT_FULLSCREEN,
@@ -46,6 +46,9 @@ interface PensionBenefitEstimatePanelProps {
   member: FamilyMember;
   memberState: PensionMemberState;
   incomeEntries: IncomeEntry[];
+  familyMembers: FamilyMember[];
+  pensionByMember: PensionByMember;
+  incomeByMember: IncomeByMember;
   referenceDate: Date;
 }
 
@@ -251,6 +254,9 @@ export function PensionBenefitEstimatePanel({
   member,
   memberState,
   incomeEntries,
+  familyMembers,
+  pensionByMember,
+  incomeByMember,
   referenceDate,
 }: PensionBenefitEstimatePanelProps) {
   const [visible, setVisible] =
@@ -263,9 +269,20 @@ export function PensionBenefitEstimatePanel({
         member,
         memberState,
         incomeEntries,
+        familyMembers,
+        pensionByMember,
+        incomeByMember,
         referenceDate,
       }),
-    [member, memberState, incomeEntries, referenceDate],
+    [
+      member,
+      memberState,
+      incomeEntries,
+      familyMembers,
+      pensionByMember,
+      incomeByMember,
+      referenceDate,
+    ],
   );
 
   const chartPoints = useMemo(
