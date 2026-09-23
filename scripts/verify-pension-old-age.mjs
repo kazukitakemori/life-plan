@@ -5,7 +5,9 @@
 import assert from 'node:assert/strict';
 import {
   getEarlyClaimReductionPerMonthByBirth,
+  getMaxOldAgeDeferralAgeByBirth,
   getOldAgeAmountFactor,
+  normalizeOldAgeBenefitStart,
 } from '../src/lib/pensionOldAge.ts';
 import { estimatePost65EmployeesPensionIncreaseMan } from '../src/lib/pensionEnrollmentEstimate.ts';
 import {
@@ -41,6 +43,41 @@ assert.equal(
 assert.equal(
   getOldAgeAmountFactor(60, 0, EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY),
   0.7,
+);
+
+
+// 繰下げの制度境界: 65歳の途中開始はなく、75歳0か月が現行上限。
+assert.equal(getOldAgeAmountFactor(65, 5), 1);
+assert.equal(getOldAgeAmountFactor(66, 0), 1.084);
+assert.equal(getOldAgeAmountFactor(75, 0), 1.84);
+assert.equal(getOldAgeAmountFactor(75, 11), 1.84);
+assert.deepEqual(
+  normalizeOldAgeBenefitStart(65, 5),
+  { startAge: 65, startMonth: 0 },
+);
+assert.deepEqual(
+  normalizeOldAgeBenefitStart(75, 11),
+  { startAge: 75, startMonth: 0 },
+);
+
+// 昭和27年4月1日以前生まれは繰下げ上限70歳。
+assert.equal(getMaxOldAgeDeferralAgeByBirth(1952, 4, 1), 70);
+assert.equal(getMaxOldAgeDeferralAgeByBirth(1952, 4, 2), 75);
+assert.equal(getMaxOldAgeDeferralAgeByBirth(1952, 4, null), 70);
+assert.equal(getMaxOldAgeDeferralAgeByBirth(1952, 3, 31), 70);
+assert.equal(getMaxOldAgeDeferralAgeByBirth(1952, 5, 1), 75);
+assert.equal(
+  getOldAgeAmountFactor(
+    75,
+    0,
+    EARLY_CLAIM_REDUCTION_PER_MONTH,
+    70,
+  ),
+  1.42,
+);
+assert.deepEqual(
+  normalizeOldAgeBenefitStart(75, 0, 70),
+  { startAge: 70, startMonth: 0 },
 );
 
 
