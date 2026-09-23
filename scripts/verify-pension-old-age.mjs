@@ -8,6 +8,8 @@ import {
   getMaxOldAgeDeferralAgeByBirth,
   getOldAgeAmountFactor,
   normalizeOldAgeBenefitStart,
+  applyBasicDetailAdjustment,
+  applyGeneralDetailAdjustment,
 } from '../src/lib/pensionOldAge.ts';
 import { estimatePost65EmployeesPensionIncreaseMan } from '../src/lib/pensionEnrollmentEstimate.ts';
 import {
@@ -79,6 +81,53 @@ assert.deepEqual(
   normalizeOldAgeBenefitStart(75, 0, 70),
   { startAge: 70, startMonth: 0 },
 );
+
+
+// 増減額は内訳本体と二重計上しない。
+// 100万円/年を60歳へ繰上げ（0.4%×60月=24%減）なら合計76万円/年。
+{
+  const adjusted = applyBasicDetailAdjustment(
+    {
+      basic: 100,
+      additional: 0,
+      transfer: 0,
+      earlyPayment: 0,
+      fund: 0,
+    },
+    60,
+    0,
+    EARLY_CLAIM_REDUCTION_PER_MONTH,
+  );
+  assert.equal(adjusted.basic, 100);
+  assert.ok(Math.abs(adjusted.earlyPayment - (-24)) < 1e-9);
+  assert.ok(
+    Math.abs(
+      Object.values(adjusted).reduce((sum, value) => sum + value, 0) - 76
+    ) < 1e-9,
+  );
+}
+
+// 100万円/年を70歳まで繰下げ（0.7%×60月=42%増）なら合計142万円/年。
+{
+  const adjusted = applyGeneralDetailAdjustment(
+    {
+      basic: 100,
+      transitional: 0,
+      dependent: 0,
+      payment: 0,
+      earlyPayment: 0,
+    },
+    70,
+    0,
+  );
+  assert.equal(adjusted.basic, 100);
+  assert.ok(Math.abs(adjusted.earlyPayment - 42) < 1e-9);
+  assert.ok(
+    Math.abs(
+      Object.values(adjusted).reduce((sum, value) => sum + value, 0) - 142
+    ) < 1e-9,
+  );
+}
 
 
 function pensionMember({ birthDay = 2 } = {}) {
