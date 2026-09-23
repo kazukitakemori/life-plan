@@ -655,4 +655,42 @@ assert.equal(
   423_700,
 );
 
+// 配偶者が障害年金を受給している間は配偶者加給を停止する。
+{
+  const pensioner = {
+    ...pensionMember({ age: 66 }),
+    id: 'kakyu-head',
+    role: 'head',
+  };
+  const spouse = {
+    ...pensionMember({ age: 60 }),
+    id: 'kakyu-spouse',
+    role: 'spouse',
+    gender: 'female',
+    disability: 'has',
+    disabilityGrade: 'grade2',
+    disabilityPension: 'basic_grade2',
+  };
+  const state = createDefaultPensionMemberState();
+  state.pastEnrollment = 'nenkin-teikibin-over50';
+  state.teikibinOver50.employeesPensionGeneralMonths = 300;
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 120_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const result = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, spouse],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2026,
+    10,
+  );
+  assert.equal(result.oldAge.generalEmployees.dependent, 0);
+  assert.equal(result.oldAge.publicServant.dependent, 0);
+}
+
 console.log('verify-pension-old-age: all passed');
