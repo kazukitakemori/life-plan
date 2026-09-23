@@ -5,7 +5,6 @@ import {
   FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
   SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR,
   SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
-  SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE,
 } from './pensionConstants';
 import { toMonthlyMan } from './pensionOldAge';
 import type { FamilyMember } from '../types/family';
@@ -39,9 +38,10 @@ export function isEligibleSurvivorBasicChild(
   if (member.role !== 'child') return false;
   const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
   if (!ageMonth) return false;
-  if (member.disability === 'has') {
-    return ageMonth.age < SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE;
-  }
+  // 遺族基礎年金で20歳未満まで対象となるのは、障害年金の障害等級
+  // 1級または2級の状態にある子。家族タブの disability は等級を保持しない
+  // 一般的な「障害あり」フラグのため、20歳延長の根拠には使わない。
+  // 等級データがない現状では過大計算を避け、通常の18歳年度末要件で判定する。
   const end = survivorChildOrdinaryEnd(member, referenceDate);
   if (!end) return false;
   return calendarIndex(year, month) <= calendarIndex(end.year, end.month);
