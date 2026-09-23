@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { createDefaultPensionMemberState } from '../../lib/pensionDefaults';
-import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { memberHasPensionData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
@@ -136,9 +135,6 @@ export function PensionStep({
 
       <PublicPensionSection
         member={activeMember}
-        headOfHouseholdLabel={
-          headMember ? getMemberTabLabel(headMember) : '世帯主さん'
-        }
         referenceDate={referenceDate}
         memberState={memberState}
         onChange={(state) => updateMemberState(resolvedActiveId, state)}
