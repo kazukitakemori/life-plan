@@ -495,7 +495,7 @@ export function BenefitSettingsSection({
                     }
                   />
                   <span className="benefit-survivor-suffix">
-                    円/年（子の加算を除いた額）
+                    円/年（実際の受給年額・子の加算を含む合計額）
                   </span>
                 </td>
               </tr>
@@ -518,7 +518,7 @@ export function BenefitSettingsSection({
                     }
                   />
                   <span className="benefit-survivor-suffix">
-                    円/年（遺族厚生年金と遺族共済年金の合計）
+                    円/年（実際の受給年額・遺族厚生年金と共済年金の合計）
                   </span>
                 </td>
               </tr>
