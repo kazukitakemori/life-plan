@@ -905,5 +905,47 @@ const pension = createDefaultPensionMemberState();
   console.log('OK 2028 continuation: statutory 1/3 and 1/2 suspension formula');
 }
 
+{
+  const reformDeath = { year: 2028, month: 4 };
+  const domesticChild = member({
+    ...child,
+    pensionChildResidence: 'japan',
+  });
+  const unknownChild = member({
+    ...child,
+    id: 'unknown-child',
+    pensionChildResidence: 'unknown',
+  });
+
+  const domesticState = createDefaultPensionMemberState();
+  domesticState.benefitSettings.survivorPremiumRequirement = 'met';
+  const domestic = calcCoverageSurvivorEmployeesDetail({
+    familyMembers: [head, wife38, domesticChild],
+    subject: 'head',
+    pensionByMember: { [head.id]: domesticState },
+    originalIncomeByMember: { [head.id]: [headIncome] },
+    coverageIncomeByMember: {},
+    referenceDate,
+    death: reformDeath,
+    year: 2028,
+    month: 4,
+  });
+  assert.ok(domestic.detail.children > 0);
+
+  const unknown = calcCoverageSurvivorEmployeesDetail({
+    familyMembers: [head, wife38, unknownChild],
+    subject: 'head',
+    pensionByMember: { [head.id]: domesticState },
+    originalIncomeByMember: { [head.id]: [headIncome] },
+    coverageIncomeByMember: {},
+    referenceDate,
+    death: reformDeath,
+    year: 2028,
+    month: 4,
+  });
+  assert.equal(unknown.detail.children, 0);
+  console.log('OK 2028 survivor employees child addition requires domestic/exception residence');
+}
+
 assert.equal(CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE, 30);
 console.log('verify-survivor-employees: all passed');
