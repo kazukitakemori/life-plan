@@ -870,6 +870,65 @@ export function isSurvivorEmployeesSpouseIncomeRequirementRemoved(
   );
 }
 
+/**
+ * 2028年改正後の配偶者について、その月が「収入要件を撤廃する5年有期給付」
+ * 以後の期間に入っているかを返す。
+ *
+ * 子がいる間は現行給付を維持するため収入要件を残し、最後の対象児が
+ * 遺族基礎年金の対象外となって有期給付へ移る月から撤廃する。
+ * 有期給付終了後の継続給付は別の所得調整で判定するため、旧850万円基準へ戻さない。
+ */
+export function isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+  spouse: FamilyMember,
+  remainingFamilyMembers: FamilyMember[],
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+): boolean {
+  if (!isOnOrAfterSurvivorReform(death)) return false;
+
+  const childrenAtDeath = listEligibleSurvivorBasicChildren(
+    remainingFamilyMembers,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (childrenAtDeath.length > 0) {
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset += 1) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      if (
+        listEligibleSurvivorBasicChildren(
+          remainingFamilyMembers,
+          referenceDate,
+          year,
+          month,
+        ).length === 0
+      ) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
+
+  const finiteStart = resolveReformSpouseFiniteStart(
+    spouse,
+    childrenAtDeath.length > 0,
+    referenceDate,
+    death,
+    survivorBasicLoss,
+  );
+  if (!finiteStart) return false;
+
+  return (
+    calendarIndex(now.year, now.month) >=
+    calendarIndex(finiteStart.year, finiteStart.month)
+  );
+}
+
 export interface SurvivorContinuationAssessmentTarget {
   member: FamilyMember;
   finiteBenefitStart: CalendarYearMonth;
