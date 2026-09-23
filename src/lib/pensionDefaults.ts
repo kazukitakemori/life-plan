@@ -100,6 +100,7 @@ export function createDefaultBenefitSettings(): BenefitSettings {
     survivorDeathMonth: 1,
     survivorBasicPerYear: null,
     survivorEmployeesMutualPerYear: null,
+    survivorPremiumRequirement: 'auto',
     dependentSpousePension: createDefaultDependentSpousePension(),
   };
 }
