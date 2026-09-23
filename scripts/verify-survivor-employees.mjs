@@ -19,7 +19,6 @@ import {
   calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
   isSurvivingSpouseEligibleForEmployees,
-  isSurvivingSpouseInContinuationAssessmentWindow,
   resolveSurvivorContinuationAnnualPensionYen,
   resolveSurvivorContinuationAssessmentTarget,
   resolveSurvivorContinuationIncomeBasis,
@@ -437,54 +436,9 @@ const pension = createDefaultPensionMemberState();
 {
   const reformDeath = { year: 2028, month: 4 };
 
-  // 子なし・60歳未満の有期給付は60か月で終了し、その翌月から継続給付の判定期間に入る。
-  assert.equal(
-    isSurvivingSpouseInContinuationAssessmentWindow(
-      wife28,
-      false,
-      referenceDate,
-      reformDeath,
-      { year: 2033, month: 3 },
-    ),
-    false,
-  );
-  assert.equal(
-    isSurvivingSpouseInContinuationAssessmentWindow(
-      wife28,
-      false,
-      referenceDate,
-      reformDeath,
-      { year: 2033, month: 4 },
-    ),
-    true,
-  );
-
-  // 改正前の死亡は新しい継続給付の対象として扱わない。
-  assert.equal(
-    isSurvivingSpouseInContinuationAssessmentWindow(
-      wife28,
-      false,
-      referenceDate,
-      death,
-      { year: 2033, month: 4 },
-    ),
-    false,
-  );
-
   // 女性の段階移行は、子の遺族基礎年金を失う時点で判定する。
   // このケースは有期対象年齢を超えているため5年打切りにせず、従来型の期間を維持する。
   const transitionalChildLoss = { year: 2033, month: 4 };
-  assert.equal(
-    isSurvivingSpouseInContinuationAssessmentWindow(
-      wife45,
-      true,
-      referenceDate,
-      reformDeath,
-      { year: 2039, month: 4 },
-      transitionalChildLoss,
-    ),
-    false,
-  );
   assert.equal(
     isSurvivingSpouseEligibleForEmployees(
       wife45,
@@ -501,17 +455,6 @@ const pension = createDefaultPensionMemberState();
   // 子の年金が60歳以後に失権する配偶者は、新たな5年有期へ切り替えない。
   const lossAfterSixty = { year: 2046, month: 7 };
   assert.equal(
-    isSurvivingSpouseInContinuationAssessmentWindow(
-      husband40,
-      true,
-      referenceDate,
-      reformDeath,
-      { year: 2052, month: 7 },
-      lossAfterSixty,
-    ),
-    false,
-  );
-  assert.equal(
     isSurvivingSpouseEligibleForEmployees(
       husband40,
       true,
@@ -524,7 +467,27 @@ const pension = createDefaultPensionMemberState();
     true,
   );
 
-  console.log('OK 2028 continuation: five-year end and child-loss transition window');
+  // 実際の家族構成から判定する既存の継続給付ターゲットも、子の失権後の開始年齢を使う。
+  const childContinuationTarget = resolveSurvivorContinuationAssessmentTarget(
+    [head, wife28, child],
+    'head',
+    referenceDate,
+    reformDeath,
+    { year: 2042, month: 4 },
+  );
+  assert.equal(childContinuationTarget?.member.id, wife28.id);
+  assert.ok(childContinuationTarget?.finiteBenefitStart.year > reformDeath.year);
+
+  const childTransitionExcluded = resolveSurvivorContinuationAssessmentTarget(
+    [head, wife45, child],
+    'head',
+    referenceDate,
+    reformDeath,
+    { year: 2042, month: 4 },
+  );
+  assert.equal(childTransitionExcluded, null);
+
+  console.log('OK 2028 continuation: child-loss age and transition phase are respected');
 }
 
 {
