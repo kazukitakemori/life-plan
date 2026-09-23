@@ -1241,7 +1241,7 @@ function getTotalEmployeesMonthsForDependentQualification(
  *
  * manual モード: ユーザー入力額を使用。
  */
-function getDependentSpousePensionYenPerYear(
+export function getDependentSpousePensionYenPerYear(
   pensioner: FamilyMember,
   referenceDate: Date,
 ): number {
@@ -1400,14 +1400,18 @@ function calcDependentSpousePensionMonthlyMan(
   let spouseAge = calendarYear - spouseBirthYear;
   if (calendarMonth < resolveMemberBirthMonth(spouseMember)) spouseAge--;
 
-  if (
-    isOnOrAfterBenefitStart(
-      spouseAge,
-      calendarMonth,
-      DEPENDENT_PENSION_CUTOFF_AGE,
-      resolveMemberBirthMonth(spouseMember),
-    )
-  ) {
+  const spouseAtKakyuCutoff = isOldAgeRowPaymentActive(
+    spouseMember,
+    {
+      startAge: DEPENDENT_PENSION_CUTOFF_AGE,
+      startMonth: 0,
+      amountMode: 'auto',
+      manualAmountPerYear: null,
+    },
+    referenceDate,
+    { age: spouseAge, month: calendarMonth },
+  );
+  if (spouseAtKakyuCutoff) {
     return 0;
   }
 
@@ -1483,51 +1487,59 @@ function calcDependentSpousePensionMonthlyMan(
  * 令和8年度(2026年度)の振替加算額を配偶者の生年月日から返す。
  * 日付不明のため、4月生まれは「4月2日以降」として扱い保守的に判定する。
  */
-function getTransferAdditionYenPerYear(
+export function getTransferAdditionYenPerYear(
   spouseBirthYear: number,
   spouseBirthMonth: number,
+  spouseBirthDay?: number | null,
 ): number {
-  // 生年がcutoffYear年4月2日以降かを判定（月のみで判断: 4月は4月2日以降扱い）
-  const onOrAfterApril = (cutoffYear: number): boolean =>
+  // 各区分は「前年4月2日〜当年4月1日」。4月1日／2日の境界まで判定する。
+  // 日が未入力の古いデータは、4月生まれのみ若い側（低い加算額）として保守的に扱う。
+  const resolvedDay =
+    spouseBirthDay == null && spouseBirthMonth === 4
+      ? 2
+      : (spouseBirthDay ?? 1);
+  const onOrAfterApril2 = (cutoffYear: number): boolean =>
     spouseBirthYear > cutoffYear ||
-    (spouseBirthYear === cutoffYear && spouseBirthMonth >= 4);
+    (spouseBirthYear === cutoffYear &&
+      (spouseBirthMonth > 4 ||
+        (spouseBirthMonth === 4 && resolvedDay >= 2)));
 
-  if (onOrAfterApril(1966)) return 0;         // 昭和41/4/2〜: 対象外
-  if (onOrAfterApril(1961)) return 16_335;    // 昭和36〜41 (0.067)
-  if (onOrAfterApril(1960)) return 22_673;    // 昭和35〜36 (0.093)
-  if (onOrAfterApril(1959)) return 29_256;    // 昭和34〜35 (0.120)
-  if (onOrAfterApril(1958)) return 35_839;    // 昭和33〜34 (0.147)
-  if (onOrAfterApril(1957)) return 42_177;    // 昭和32〜33 (0.173)
-  if (onOrAfterApril(1956)) return 48_760;    // 昭和31〜32 (0.200, base 243,800)
-  if (onOrAfterApril(1955)) return 55_184;    // 昭和30〜31 (0.227, base 243,100)
-  if (onOrAfterApril(1954)) return 61_504;    // 昭和29〜30 (0.253)
-  if (onOrAfterApril(1953)) return 68_068;    // 昭和28〜29 (0.280)
-  if (onOrAfterApril(1952)) return 74_632;    // 昭和27〜28 (0.307)
-  if (onOrAfterApril(1951)) return 80_952;    // 昭和26〜27 (0.333)
-  if (onOrAfterApril(1950)) return 87_516;    // 昭和25〜26 (0.360)
-  if (onOrAfterApril(1949)) return 94_080;    // 昭和24〜25 (0.387)
-  if (onOrAfterApril(1948)) return 100_400;   // 昭和23〜24 (0.413)
-  if (onOrAfterApril(1947)) return 106_964;   // 昭和22〜23 (0.440)
-  if (onOrAfterApril(1946)) return 113_528;   // 昭和21〜22 (0.467)
-  if (onOrAfterApril(1945)) return 119_848;   // 昭和20〜21 (0.493)
-  if (onOrAfterApril(1944)) return 126_412;   // 昭和19〜20 (0.520)
-  if (onOrAfterApril(1943)) return 132_976;   // 昭和18〜19 (0.547)
-  if (onOrAfterApril(1942)) return 139_296;   // 昭和17〜18 (0.573)
-  if (onOrAfterApril(1941)) return 145_860;   // 昭和16〜17 (0.600)
-  if (onOrAfterApril(1940)) return 152_424;   // 昭和15〜16 (0.627)
-  if (onOrAfterApril(1939)) return 158_744;   // 昭和14〜15 (0.653)
-  if (onOrAfterApril(1938)) return 165_308;   // 昭和13〜14 (0.680)
-  if (onOrAfterApril(1937)) return 171_872;   // 昭和12〜13 (0.707)
-  if (onOrAfterApril(1936)) return 178_192;   // 昭和11〜12 (0.733)
-  if (onOrAfterApril(1935)) return 184_756;   // 昭和10〜11 (0.760)
-  if (onOrAfterApril(1934)) return 191_320;   // 昭和 9〜10 (0.787)
-  if (onOrAfterApril(1933)) return 197_640;   // 昭和 8〜 9 (0.813)
-  if (onOrAfterApril(1932)) return 204_204;   // 昭和 7〜 8 (0.840)
-  if (onOrAfterApril(1931)) return 210_768;   // 昭和 6〜 7 (0.867)
-  if (onOrAfterApril(1930)) return 217_088;   // 昭和 5〜 6 (0.893)
-  if (onOrAfterApril(1929)) return 223_652;   // 昭和 4〜 5 (0.920)
-  if (onOrAfterApril(1928)) return 230_216;   // 昭和 3〜 4 (0.947)
-  if (onOrAfterApril(1927)) return 236_536;   // 昭和 2〜 3 (0.973)
+  if (onOrAfterApril2(1966)) return 0;         // 昭和41/4/2〜: 対象外
+  if (onOrAfterApril2(1961)) return 16_335;    // 昭和36〜41 (0.067)
+  if (onOrAfterApril2(1960)) return 22_673;    // 昭和35〜36 (0.093)
+  if (onOrAfterApril2(1959)) return 29_256;    // 昭和34〜35 (0.120)
+  if (onOrAfterApril2(1958)) return 35_839;    // 昭和33〜34 (0.147)
+  if (onOrAfterApril2(1957)) return 42_177;    // 昭和32〜33 (0.173)
+  if (onOrAfterApril2(1956)) return 48_760;    // 昭和31〜32 (0.200, base 243,800)
+  if (onOrAfterApril2(1955)) return 55_184;    // 昭和30〜31 (0.227, base 243,100)
+  if (onOrAfterApril2(1954)) return 61_504;    // 昭和29〜30 (0.253)
+  if (onOrAfterApril2(1953)) return 68_068;    // 昭和28〜29 (0.280)
+  if (onOrAfterApril2(1952)) return 74_632;    // 昭和27〜28 (0.307)
+  if (onOrAfterApril2(1951)) return 80_952;    // 昭和26〜27 (0.333)
+  if (onOrAfterApril2(1950)) return 87_516;    // 昭和25〜26 (0.360)
+  if (onOrAfterApril2(1949)) return 94_080;    // 昭和24〜25 (0.387)
+  if (onOrAfterApril2(1948)) return 100_400;   // 昭和23〜24 (0.413)
+  if (onOrAfterApril2(1947)) return 106_964;   // 昭和22〜23 (0.440)
+  if (onOrAfterApril2(1946)) return 113_528;   // 昭和21〜22 (0.467)
+  if (onOrAfterApril2(1945)) return 119_848;   // 昭和20〜21 (0.493)
+  if (onOrAfterApril2(1944)) return 126_412;   // 昭和19〜20 (0.520)
+  if (onOrAfterApril2(1943)) return 132_976;   // 昭和18〜19 (0.547)
+  if (onOrAfterApril2(1942)) return 139_296;   // 昭和17〜18 (0.573)
+  if (onOrAfterApril2(1941)) return 145_860;   // 昭和16〜17 (0.600)
+  if (onOrAfterApril2(1940)) return 152_424;   // 昭和15〜16 (0.627)
+  if (onOrAfterApril2(1939)) return 158_744;   // 昭和14〜15 (0.653)
+  if (onOrAfterApril2(1938)) return 165_308;   // 昭和13〜14 (0.680)
+  if (onOrAfterApril2(1937)) return 171_872;   // 昭和12〜13 (0.707)
+  if (onOrAfterApril2(1936)) return 178_192;   // 昭和11〜12 (0.733)
+  if (onOrAfterApril2(1935)) return 184_756;   // 昭和10〜11 (0.760)
+  if (onOrAfterApril2(1934)) return 191_320;   // 昭和 9〜10 (0.787)
+  if (onOrAfterApril2(1933)) return 197_640;   // 昭和 8〜 9 (0.813)
+  if (onOrAfterApril2(1932)) return 204_204;   // 昭和 7〜 8 (0.840)
+  if (onOrAfterApril2(1931)) return 210_768;   // 昭和 6〜 7 (0.867)
+  if (onOrAfterApril2(1930)) return 217_088;   // 昭和 5〜 6 (0.893)
+  if (onOrAfterApril2(1929)) return 223_652;   // 昭和 4〜 5 (0.920)
+  if (onOrAfterApril2(1928)) return 230_216;   // 昭和 3〜 4 (0.947)
+  if (onOrAfterApril2(1927)) return 236_536;   // 昭和 2〜 3 (0.973)
   return 243_100;                              // 〜昭和 2/4/1 (1.000)
 }
 
@@ -1557,7 +1569,11 @@ function calcTransferAdditionMonthlyMan(
   );
 
   // 配偶者の生年月日から振替加算額を取得（対象外なら0）
-  const yenPerYear = getTransferAdditionYenPerYear(spouseBirthYear, resolveMemberBirthMonth(spouseMember));
+  const yenPerYear = getTransferAdditionYenPerYear(
+    spouseBirthYear,
+    resolveMemberBirthMonth(spouseMember),
+    spouseMember.birthDay,
+  );
   if (yenPerYear <= 0) return 0;
 
   // 振替加算を受ける本人の厚生年金・共済加入が240月以上なら対象外。
@@ -1586,12 +1602,11 @@ function calcTransferAdditionMonthlyMan(
   if (calendarMonth < resolveMemberBirthMonth(spouseMember)) spouseAge--;
 
   if (
-    !isOnOrAfterBenefitStart(
-      spouseAge,
-      calendarMonth,
-      spouseBasicStart.startAge,
-      resolveMemberBirthMonth(spouseMember),
-      spouseBasicStart.startMonth ?? 0,
+    !isOldAgeRowPaymentActive(
+      spouseMember,
+      spouseBasicStart,
+      referenceDate,
+      { age: spouseAge, month: calendarMonth },
     )
   ) {
     return 0;
