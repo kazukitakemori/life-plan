@@ -526,6 +526,87 @@ export function calcSurvivorContinuationSuspensionYen(input: {
   return Math.min(pension, Math.max(0, suspension));
 }
 
+export type SurvivorContinuationAnnualPensionResolution =
+  | 'qualifying_disability'
+  | 'income_adjusted'
+  | 'thresholds_unavailable'
+  | 'income_unavailable';
+
+export interface SurvivorContinuationAnnualPensionResult {
+  annualPensionYen: number | null;
+  suspensionYen: number | null;
+  resolution: SurvivorContinuationAnnualPensionResolution;
+  incomeBasis: SurvivorContinuationIncomeBasis | null;
+}
+
+/**
+ * 5年有期給付終了後の継続給付年額を解決する。
+ *
+ * 障害要件は「障害状態」だけでは足りず、法令上の障害年金受給権等の要件を
+ * 満たすことを呼び出し側が確認できた場合だけ true を渡す。
+ * 所得基準額は政令の公式確定値を外部から渡す。未確定の目安値は使用しない。
+ */
+export function resolveSurvivorContinuationAnnualPensionYen(input: {
+  recipient: FamilyMember;
+  incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: PriorYearIncomeByMember;
+  referenceDate: Date;
+  paymentYear: number;
+  paymentMonth: number;
+  enhancedAnnualPensionYen: number;
+  thresholds?: SurvivorContinuationIncomeThresholdsYen;
+  hasQualifyingDisabilityPensionEntitlement: boolean;
+}): SurvivorContinuationAnnualPensionResult {
+  const pension = Math.max(0, input.enhancedAnnualPensionYen);
+
+  if (input.hasQualifyingDisabilityPensionEntitlement) {
+    return {
+      annualPensionYen: pension,
+      suspensionYen: 0,
+      resolution: 'qualifying_disability',
+      incomeBasis: null,
+    };
+  }
+
+  if (!input.thresholds) {
+    return {
+      annualPensionYen: null,
+      suspensionYen: null,
+      resolution: 'thresholds_unavailable',
+      incomeBasis: null,
+    };
+  }
+
+  const incomeBasis = resolveSurvivorContinuationIncomeBasis({
+    recipient: input.recipient,
+    incomeByMember: input.incomeByMember,
+    priorYearIncomeByMember: input.priorYearIncomeByMember,
+    referenceDate: input.referenceDate,
+    paymentYear: input.paymentYear,
+    paymentMonth: input.paymentMonth,
+  });
+  if (incomeBasis.totalIncomeYen == null) {
+    return {
+      annualPensionYen: null,
+      suspensionYen: null,
+      resolution: 'income_unavailable',
+      incomeBasis,
+    };
+  }
+
+  const suspensionYen = calcSurvivorContinuationSuspensionYen({
+    priorIncomeYen: incomeBasis.totalIncomeYen,
+    annualPensionYen: pension,
+    thresholds: input.thresholds,
+  });
+  return {
+    annualPensionYen: Math.max(0, pension - suspensionYen),
+    suspensionYen,
+    resolution: 'income_adjusted',
+    incomeBasis,
+  };
+}
+
 function isOnOrAfterAge(
   ageMonth: { age: number; month: number },
   minAge: number,
@@ -540,12 +621,34 @@ function isOnOrAfterSurvivorReform(death: CalendarYearMonth): boolean {
   );
 }
 
-function survivorReformWifeFiniteMaxAge(death: CalendarYearMonth): number {
-  if (!isOnOrAfterSurvivorReform(death)) return CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
-  // 2028年度は40歳未満から開始し、対象生年月日を固定することで
-  // その後は毎年度1歳ずつ上限年齢が上がり、2048年度に60歳未満へ到達する。
-  const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
+function survivorReformWifeFiniteMaxAge(start: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(start)) return CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
+  // 2028年度は40歳未満から開始し、その後は毎年度1歳ずつ対象上限を引き上げ、
+  // 2048年度に60歳未満へ到達する。子の失権後に有期給付へ移る場合は
+  // 死亡時ではなく、その有期給付の開始時点で判定する。
+  const fiscalYear = start.month >= 4 ? start.year : start.year - 1;
   return Math.min(60, 40 + Math.max(0, fiscalYear - 2028));
+}
+
+function resolveReformSpouseFiniteStart(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  survivorBasicLoss: CalendarYearMonth | null,
+): CalendarYearMonth | null {
+  if (!isOnOrAfterSurvivorReform(death)) return null;
+  const start =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+  const startAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    start.year,
+    start.month,
+  );
+  if (!startAge || startAge.age >= 60) return null;
+  if (spouse.gender === 'male') return start;
+  return startAge.age < survivorReformWifeFiniteMaxAge(start) ? start : null;
 }
 
 function isSpouseFiniteSurvivorEmployeesBenefit(
@@ -557,6 +660,18 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
   survivorBasicLoss: CalendarYearMonth | null,
 ): boolean {
   if (receivesSurvivorBasicNow) return false;
+  if (isOnOrAfterSurvivorReform(death)) {
+    return Boolean(
+      resolveReformSpouseFiniteStart(
+        spouse,
+        hadEligibleChildrenAtDeath,
+        referenceDate,
+        death,
+        survivorBasicLoss,
+      ),
+    );
+  }
+
   const start =
     hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
   const startAge = getMemberAgeMonth(
@@ -565,17 +680,42 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
     start.year,
     start.month,
   );
-  if (!startAge) return false;
+  return Boolean(
+    startAge &&
+      spouse.gender === 'female' &&
+      startAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE,
+  );
+}
 
-  if (isOnOrAfterSurvivorReform(death)) {
-    // 改正後、子を養育していた配偶者は遺族基礎年金の失権後さらに5年間、
-    // 増額された有期給付の対象となる。
-    if (hadEligibleChildrenAtDeath && survivorBasicLoss) return true;
-    if (spouse.gender === 'male') return startAge.age < 60;
-    return startAge.age < survivorReformWifeFiniteMaxAge(death);
-  }
-  return spouse.gender === 'female' &&
-    startAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
+/**
+ * 5年有期給付が終わった後、所得・障害要件による継続給付を
+ * 「判定すべき期間」に入っているかを返す。
+ *
+ * これは支給確定判定ではない。実際の支給には所得基準額、障害年金受給権、
+ * 老齢厚生年金受給権、全額停止の継続期間等の追加確認が必要。
+ */
+export function isSurvivingSpouseInContinuationAssessmentWindow(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+  survivorBasicLoss: CalendarYearMonth | null = null,
+): boolean {
+  const finiteStart = resolveReformSpouseFiniteStart(
+    spouse,
+    hadEligibleChildrenAtDeath,
+    referenceDate,
+    death,
+    survivorBasicLoss,
+  );
+  if (!finiteStart) return false;
+
+  const nowAge = getMemberAgeMonth(spouse, referenceDate, now.year, now.month);
+  if (!nowAge || nowAge.age >= STANDARD_OLD_AGE_START) return false;
+
+  const end = fiveYearEnd(finiteStart);
+  return calendarIndex(now.year, now.month) > calendarIndex(end.year, end.month);
 }
 
 export function isSurvivingSpouseEligibleForEmployees(
@@ -600,13 +740,24 @@ export function isSurvivingSpouseEligibleForEmployees(
   const fiveYearStart =
     hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
 
-  if (
-    isOnOrAfterSurvivorReform(death) &&
-    hadEligibleChildrenAtDeath &&
-    survivorBasicLoss
-  ) {
-    const end = fiveYearEnd(survivorBasicLoss);
-    return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
+  if (isOnOrAfterSurvivorReform(death)) {
+    const reformFiniteStart = resolveReformSpouseFiniteStart(
+      spouse,
+      hadEligibleChildrenAtDeath,
+      referenceDate,
+      death,
+      survivorBasicLoss,
+    );
+    if (reformFiniteStart) {
+      const end = fiveYearEnd(reformFiniteStart);
+      return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
+    }
+
+    // 子の遺族基礎年金が60歳以後に失権した場合や、女性の段階移行で
+    // 有期給付の対象外となる場合は5年で打ち切らず、従来どおりの期間判定へ進む。
+    if (hadEligibleChildrenAtDeath && survivorBasicLoss) return true;
+    if (spouse.gender === 'female') return true;
+    if (deathAge.age < 60) return false;
   }
 
   if (spouse.gender === 'female') {
@@ -618,7 +769,7 @@ export function isSurvivingSpouseEligibleForEmployees(
     );
     if (
       fiveYearStartAge &&
-      fiveYearStartAge.age < survivorReformWifeFiniteMaxAge(death)
+      fiveYearStartAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE
     ) {
       const end = fiveYearEnd(fiveYearStart);
       return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
@@ -626,12 +777,7 @@ export function isSurvivingSpouseEligibleForEmployees(
     return true;
   }
 
-  if (isOnOrAfterSurvivorReform(death) && deathAge.age < 60) {
-    const end = fiveYearEnd(fiveYearStart);
-    return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
-  }
-
-    if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
+  if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
   if (receivesSurvivorBasicNow && isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH)) {
     return true;
   }
