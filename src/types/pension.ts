@@ -98,6 +98,11 @@ export type NenkinTeikibinOver50Form = NenkinTeikibinParticipationFields &
 
 export type BenefitAmountMode = 'auto' | 'manual';
 
+export type SurvivorPremiumRequirementSetting =
+  | 'auto'
+  | 'met'
+  | 'not_met';
+
 export interface OldAgeBenefitRowSettings {
   startAge: number;
   /** 受給開始年齢の月オフセット（0〜11）。0 = startAge の誕生月と同月。 */
@@ -124,6 +129,11 @@ export interface BenefitSettings {
   survivorDeathMonth: number;
   survivorBasicPerYear: number | null;
   survivorEmployeesMutualPerYear: number | null;
+  /**
+   * 遺族厚生年金の保険料納付要件。
+   * auto はねんきん定期便等から確認できる場合だけ確定し、確認できなければ未確認扱い。
+   */
+  survivorPremiumRequirement: SurvivorPremiumRequirementSetting;
   dependentSpousePension: DependentSpousePensionSettings;
 }
 
