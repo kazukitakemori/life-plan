@@ -984,6 +984,8 @@ function calcDependentSpousePensionMonthlyMan(
   headMemberState: PensionMemberState,
   headIncomeEntries: IncomeEntry[],
   spouseMember: FamilyMember,
+  spouseMemberState: PensionMemberState,
+  spouseIncomeEntries: IncomeEntry[],
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -1038,6 +1040,39 @@ function calcDependentSpousePensionMonthlyMan(
     )
   ) {
     return 0;
+  }
+
+  // 2022年4月以降、配偶者が20年以上の老齢厚生年金等の受給権を
+  // 有する場合は、実際の支給・停止状況にかかわらず配偶者加給を停止する。
+  const spouseEmployees = getTotalEmployeesMonthsForDependentQualification(
+    spouseMember,
+    spouseMemberState,
+    spouseIncomeEntries,
+    referenceDate,
+  );
+  if (
+    spouseEmployees.general + spouseEmployees.publicServant >=
+    DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
+    const spouseBenefitSettings =
+      spouseMemberState.benefitSettings ?? createDefaultBenefitSettings();
+    const spouseEmployeesStart = Math.min(
+      spouseBenefitSettings.oldAgeGeneralEmployees.startAge * 12 +
+        (spouseBenefitSettings.oldAgeGeneralEmployees.startMonth ?? 0),
+      spouseBenefitSettings.oldAgePublicPrivate.startAge * 12 +
+        (spouseBenefitSettings.oldAgePublicPrivate.startMonth ?? 0),
+    );
+    if (
+      isOnOrAfterBenefitStart(
+        spouseAge,
+        calendarMonth,
+        Math.floor(spouseEmployeesStart / 12),
+        resolveMemberBirthMonth(spouseMember),
+        spouseEmployeesStart % 12,
+      )
+    ) {
+      return 0;
+    }
   }
 
   const settings: DependentSpousePensionSettings =
@@ -1238,6 +1273,8 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
       headState,
       headEntries,
       spouseMember,
+      pensionByMember[spouseMember.id] ?? createDefaultPensionMemberState(),
+      incomeByMember[spouseMember.id] ?? [],
       referenceDate,
       calendarYear,
       calendarMonth,
