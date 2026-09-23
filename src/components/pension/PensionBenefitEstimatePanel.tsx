@@ -363,7 +363,7 @@ export function PensionBenefitEstimatePanel({
               isMobile
                 ? {
                     top: 8,
-                    right: 0,
+                    right: 14,
                     left: 0,
                     bottom: xAxisHeight,
                   }
@@ -386,7 +386,7 @@ export function PensionBenefitEstimatePanel({
               scale="linear"
               domain={[plotMinHeadAge, plotMaxHeadAge]}
               allowDataOverflow
-              padding={isMobile ? { left: 8, right: 8 } : { left: 0, right: 0 }}
+              padding={isMobile ? { left: 12, right: 16 } : { left: 0, right: 0 }}
               ticks={tickAges}
               interval={0}
               stroke="#94a3b8"
