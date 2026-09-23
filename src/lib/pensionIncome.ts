@@ -1631,7 +1631,11 @@ function isOldAgeEmployeesPaymentActiveAtCalendarMonth(
   ].some((row) =>
     isOldAgeRowPaymentActive(
       member,
-      row,
+      applyKnownDisabilityDeferralRestriction(
+        member,
+        normalizeOldAgeRowForMember(member, row, referenceDate),
+        'employees',
+      ),
       referenceDate,
       ageMonth,
     ),
