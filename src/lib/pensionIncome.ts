@@ -2273,12 +2273,24 @@ function calcDependentSpousePensionMonthlyMan(
     return 0;
   }
 
-  // 配偶者が障害基礎年金・障害厚生年金を受給している間も、
+  // 配偶者が障害基礎年金・障害厚生年金を受けられる間は、
   // 配偶者加給年金は支給停止となる。
-  if (
-    spouseMember.disability === 'has' &&
-    (spouseMember.disabilityPension ?? 'none') !== 'none'
-  ) {
+  // Q1の広い「障害あり」フラグではなく、受給権と現在等級が一致する
+  // 場合だけ自動停止する。全額支給停止中かどうかは現データでは判定しない。
+  const spouseDisabilityPension = spouseMember.disabilityPension ?? 'none';
+  const spouseDisabilityGrade = spouseMember.disabilityGrade ?? 'none';
+  const spouseCanReceiveDisabilityPension =
+    (spouseDisabilityPension === 'basic_grade1' &&
+      spouseDisabilityGrade === 'grade1') ||
+    (spouseDisabilityPension === 'basic_grade2' &&
+      spouseDisabilityGrade === 'grade2') ||
+    (spouseDisabilityPension === 'employees_grade1' &&
+      spouseDisabilityGrade === 'grade1') ||
+    (spouseDisabilityPension === 'employees_grade2' &&
+      spouseDisabilityGrade === 'grade2') ||
+    (spouseDisabilityPension === 'employees_grade3' &&
+      spouseDisabilityGrade === 'grade3');
+  if (spouseCanReceiveDisabilityPension) {
     return 0;
   }
 
