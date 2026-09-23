@@ -15,6 +15,7 @@ import {
 import { canAddSideBusinessIncome } from './incomeGuidance';
 import type { AddIncomeOption } from './incomeLabels';
 import { getMemberTabLabel } from './memberDisplay';
+import { isPensionSpouseLikeMember } from './familyDefaults';
 import {
   addCalendarMonths,
   type CalendarYearMonth,
@@ -637,10 +638,10 @@ export function accumulateCoverageIncome(
   if (endIdx < startIdx) return emptyCoverageIncomeTotals();
 
   const workers = input.familyMembers.filter((member) => member.role !== 'pet');
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const spouseReceives = input.familyMembers.some(
-    (member) => member.role === survivorRole,
-  );
+  const spouseReceives =
+    subject === 'head'
+      ? input.familyMembers.some((member) => isPensionSpouseLikeMember(member))
+      : input.familyMembers.some((member) => member.role === 'head');
   const deceased = input.familyMembers.find((member) => member.role === subject);
   const deceasedState = deceased
     ? input.pensionByMember[deceased.id] ?? createDefaultPensionMemberState()
