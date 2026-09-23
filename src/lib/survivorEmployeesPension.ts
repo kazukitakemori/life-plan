@@ -596,6 +596,21 @@ export function resolveSurvivorContinuationIncomeBasis(input: {
     incomeReferenceYear === simulationStartYear - 1 &&
     priorOverride?.differsFromCurrentYear
   ) {
+    // Q7の前年度上書きは月額・収入区分しか持たない。
+    // 給与系は給与所得控除から概算できるが、自営業等は必要経費を
+    // 保存していないため、継続給付の「前年所得」を確定しない。
+    const canEstimateTotalIncomeFromOverride =
+      priorOverride.category === 'employee' ||
+      priorOverride.category === 'civil_servant' ||
+      priorOverride.category === 'part_time';
+    if (!canEstimateTotalIncomeFromOverride) {
+      return {
+        incomeReferenceYear,
+        totalIncomeYen: null,
+        resolution: 'unavailable',
+        isEstimate: true,
+      };
+    }
     const profile = buildMemberYearIncomeProfileFromOverride(priorOverride);
     return {
       incomeReferenceYear,
