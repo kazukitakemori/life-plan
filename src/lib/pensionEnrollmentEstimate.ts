@@ -24,6 +24,7 @@ import {
   EMPLOYEES_PENSION_MAX_INSURED_AGE,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
+  FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
   NATIONAL_PENSION_MANDATORY_END_AGE,
   PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
@@ -480,9 +481,26 @@ export function getNationalPensionCreditedMonthCount(
 
 export function calcBasicPensionYenFromCreditedMonths(
   creditedMonths: number,
+  fullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
 ): number {
   const months = Math.max(0, Math.min(creditedMonths, FULL_BASIC_PENSION_MONTHS));
-  return (months / FULL_BASIC_PENSION_MONTHS) * FULL_BASIC_PENSION_YEN_PER_YEAR;
+  return (months / FULL_BASIC_PENSION_MONTHS) * fullBasicPensionYenPerYear;
+}
+
+function resolveFullBasicPensionYenPerYearForMember(
+  member: FamilyMember,
+  referenceDate: Date,
+): number {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
+  const birthDay = member.birthDay ?? 1;
+  const isLegacy =
+    birthYear < 1956 ||
+    (birthYear === 1956 &&
+      (birthMonth < 4 || (birthMonth === 4 && birthDay <= 1)));
+  return isLegacy
+    ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
+    : FULL_BASIC_PENSION_YEN_PER_YEAR;
 }
 
 /**
@@ -502,10 +520,11 @@ export function calcBasicPensionYenFromCreditedMonths(
 export function calcTransitionalAdditionYenPerYear(
   totalEmployeesMonths: number,
   basicCreditedMonths: number,
+  fullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
 ): number {
   const cappedMonths = Math.min(totalEmployeesMonths, FULL_BASIC_PENSION_MONTHS);
   const diff = Math.max(0, cappedMonths - basicCreditedMonths);
-  return (diff / FULL_BASIC_PENSION_MONTHS) * FULL_BASIC_PENSION_YEN_PER_YEAR;
+  return (diff / FULL_BASIC_PENSION_MONTHS) * fullBasicPensionYenPerYear;
 }
 
 /**
@@ -897,9 +916,12 @@ export function estimateOldAgeAmountsFromIncome(
   const publicMonths = publicServant.preMonths + publicServant.postMonths;
   const totalEmployeesMonths = generalMonths + publicMonths;
 
+  const fullBasicPensionYenPerYear =
+    resolveFullBasicPensionYenPerYearForMember(member, referenceDate);
   const totalTransitional = calcTransitionalAdditionYenPerYear(
     totalEmployeesMonths,
     creditedMonths,
+    fullBasicPensionYenPerYear,
   );
 
   // 経過的加算を厚生年金加入月数の比率で一般・公務員に按分
@@ -909,7 +931,10 @@ export function estimateOldAgeAmountsFromIncome(
       : 0;
 
   return {
-    basicYenPerYear: calcBasicPensionYenFromCreditedMonths(creditedMonths),
+    basicYenPerYear: calcBasicPensionYenFromCreditedMonths(
+      creditedMonths,
+      fullBasicPensionYenPerYear,
+    ),
     generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
     publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
     generalTransitionalYenPerYear,
