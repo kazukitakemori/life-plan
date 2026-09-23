@@ -26,6 +26,7 @@ import {
   FULL_BASIC_PENSION_YEN_PER_YEAR,
   FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
   NATIONAL_PENSION_MANDATORY_END_AGE,
+  OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS,
   PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
   UNIVERSITY_EXEMPTION_END_AGE,
@@ -379,11 +380,9 @@ function isUniversityExemptionMonth(age: number, month: number): boolean {
  * 加入月数が満額480に達する場合でも、大学在学猶予24か月分は控除する。
  */
 function finalizeNationalPensionCreditedMonths(coveredMonths: number): number {
-  const capped = Math.min(coveredMonths, FULL_BASIC_PENSION_MONTHS);
-  if (coveredMonths >= FULL_BASIC_PENSION_MONTHS) {
-    return Math.max(0, capped - UNIVERSITY_EXEMPTION_MONTHS);
-  }
-  return capped;
+  // 学生納付特例の想定月は hasNationalPensionCoverageAtAgeMonth 側で
+  // すでに年金額算定から除外している。ここで再度24月を引かない。
+  return Math.min(Math.max(0, coveredMonths), FULL_BASIC_PENSION_MONTHS);
 }
 
 function hasNationalPensionCoverageAtAgeMonth(
@@ -482,6 +481,46 @@ export function getNationalPensionCreditedMonthCount(
   }
 
   return finalizeNationalPensionCreditedMonths(count);
+}
+
+/**
+ * 定期便なし概算で老齢年金の10年資格期間を推計する。
+ * 年金額へは反映しない学生納付特例の想定期間も、受給資格期間には含める。
+ */
+export function getEstimatedOldAgeQualifyingMonthCount(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+): number {
+  const workProfile = resolveCurrentWorkProfile(member, entries, referenceDate);
+  const careerEnd = findCareerEnd(entries);
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  let count = 0;
+
+  for (
+    let age = PENSION_ENROLLMENT_START_AGE;
+    age < NATIONAL_PENSION_MANDATORY_END_AGE;
+    age++
+  ) {
+    for (let month = 1; month <= 12; month++) {
+      if (
+        hasNationalPensionCoverageAtAgeMonth(
+          entries,
+          age,
+          month,
+          member,
+          workProfile,
+          careerEnd,
+          birthYear,
+        ) ||
+        isUniversityExemptionMonth(age, month)
+      ) {
+        count++;
+      }
+    }
+  }
+
+  return Math.min(Math.max(0, count), FULL_BASIC_PENSION_MONTHS);
 }
 
 export function calcBasicPensionYenFromCreditedMonths(
@@ -926,6 +965,11 @@ export function estimateOldAgeAmountsFromIncome(
     entries,
     referenceDate,
   );
+  const qualifyingMonths = getEstimatedOldAgeQualifyingMonthCount(
+    member,
+    entries,
+    referenceDate,
+  );
 
   const generalMonths = general.preMonths + general.postMonths;
   const publicMonths = publicServant.preMonths + publicServant.postMonths;
@@ -944,6 +988,16 @@ export function estimateOldAgeAmountsFromIncome(
     totalEmployeesMonths > 0
       ? totalTransitional * (generalMonths / totalEmployeesMonths)
       : 0;
+
+  if (qualifyingMonths < OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS) {
+    return {
+      basicYenPerYear: 0,
+      generalEmployeesYenPerYear: 0,
+      publicServantYenPerYear: 0,
+      generalTransitionalYenPerYear: 0,
+      publicTransitionalYenPerYear: 0,
+    };
+  }
 
   return {
     basicYenPerYear: calcBasicPensionYenFromCreditedMonths(
