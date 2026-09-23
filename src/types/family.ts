@@ -4,6 +4,14 @@ export type Gender = 'male' | 'female';
 
 export type DisabilityStatus = 'none' | 'has';
 
+export type DisabilityPensionStatus =
+  | 'none'
+  | 'basic_grade1'
+  | 'basic_grade2'
+  | 'employees_grade1'
+  | 'employees_grade2'
+  | 'employees_grade3';
+
 export type HouseholdPeriodMode = 'lifetime' | 'by_education' | 'custom';
 
 /**
@@ -41,6 +49,11 @@ export interface FamilyMember {
   gender: Gender;
   expectedLifespan: number;
   disability: DisabilityStatus;
+  /**
+   * 現在の障害年金受給状況。
+   * 未入力・旧データはnoneとして扱い、障害があるだけで受給権を推測しない。
+   */
+  disabilityPension?: DisabilityPensionStatus;
   hobbies: string[];
   householdPeriod: HouseholdPeriod;
   /** roleが'other'のときのみ使用。続柄による控除区分の判定に使用 */
@@ -71,4 +84,13 @@ export const OTHER_RELATIONSHIP_LABELS: Record<OtherRelationship, string> = {
   sibling: '兄弟姉妹',
   common_law_partner: '内縁の配偶者',
   other_relative: 'その他（その他親族など）',
+};
+
+export const DISABILITY_PENSION_LABELS: Record<DisabilityPensionStatus, string> = {
+  none: '受給なし・不明',
+  basic_grade1: '障害基礎年金 1級',
+  basic_grade2: '障害基礎年金 2級',
+  employees_grade1: '障害厚生年金 1級',
+  employees_grade2: '障害厚生年金 2級',
+  employees_grade3: '障害厚生年金 3級',
 };
