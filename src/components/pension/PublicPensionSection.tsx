@@ -179,6 +179,8 @@ export function PublicPensionSection({
       </div>
 
       <BenefitSettingsSection
+        member={member}
+        referenceDate={referenceDate}
         settings={resolvedBenefitSettings}
         headOfHouseholdLabel={headOfHouseholdLabel}
         onChange={(settings) =>
