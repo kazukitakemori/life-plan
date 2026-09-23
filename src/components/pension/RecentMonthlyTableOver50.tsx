@@ -72,8 +72,42 @@ export function RecentMonthlyTableOver50({
               return (
                 <tr key={label}>
                   <td className="teikibin-monthly-label">{label}</td>
-                  <td className="teikibin-monthly-readonly" />
-                  <td className="teikibin-monthly-readonly" />
+                  <td className="teikibin-monthly-input-cell">
+                    <select
+                      className="pension-field-select pension-field-select--table"
+                      value={row.nationalPensionStatus}
+                      onChange={(e) =>
+                        updateRow(index, {
+                          nationalPensionStatus: e.target.value,
+                        })
+                      }
+                      aria-label={`${label} 国民年金納付状況`}
+                    >
+                      {NATIONAL_PENSION_PAYMENT_OPTIONS.map((opt) => (
+                        <option key={opt.value || 'empty'} value={opt.value}>
+                          {opt.label || '　'}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <select
+                      className="pension-field-select pension-field-select--table"
+                      value={row.employeesPensionCategory}
+                      onChange={(e) =>
+                        updateRow(index, {
+                          employeesPensionCategory: e.target.value,
+                        })
+                      }
+                      aria-label={`${label} 厚生年金加入区分`}
+                    >
+                      {EMPLOYEES_PENSION_CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt.value || 'empty'} value={opt.value}>
+                          {opt.label || '　'}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="teikibin-monthly-input-cell">
                     <input
                       type="text"
@@ -96,7 +130,18 @@ export function RecentMonthlyTableOver50({
                       }
                     />
                   </td>
-                  <td className="teikibin-monthly-premium" />
+                  <td className="teikibin-monthly-input-cell">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="pension-field-input pension-field-input--table"
+                      value={row.premiumPayment}
+                      onChange={(e) =>
+                        updateRow(index, { premiumPayment: e.target.value })
+                      }
+                      aria-label={`${label} 保険料納付額`}
+                    />
+                  </td>
                 </tr>
               );
             })}
@@ -186,7 +231,18 @@ export function RecentMonthlyTableOver50({
                   }
                 />
               </td>
-              <td className="teikibin-monthly-premium" />
+              <td className="teikibin-monthly-input-cell">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="pension-field-input pension-field-input--table"
+                  value={inputRow.premiumPayment}
+                  onChange={(e) =>
+                    updateInputRow({ premiumPayment: e.target.value })
+                  }
+                  aria-label="保険料納付額"
+                />
+              </td>
             </tr>
           </tbody>
         </table>
