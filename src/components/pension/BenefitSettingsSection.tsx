@@ -3,6 +3,7 @@ import { calcBirthYear } from '../../lib/birthDate';
 import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
+  canDeferOldAgeWithDisabilityPension,
   getMaxOldAgeDeferralAgeByBirth,
   normalizeOldAgeBenefitStart,
 } from '../../lib/pensionOldAge';
@@ -90,21 +91,27 @@ function OldAgeBenefitRow({
   label,
   row,
   maxDeferralAge,
+  allowDeferral,
   onChange,
 }: {
   rowId: string;
   label: string;
   row: OldAgeBenefitRowSettings;
   maxDeferralAge: number;
+  allowDeferral: boolean;
   onChange: (row: OldAgeBenefitRowSettings) => void;
 }) {
-  const normalizedStart = normalizeOldAgeBenefitStart(
+  const normalizedByAge = normalizeOldAgeBenefitStart(
     row.startAge,
     row.startMonth ?? 0,
     maxDeferralAge,
   );
+  const normalizedStart =
+    !allowDeferral && normalizedByAge.startAge > 65
+      ? { startAge: 65, startMonth: 0 }
+      : normalizedByAge;
   const ageOptions = PENSION_START_AGE_OPTIONS.filter(
-    (age) => age <= maxDeferralAge,
+    (age) => age <= (allowDeferral ? maxDeferralAge : 65),
   );
   const monthOptions =
     normalizedStart.startAge === 65 ||
@@ -113,13 +120,16 @@ function OldAgeBenefitRow({
       : PENSION_START_MONTH_OPTIONS;
 
   const updateStart = (startAge: number, startMonth: number) => {
+    const normalized = normalizeOldAgeBenefitStart(
+      startAge,
+      startMonth,
+      maxDeferralAge,
+    );
     onChange({
       ...row,
-      ...normalizeOldAgeBenefitStart(
-        startAge,
-        startMonth,
-        maxDeferralAge,
-      ),
+      ...(!allowDeferral && normalized.startAge > 65
+        ? { startAge: 65, startMonth: 0 }
+        : normalized),
     });
   };
 
@@ -251,6 +261,15 @@ export function BenefitSettingsSection({
     resolveMemberBirthMonth(member),
     member.birthDay,
   );
+  const canDeferBasic = canDeferOldAgeWithDisabilityPension(
+    member.disabilityPension,
+    'basic',
+  );
+  const canDeferEmployees = canDeferOldAgeWithDisabilityPension(
+    member.disabilityPension,
+    'employees',
+  );
+
   const update = (patch: Partial<BenefitSettings>) => {
     onChange({ ...settings, ...patch });
   };
@@ -332,6 +351,13 @@ export function BenefitSettingsSection({
         <h5 className="benefit-settings-block-title">
           老齢年金の受け取り方
         </h5>
+        {(!canDeferBasic || !canDeferEmployees) && (
+          <p className="benefit-early-pension-note">
+            {canDeferEmployees
+              ? '※ Q1で障害基礎年金の受給権が設定されているため、老齢基礎年金は繰下げ不可として65才から計算します。老齢厚生年金は繰下げを選べます。'
+              : '※ Q1で障害厚生年金の受給権が設定されているため、老齢基礎・老齢厚生年金は繰下げ不可として65才から計算します。'}
+          </p>
+        )}
         {isEarlyPension && (
           <p className="benefit-early-pension-note">
             ※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。
@@ -358,6 +384,7 @@ export function BenefitSettingsSection({
               label="老齢基礎"
               row={settings.oldAgeBasic}
               maxDeferralAge={maxDeferralAge}
+              allowDeferral={canDeferBasic}
               onChange={(row) => handleOldAgeChange('oldAgeBasic', row)}
             />
             <OldAgeBenefitRow
@@ -365,6 +392,7 @@ export function BenefitSettingsSection({
               label="一般厚生"
               row={settings.oldAgeGeneralEmployees}
               maxDeferralAge={maxDeferralAge}
+              allowDeferral={canDeferEmployees}
               onChange={(row) =>
                 handleOldAgeChange('oldAgeGeneralEmployees', row)
               }
@@ -374,6 +402,7 @@ export function BenefitSettingsSection({
               label="公務員厚生・私学共済"
               row={settings.oldAgePublicPrivate}
               maxDeferralAge={maxDeferralAge}
+              allowDeferral={canDeferEmployees}
               onChange={(row) =>
                 handleOldAgeChange('oldAgePublicPrivate', row)
               }
