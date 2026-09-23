@@ -188,7 +188,10 @@ function findCareerEnd(entries: IncomeEntry[]): AgeMonth | null {
   return { age: end.age, month: end.month };
 }
 
-import { standardRemunerationYenFromMonthlyMan } from './standardRemuneration';
+import {
+  resolvePensionStandardBonusYen,
+  standardRemunerationYenFromMonthlyMan,
+} from './standardRemuneration';
 
 function resolveEmployeesEnrollmentAtAgeMonth(
   entries: IncomeEntry[],
@@ -504,6 +507,101 @@ export function getActiveEmployeesMonthlyRemunerationMan(
   const kind = classifyEmployeesEnrollmentFromIncome(active.category, active.streamType);
   if (!kind) return 0;
   return active.monthlyAmountMan;
+}
+
+/**
+ * 在職老齢年金の「総報酬月額相当額」（万円）をQ7から算出する。
+ *
+ * 総報酬月額相当額 =
+ *   当月の標準報酬月額 + 直近12か月の標準賞与額合計 / 12
+ *
+ * 標準賞与額は1,000円未満を切り捨て、厚生年金の1回150万円上限を適用する。
+ * Q7の賞与は各収入期間の paymentMonth に毎年支給される前提。
+ */
+export function getActiveEmployeesTotalRemunerationMan(
+  entries: IncomeEntry[],
+  age: number,
+  calendarMonth: number,
+  birthYear: number,
+  birthMonth = 1,
+): number {
+  const active = findActiveIncomeAtAgeMonth(
+    entries,
+    age,
+    calendarMonth,
+    birthYear,
+    birthMonth,
+  );
+  if (!active) return 0;
+  const activeKind = classifyEmployeesEnrollmentFromIncome(
+    active.category,
+    active.streamType,
+  );
+  if (!activeKind) return 0;
+
+  const standardMonthlyYen = standardRemunerationYenFromMonthlyMan(
+    active.monthlyAmountMan,
+    'pension',
+  );
+
+  const currentCalendarYear = calcYearAtAge(
+    birthYear,
+    birthMonth,
+    age,
+    calendarMonth,
+  );
+  const currentSerial = currentCalendarYear * 12 + (calendarMonth - 1);
+  let standardBonusTotalYen = 0;
+
+  for (let offset = 0; offset < 12; offset++) {
+    const serial = currentSerial - offset;
+    const targetYear = Math.floor(serial / 12);
+    const targetMonth = (serial % 12) + 1;
+
+    for (const entry of entries) {
+      for (const period of entry.periods) {
+        const kind = classifyEmployeesEnrollmentFromIncome(
+          entry.category,
+          period.streamType,
+        );
+        if (!kind) continue;
+
+        for (const bonus of period.bonuses ?? []) {
+          if (bonus.paymentMonth !== targetMonth) continue;
+
+          const targetAgeMonthIndex =
+            (targetYear - birthYear) * 12 +
+            targetMonth -
+            birthMonth;
+          const targetAge = Math.floor(targetAgeMonthIndex / 12);
+          const monthSinceBirthday =
+            ((targetAgeMonthIndex % 12) + 12) % 12;
+          const targetAgeCalendarMonth = monthSinceBirthday + 1;
+
+          if (
+            !isAgeCalendarMonthInRange(
+              targetAge,
+              targetAgeCalendarMonth,
+              period.startAge,
+              period.startMonth,
+              period.endAge,
+              period.endMonth,
+              birthYear,
+              birthMonth,
+            )
+          ) {
+            continue;
+          }
+
+          standardBonusTotalYen += resolvePensionStandardBonusYen(
+            bonus.amountMan * 10_000,
+          );
+        }
+      }
+    }
+  }
+
+  return (standardMonthlyYen + standardBonusTotalYen / 12) / 10_000;
 }
 
 export function getEmployeesEnrollmentMonthCounts(
