@@ -10,6 +10,10 @@ import {
   SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
 } from './pensionConstants';
 import { toMonthlyMan } from './pensionOldAge';
+import {
+  createEmptySurvivorBasicDetail,
+  type SurvivorBasicDetail,
+} from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
 import type { RequiredCoverageSubject } from '../types/requiredCoverage';
 import type { CalendarYearMonth } from './housingLoanAmortization';
@@ -149,13 +153,14 @@ export function calcSurvivorBasicYenPerYear(
   );
 }
 
-export function calcCoverageSurvivorBasicMonthlyMan(
+export function calcCoverageSurvivorBasicDetailMonthlyMan(
   familyMembers: FamilyMember[],
   subject: RequiredCoverageSubject,
   referenceDate: Date,
   year: number,
   month: number,
-): number {
+): SurvivorBasicDetail {
+  const detail = createEmptySurvivorBasicDetail();
   const survivorRole = subject === 'head' ? 'spouse' : 'head';
   const survivorSpouse = familyMembers.some(
     (member) => member.role === survivorRole,
@@ -166,6 +171,8 @@ export function calcCoverageSurvivorBasicMonthlyMan(
     year,
     month,
   );
+  if (children.length <= 0) return detail;
+
   const spouse = familyMembers.find((member) => member.role === survivorRole);
   const spouseFullBasicPensionYenPerYear = (() => {
     if (!spouse) return FULL_BASIC_PENSION_YEN_PER_YEAR;
@@ -173,20 +180,45 @@ export function calcCoverageSurvivorBasicMonthlyMan(
     const birthMonth = resolveMemberBirthMonth(spouse);
     const birthDay = spouse.birthDay ?? 1;
     return birthYear < 1956 ||
-      (birthYear === 1956 && (birthMonth < 4 || (birthMonth === 4 && birthDay <= 1)))
+      (birthYear === 1956 &&
+        (birthMonth < 4 || (birthMonth === 4 && birthDay <= 1)))
       ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
       : FULL_BASIC_PENSION_YEN_PER_YEAR;
   })();
   const childAdditionCount = children.filter((member) =>
     isEligiblePensionChildAdditionResidence(member, year, month),
   ).length;
-  const yen = calcSurvivorBasicYenPerYear(
-    children.length,
-    survivorSpouse,
-    spouseFullBasicPensionYenPerYear,
+
+  detail.basic = toMonthlyMan(
+    survivorSpouse
+      ? spouseFullBasicPensionYenPerYear
+      : FULL_BASIC_PENSION_YEN_PER_YEAR,
+  );
+  detail.children = toMonthlyMan(
+    survivorBasicChildAddYenPerYear(
+      survivorSpouse
+        ? childAdditionCount
+        : Math.max(0, childAdditionCount - 1),
+      year,
+      month,
+    ),
+  );
+  return detail;
+}
+
+export function calcCoverageSurvivorBasicMonthlyMan(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+  referenceDate: Date,
+  year: number,
+  month: number,
+): number {
+  const detail = calcCoverageSurvivorBasicDetailMonthlyMan(
+    familyMembers,
+    subject,
+    referenceDate,
     year,
     month,
-    childAdditionCount,
   );
-  return toMonthlyMan(yen);
+  return detail.basic + detail.children + detail.widow;
 }
