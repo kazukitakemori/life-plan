@@ -168,6 +168,8 @@ export interface SurvivorEmployeesDetail {
 
   basic: number;
 
+  children: number;
+
   occupational: number;
 
   middleAged: number;
@@ -405,6 +407,8 @@ export const SURVIVOR_EMPLOYEES_DETAIL_ROWS: {
 }[] = [
 
   { key: 'basic', label: '基本' },
+
+  { key: 'children', label: '子の加算' },
 
   { key: 'occupational', label: '職域' },
 
@@ -1517,6 +1521,8 @@ export function createEmptySurvivorEmployeesDetail(): SurvivorEmployeesDetail {
   return {
 
     basic: 0,
+
+    children: 0,
 
     occupational: 0,
 
