@@ -757,6 +757,8 @@ export function accumulateCoverageIncome(
       const target = indexToYearMonth(calendarIdx);
       const entitlement = createEmptyPensionBreakdown();
       if (!survivorBasicDeathRequirementMet) return entitlement;
+      // 遺族基礎年金は死亡月の翌月分から発生する。
+      if (calendarIdx <= startIdx) return entitlement;
 
       const basicDetail = calcCoverageSurvivorBasicDetailMonthlyMan(
         input.familyMembers,
