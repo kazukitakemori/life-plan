@@ -147,10 +147,8 @@ function scaleDetailFields(
   if (totalBefore <= 0) return;
 
   const totalAfter = totalBefore * factor;
-  for (const key of Object.keys(detail)) {
-    if (key === earlyPaymentKey) continue;
-    detail[key] *= factor;
-  }
+  // 元の年金内訳はそのまま残し、増減分だけを「繰上げ・繰下げ」内訳へ置く。
+  // 内訳自体を factor 倍したうえで差額も加えると増減を二重計上してしまう。
   detail[earlyPaymentKey] = totalAfter - totalBefore;
 }
 
