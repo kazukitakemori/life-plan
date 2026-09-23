@@ -1201,15 +1201,16 @@ const MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR: Record<number, number> = {
   2052: 0.038,
 };
 
-function middleAgedWidowAddPhaseRatio(death: CalendarYearMonth): number {
-  if (!isOnOrAfterSurvivorReform(death)) return 1;
-  const fiscalYear = death.month >= 4 ? death.year : death.year - 1;
+function middleAgedWidowAddPhaseRatio(start: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(start)) return 1;
+  const fiscalYear = start.month >= 4 ? start.year : start.year - 1;
   if (fiscalYear < 2028) return 1;
   if (fiscalYear >= 2053) return 0;
 
   // 令和7年法律74号附則別表第一の法定率。
+  // 基準は死亡年度ではなく「中高齢寡婦加算が新規に発生した年度」。
   // 法律上は2028年4月1日までは1.000、4月2日から0.962だが、
-  // 本ソフトの死亡日は月単位のため2028年4月は改正後の0.962として扱う。
+  // 本ソフトは月単位のため2028年4月発生は改正後の0.962として扱う。
   return MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR[fiscalYear] ?? 0;
 }
 
@@ -1387,6 +1388,84 @@ export function calcTransitionalWidowAddYenPerYear(input: {
   return hadMiddleAgedWidowAdditionBefore65(input) ? amount : 0;
 }
 
+function resolveMiddleAgedWidowAdditionStart(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  hadEligibleChildrenAtDeath: boolean;
+}): CalendarYearMonth | null {
+  const deathAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.death.year,
+    input.death.month,
+  );
+  if (deathAge == null) return null;
+
+  // 子がいない場合は、夫の死亡が加算開始事由。
+  if (!input.hadEligibleChildrenAtDeath) {
+    return deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE &&
+      deathAge < STANDARD_OLD_AGE_START
+      ? input.death
+      : null;
+  }
+
+  // 40歳未満で死別した場合は、40歳到達時に遺族基礎年金の対象児が
+  // 残っていることが中高齢寡婦加算への移行要件。
+  if (deathAge < MIDDLE_AGED_WIDOW_MIN_AGE) {
+    const atForty = yearMonthWhenAgeReached(
+      input.wife,
+      input.referenceDate,
+      MIDDLE_AGED_WIDOW_MIN_AGE,
+    );
+    if (!atForty) return null;
+    const hadChildrenAtForty =
+      listEligibleSurvivorBasicChildren(
+        input.remainingFamilyMembers,
+        input.referenceDate,
+        atForty.year,
+        atForty.month,
+      ).length > 0;
+    if (!hadChildrenAtForty) return null;
+  }
+
+  // 子のある妻は、遺族基礎年金を受給できなくなる最初の月から
+  // 中高齢寡婦加算へ移る。逓減率もこの新規発生月を基準に固定する。
+  const deathIndex = calendarIndex(input.death.year, input.death.month);
+  for (let offset = 1; offset <= 25 * 12; offset++) {
+    const serial = deathIndex + offset;
+    const year = Math.floor((serial - 1) / 12);
+    const month = ((serial - 1) % 12) + 1;
+    if (
+      listEligibleSurvivorBasicChildren(
+        input.remainingFamilyMembers,
+        input.referenceDate,
+        year,
+        month,
+      ).length > 0
+    ) {
+      continue;
+    }
+    const startAge = ageAt(
+      input.wife,
+      input.referenceDate,
+      year,
+      month,
+    );
+    if (
+      startAge == null ||
+      startAge < MIDDLE_AGED_WIDOW_MIN_AGE ||
+      startAge >= STANDARD_OLD_AGE_START
+    ) {
+      return null;
+    }
+    return { year, month };
+  }
+
+  return null;
+}
+
 export function calcMiddleAgedWidowAddYenPerYear(input: {
   wife: FamilyMember;
   remainingFamilyMembers: FamilyMember[];
@@ -1411,48 +1490,25 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
     return 0;
   }
 
-  const deathAge = ageAt(
-    input.wife,
-    input.referenceDate,
-    input.death.year,
-    input.death.month,
-  );
-  if (deathAge == null) return 0;
-
-  if (!input.hadEligibleChildrenAtDeath) {
-    if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE && deathAge < STANDARD_OLD_AGE_START) {
-      return (
-    MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
-    middleAgedWidowAddPhaseRatio(input.death)
-  );
-    }
+  const start = resolveMiddleAgedWidowAdditionStart({
+    wife: input.wife,
+    remainingFamilyMembers: input.remainingFamilyMembers,
+    referenceDate: input.referenceDate,
+    death: input.death,
+    hadEligibleChildrenAtDeath: input.hadEligibleChildrenAtDeath,
+  });
+  if (!start) return 0;
+  if (
+    calendarIndex(input.now.year, input.now.month) <
+    calendarIndex(start.year, start.month)
+  ) {
     return 0;
   }
 
-  if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE) {
-    return (
-      MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
-      middleAgedWidowAddPhaseRatio(input.death)
-    );
-  }
-
-  const atForty = yearMonthWhenAgeReached(
-    input.wife,
-    input.referenceDate,
-    MIDDLE_AGED_WIDOW_MIN_AGE,
+  return (
+    MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
+    middleAgedWidowAddPhaseRatio(start)
   );
-  if (!atForty) return 0;
-  const hadChildrenAtForty =
-    listEligibleSurvivorBasicChildren(
-      input.remainingFamilyMembers,
-      input.referenceDate,
-      atForty.year,
-      atForty.month,
-    ).length > 0;
-  return hadChildrenAtForty
-    ? MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
-        middleAgedWidowAddPhaseRatio(input.death)
-    : 0;
 }
 
 export function calcCoverageSurvivorEmployeesDetail(input: {
@@ -1491,6 +1547,12 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   if (requirement === 'none') return empty;
 
   const now: CalendarYearMonth = { year: input.year, month: input.month };
+  if (
+    calendarIndex(now.year, now.month) <=
+    calendarIndex(input.death.year, input.death.month)
+  ) {
+    return empty;
+  }
   const continuationAssessment =
     resolveSurvivorContinuationAssessmentTarget(
       input.familyMembers,
