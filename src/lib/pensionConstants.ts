@@ -67,7 +67,11 @@ export const NATIONAL_PENSION_MANDATORY_END_AGE = 60;
  * 受給権者が昭和18年4月2日以後生まれ（現在の受給年齢層はほぼ該当）を前提に統一。
  * 基本額 243,800円＋特別加算 179,900円 = 合計 423,700円。
  */
-export const DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR = 423_700;
+export const DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR = 243_800;
+/** 2026年度・加給年金の子1人目・2人目 */ 
+export const DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR = 243_800;
+/** 2026年度・加給年金の子3人目以降 */
+export const DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR = 81_300;
 
 /** 加給年金の支給要件：老齢厚生年金の被保険者期間の最低月数（20年） */
 export const DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS = 240;
