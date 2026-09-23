@@ -16,11 +16,16 @@ import { isMemberBirthComplete } from '../../lib/familyDefaults';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { validateMemberDependentDefaults } from '../../lib/dependentValidation';
 import type {
+  DisabilityPensionStatus,
   FamilyMember,
   HouseholdPeriodMode,
   OtherRelationship,
 } from '../../types/family';
-import { OTHER_RELATIONSHIP_LABELS, ROLE_LABELS } from '../../types/family';
+import {
+  DISABILITY_PENSION_LABELS,
+  OTHER_RELATIONSHIP_LABELS,
+  ROLE_LABELS,
+} from '../../types/family';
 import {
   DisclosureSection,
   FormChoice,
@@ -223,7 +228,14 @@ export function FamilyMemberRow({
   };
 
   const detailSummaryParts: string[] = [];
-  if (member.disability === 'has') detailSummaryParts.push('障害あり');
+  if (member.disability === 'has') {
+    const pensionStatus = member.disabilityPension ?? 'none';
+    detailSummaryParts.push(
+      pensionStatus === 'none'
+        ? '障害あり'
+        : DISABILITY_PENSION_LABELS[pensionStatus],
+    );
+  }
   if (member.hobbies.length > 0) {
     detailSummaryParts.push(`趣味${member.hobbies.length}`);
   }
@@ -396,18 +408,49 @@ export function FamilyMemberRow({
             <FormField label="障害">
               <FormSelect
                 value={member.disability === 'none' ? 0 : 1}
-                onValueChange={(raw) =>
+                onValueChange={(raw) => {
+                  const disability =
+                    Number(raw) === 0 ? 'none' : 'has';
                   onChange({
                     ...member,
-                    disability: Number(raw) === 0 ? 'none' : 'has',
-                  })
-                }
+                    disability,
+                    ...(disability === 'none'
+                      ? { disabilityPension: 'none' as const }
+                      : {}),
+                  });
+                }}
                 options={[
                   { value: 0, label: 'なし' },
                   { value: 1, label: 'あり' },
                 ]}
               />
             </FormField>
+
+            {member.disability === 'has' && (
+              <div className="family-disability-pension-block">
+                <FormField label="障害年金（現在）">
+                  <FormSelect
+                    wide
+                    value={member.disabilityPension ?? 'none'}
+                    onValueChange={(raw) =>
+                      onChange({
+                        ...member,
+                        disabilityPension: raw as DisabilityPensionStatus,
+                      })
+                    }
+                    options={(
+                      Object.entries(DISABILITY_PENSION_LABELS) as Array<
+                        [DisabilityPensionStatus, string]
+                      >
+                    ).map(([value, label]) => ({ value, label }))}
+                  />
+                </FormField>
+                <p className="ui-note">
+                  遺族厚生年金の将来試算では、ここで選んだ受給権・等級が
+                  継続する前提で判定します。
+                </p>
+              </div>
+            )}
 
             <div className="family-hobbies-block">
               <div className="family-panel-title-row">
