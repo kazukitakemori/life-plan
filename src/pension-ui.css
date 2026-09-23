@@ -617,3 +617,27 @@
     justify-content: flex-start;
   }
 }
+
+
+/* Q2教育費グラフと同じ白いカード表現を優先する。 */
+.pension-step .pension-estimate-panel.pension-chart-card {
+  background: #fff;
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .pension-step .pension-estimate-panel.pension-chart-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .pension-step .pension-chart-container {
+    overflow: visible;
+  }
+
+  .pension-step .pension-chart-container .recharts-responsive-container {
+    max-width: 100%;
+  }
+}
