@@ -1136,7 +1136,7 @@ export function calcMemberMonthlyPensionBreakdownMan(
  *
  * - 偶数月に前2か月分を受け取る実支払ベース
  * - 非課税の遺族年金・障害年金は含めない
- * - 加給年金・振替加算など世帯単位の老齢年金加算は世帯主へ帰属
+ * - 加給年金・子の加算・振替加算は、実際の年金受給者へ帰属
  */
 export function calcMemberAnnualTaxableOldAgePensionPaymentManByMember(input: {
   familyMembers: FamilyMember[];
@@ -1151,45 +1151,31 @@ export function calcMemberAnnualTaxableOldAgePensionPaymentManByMember(input: {
   const monthEnd = input.monthEnd ?? 12;
   const result: Record<string, number> = {};
 
-  const householdEntitlements: PensionBreakdown[] = [];
-  householdEntitlements[0] = calcMonthlyPensionEntitlementBreakdownMan(
-    input.familyMembers,
-    input.pensionByMember,
-    input.incomeByMember,
-    input.referenceDate,
-    input.calendarYear - 1,
-    12,
-  );
-  for (let month = 1; month <= 12; month++) {
-    householdEntitlements[month] = calcMonthlyPensionEntitlementBreakdownMan(
-      input.familyMembers,
-      input.pensionByMember,
-      input.incomeByMember,
-      input.referenceDate,
-      input.calendarYear,
-      month,
-    );
-  }
-
   for (const member of input.familyMembers) {
     if (member.role === 'pet') continue;
     const memberState =
       input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
     const incomeEntries = input.incomeByMember[member.id] ?? [];
     const entitlements: PensionBreakdown[] = [];
-    entitlements[0] = calcMemberMonthlyPensionBreakdownMan(
+    entitlements[0] = calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
       member,
       memberState,
       incomeEntries,
+      input.familyMembers,
+      input.pensionByMember,
+      input.incomeByMember,
       input.referenceDate,
       input.calendarYear - 1,
       12,
     );
     for (let month = 1; month <= 12; month++) {
-      entitlements[month] = calcMemberMonthlyPensionBreakdownMan(
+      entitlements[month] = calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
         member,
         memberState,
         incomeEntries,
+        input.familyMembers,
+        input.pensionByMember,
+        input.incomeByMember,
         input.referenceDate,
         input.calendarYear,
         month,
@@ -1205,29 +1191,6 @@ export function calcMemberAnnualTaxableOldAgePensionPaymentManByMember(input: {
       );
     }
     result[member.id] = annual;
-  }
-
-  const householdAnnual = Array.from(
-    { length: monthEnd - monthStart + 1 },
-    (_, index) => monthStart + index,
-  ).reduce(
-    (sum, month) =>
-      sum +
-      calcTaxableOldAgePensionPaymentMan(
-        month,
-        householdEntitlements[month - 1] ?? createEmptyPensionBreakdown(),
-        householdEntitlements[month - 2] ?? createEmptyPensionBreakdown(),
-      ),
-    0,
-  );
-  const memberAnnual = Object.values(result).reduce(
-    (sum, amount) => sum + amount,
-    0,
-  );
-  const additions = Math.max(0, householdAnnual - memberAnnual);
-  const head = input.familyMembers.find((member) => member.role === 'head');
-  if (head && additions > 0) {
-    result[head.id] = (result[head.id] ?? 0) + additions;
   }
 
   return result;
@@ -1255,10 +1218,13 @@ export function calcMemberAnnualPensionManByMember(input: {
     let memberPension = 0;
     for (let month = monthStart; month <= monthEnd; month++) {
       memberPension += sumPensionBreakdown(
-        calcMemberMonthlyPensionBreakdownMan(
+        calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
           member,
           memberState,
           incomeEntries,
+          input.familyMembers,
+          input.pensionByMember,
+          input.incomeByMember,
           input.referenceDate,
           input.calendarYear,
           month,
@@ -2080,6 +2046,195 @@ function calcTransferAdditionMonthlyMan(
   return toMonthlyMan(yenPerYear);
 }
 
+function calcOldAgeHouseholdAdditionsByMemberMan(
+  familyMembers: FamilyMember[],
+  pensionByMember: Record<string, PensionMemberState>,
+  incomeByMember: Record<string, IncomeEntry[]>,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): Record<string, PensionBreakdown> {
+  const result: Record<string, PensionBreakdown> = {};
+  const ensure = (memberId: string): PensionBreakdown => {
+    result[memberId] ??= createEmptyPensionBreakdown();
+    return result[memberId];
+  };
+
+  const headMember = familyMembers.find((member) => member.role === 'head');
+  const formalSpouse = familyMembers.find((member) => member.role === 'spouse');
+  const commonLawPartner = familyMembers.find(
+    (member) =>
+      member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner',
+  );
+  const partner = formalSpouse ?? commonLawPartner;
+  const adults = [headMember, partner].filter(
+    (member): member is FamilyMember => Boolean(member),
+  );
+
+  const addEmployeesDependent = (
+    pensioner: FamilyMember,
+    amountMan: number,
+  ): void => {
+    if (amountMan <= 0) return;
+    const state =
+      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+    const entries = incomeByMember[pensioner.id] ?? [];
+    const { general, publicServant } = getTotalEmployeesMonths(
+      pensioner,
+      state,
+      entries,
+      referenceDate,
+    );
+    const detail = ensure(pensioner.id);
+    if (general >= publicServant) {
+      detail.oldAge.generalEmployees.dependent += amountMan;
+    } else {
+      detail.oldAge.publicServant.dependent += amountMan;
+    }
+  };
+
+  const employeeChildCandidates: Array<{
+    pensioner: FamilyMember;
+    amountMan: number;
+  }> = [];
+
+  for (const pensioner of adults) {
+    const state =
+      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+    const entries = incomeByMember[pensioner.id] ?? [];
+    const otherAdult = adults.find((member) => member.id !== pensioner.id);
+
+    if (otherAdult) {
+      const otherState =
+        pensionByMember[otherAdult.id] ?? createDefaultPensionMemberState();
+      const otherEntries = incomeByMember[otherAdult.id] ?? [];
+
+      addEmployeesDependent(
+        pensioner,
+        calcDependentSpousePensionMonthlyMan(
+          pensioner,
+          state,
+          entries,
+          otherAdult,
+          otherState,
+          otherEntries,
+          referenceDate,
+          calendarYear,
+          calendarMonth,
+        ),
+      );
+
+      const transfer = calcTransferAdditionMonthlyMan(
+        pensioner,
+        state,
+        entries,
+        otherAdult,
+        otherState,
+        otherEntries,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+      if (transfer > 0) {
+        ensure(otherAdult.id).oldAge.basic.transfer += transfer;
+      }
+    }
+
+    const employeeChildAddition =
+      calcDependentChildrenPensionMonthlyMan(
+        pensioner,
+        state,
+        entries,
+        familyMembers,
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+    if (employeeChildAddition > 0) {
+      employeeChildCandidates.push({
+        pensioner,
+        amountMan: employeeChildAddition,
+      });
+    }
+  }
+
+  const selectedEmployeesChild =
+    employeeChildCandidates.find(
+      ({ pensioner }) => pensioner.role === 'head',
+    ) ?? employeeChildCandidates[0];
+
+  if (selectedEmployeesChild) {
+    addEmployeesDependent(
+      selectedEmployeesChild.pensioner,
+      selectedEmployeesChild.amountMan,
+    );
+  } else {
+    const basicChildCandidates = adults
+      .map((pensioner) => {
+        const state =
+          pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
+        const entries = incomeByMember[pensioner.id] ?? [];
+        return {
+          pensioner,
+          amountMan: calcOldAgeBasicChildrenPensionMonthlyMan(
+            pensioner,
+            state,
+            entries,
+            familyMembers,
+            referenceDate,
+            calendarYear,
+            calendarMonth,
+          ),
+        };
+      })
+      .filter(({ amountMan }) => amountMan > 0);
+
+    const selectedBasicChild =
+      basicChildCandidates.find(
+        ({ pensioner }) => pensioner.role === 'head',
+      ) ?? basicChildCandidates[0];
+    if (selectedBasicChild) {
+      ensure(selectedBasicChild.pensioner.id).oldAge.basic.children +=
+        selectedBasicChild.amountMan;
+    }
+  }
+
+  return result;
+}
+
+function calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  incomeEntries: IncomeEntry[],
+  familyMembers: FamilyMember[],
+  pensionByMember: Record<string, PensionMemberState>,
+  incomeByMember: Record<string, IncomeEntry[]>,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): PensionBreakdown {
+  const result = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    memberState,
+    incomeEntries,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
+  );
+  const addition =
+    calcOldAgeHouseholdAdditionsByMemberMan(
+      familyMembers,
+      pensionByMember,
+      incomeByMember,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    )[member.id];
+  if (addition) addPensionBreakdown(result, addition);
+  return result;
+}
+
 /** 暦月ごとの受給資格に基づく1か月分の年金内訳（支給タイミングは別途調整） */
 export function calcMonthlyPensionEntitlementBreakdownMan(
   familyMembers: FamilyMember[],
@@ -2111,148 +2266,16 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
     );
   }
 
-  // 加給年金・子の加算は世帯主固定にせず、世帯主・配偶者のどちらが
-  // 年金受給者でも同じルールで判定する。
-  const headMember = familyMembers.find((member) => member.role === 'head');
-  const formalSpouse = familyMembers.find((member) => member.role === 'spouse');
-  const commonLawPartner = familyMembers.find(
-    (member) =>
-      member.role === 'other' &&
-      member.otherRelationship === 'common_law_partner',
+  const additionsByMember = calcOldAgeHouseholdAdditionsByMemberMan(
+    familyMembers,
+    pensionByMember,
+    incomeByMember,
+    referenceDate,
+    calendarYear,
+    calendarMonth,
   );
-  const partner = formalSpouse ?? commonLawPartner;
-  const adults = [headMember, partner].filter(
-    (member): member is FamilyMember => Boolean(member),
-  );
-
-  const addEmployeesDependent = (
-    pensioner: FamilyMember,
-    amountMan: number,
-  ): void => {
-    if (amountMan <= 0) return;
-    const state =
-      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
-    const entries = incomeByMember[pensioner.id] ?? [];
-    const { general, publicServant } = getTotalEmployeesMonths(
-      pensioner,
-      state,
-      entries,
-      referenceDate,
-    );
-    if (general >= publicServant) {
-      total.oldAge.generalEmployees.dependent += amountMan;
-    } else {
-      total.oldAge.publicServant.dependent += amountMan;
-    }
-  };
-
-  const employeeChildCandidates: Array<{
-    pensioner: FamilyMember;
-    amountMan: number;
-  }> = [];
-
-  for (const pensioner of adults) {
-    const state =
-      pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
-    const entries = incomeByMember[pensioner.id] ?? [];
-    const partner = adults.find((member) => member.id !== pensioner.id);
-
-    if (partner) {
-      const partnerState =
-        pensionByMember[partner.id] ?? createDefaultPensionMemberState();
-      const partnerEntries = incomeByMember[partner.id] ?? [];
-
-      const spouseAddition = calcDependentSpousePensionMonthlyMan(
-        pensioner,
-        state,
-        entries,
-        partner,
-        partnerState,
-        partnerEntries,
-        referenceDate,
-        calendarYear,
-        calendarMonth,
-      );
-      addEmployeesDependent(pensioner, spouseAddition);
-
-      // 振替加算も夫・妻の役割を固定せず、加給年金を受ける側→相手側の順に判定する。
-      const transfer = calcTransferAdditionMonthlyMan(
-        pensioner,
-        state,
-        entries,
-        partner,
-        partnerState,
-        partnerEntries,
-        referenceDate,
-        calendarYear,
-        calendarMonth,
-      );
-      if (transfer > 0) {
-        total.oldAge.basic.transfer += transfer;
-      }
-    }
-
-    const employeeChildAddition =
-      calcDependentChildrenPensionMonthlyMan(
-        pensioner,
-        state,
-        entries,
-        familyMembers,
-        referenceDate,
-        calendarYear,
-        calendarMonth,
-      );
-    if (employeeChildAddition > 0) {
-      employeeChildCandidates.push({
-        pensioner,
-        amountMan: employeeChildAddition,
-      });
-    }
-  }
-
-  // 同じ子について基礎・厚生、または父母双方へ重複して加算しない。
-  // 現在の保存データには「主として子を生計維持する親」の指定がないため、
-  // 両親とも厚生年金の子加算対象なら従来の世帯主優先で1人だけ計上する。
-  const selectedEmployeesChild =
-    employeeChildCandidates.find(
-      ({ pensioner }) => pensioner.role === 'head',
-    ) ?? employeeChildCandidates[0];
-
-  if (selectedEmployeesChild) {
-    addEmployeesDependent(
-      selectedEmployeesChild.pensioner,
-      selectedEmployeesChild.amountMan,
-    );
-  } else {
-    // 2028年4月以降、厚生年金側の子加算が付かない場合は
-    // 老齢基礎年金の新設された子加算を適用する。
-    const basicChildCandidates = adults
-      .map((pensioner) => {
-        const state =
-          pensionByMember[pensioner.id] ?? createDefaultPensionMemberState();
-        const entries = incomeByMember[pensioner.id] ?? [];
-        return {
-          pensioner,
-          amountMan: calcOldAgeBasicChildrenPensionMonthlyMan(
-            pensioner,
-            state,
-            entries,
-            familyMembers,
-            referenceDate,
-            calendarYear,
-            calendarMonth,
-          ),
-        };
-      })
-      .filter(({ amountMan }) => amountMan > 0);
-
-    const selectedBasicChild =
-      basicChildCandidates.find(
-        ({ pensioner }) => pensioner.role === 'head',
-      ) ?? basicChildCandidates[0];
-    if (selectedBasicChild) {
-      total.oldAge.basic.children += selectedBasicChild.amountMan;
-    }
+  for (const addition of Object.values(additionsByMember)) {
+    addPensionBreakdown(total, addition);
   }
 
   return total;
