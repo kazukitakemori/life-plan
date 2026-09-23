@@ -565,6 +565,82 @@ function hasAnyEmployeesPensionInQ7(entries: IncomeEntry[]): {
  * 定期便ありの場合、定期便の記録最終月の翌月以降の Q7 収入期間を加算し、
  * 定期便の実績月数との二重計上を避けるために使用する。
  */
+export interface FuturePensionAdditionsYen {
+  basicYenPerYear: number;
+  generalEmployeesYenPerYear: number;
+  publicServantYenPerYear: number;
+}
+
+/**
+ * ねんきん定期便の記録最終月より後にQ7へ明示されている就労期間だけを使い、
+ * 65歳までの将来加入分を年金額へ換算する。
+ * 50歳未満の定期便は「これまでの加入実績額」なので、将来分を二重計上せず足す用途。
+ */
+export function estimateQ7FuturePensionAdditionsAfterDate(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+  afterYear: number,
+  afterMonth: number,
+): FuturePensionAdditionsYen {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
+  const general = createEmptyProportionalAccumulation();
+  const publicServant = createEmptyProportionalAccumulation();
+  let basicMonths = 0;
+
+  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
+    for (let month = 1; month <= 12; month++) {
+      const calendarYear = calcYearAtAge(birthYear, birthMonth, age, month);
+      const isAfter =
+        calendarYear > afterYear ||
+        (calendarYear === afterYear && month > afterMonth);
+      if (!isAfter) continue;
+
+      const active = findActiveIncomeAtAgeMonth(
+        entries,
+        age,
+        month,
+        birthYear,
+        birthMonth,
+      );
+      if (!active) continue;
+
+      const employeesKind = classifyEmployeesEnrollmentFromIncome(
+        active.category,
+        active.streamType,
+      );
+      if (employeesKind) {
+        if (!isEmployeesPensionLiableAtAgeMonth(age, month, birthMonth)) continue;
+        basicMonths += 1;
+        const remunerationYen = standardRemunerationYenFromMonthlyMan(
+          active.monthlyAmountMan,
+          'pension',
+        );
+        addEmployeesEnrollmentMonth(
+          employeesKind === 'general' ? general : publicServant,
+          calendarYear,
+          month,
+          remunerationYen,
+        );
+        continue;
+      }
+
+      if (isNationalPensionOnlyIncome(active.category, active.streamType)) {
+        basicMonths += 1;
+      }
+    }
+  }
+
+  return {
+    basicYenPerYear:
+      (Math.min(basicMonths, FULL_BASIC_PENSION_MONTHS) / FULL_BASIC_PENSION_MONTHS) *
+      FULL_BASIC_PENSION_YEN_PER_YEAR,
+    generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
+    publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
+  };
+}
+
 export function countQ7EmployeesMonthsAfterDate(
   entries: IncomeEntry[],
   member: FamilyMember,
