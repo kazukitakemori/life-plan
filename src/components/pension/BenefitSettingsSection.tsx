@@ -464,9 +464,10 @@ export function BenefitSettingsSection({
     canDeferEmployees &&
     (settings.oldAgeGeneralEmployees.startAge > 65 ||
       settings.oldAgePublicPrivate.startAge > 65);
-  const hasSurvivorPensionInput =
-    settings.survivorBasicPerYear != null ||
+  const hasSurvivorEmployeesInput =
     settings.survivorEmployeesMutualPerYear != null;
+  const hasSurvivorPensionInput =
+    settings.survivorBasicPerYear != null || hasSurvivorEmployeesInput;
   const hasOldAgeDeferral =
     settings.oldAgeBasic.startAge > 65 ||
     settings.oldAgeGeneralEmployees.startAge > 65 ||
@@ -491,7 +492,9 @@ export function BenefitSettingsSection({
         )}
         {shouldWarnSurvivorDeferral && (
           <p className="benefit-early-pension-note">
-            ※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・時期・請求状況で変わります。2028年4月施行の改正では、対象となる人について、遺族厚生年金の受給権があっても老齢基礎年金は繰下げ可能となり、老齢厚生年金は遺族厚生年金を請求していない場合に限り繰下げ可能となります。Q8の「受給中」入力だけでは経過措置まで確定できないため、開始年齢は自動変更せず選択値のまま試算します。
+            {hasSurvivorEmployeesInput
+              ? '※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・時期・請求状況で変わります。2028年4月施行の改正では、対象となる人について、遺族厚生年金の受給権があっても老齢基礎年金は繰下げ可能となり、老齢厚生年金は遺族厚生年金を請求していない場合に限り繰下げ可能となります。Q8の「受給中」入力だけでは経過措置まで確定できないため、開始年齢は自動変更せず選択値のまま試算します。'
+              : '※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・取得時期・失権時期などで変わります。Q8の「受給中」入力だけでは時系列を確定できないため、開始年齢は自動変更せず選択値のまま試算します。'}
           </p>
         )}
         {isEarlyPension && (
