@@ -75,6 +75,7 @@ import {
   DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
+  OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS,
   STANDARD_OLD_AGE_START,
   ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH,
 } from './pensionConstants';
@@ -430,6 +431,23 @@ function calcUnder50OldAgeAmounts(
     form.recentMonthlyYear,
     form.recentMonthlyMonth,
   );
+
+  const recordedQualifyingMonths = sumNullable([
+    form.nationalPensionType1Months,
+    form.nationalPensionType3Months,
+    form.seamenInsuranceMonths,
+    form.employeesPensionGeneralMonths,
+    form.employeesPensionPublicServantMonths,
+    form.employeesPensionPrivateSchoolMonths,
+    form.consolidationPeriodMonths,
+  ]);
+  if (
+    recordedQualifyingMonths + future.qualifyingMonths <
+    OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS
+  ) {
+    return createEmptyOldAgePensionBreakdown();
+  }
+
   const projectedBasicYen = Math.min(
     FULL_BASIC_PENSION_YEN_PER_YEAR,
     basicYen + future.basicYenPerYear,
