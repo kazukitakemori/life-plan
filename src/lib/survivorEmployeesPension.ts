@@ -183,6 +183,17 @@ function recordedLongTermQualifyingMonths(memberState: PensionMemberState): numb
   );
 }
 
+export function hasConfirmedLongTermSurvivorQualification(
+  memberState: PensionMemberState,
+): boolean {
+  // 第1号の前納は最大24か月まで将来月が混在し得るため安全側に控除する。
+  const recordedLongTermMonths = Math.max(
+    0,
+    recordedLongTermQualifyingMonths(memberState) - 24,
+  );
+  return recordedLongTermMonths >= SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS;
+}
+
 function maximumNationalPensionInsuredMonthsUntil(
   member: FamilyMember,
   referenceDate: Date,
@@ -327,6 +338,17 @@ export function resolveSurvivorEmployeesDeathRequirement(
     calcBirthYear(deceased.age, deceased.birthMonth, referenceDate),
     deceased.birthMonth ?? 1,
   );
+
+  // 1級・2級の障害厚生年金受給権者の死亡は、保険料納付要件を別途求めず
+  // 短期要件と同じ300月みなしの対象となる。
+  const disabilityEmployeesQualification =
+    deceased.disability === 'has' &&
+    (deceased.disabilityPension === 'employees_grade1' ||
+      deceased.disabilityPension === 'employees_grade2');
+  if (disabilityEmployeesQualification) {
+    return 'short_term';
+  }
+
   if (insured) {
     const premiumAssessment = resolveSurvivorPremiumRequirementAssessment(
       deceased,
@@ -334,20 +356,14 @@ export function resolveSurvivorEmployeesDeathRequirement(
       referenceDate,
       death,
     );
-    return premiumAssessment.status === 'met' ? 'short_term' : 'none';
+    if (premiumAssessment.status === 'met') {
+      return 'short_term';
+    }
   }
 
-  // 老齢厚生年金の受給資格（25年以上）による長期要件は、
-  // Q7の就労推計ではなく、ねんきん定期便の記録済み加入期間で確認する。
-  // 前納による将来月混入に備えて最大24月を安全側に控除する。
-  const recordedLongTermMonths = Math.max(
-    0,
-    recordedLongTermQualifyingMonths(memberState) - 24,
-  );
-  if (
-    recordedLongTermMonths >=
-    SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS
-  ) {
+  // 現在の被保険者かどうかにかかわらず、25年以上の長期要件を
+  // ねんきん定期便の記録で確認できる場合は長期要件を優先できる。
+  if (hasConfirmedLongTermSurvivorQualification(memberState)) {
     return 'long_term';
   }
   return 'none';
