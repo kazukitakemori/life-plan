@@ -16,8 +16,11 @@ import {
   calcDeceasedProportionalYenPerYearUntilDeath,
   calcEmployeesMonthsUntilDeath,
   calcMiddleAgedWidowAddYenPerYear,
+  calcSurvivorContinuationSuspensionYen,
   calcSurvivorEmployeesBaseYenPerYear,
   isSurvivingSpouseEligibleForEmployees,
+  resolveSurvivorContinuationIncomeBasis,
+  resolveSurvivorContinuationIncomeReferenceYear,
   resolveSurvivorEmployeesDeathRequirement,
   resolveSurvivorEmployeesRecipient,
 } from '../src/lib/survivorEmployeesPension.ts';
@@ -318,6 +321,98 @@ const pension = createDefaultPensionMemberState();
   });
   assert.equal(abolished, 0);
   console.log('OK 2028 reform: middle-aged widow addition phases down through FY2052');
+}
+
+{
+  // 継続給付の所得参照年は、1〜9月が前々年、10〜12月が前年。
+  assert.equal(resolveSurvivorContinuationIncomeReferenceYear(2034, 1), 2032);
+  assert.equal(resolveSurvivorContinuationIncomeReferenceYear(2034, 9), 2032);
+  assert.equal(resolveSurvivorContinuationIncomeReferenceYear(2034, 10), 2033);
+  assert.equal(resolveSurvivorContinuationIncomeReferenceYear(2034, 12), 2033);
+
+  // Q7の当該暦年所得は「概算」として利用できる。
+  const q7Basis = resolveSurvivorContinuationIncomeBasis({
+    recipient: head,
+    incomeByMember: { [head.id]: [headIncome] },
+    referenceDate,
+    paymentYear: 2028,
+    paymentMonth: 9,
+  });
+  assert.equal(q7Basis.incomeReferenceYear, 2026);
+  assert.equal(q7Basis.resolution, 'q7_reference_year');
+  assert.equal(q7Basis.isEstimate, true);
+  assert.ok((q7Basis.totalIncomeYen ?? 0) > 0);
+
+  // 「前年度の収入」上書きは、試算開始年の前年を参照する場合だけ概算元に使う。
+  const overrideBasis = resolveSurvivorContinuationIncomeBasis({
+    recipient: head,
+    incomeByMember: {},
+    priorYearIncomeByMember: {
+      [head.id]: {
+        differsFromCurrentYear: true,
+        category: 'employee',
+        monthlyAmountMan: 30,
+      },
+    },
+    referenceDate,
+    paymentYear: 2026,
+    paymentMonth: 10,
+  });
+  assert.equal(overrideBasis.incomeReferenceYear, 2025);
+  assert.equal(overrideBasis.resolution, 'prior_year_override');
+  assert.equal(overrideBasis.isEstimate, true);
+  assert.ok((overrideBasis.totalIncomeYen ?? 0) > 0);
+
+  // 元データが無い場合は0円と決めつけず、判定不能にする。
+  const unavailableBasis = resolveSurvivorContinuationIncomeBasis({
+    recipient: wife38,
+    incomeByMember: {},
+    referenceDate,
+    paymentYear: 2028,
+    paymentMonth: 9,
+  });
+  assert.equal(unavailableBasis.resolution, 'unavailable');
+  assert.equal(unavailableBasis.totalIncomeYen, null);
+
+  console.log('OK 2028 continuation: prior-income reference is separated from resident-tax proxy');
+}
+
+{
+  // 所得基準額は政令値を外から渡す。ここでは法律の停止式だけを仮の基準額で検証する。
+  const thresholds = { first: 900_000, second: 1_800_000 };
+  assert.equal(
+    calcSurvivorContinuationSuspensionYen({
+      priorIncomeYen: 800_000,
+      annualPensionYen: 3_000_000,
+      thresholds,
+    }),
+    0,
+  );
+  assert.equal(
+    calcSurvivorContinuationSuspensionYen({
+      priorIncomeYen: 1_500_000,
+      annualPensionYen: 3_000_000,
+      thresholds,
+    }),
+    200_000,
+  );
+  assert.equal(
+    calcSurvivorContinuationSuspensionYen({
+      priorIncomeYen: 2_400_000,
+      annualPensionYen: 3_000_000,
+      thresholds,
+    }),
+    600_000,
+  );
+  assert.equal(
+    calcSurvivorContinuationSuspensionYen({
+      priorIncomeYen: 2_400_000,
+      annualPensionYen: 100_000,
+      thresholds,
+    }),
+    100_000,
+  );
+  console.log('OK 2028 continuation: statutory 1/3 and 1/2 suspension formula');
 }
 
 assert.equal(CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE, 30);
