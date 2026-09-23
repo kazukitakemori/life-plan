@@ -871,16 +871,58 @@ export function accumulateCoverageIncome(
       input.referenceDate,
       start,
     );
-  const survivorEmployeesFamilyMembers =
-    survivorSpouse &&
-    spouseIncomeClearlyNotMet &&
-    !spouseEmployeesIncomeRequirementRemoved
-      ? input.familyMembers.filter((member) => member.id !== survivorSpouse.id)
-      : input.familyMembers;
-  const survivorBasicFamilyMembers =
-    survivorSpouse && spouseIncomeClearlyNotMet && reformAtDeath
-      ? input.familyMembers.filter((member) => member.id !== survivorSpouse.id)
-      : input.familyMembers;
+  const livelihoodIncomeAssessmentByMember = new Map<
+    string,
+    SurvivorLivelihoodIncomeAssessment
+  >();
+  const getLivelihoodIncomeAssessment = (
+    member: FamilyMember,
+  ): SurvivorLivelihoodIncomeAssessment => {
+    const cached = livelihoodIncomeAssessmentByMember.get(member.id);
+    if (cached) return cached;
+    const assessment = resolveSurvivorLivelihoodIncomeAssessment({
+      recipient: member,
+      incomeByMember: input.incomeByMember,
+      futureIncomeByMember: incomeByMember,
+      priorYearIncomeByMember: input.priorYearIncomeByMember,
+      referenceDate: input.referenceDate,
+      death: start,
+    });
+    livelihoodIncomeAssessmentByMember.set(member.id, assessment);
+    return assessment;
+  };
+
+  // 生計維持の収入要件は配偶者だけでなく、子・父母・孫・祖父母にもある。
+  // 「明らかに基準を満たさない」と確認できる候補だけ受給順位から外す。
+  // 不明な場合は、必要保障額を制度上の個別認定で断定しないため候補に残す。
+  const survivorEmployeesFamilyMembers = input.familyMembers.filter((member) => {
+    if (member.role === 'pet' || member.id === deceased?.id) return true;
+    if (
+      survivorSpouse &&
+      member.id === survivorSpouse.id &&
+      spouseEmployeesIncomeRequirementRemoved
+    ) {
+      return true;
+    }
+    return getLivelihoodIncomeAssessment(member).status !== 'not_met';
+  });
+
+  // 遺族基礎年金の収入要件は2028年改正後も維持される。
+  // 改正後は高収入の配偶者を外した上で、要件を満たす子自身が受給できる。
+  const survivorBasicFamilyMembers = input.familyMembers.filter((member) => {
+    if (member.role === 'pet' || member.id === deceased?.id) return true;
+    if (
+      member.role !== 'child' &&
+      !(
+        member.role === 'other' &&
+        member.otherRelationship === 'grandchild'
+      ) &&
+      member.id !== survivorSpouse?.id
+    ) {
+      return true;
+    }
+    return getLivelihoodIncomeAssessment(member).status !== 'not_met';
+  });
   const survivorBasicBlockedByIneligibleParent =
     Boolean(survivorSpouse) &&
     spouseIncomeClearlyNotMet &&
