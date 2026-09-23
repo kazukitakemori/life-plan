@@ -968,9 +968,14 @@ export function isSurvivingSpouseEligibleForEmployees(
     return false;
   }
 
-  // 子がいる間は現行どおり受給。子の資格終了後に有期給付となる場合は、
-  // 「死亡から5年」ではなく遺族基礎年金の失権時から5年を数える。
-  if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) return true;
+  // 子がいる間は現行制度の給付順位を維持する。
+  // 妻は受給、夫は死亡時55歳以上で遺族基礎年金の受給権がある場合に限り、
+  // 60歳前の支給停止が解除される。55歳未満の夫へは遺族厚生年金を付けず、
+  // 子の受給へ回す。
+  if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) {
+    if (spouse.gender === 'female') return true;
+    return deathAge.age >= CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH;
+  }
   const fiveYearStart =
     hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
 
@@ -1012,10 +1017,13 @@ export function isSurvivingSpouseEligibleForEmployees(
   }
 
   if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
-  if (receivesSurvivorBasicNow && isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH)) {
-    return true;
-  }
-  return isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_PAYMENT_START_AGE);
+  if (receivesSurvivorBasicNow) return true;
+  return isMonthAfterAgeReached(
+    spouse,
+    referenceDate,
+    CHILDLESS_HUSBAND_PAYMENT_START_AGE,
+    now,
+  );
 }
 
 function isEligibleSurvivorEmployeesGrandchild(
@@ -1050,20 +1058,69 @@ function isEligibleSurvivorEmployeesGrandchild(
   );
 }
 
-function isParentLikeEligible(
+function hasParentLikeSurvivorRightAtDeath(
   member: FamilyMember,
-  minRelationship: 'parent' | 'grandparent',
+  relationship: 'parent' | 'grandparent',
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (member.role !== 'other') return false;
+  if (member.otherRelationship !== relationship) return false;
+  const deathAge = getMemberAgeMonth(
+    member,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  return Boolean(
+    deathAge && deathAge.age >= SURVIVOR_PARENT_MIN_AGE_AT_DEATH,
+  );
+}
+
+function isParentLikePaymentActive(
+  member: FamilyMember,
+  relationship: 'parent' | 'grandparent',
   referenceDate: Date,
   death: CalendarYearMonth,
   now: CalendarYearMonth,
 ): boolean {
-  if (member.role !== 'other') return false;
-  if (member.otherRelationship !== minRelationship) return false;
-  const deathAge = getMemberAgeMonth(member, referenceDate, death.year, death.month);
-  const nowAge = getMemberAgeMonth(member, referenceDate, now.year, now.month);
-  if (!deathAge || !nowAge) return false;
-  if (deathAge.age < SURVIVOR_PARENT_MIN_AGE_AT_DEATH) return false;
-  return isOnOrAfterAge(nowAge, SURVIVOR_PARENT_PAYMENT_START_AGE);
+  if (
+    !hasParentLikeSurvivorRightAtDeath(
+      member,
+      relationship,
+      referenceDate,
+      death,
+    )
+  ) {
+    return false;
+  }
+  return isMonthAfterAgeReached(
+    member,
+    referenceDate,
+    SURVIVOR_PARENT_PAYMENT_START_AGE,
+    now,
+  );
+}
+
+function hasSpouseSurvivorEmployeesRightAtDeath(
+  spouse: FamilyMember,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  const deathAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  if (!deathAge) return false;
+  if (spouse.gender === 'female') return true;
+
+  // 2028年改正後は60歳未満の夫にも原則5年の有期給付が創設される。
+  if (isOnOrAfterSurvivorReform(death)) return true;
+
+  // 改正前の夫は死亡時55歳以上で受給権を取得する。
+  return deathAge.age >= CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH;
 }
 
 export interface SurvivorEmployeesRecipient {
@@ -1092,7 +1149,17 @@ export function resolveSurvivorEmployeesRecipient(
     isEligibleSurvivorBasicChild(member, referenceDate, now.year, now.month),
   );
   const spouse = findSurvivorSpouseLike(remaining, subject);
-  const receivesSurvivorBasicNow = childrenNow.length > 0 && Boolean(spouse);
+  const spouseHadRightAtDeath = Boolean(
+    spouse &&
+      hasSpouseSurvivorEmployeesRightAtDeath(
+        spouse,
+        referenceDate,
+        death,
+      ),
+  );
+  const receivesSurvivorBasicNow =
+    childrenNow.length > 0 && Boolean(spouse);
+
   let survivorBasicLoss: CalendarYearMonth | null = null;
   if (spouse && childrenAtDeath.length > 0) {
     // 最後の対象児が遺族基礎年金の対象外となる最初の月を求める。
@@ -1115,46 +1182,100 @@ export function resolveSurvivorEmployeesRecipient(
     }
   }
 
-  if (
-    spouse &&
-    isSurvivingSpouseEligibleForEmployees(
-      spouse,
-      childrenAtDeath.length > 0,
+  // 配偶者または子が死亡時に受給権順位を占めた場合、父母・孫・祖父母へ
+  // 後から順位を繰り上げない。支給停止中や有期給付終了後も同様。
+  if (spouseHadRightAtDeath || childrenAtDeath.length > 0) {
+    if (
+      spouse &&
+      isSurvivingSpouseEligibleForEmployees(
+        spouse,
+        childrenAtDeath.length > 0,
+        referenceDate,
+        death,
+        now,
+        receivesSurvivorBasicNow,
+        survivorBasicLoss,
+      )
+    ) {
+      return { member: spouse, kind: 'spouse' };
+    }
+
+    if (childrenNow.length > 0) {
+      return { member: childrenNow[0], kind: 'child' };
+    }
+
+    return null;
+  }
+
+  // 父母に受給権者がいれば、その支給が60歳まで停止していても
+  // 孫・祖父母へ順位を移さない。
+  const parentsWithRight = remaining.filter((member) =>
+    hasParentLikeSurvivorRightAtDeath(
+      member,
+      'parent',
       referenceDate,
       death,
-      now,
-      receivesSurvivorBasicNow,
-      survivorBasicLoss,
-    )
-  ) {
-    return { member: spouse, kind: 'spouse' };
-  }
-
-  if (childrenNow.length > 0) {
-    return { member: childrenNow[0], kind: 'child' };
-  }
-
-  const parent = remaining.find((member) =>
-    isParentLikeEligible(member, 'parent', referenceDate, death, now),
+    ),
   );
-  if (parent) return { member: parent, kind: 'parent' };
+  if (parentsWithRight.length > 0) {
+    const parent = parentsWithRight.find((member) =>
+      isParentLikePaymentActive(
+        member,
+        'parent',
+        referenceDate,
+        death,
+        now,
+      ),
+    );
+    return parent ? { member: parent, kind: 'parent' } : null;
+  }
 
-  const grandchild = remaining.find((member) =>
+  // 孫も死亡時の受給権順位で固定する。後に年齢要件を外れても
+  // 祖父母へ新たに受給権を移さない。
+  const grandchildrenWithRight = remaining.filter((member) =>
     isEligibleSurvivorEmployeesGrandchild(
       member,
       referenceDate,
-      now.year,
-      now.month,
+      death.year,
+      death.month,
     ),
   );
-  if (grandchild) {
-    return { member: grandchild, kind: 'grandchild' };
+  if (grandchildrenWithRight.length > 0) {
+    const grandchild = grandchildrenWithRight.find((member) =>
+      isEligibleSurvivorEmployeesGrandchild(
+        member,
+        referenceDate,
+        now.year,
+        now.month,
+      ),
+    );
+    return grandchild
+      ? { member: grandchild, kind: 'grandchild' }
+      : null;
   }
 
-  const grandparent = remaining.find((member) =>
-    isParentLikeEligible(member, 'grandparent', referenceDate, death, now),
+  const grandparentsWithRight = remaining.filter((member) =>
+    hasParentLikeSurvivorRightAtDeath(
+      member,
+      'grandparent',
+      referenceDate,
+      death,
+    ),
   );
-  if (grandparent) return { member: grandparent, kind: 'grandparent' };
+  if (grandparentsWithRight.length > 0) {
+    const grandparent = grandparentsWithRight.find((member) =>
+      isParentLikePaymentActive(
+        member,
+        'grandparent',
+        referenceDate,
+        death,
+        now,
+      ),
+    );
+    return grandparent
+      ? { member: grandparent, kind: 'grandparent' }
+      : null;
+  }
 
   return null;
 }
@@ -1169,10 +1290,27 @@ function yearMonthWhenAgeReached(
   age: number,
 ): CalendarYearMonth | null {
   if (member.age == null || member.birthMonth == null) return null;
-  return {
+  const nominal = {
     year: calcBirthYear(member.age, member.birthMonth, referenceDate) + age,
     month: member.birthMonth,
   };
+  return member.birthDay === 1
+    ? addCalendarMonths(nominal, -1)
+    : nominal;
+}
+
+function isMonthAfterAgeReached(
+  member: FamilyMember,
+  referenceDate: Date,
+  age: number,
+  now: CalendarYearMonth,
+): boolean {
+  const reached = yearMonthWhenAgeReached(member, referenceDate, age);
+  return Boolean(
+    reached &&
+      calendarIndex(now.year, now.month) >
+        calendarIndex(reached.year, reached.month),
+  );
 }
 
 const MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR: Record<number, number> = {
@@ -1305,13 +1443,13 @@ function hadMiddleAgedWidowAdditionBefore65(input: {
     STANDARD_OLD_AGE_START,
   );
   if (!age65) return false;
-  const before65 = addCalendarMonths(age65, -1);
+  const finalMiddleAgedMonth = age65;
   const childrenBefore65 =
     listEligibleSurvivorBasicChildren(
       input.remainingFamilyMembers,
       input.referenceDate,
-      before65.year,
-      before65.month,
+      finalMiddleAgedMonth.year,
+      finalMiddleAgedMonth.month,
     ).length > 0;
   const childrenAtDeath =
     listEligibleSurvivorBasicChildren(
@@ -1326,7 +1464,7 @@ function hadMiddleAgedWidowAdditionBefore65(input: {
       remainingFamilyMembers: input.remainingFamilyMembers,
       referenceDate: input.referenceDate,
       death: input.death,
-      now: before65,
+      now: finalMiddleAgedMonth,
       hadEligibleChildrenAtDeath: childrenAtDeath,
       hasEligibleChildrenNow: childrenBefore65,
       requirement: input.requirement,
@@ -1344,13 +1482,16 @@ export function calcTransitionalWidowAddYenPerYear(input: {
   requirement: SurvivorEmployeesDeathRequirement;
   deceasedEmployeesMonths: number;
 }): number {
-  const nowAge = ageAt(
-    input.wife,
-    input.referenceDate,
-    input.now.year,
-    input.now.month,
-  );
-  if (nowAge == null || nowAge < STANDARD_OLD_AGE_START) return 0;
+  if (
+    !isMonthAfterAgeReached(
+      input.wife,
+      input.referenceDate,
+      STANDARD_OLD_AGE_START,
+      input.now,
+    )
+  ) {
+    return 0;
+  }
 
   const amount = getTransitionalWidowAddYenPerYear(
     input.wife,
@@ -1458,7 +1599,12 @@ function resolveMiddleAgedWidowAdditionStart(input: {
     if (
       startAge == null ||
       startAge < MIDDLE_AGED_WIDOW_MIN_AGE ||
-      startAge >= STANDARD_OLD_AGE_START
+      isMonthAfterAgeReached(
+        input.wife,
+        input.referenceDate,
+        STANDARD_OLD_AGE_START,
+        { year, month },
+      )
     ) {
       return null;
     }
@@ -1480,8 +1626,22 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
   deceasedEmployeesMonths: number;
 }): number {
   if (input.wife.gender !== 'female') return 0;
-  const nowAge = ageAt(input.wife, input.referenceDate, input.now.year, input.now.month);
-  if (nowAge == null || nowAge < MIDDLE_AGED_WIDOW_MIN_AGE || nowAge >= STANDARD_OLD_AGE_START) {
+  const nowAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.now.year,
+    input.now.month,
+  );
+  if (
+    nowAge == null ||
+    nowAge < MIDDLE_AGED_WIDOW_MIN_AGE ||
+    isMonthAfterAgeReached(
+      input.wife,
+      input.referenceDate,
+      STANDARD_OLD_AGE_START,
+      input.now,
+    )
+  ) {
     return 0;
   }
   if (input.hasEligibleChildrenNow) return 0;
