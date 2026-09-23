@@ -430,6 +430,7 @@ function calcOldAgeMonthlyManByRow(
   const earlyReductionPerMonth = getEarlyClaimReductionPerMonthByBirth(
     calcBirthYear(member.age, member.birthMonth, referenceDate),
     resolveMemberBirthMonth(member),
+    member.birthDay,
   );
 
   if (basicActive) {
