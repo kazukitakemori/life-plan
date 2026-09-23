@@ -566,7 +566,7 @@ export function getActiveEmployeesTotalRemunerationMan(
   );
   if (!activeKind) return 0;
 
-  const currentCalendarYear = calcYearAtAge(
+  const currentCalendarYear = calendarYearFromAgeCalendarMonth(
     birthYear,
     birthMonth,
     age,
