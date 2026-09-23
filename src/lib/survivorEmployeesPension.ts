@@ -687,37 +687,6 @@ function isSpouseFiniteSurvivorEmployeesBenefit(
   );
 }
 
-/**
- * 5年有期給付が終わった後、所得・障害要件による継続給付を
- * 「判定すべき期間」に入っているかを返す。
- *
- * これは支給確定判定ではない。実際の支給には所得基準額、障害年金受給権、
- * 老齢厚生年金受給権、全額停止の継続期間等の追加確認が必要。
- */
-export function isSurvivingSpouseInContinuationAssessmentWindow(
-  spouse: FamilyMember,
-  hadEligibleChildrenAtDeath: boolean,
-  referenceDate: Date,
-  death: CalendarYearMonth,
-  now: CalendarYearMonth,
-  survivorBasicLoss: CalendarYearMonth | null = null,
-): boolean {
-  const finiteStart = resolveReformSpouseFiniteStart(
-    spouse,
-    hadEligibleChildrenAtDeath,
-    referenceDate,
-    death,
-    survivorBasicLoss,
-  );
-  if (!finiteStart) return false;
-
-  const nowAge = getMemberAgeMonth(spouse, referenceDate, now.year, now.month);
-  if (!nowAge || nowAge.age >= STANDARD_OLD_AGE_START) return false;
-
-  const end = fiveYearEnd(finiteStart);
-  return calendarIndex(now.year, now.month) > calendarIndex(end.year, end.month);
-}
-
 export interface SurvivorContinuationAssessmentTarget {
   member: FamilyMember;
   finiteBenefitStart: CalendarYearMonth;
