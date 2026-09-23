@@ -801,7 +801,6 @@ export function accumulateCoverageIncome(
     ? resolveSurvivorLivelihoodIncomeAssessment({
         recipient: survivorSpouse,
         incomeByMember: input.incomeByMember,
-        futureIncomeByMember: incomeByMember,
         priorYearIncomeByMember: input.priorYearIncomeByMember,
         referenceDate: input.referenceDate,
         death: start,
@@ -869,7 +868,6 @@ export function accumulateCoverageIncome(
     const assessment = resolveSurvivorLivelihoodIncomeAssessment({
       recipient: member,
       incomeByMember: input.incomeByMember,
-      futureIncomeByMember: incomeByMember,
       priorYearIncomeByMember: input.priorYearIncomeByMember,
       referenceDate: input.referenceDate,
       death: start,
