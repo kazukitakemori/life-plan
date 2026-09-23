@@ -178,6 +178,11 @@ export function PensionBenefitEstimatePanel({
     [member, memberState, incomeEntries, referenceDate],
   );
 
+  const chartPoints = useMemo(
+    () => points.filter((point) => point.headAge >= 60),
+    [points],
+  );
+
   const {
     visiblePoints,
     canZoomIn,
@@ -185,7 +190,7 @@ export function PensionBenefitEstimatePanel({
     zoomIn,
     zoomOut,
     reset,
-  } = useCoverageChartWindow(points);
+  } = useCoverageChartWindow(chartPoints);
 
   const minHeadAge = visiblePoints[0]?.headAge ?? 0;
   const maxHeadAge = visiblePoints[visiblePoints.length - 1]?.headAge ?? 0;
@@ -219,7 +224,7 @@ export function PensionBenefitEstimatePanel({
     <section className="pension-estimate-panel" aria-label="年金試算結果">
       <div className="lifetime-chart-header">
         <div className="lifetime-chart-header-left">
-          <h3 className="lifetime-chart-title">試算結果（老齢年金・年齢別）</h3>
+          <h3 className="lifetime-chart-title">試算結果（老齢年金・60歳以降）</h3>
         </div>
         <CoverageChartZoomToolbar
           canZoomIn={canZoomIn}
