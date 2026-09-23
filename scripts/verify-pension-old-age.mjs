@@ -21,6 +21,7 @@ import { isEmployeesPensionLiableAtAgeMonth } from '../src/lib/employeesPensionP
 import { buildPensionBenefitChartPoints } from '../src/lib/pensionBenefitChartData.ts';
 import {
   calcMemberAnnualTaxableOldAgePensionPaymentManByMember,
+  calcMemberMonthlyOldAgePensionBeforeZaishokuMan,
   calcMemberMonthlyPensionBreakdownMan,
   calcMonthlyPensionEntitlementBreakdownMan,
   getDependentSpousePensionYenPerYear,
@@ -317,6 +318,46 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.ok(day2May > day1April);
 }
 
+
+// 遺族厚生年金との併給調整に使う老齢厚生年金額は、在職老齢年金の
+// 支給停止前の受給権上の額を使う。
+{
+  const member = pensionMember({ birthDay: 1, age: 66 });
+  const state = createDefaultPensionMemberState();
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 0;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 1_200_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const entries = employeeIncome();
+  entries[0].periods[0].monthlyAmountMan = 100;
+  entries[0].periods[0].annualAmountMan = 1_200;
+
+  const paid = calcMemberMonthlyPensionBreakdownMan(
+    member,
+    state,
+    entries,
+    referenceDate,
+    2026,
+    6,
+  );
+  const entitlement = calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
+    member,
+    state,
+    entries,
+    referenceDate,
+    2026,
+    6,
+  );
+
+  assert.ok(entitlement.generalEmployees.basic > 0);
+  assert.ok(
+    paid.oldAge.generalEmployees.basic <
+      entitlement.generalEmployees.basic,
+  );
+}
 
 // 老齢年金は請求月の翌月分から発生。
 // 4月1日生まれは3月31日に65歳到達→4月分から、4月2日生まれは4月1日到達→5月分から。
