@@ -3,14 +3,26 @@ import {
   getWesternYearOptions,
   MONTH_OPTIONS,
 } from '../../lib/pensionTeikibinLabels';
-import type { NenkinTeikibinMonthlyFields } from '../../types/pension';
+import {
+  EMPLOYEES_PENSION_CATEGORY_OPTIONS,
+  NATIONAL_PENSION_PAYMENT_OPTIONS,
+} from '../../lib/pensionTeikibinLabels';
+import type { NenkinTeikibinMonthlyFields, NenkinTeikibinMonthlyRow } from '../../types/pension';
 
 interface RecentMonthlyTableProps {
   form: NenkinTeikibinMonthlyFields;
   onChange: (patch: Partial<NenkinTeikibinMonthlyFields>) => void;
 }
 
-const READONLY_CELL_COUNT = 4;
+  const updateRow = (
+    index: number,
+    patch: Partial<NenkinTeikibinMonthlyRow>,
+  ) => {
+    const monthlyRows = form.monthlyRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row,
+    );
+    onChange({ monthlyRows });
+  };
 
 export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
   const monthLabels = buildMonthlyLabelsFromWestern(
@@ -39,18 +51,57 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
             </tr>
           </thead>
           <tbody>
-            {monthLabels.map((label) => (
-              <tr key={label}>
-                <td className="teikibin-monthly-label">{label}</td>
-                {Array.from({ length: READONLY_CELL_COUNT }, (_, index) => (
-                  <td
-                    key={`${label}-readonly-${index}`}
-                    className="teikibin-monthly-readonly"
-                  />
-                ))}
-                <td className="teikibin-monthly-premium" />
-              </tr>
-            ))}
+            {monthLabels.map((label, index) => {
+              const row = form.monthlyRows[index];
+              if (!row) return null;
+              return (
+                <tr key={label}>
+                  <td className="teikibin-monthly-label">{label}</td>
+                  <td className="teikibin-monthly-input-cell">
+                    <select
+                      className="pension-field-select pension-field-select--table"
+                      value={row.nationalPensionStatus}
+                      onChange={(e) => updateRow(index, { nationalPensionStatus: e.target.value })}
+                      aria-label={`${label} 国民年金納付状況`}
+                    >
+                      {NATIONAL_PENSION_PAYMENT_OPTIONS.map((opt) => (
+                        <option key={opt.value || 'empty'} value={opt.value}>{opt.label || '　'}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <select
+                      className="pension-field-select pension-field-select--table"
+                      value={row.employeesPensionCategory}
+                      onChange={(e) => updateRow(index, { employeesPensionCategory: e.target.value })}
+                      aria-label={`${label} 厚生年金加入区分`}
+                    >
+                      {EMPLOYEES_PENSION_CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt.value || 'empty'} value={opt.value}>{opt.label || '　'}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.standardRemuneration}
+                      onChange={(e) => updateRow(index, { standardRemuneration: e.target.value })}
+                      aria-label={`${label} 標準報酬月額`} />
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.standardBonus}
+                      onChange={(e) => updateRow(index, { standardBonus: e.target.value })}
+                      aria-label={`${label} 標準賞与額`} />
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.premiumPayment}
+                      onChange={(e) => updateRow(index, { premiumPayment: e.target.value })}
+                      aria-label={`${label} 保険料納付額`} />
+                  </td>
+                </tr>
+              );
+            })}
 
             <tr className="teikibin-monthly-input-row">
               <td className="teikibin-monthly-date">
@@ -85,13 +136,9 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
                 </select>
                 <span className="teikibin-monthly-date-unit">月</span>
               </td>
-              {Array.from({ length: READONLY_CELL_COUNT }, (_, index) => (
-                <td
-                  key={`input-row-readonly-${index}`}
-                  className="teikibin-monthly-readonly"
-                />
-              ))}
-              <td className="teikibin-monthly-premium" />
+              <td colSpan={5} className="teikibin-monthly-readonly">
+                上の12か月欄へ、ねんきん定期便に記載された内容を入力してください
+              </td>
             </tr>
           </tbody>
         </table>
