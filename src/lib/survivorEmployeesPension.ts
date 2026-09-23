@@ -934,7 +934,17 @@ export function resolveSurvivorContinuationAssessmentTarget(
     now.year,
     now.month,
   );
-  if (!nowAge || nowAge.age >= STANDARD_OLD_AGE_START) return null;
+  if (
+    !nowAge ||
+    isMonthAfterAgeReached(
+      spouse,
+      referenceDate,
+      STANDARD_OLD_AGE_START,
+      now,
+    )
+  ) {
+    return null;
+  }
 
   return {
     member: spouse,
