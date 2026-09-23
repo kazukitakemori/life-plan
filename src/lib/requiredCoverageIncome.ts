@@ -740,15 +740,28 @@ export function accumulateCoverageIncome(
       middleAged: monthMiddleAgedWidow,
       employees: monthSurvivorEmployees,
     } = extractSurvivorEmployeesPaymentParts(pensionPayment);
-    for (const [memberId, amount] of Object.entries(
-      pensionMonth.tax.allOldAgeMan,
-    )) {
-      addCoverageAnnualPensionMan(
-        annualPensionAllOldAgeByYear,
-        year,
-        memberId,
-        amount,
-      );
+    // 税計算へ渡す老齢年金も、CFの現金収入と同じ偶数月・前2か月分の
+    // 実支払ベースにそろえる。遺族年金は tax.allOldAgeMan に含めていない。
+    if (month % 2 === 0) {
+      const oneMonthAgoTax =
+        getPensionMonth(prevCalendarIndex(idx)).tax.allOldAgeMan;
+      const twoMonthsAgoTax =
+        getPensionMonth(
+          prevCalendarIndex(prevCalendarIndex(idx)),
+        ).tax.allOldAgeMan;
+      const memberIds = new Set([
+        ...Object.keys(oneMonthAgoTax),
+        ...Object.keys(twoMonthsAgoTax),
+      ]);
+      for (const memberId of memberIds) {
+        addCoverageAnnualPensionMan(
+          annualPensionAllOldAgeByYear,
+          year,
+          memberId,
+          (oneMonthAgoTax[memberId] ?? 0) +
+            (twoMonthsAgoTax[memberId] ?? 0),
+        );
+      }
     }
     survivorBasic += monthBasic;
     childAllowance += monthChildAllowance;
