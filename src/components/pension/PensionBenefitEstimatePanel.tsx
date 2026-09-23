@@ -159,13 +159,6 @@ function allVisible(): Record<SeriesKey, boolean> {
   };
 }
 
-function noneVisible(): Record<SeriesKey, boolean> {
-  return {
-    oldAgeBasic: false,
-    oldAgeEmployeesGeneral: false,
-    oldAgeEmployeesPublic: false,
-  };
-}
 
 function stackTotal(
   point: PensionBenefitChartPoint,
@@ -203,23 +196,23 @@ function PensionBenefitTooltip({
   if (rows.length === 0 && total === 0) return null;
 
   return (
-    <div className="lifetime-chart-tooltip">
-      <p className="lifetime-chart-tooltip-title">
+    <div className="education-chart-tooltip pension-chart-tooltip">
+      <p className="education-chart-tooltip-title">
         {point.calendarYear}年（{point.headAge}歳）
       </p>
-      <div className="lifetime-chart-tooltip-body">
+      <div className="education-chart-tooltip-body">
         {rows.map((item) => (
-          <p key={item.key} className="lifetime-chart-tooltip-row">
+          <p key={item.key} className="education-chart-tooltip-row pension-chart-tooltip-row">
             <span
-              className="lifetime-chart-tooltip-swatch"
+              className="education-chart-tooltip-swatch"
               style={{ backgroundColor: item.color }}
             />
             <span>{item.label}</span>
             <span>{formatTooltipMan(point[item.key])}</span>
           </p>
         ))}
-        <p className="lifetime-chart-tooltip-row lifetime-chart-tooltip-row--emphasis">
-          <span className="lifetime-chart-tooltip-swatch" />
+        <p className="education-chart-tooltip-row pension-chart-tooltip-row pension-chart-tooltip-row--emphasis">
+          <span className="education-chart-tooltip-swatch" />
           <span>合計</span>
           <span>{formatTooltipMan(total)}</span>
         </p>
