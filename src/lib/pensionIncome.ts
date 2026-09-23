@@ -1002,7 +1002,7 @@ function getTransferAdditionYenPerYear(
   if (onOrAfterApril(1946)) return 113_528;   // 昭和21〜22 (0.467)
   if (onOrAfterApril(1945)) return 119_848;   // 昭和20〜21 (0.493)
   if (onOrAfterApril(1944)) return 126_412;   // 昭和19〜20 (0.520)
-  if (onOrAfterApril(1943)) return 132_975;   // 昭和18〜19 (0.547)
+  if (onOrAfterApril(1943)) return 132_976;   // 昭和18〜19 (0.547)
   if (onOrAfterApril(1942)) return 139_296;   // 昭和17〜18 (0.573)
   if (onOrAfterApril(1941)) return 145_860;   // 昭和16〜17 (0.600)
   if (onOrAfterApril(1940)) return 152_424;   // 昭和15〜16 (0.627)
@@ -1036,6 +1036,7 @@ function calcTransferAdditionMonthlyMan(
   headIncomeEntries: IncomeEntry[],
   spouseMember: FamilyMember,
   spouseMemberState: PensionMemberState,
+  spouseIncomeEntries: IncomeEntry[],
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -1049,6 +1050,20 @@ function calcTransferAdditionMonthlyMan(
   // 配偶者の生年月日から振替加算額を取得（対象外なら0）
   const yenPerYear = getTransferAdditionYenPerYear(spouseBirthYear, resolveMemberBirthMonth(spouseMember));
   if (yenPerYear <= 0) return 0;
+
+  // 振替加算を受ける本人の厚生年金・共済加入が240月以上なら対象外。
+  const spouseEmployeesMonths = getTotalEmployeesMonthsForDependentQualification(
+    spouseMember,
+    spouseMemberState,
+    spouseIncomeEntries,
+    referenceDate,
+  );
+  if (
+    spouseEmployeesMonths.general + spouseEmployeesMonths.publicServant >=
+    DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
+    return 0;
+  }
 
   // 配偶者が老齢基礎年金の受給開始年齢に達しているか確認
   const spouseSettings =
@@ -1156,6 +1171,7 @@ export function calcMonthlyPensionEntitlementBreakdownMan(
       headEntries,
       spouseMember,
       spouseState,
+      incomeByMember[spouseMember.id] ?? [],
       referenceDate,
       calendarYear,
       calendarMonth,
