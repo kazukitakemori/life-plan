@@ -57,11 +57,12 @@ export function resolveMemberBirthDay(
   return member?.birthDay ?? fallback;
 }
 
-/** 旧データ互換: birthDay 欠落を null で補完 */
+/** 旧データ互換: 欠落した任意項目を安全な未設定値で補完 */
 export function migrateFamilyMember(member: FamilyMember): FamilyMember {
   return {
     ...member,
     birthDay: member.birthDay ?? null,
+    disabilityPension: member.disabilityPension ?? 'none',
   };
 }
 
@@ -80,6 +81,7 @@ export function createFamilyMember(role: FamilyMemberRole): FamilyMember {
     gender: defaultGender(role),
     expectedLifespan: 90,
     disability: 'none',
+    disabilityPension: 'none',
     hobbies: [],
     householdPeriod: defaultHouseholdPeriod(role),
   };
