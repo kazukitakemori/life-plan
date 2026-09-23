@@ -42,6 +42,8 @@ import {
   getTotalEmployeesMonths,
 } from './pensionIncome';
 import { toMonthlyMan } from './pensionOldAge';
+import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import { buildMemberYearIncomeProfileFromOverride } from './priorYearIncomeResolution';
 import { calcProportionalPartAnnualYen } from './pensionProportionalPart';
 import {
   listEligibleSurvivorBasicChildren,
@@ -53,7 +55,11 @@ import {
   type SurvivorEmployeesDetail,
 } from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
-import type { IncomeByMember, IncomeEntry } from '../types/income';
+import type {
+  IncomeByMember,
+  IncomeEntry,
+  PriorYearIncomeByMember,
+} from '../types/income';
 import type { PensionByMember, PensionMemberState } from '../types/pension';
 import type { CalendarYearMonth } from './housingLoanAmortization';
 import type { RequiredCoverageSubject } from '../types/requiredCoverage';
@@ -391,6 +397,133 @@ function fiveYearEnd(death: CalendarYearMonth): CalendarYearMonth {
     year: Math.floor((total - 1) / 12),
     month: ((total - 1) % 12) + 1,
   };
+}
+
+/**
+ * 2028年改正後の継続給付で参照する所得年。
+ * 法律上、1〜9月分は前々年、10〜12月分は前年の所得を参照する。
+ */
+export function resolveSurvivorContinuationIncomeReferenceYear(
+  paymentYear: number,
+  paymentMonth: number,
+): number {
+  return paymentYear - (paymentMonth <= 9 ? 2 : 1);
+}
+
+export type SurvivorContinuationIncomeBasisResolution =
+  | 'q7_reference_year'
+  | 'prior_year_override'
+  | 'unavailable';
+
+export interface SurvivorContinuationIncomeBasis {
+  incomeReferenceYear: number;
+  /** 税務上の合計所得金額ベース（円）。自動推計できない場合はnull。 */
+  totalIncomeYen: number | null;
+  resolution: SurvivorContinuationIncomeBasisResolution;
+  /**
+   * Q7や「前年度の収入」から組み立てるため、税務署・自治体の確定所得そのものではない。
+   * 継続給付の最終判定では公式所得情報による確認が必要。
+   */
+  isEstimate: true;
+}
+
+/**
+ * 継続給付の「前年所得」の概算元を解決する。
+ *
+ * residentTax用の resolveMemberPriorYearIncome は、試算初年度に現年収proxyを使うことが
+ * あるため、そのまま流用しない。法律で指定された参照暦年を直接Q7から組み立てる。
+ * Q7「前年度の収入」上書きは、試算開始年の前年を参照する場合だけ利用する。
+ */
+export function resolveSurvivorContinuationIncomeBasis(input: {
+  recipient: FamilyMember;
+  incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: PriorYearIncomeByMember;
+  referenceDate: Date;
+  paymentYear: number;
+  paymentMonth: number;
+}): SurvivorContinuationIncomeBasis {
+  const incomeReferenceYear = resolveSurvivorContinuationIncomeReferenceYear(
+    input.paymentYear,
+    input.paymentMonth,
+  );
+  const simulationStartYear = input.referenceDate.getFullYear();
+  const priorOverride = input.priorYearIncomeByMember?.[input.recipient.id];
+
+  if (
+    incomeReferenceYear === simulationStartYear - 1 &&
+    priorOverride?.differsFromCurrentYear
+  ) {
+    const profile = buildMemberYearIncomeProfileFromOverride(priorOverride);
+    return {
+      incomeReferenceYear,
+      totalIncomeYen: Math.round(profile.totalIncomeMan * 10_000),
+      resolution: 'prior_year_override',
+      isEstimate: true,
+    };
+  }
+
+  const entries = input.incomeByMember[input.recipient.id] ?? [];
+  if (entries.length === 0) {
+    return {
+      incomeReferenceYear,
+      totalIncomeYen: null,
+      resolution: 'unavailable',
+      isEstimate: true,
+    };
+  }
+
+  const profile = resolveMemberYearIncomeProfile(
+    input.recipient,
+    entries,
+    input.referenceDate,
+    incomeReferenceYear,
+    1,
+    12,
+  );
+  return {
+    incomeReferenceYear,
+    totalIncomeYen: Math.round(profile.totalIncomeMan * 10_000),
+    resolution: 'q7_reference_year',
+    isEstimate: true,
+  };
+}
+
+export interface SurvivorContinuationIncomeThresholdsYen {
+  first: number;
+  second: number;
+}
+
+/**
+ * 2028年改正後の継続給付の所得による年額支給停止額。
+ *
+ * 厚生年金保険法65条2項の確定式のみを実装する。
+ * - 第一所得基準額超〜第二所得基準額以下: 超過額の1/3
+ * - 第二所得基準額超: 第一〜第二の1/3 + 第二超過分の1/2
+ * - 支給停止額は年金年額を上限とする
+ *
+ * 第一・第二所得基準額そのものは政令事項のため、呼び出し側が公式確定値を
+ * 渡せる場合に限って使用する。目安値をここへ固定しない。
+ */
+export function calcSurvivorContinuationSuspensionYen(input: {
+  priorIncomeYen: number;
+  annualPensionYen: number;
+  thresholds: SurvivorContinuationIncomeThresholdsYen;
+}): number {
+  const income = Math.max(0, input.priorIncomeYen);
+  const pension = Math.max(0, input.annualPensionYen);
+  const first = Math.max(0, input.thresholds.first);
+  const second = Math.max(first, input.thresholds.second);
+
+  let suspension = 0;
+  if (income > second) {
+    suspension =
+      (second - first) / 3 +
+      (income - second) / 2;
+  } else if (income > first) {
+    suspension = (income - first) / 3;
+  }
+
+  return Math.min(pension, Math.max(0, suspension));
 }
 
 function isOnOrAfterAge(
