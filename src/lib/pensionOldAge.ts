@@ -33,17 +33,20 @@ export function getOldAgeAmountFactor(
 }
 
 /**
- * 生年月から繰上げ減額率を返す。
- * 昭和37年4月2日が制度境界だが本アプリは日を保持しないため、1962年4月生まれは
- * 現行率0.4%として扱う。1962年3月以前は旧率0.5%、1962年5月以降は0.4%。
+ * 生年月日から繰上げ減額率を返す。
+ * 昭和37年4月2日以後生まれは1月あたり0.4%、同年4月1日以前生まれは0.5%。
+ * 生年月日の日が未入力の1962年4月だけは、過大な減額を避けるため現行率0.4%で概算する。
  */
 export function getEarlyClaimReductionPerMonthByBirth(
   birthYear: number,
   birthMonth: number,
+  birthDay?: number | null,
 ): number {
-  if (birthYear < 1962 || (birthYear === 1962 && birthMonth < 4)) {
-    return EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY;
-  }
+  if (birthYear < 1962) return EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY;
+  if (birthYear > 1962) return EARLY_CLAIM_REDUCTION_PER_MONTH;
+  if (birthMonth < 4) return EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY;
+  if (birthMonth > 4) return EARLY_CLAIM_REDUCTION_PER_MONTH;
+  if (birthDay === 1) return EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY;
   return EARLY_CLAIM_REDUCTION_PER_MONTH;
 }
 
