@@ -237,7 +237,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   );
   const explicitKind = classifyEmployeesEnrollment(active);
 
-  if (explicitKind) {
+  if (explicitKind && active) {
     return {
       kind: explicitKind,
       monthlyAmountMan: active.monthlyAmountMan,
