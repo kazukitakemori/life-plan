@@ -602,7 +602,7 @@ export function BenefitSettingsSection({
                   })
                 }
               >
-                <option value="auto">ねんきん定期便から自動確認</option>
+                <option value="auto">入力内容から自動判定</option>
                 <option value="met">満たしている</option>
                 <option value="not_met">満たしていない</option>
               </select>
