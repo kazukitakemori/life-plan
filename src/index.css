@@ -14514,6 +14514,22 @@ button:disabled {
   background: #e3f2fd;
 }
 
+.loan-entry-card-main {
+  display: flex;
+  flex: 1 1 360px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.loan-entry-card-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
 .loan-entry-card-wrap--expanded .loan-entry-card {
   border-radius: 8px 8px 0 0;
 }
@@ -14537,8 +14553,23 @@ button:disabled {
 }
 
 .loan-entry-summary {
+  min-width: 0;
   font-size: 0.8125rem;
+  line-height: 1.45;
   color: #666;
+  overflow-wrap: anywhere;
+}
+
+.loan-entry-link-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid #a7d7b2;
+  border-radius: 999px;
+  background: #f0f8f2;
+  color: #2e6b3d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .loan-entry-housing-badge {
@@ -14554,7 +14585,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 100px;
+  width: 124px;
   flex-shrink: 0;
   padding: 6px 12px;
   border: 1px solid #ccc;
@@ -14571,15 +14602,94 @@ button:disabled {
   color: #fff;
 }
 
-.loan-entry-card .housing-row-remove {
-  margin-left: auto;
-  flex-shrink: 0;
+.loan-entry-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 18px 16px;
+  background: #fff;
+}
+
+.loan-entry-remove-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loan-entry-remove-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
 }
 
 .loan-entry-detail {
   padding: 16px 18px 18px;
   border-top: 1px solid #bbdefb;
   background: #fff;
+}
+
+@media (max-width: 720px) {
+  .loan-section {
+    margin-bottom: 20px;
+  }
+
+  .loan-entry-list {
+    gap: 10px;
+  }
+
+  .loan-entry-card {
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .loan-entry-card-main {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .loan-entry-card-heading {
+    align-items: flex-start;
+  }
+
+  .loan-entry-name-input {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  .loan-entry-name-label {
+    flex: 1 1 100%;
+    font-size: 0.875rem;
+  }
+
+  .loan-entry-summary {
+    white-space: normal;
+  }
+
+  .loan-entry-open-btn {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .loan-entry-detail {
+    padding: 14px 12px 16px;
+  }
+
+  .loan-entry-card-footer {
+    padding: 0 12px 14px;
+  }
+
+  .loan-entry-remove-btn {
+    width: 100%;
+    min-height: 40px;
+  }
 }
 
 .loan-settings-table-card {
