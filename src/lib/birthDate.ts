@@ -3,7 +3,8 @@ import { formatReferenceMonthLabel } from './simulationTiming';
 import type { FamilyMember } from '../types/family';
 
 export function getMemberAgeMonth(
-  member: Pick<FamilyMember, 'age' | 'birthMonth' | 'birthDay'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth'> &
+    Partial<Pick<FamilyMember, 'birthDay'>>,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
