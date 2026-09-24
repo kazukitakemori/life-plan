@@ -145,7 +145,7 @@ headIncome.periods[0].monthlyAmountMan = 50;
 const pension = createDefaultPensionMemberState();
 
 {
-  // Q7で会社員と分かっても、過去の納付実績までは推測しない。
+  // Q7の厚生年金加入期間が直近1年を覆わない場合は、納付要件を推測しない。
   const autoAssessment = resolveSurvivorPremiumRequirementAssessment(
     head,
     pension,
@@ -214,7 +214,36 @@ const pension = createDefaultPensionMemberState();
     ),
     'none',
   );
-  console.log('OK premium requirement is not inferred from Q7; manual confirmation controls eligibility');
+  console.log('OK incomplete Q7 history does not over-assume the premium requirement');
+}
+
+{
+  // Q7で死亡月の前々月までの直近12か月すべて厚生年金加入と確認できる場合は、
+  // 直近1年要件を満たすものとして自動判定できる。
+  const q7CoveredIncome = createIncomeEntry(head.id, 'employee', 39, 8, head);
+  q7CoveredIncome.periods[0].monthlyAmountMan = 50;
+
+  assert.deepEqual(
+    resolveSurvivorPremiumRequirementAssessment(
+      head,
+      pension,
+      referenceDate,
+      death,
+      [q7CoveredIncome],
+    ),
+    { status: 'met', basis: 'one_year_no_unpaid' },
+  );
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      head,
+      [q7CoveredIncome],
+      pension,
+      referenceDate,
+      death,
+    ),
+    'short_term',
+  );
+  console.log('OK Q7 continuous employees coverage can confirm the one-year premium exception');
 }
 
 {
