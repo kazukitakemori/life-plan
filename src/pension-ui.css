@@ -206,8 +206,13 @@
   border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
-.pension-step .benefit-survivor-section-heading .benefit-settings-block-title {
-  margin-bottom: 12px;
+
+.pension-step .benefit-survivor-assessment {
+  margin: 6px 0 0;
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .pension-step .benefit-settings-block--optional {
