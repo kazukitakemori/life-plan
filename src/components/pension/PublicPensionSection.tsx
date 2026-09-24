@@ -1,5 +1,4 @@
 import type { FamilyMember } from '../../types/family';
-import type { IncomeEntry } from '../../types/income';
 import type {
   PastEnrollmentMode,
   PensionMemberState,
@@ -9,7 +8,6 @@ import {
   resolveOver50GeneralSpecialStartAge,
   resolveOver50PublicPrivateSpecialStartAge,
 } from '../../lib/pensionIncome';
-import { resolveSurvivorPremiumRequirementAssessment } from '../../lib/survivorEmployeesPension';
 import {
   createDefaultBenefitSettings,
   createDefaultTeikibinOver50Form,
@@ -27,7 +25,6 @@ interface PublicPensionSectionProps {
   member: FamilyMember;
   referenceDate: Date;
   memberState: PensionMemberState;
-  incomeEntries: IncomeEntry[];
   onChange: (state: PensionMemberState) => void;
 }
 
@@ -39,19 +36,19 @@ const PENSION_SOURCE_OPTIONS: Array<{
 }> = [
   {
     value: 'none',
-    title: '収入情報から概算',
-    description: 'Q7「収入」の内容から加入状況を推定して試算します。',
+    title: '入力内容から試算',
+    description: 'Q1・Q7などの入力内容から公的年金を試算します。',
     badge: 'かんたん',
   },
   {
     value: 'nenkin-teikibin-under50',
-    title: 'ねんきん定期便から入力',
-    description: '50歳未満の方向けの定期便をお持ちの場合。',
+    title: 'ねんきん定期便から試算',
+    description: '50歳未満の方向けの定期便をもとに試算します。',
   },
   {
     value: 'nenkin-teikibin-over50',
-    title: 'ねんきん定期便から入力',
-    description: '50歳以上の方向けの定期便をお持ちの場合。',
+    title: 'ねんきん定期便から試算',
+    description: '50歳以上の方向けの定期便をもとに試算します。',
   },
 ];
 
@@ -59,7 +56,6 @@ export function PublicPensionSection({
   member,
   referenceDate,
   memberState,
-  incomeEntries,
   onChange,
 }: PublicPensionSectionProps) {
   const { pastEnrollment, teikibinUnder50, teikibinOver50, benefitSettings } =
@@ -81,23 +77,6 @@ export function PublicPensionSection({
     pastEnrollment === 'nenkin-teikibin-over50'
       ? resolveOver50PublicPrivateSpecialStartAge(resolvedTeikibinOver50)
       : null;
-  const survivorPremiumAssessment =
-    resolveSurvivorPremiumRequirementAssessment(
-      member,
-      memberState,
-      referenceDate,
-      {
-        year: referenceDate.getFullYear(),
-        month: referenceDate.getMonth() + 1,
-      },
-      incomeEntries,
-    );
-  const survivorPremiumAssessmentReason =
-    survivorPremiumAssessment.status !== 'unconfirmed'
-      ? null
-      : pastEnrollment === 'none'
-        ? 'Q7だけでは直近1年の厚生年金加入を確認できないため'
-        : '入力された加入記録だけでは納付要件を確認できないため';
 
   const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
     onChange({ ...memberState, pastEnrollment: mode });
@@ -205,8 +184,6 @@ export function PublicPensionSection({
         specialEmployeesStartAge={specialEmployeesStartAge}
         generalSpecialStartAge={generalSpecialStartAge}
         publicSpecialStartAge={publicSpecialStartAge}
-        survivorPremiumAssessmentStatus={survivorPremiumAssessment.status}
-        survivorPremiumAssessmentReason={survivorPremiumAssessmentReason}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
