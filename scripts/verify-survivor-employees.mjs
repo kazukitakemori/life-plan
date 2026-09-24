@@ -221,6 +221,8 @@ const pension = createDefaultPensionMemberState();
   // Q7で死亡月の前々月までの直近12か月すべて厚生年金加入と確認できる場合は、
   // 直近1年要件を満たすものとして自動判定できる。
   const q7CoveredIncome = createIncomeEntry(head.id, 'employee', 39, 8, head);
+  q7CoveredIncome.periods[0].startAge = 39;
+  q7CoveredIncome.periods[0].startMonth = 8;
   q7CoveredIncome.periods[0].monthlyAmountMan = 50;
 
   assert.deepEqual(
