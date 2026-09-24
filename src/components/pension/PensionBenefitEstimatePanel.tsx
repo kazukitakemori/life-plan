@@ -219,6 +219,13 @@ function PensionBenefitTooltip({
           <span>合計</span>
           <span>{formatTooltipMan(total)}</span>
         </p>
+        {point.familyAdditions > 0 ? (
+          <p className="education-chart-tooltip-row pension-chart-tooltip-row pension-chart-tooltip-row--note">
+            <span className="education-chart-tooltip-swatch" />
+            <span>うち加給・子の加算・振替</span>
+            <span>{formatTooltipMan(point.familyAdditions)}</span>
+          </p>
+        ) : null}
       </div>
     </div>
   );
@@ -341,7 +348,7 @@ export function PensionBenefitEstimatePanel({
     >
       <div className="pension-chart-title-row">
         <h3 className="education-chart-title pension-chart-title">
-          老齢年金（年額・万円）
+          老齢年金（年間受取額・万円）
         </h3>
         <div className="pension-chart-desktop-controls">
           <CoverageChartZoomToolbar
