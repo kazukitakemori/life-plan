@@ -9,6 +9,7 @@ interface CloudPlanEnvelope {
 
 interface CloudPlansResponse {
   plans?: CloudPlanEnvelope[];
+  deletedPlanIds?: string[];
   plan?: PlanRecord;
   revision?: number;
   error?: string;
@@ -40,6 +41,11 @@ function isPositiveRevision(value: unknown): value is number {
 
 export class CloudPlanRepository implements PlanRepository {
   private readonly revisions = new Map<string, number>();
+  private readonly deletedPlanIds = new Set<string>();
+
+  isDeleted(id: string): boolean {
+    return this.deletedPlanIds.has(id);
+  }
 
   async listSummaries(): Promise<PlanSummary[]> {
     const records = await this.listAll();
@@ -55,6 +61,10 @@ export class CloudPlanRepository implements PlanRepository {
     });
     const body = await readResponse(response);
     this.revisions.clear();
+    this.deletedPlanIds.clear();
+    for (const id of body.deletedPlanIds ?? []) {
+      this.deletedPlanIds.add(id);
+    }
     return (body.plans ?? []).map(({ plan, revision }) => {
       const migrated = migratePlanRecord(plan);
       if (isPositiveRevision(revision)) {
@@ -71,6 +81,11 @@ export class CloudPlanRepository implements PlanRepository {
     });
     if (response.status === 404) {
       this.revisions.delete(id);
+      return null;
+    }
+    if (response.status === 410) {
+      this.revisions.delete(id);
+      this.deletedPlanIds.add(id);
       return null;
     }
     const body = await readResponse(response);
@@ -95,6 +110,7 @@ export class CloudPlanRepository implements PlanRepository {
       },
     );
     const body = await readResponse(response);
+    this.deletedPlanIds.delete(toSave.id);
     if (isPositiveRevision(body.revision)) {
       this.revisions.set(toSave.id, body.revision);
     }
@@ -122,5 +138,6 @@ export class CloudPlanRepository implements PlanRepository {
     );
     await readResponse(response);
     this.revisions.delete(id);
+    this.deletedPlanIds.add(id);
   }
 }
