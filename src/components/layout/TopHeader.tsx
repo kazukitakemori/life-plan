@@ -36,6 +36,8 @@ interface TopHeaderProps {
   onAssetBuildingTabChange?: (tab: AssetBuildingTabId) => void;
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
   onRequiredCoverageRiskKindChange?: (kind: RequiredCoverageRiskKind) => void;
+  operatorPersonalInfoHidden?: boolean;
+  onOperatorPersonalInfoHiddenChange?: (hidden: boolean) => void;
 }
 
 function isHeaderTabEnabled(
@@ -85,6 +87,8 @@ export function TopHeader({
   onAssetBuildingTabChange,
   requiredCoverageRiskKind = 'death',
   onRequiredCoverageRiskKindChange,
+  operatorPersonalInfoHidden = false,
+  onOperatorPersonalInfoHiddenChange,
 }: TopHeaderProps) {
   const { isFullscreen, toggleFullscreen } = useShellFullscreen();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -606,6 +610,17 @@ export function TopHeader({
               );
             })}
           </nav>
+          {isLicensed && onOperatorPersonalInfoHiddenChange ? (
+            <button
+              type="button"
+              className={operatorPersonalInfoHidden ? 'top-header-fullscreen-btn is-active' : 'top-header-fullscreen-btn'}
+              aria-pressed={operatorPersonalInfoHidden}
+              title="保存データは変更せず、画面上の個人情報だけを隠します"
+              onClick={() => onOperatorPersonalInfoHiddenChange(!operatorPersonalInfoHidden)}
+            >
+              {operatorPersonalInfoHidden ? '個人情報：非表示' : '個人情報：表示'}
+            </button>
+          ) : null}
           <button
             type="button"
             className={
