@@ -64,10 +64,15 @@
   }
 
   .pension-step .teikibin-block {
+    overflow: visible;
+    padding-bottom: 4px;
+  }
+
+  .pension-step .teikibin-table-scroll {
+    max-width: 100%;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 4px;
   }
 
   .pension-step .teikibin-period-table,
