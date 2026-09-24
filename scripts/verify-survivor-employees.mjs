@@ -220,8 +220,8 @@ const pension = createDefaultPensionMemberState();
 }
 
 {
-  // Q7で死亡月の前々月までの直近12か月すべて厚生年金加入と確認できる場合は、
-  // 直近1年要件を満たすものとして自動判定できる。
+  // 「入力内容から試算」では標準加入前提を優先するため、
+  // Q7で直近12か月を確認できる場合でも結果は標準前提として扱う。
   const q7CoveredIncome = createIncomeEntry(head.id, 'employee', 39, 6, head);
   q7CoveredIncome.periods[0].startAge = 39;
   q7CoveredIncome.periods[0].startMonth = 6;
@@ -235,7 +235,7 @@ const pension = createDefaultPensionMemberState();
       death,
       [q7CoveredIncome],
     ),
-    { status: 'met', basis: 'one_year_no_unpaid' },
+    { status: 'met', basis: 'standard_assumption' },
   );
   assert.equal(
     resolveSurvivorEmployeesDeathRequirement(
