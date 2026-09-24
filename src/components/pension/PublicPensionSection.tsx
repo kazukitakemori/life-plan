@@ -1,6 +1,13 @@
 import type { FamilyMember } from '../../types/family';
-import type { PensionMemberState } from '../../types/pension';
-import { PAST_ENROLLMENT_OPTIONS, type PastEnrollmentMode } from '../../types/pension';
+import type {
+  PastEnrollmentMode,
+  PensionMemberState,
+} from '../../types/pension';
+import {
+  resolveOver50AnySpecialStartAge,
+  resolveOver50GeneralSpecialStartAge,
+  resolveOver50PublicPrivateSpecialStartAge,
+} from '../../lib/pensionIncome';
 import {
   createDefaultBenefitSettings,
   createDefaultTeikibinOver50Form,
@@ -15,15 +22,37 @@ import {
 
 interface PublicPensionSectionProps {
   member: FamilyMember;
-  headOfHouseholdLabel: string;
   referenceDate: Date;
   memberState: PensionMemberState;
   onChange: (state: PensionMemberState) => void;
 }
 
+const PENSION_SOURCE_OPTIONS: Array<{
+  value: PastEnrollmentMode;
+  title: string;
+  description: string;
+  badge?: string;
+}> = [
+  {
+    value: 'none',
+    title: '収入情報から概算',
+    description: 'Q7「収入」の内容から加入状況を推定して試算します。',
+    badge: 'かんたん',
+  },
+  {
+    value: 'nenkin-teikibin-under50',
+    title: 'ねんきん定期便から入力',
+    description: '50歳未満の方向けの定期便をお持ちの場合。',
+  },
+  {
+    value: 'nenkin-teikibin-over50',
+    title: 'ねんきん定期便から入力',
+    description: '50歳以上の方向けの定期便をお持ちの場合。',
+  },
+];
+
 export function PublicPensionSection({
   member,
-  headOfHouseholdLabel,
   referenceDate,
   memberState,
   onChange,
@@ -35,6 +64,18 @@ export function PublicPensionSection({
   const resolvedTeikibinOver50 = migrateTeikibinOver50Form(
     teikibinOver50 ?? createDefaultTeikibinOver50Form(),
   );
+  const specialEmployeesStartAge =
+    pastEnrollment === 'nenkin-teikibin-over50'
+      ? resolveOver50AnySpecialStartAge(resolvedTeikibinOver50)
+      : null;
+  const generalSpecialStartAge =
+    pastEnrollment === 'nenkin-teikibin-over50'
+      ? resolveOver50GeneralSpecialStartAge(resolvedTeikibinOver50)
+      : null;
+  const publicSpecialStartAge =
+    pastEnrollment === 'nenkin-teikibin-over50'
+      ? resolveOver50PublicPrivateSpecialStartAge(resolvedTeikibinOver50)
+      : null;
 
   const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
     onChange({ ...memberState, pastEnrollment: mode });
@@ -42,10 +83,10 @@ export function PublicPensionSection({
 
   return (
     <section className="pension-section">
-      <h3 className="pension-section-title">1. 公的年金</h3>
+      <h3 className="pension-section-title">公的年金</h3>
 
       <div className="pension-subsection">
-        <h4 className="pension-subsection-title">(1) 年金加入実績</h4>
+        <h4 className="pension-subsection-title">加入実績</h4>
 
         <EnrollmentTimeline
           member={member}
@@ -68,68 +109,100 @@ export function PublicPensionSection({
         />
 
         <div className="pension-enrollment-panel">
-          <div className="pension-enrollment-field">
-            <label
-              className="pension-enrollment-label"
-              htmlFor={`past-enrollment-${member.id}`}
-            >
-              過去の加入実績：
-            </label>
-            <select
-              id={`past-enrollment-${member.id}`}
-              className="select-input pension-enrollment-select"
-              value={pastEnrollment}
-              onChange={(e) =>
-                handlePastEnrollmentChange(e.target.value as PastEnrollmentMode)
-              }
-            >
-              {PAST_ENROLLMENT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
+          <fieldset className="pension-source-choice">
+            <legend className="pension-enrollment-label">
+              試算に使う情報
+            </legend>
+            <div className="pension-source-options">
+              {PENSION_SOURCE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className="pension-source-option"
+                >
+                  <input
+                    type="radio"
+                    name={`past-enrollment-${member.id}`}
+                    value={option.value}
+                    checked={pastEnrollment === option.value}
+                    onChange={() => handlePastEnrollmentChange(option.value)}
+                  />
+                  <span className="pension-source-option-copy">
+                    <span className="pension-source-option-title-row">
+                      <span className="pension-source-option-title">
+                        {option.title}
+                      </span>
+                      {option.badge ? (
+                        <span className="pension-source-option-badge">
+                          {option.badge}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="pension-source-option-description">
+                      {option.description}
+                    </span>
+                  </span>
+                </label>
               ))}
-            </select>
-            <span
-              className="pension-help-icon"
-              title="過去の年金加入実績について"
-            >
-              ?
-            </span>
-          </div>
+            </div>
+          </fieldset>
 
           {pastEnrollment === 'none' && (
-            <div className="pension-info-box">
+            <div className="pension-info-box pension-info-box--estimate">
               <p className="pension-info-emphasis">
-                ※ 正確な年金額を算出するには、可能な限り入力してください。
+                ねんきん定期便が手元になくても試算できます。
               </p>
               <p>
-                プルダウンから「ねんきん定期便（50歳未満の方タイプ）」または「ねんきん定期便（50歳以上の方タイプ）」を選択すると、ねんきん定期便の内容をそのまま入力できます。
-                入力しない場合は、収入設定の内容をもとに加入実績を推定します。大卒22歳4月就職を想定し、20歳4月〜22歳3月の24か月は大学在学中の国民年金猶予（保険料未納）として老齢基礎年金の算定から除外します。
+                Q7「収入」の内容をもとに、これまでと今後の加入状況を推定して老齢年金額を計算します。
               </p>
+              <p>
+                遺族年金の保険料納付要件は収入情報から推測しません。ねんきん定期便がない場合は、「受給設定」で確認結果を指定できます。
+              </p>
+              <details className="pension-assumption-details">
+                <summary>概算の前提を見る</summary>
+                <p>
+                  現在の推定では、大卒22歳4月就職を想定し、20歳4月〜22歳3月の24か月は学生納付特例等を利用し、追納していない期間として老齢基礎年金額の算定から除外します。この期間は老齢年金の10年受給資格期間には含めます。
+                </p>
+              </details>
             </div>
           )}
 
           {pastEnrollment === 'nenkin-teikibin-under50' && (
-            <NenkinTeikibinUnder50FormPanel
-              form={teikibinUnder50}
-              onChange={(form) => onChange({ ...memberState, teikibinUnder50: form })}
-            />
+            <>
+              <p className="pension-source-helper">
+                お手元のねんきん定期便を見ながら、同じ項目を入力してください。
+              </p>
+              <NenkinTeikibinUnder50FormPanel
+                form={teikibinUnder50}
+                onChange={(form) =>
+                  onChange({ ...memberState, teikibinUnder50: form })
+                }
+              />
+            </>
           )}
 
           {pastEnrollment === 'nenkin-teikibin-over50' && (
-            <NenkinTeikibinOver50FormPanel
-              form={resolvedTeikibinOver50}
-              onChange={(form) =>
-                onChange({ ...memberState, teikibinOver50: form })
-              }
-            />
+            <>
+              <p className="pension-source-helper">
+                お手元のねんきん定期便を見ながら、同じ項目を入力してください。
+              </p>
+              <NenkinTeikibinOver50FormPanel
+                form={resolvedTeikibinOver50}
+                onChange={(form) =>
+                  onChange({ ...memberState, teikibinOver50: form })
+                }
+              />
+            </>
           )}
         </div>
       </div>
 
       <BenefitSettingsSection
+        member={member}
+        referenceDate={referenceDate}
         settings={resolvedBenefitSettings}
-        headOfHouseholdLabel={headOfHouseholdLabel}
+        specialEmployeesStartAge={specialEmployeesStartAge}
+        generalSpecialStartAge={generalSpecialStartAge}
+        publicSpecialStartAge={publicSpecialStartAge}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }

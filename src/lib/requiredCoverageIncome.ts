@@ -1,4 +1,4 @@
-import { getMemberAgeMonth } from './birthDate';
+import { calcBirthYear, getMemberAgeMonth } from './birthDate';
 import { calcHouseholdMonthlyChildAllowanceMan } from './childAllowance';
 import {
   calcMonthlyEarnedIncomeBreakdown,
@@ -15,25 +15,36 @@ import {
 import { canAddSideBusinessIncome } from './incomeGuidance';
 import type { AddIncomeOption } from './incomeLabels';
 import { getMemberTabLabel } from './memberDisplay';
+import { isPensionSpouseLikeMember } from './familyDefaults';
+import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import { buildMemberYearIncomeProfileFromOverride } from './priorYearIncomeResolution';
 import {
   addCalendarMonths,
   type CalendarYearMonth,
 } from './housingLoanAmortization';
 import { createDefaultPensionMemberState } from './pensionDefaults';
 import {
-  calcMemberMonthlyPensionBreakdownMan,
+  calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan,
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
 import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
 import {
-  calcCoverageSurvivorBasicMonthlyMan,
+  calcCoverageSurvivorBasicDetailMonthlyMan,
   calcSurvivorBasicYenPerYear,
   listEligibleSurvivorBasicChildren,
 } from './survivorBasicPension';
-import { calcCoverageSurvivorEmployeesDetail } from './survivorEmployeesPension';
 import {
+  calcCoverageSurvivorEmployeesDetail,
+  hasConfirmedLongTermSurvivorQualification,
+  isEmployeesInsuredAt,
+  isSurvivorEmployeesSpouseIncomeRequirementRemovedAt,
+  resolveSurvivorPremiumRequirementAssessment,
+} from './survivorEmployeesPension';
+import {
+  createEmptyPensionBreakdown,
   createEmptySurvivorEmployeesDetail,
   sumIncomeBreakdown,
+  sumPensionBreakdown,
   sumOldAgeBasicDetail,
   sumOldAgeEmployeesPension,
   sumOldAgePension,
@@ -79,8 +90,194 @@ function ageMonthIndex(age: number, month: number): number {
   return age * 12 + month;
 }
 
+/**
+ * Q1「世帯主と生計を一にする期間」から、世帯主死亡時の生計同一を判定する。
+ * 生年月日が不明な場合は勝手に不該当とせず、確認不能として候補に残す。
+ */
+function isInHeadLivelihoodAt(
+  member: FamilyMember,
+  referenceDate: Date,
+  date: CalendarYearMonth,
+): boolean {
+  if (member.role === 'head') return true;
+  if (member.householdPeriod.mode === 'lifetime') return true;
+  const ageMonth = getMemberAgeMonth(
+    member,
+    referenceDate,
+    date.year,
+    date.month,
+  );
+  if (!ageMonth) return true;
+  return (
+    ageMonthIndex(ageMonth.age, ageMonth.month) <=
+    ageMonthIndex(
+      member.householdPeriod.endAge,
+      member.householdPeriod.endMonth,
+    )
+  );
+}
+
 function roundMan(value: number): number {
   return Math.round(value);
+}
+
+export type SurvivorLivelihoodIncomeAssessmentStatus =
+  | 'met'
+  | 'not_met'
+  | 'unconfirmed';
+
+export interface SurvivorLivelihoodIncomeAssessment {
+  status: SurvivorLivelihoodIncomeAssessmentStatus;
+  incomeReferenceYear: number;
+  grossRevenueMan: number | null;
+  totalIncomeMan: number | null;
+  resolution: 'prior_year_override' | 'q7_reference_year' | 'unavailable';
+}
+
+/**
+ * 遺族年金の生計維持に使う収入要件を、現在保存されているQ7情報から概算する。
+ * 収入850万円未満 または 所得655.5万円未満なら「確認できる範囲で満たす」。
+ * 基準以上でも、おおむね5年以内の収入低下見込み等の個別認定があり得るため、
+ * この関数だけで法的な不該当を確定するものではない。
+ */
+export function resolveSurvivorLivelihoodIncomeAssessment(input: {
+  recipient: FamilyMember;
+  /** 死亡前の前年収入判定に使うQ7収入 */
+  incomeByMember: IncomeByMember;
+  /** 死亡後おおむね5年以内の収入低下見込みに使う収入。未指定時はQ7を使用。 */
+  futureIncomeByMember?: IncomeByMember;
+  priorYearIncomeByMember?: CashFlowInput['priorYearIncomeByMember'];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+}): SurvivorLivelihoodIncomeAssessment {
+  const incomeReferenceYear = input.death.year - 1;
+  const simulationStartYear = input.referenceDate.getFullYear();
+  const override = input.priorYearIncomeByMember?.[input.recipient.id];
+
+  let grossRevenueMan: number | null = null;
+  let totalIncomeMan: number | null = null;
+  let resolution: SurvivorLivelihoodIncomeAssessment['resolution'] =
+    'unavailable';
+
+  if (
+    incomeReferenceYear === simulationStartYear - 1 &&
+    override?.differsFromCurrentYear
+  ) {
+    const profile = buildMemberYearIncomeProfileFromOverride(override);
+    grossRevenueMan = profile.grossRevenueMan;
+    // Q7の前年度上書きは「月額・収入区分」しか持たず、
+    // 自営業等の必要経費や雑所得等の所得計算材料までは保存していない。
+    // 給与系だけは給与所得控除から所得を概算できるが、それ以外は
+    // 850万円以上のときに655.5万円以上と断定しない。
+    const canEstimateTotalIncomeFromOverride =
+      override.category === 'employee' ||
+      override.category === 'civil_servant' ||
+      override.category === 'part_time';
+    totalIncomeMan = canEstimateTotalIncomeFromOverride
+      ? profile.totalIncomeMan
+      : null;
+    resolution = 'prior_year_override';
+  } else {
+    const entries = input.incomeByMember[input.recipient.id] ?? [];
+    if (entries.length > 0) {
+      const profile = resolveMemberYearIncomeProfile(
+        input.recipient,
+        entries,
+        input.referenceDate,
+        incomeReferenceYear,
+        1,
+        12,
+      );
+      if (profile.hasActiveIncomeBlock) {
+        grossRevenueMan = profile.grossRevenueMan;
+        totalIncomeMan = profile.totalIncomeMan;
+        resolution = 'q7_reference_year';
+      }
+    }
+  }
+
+  if (grossRevenueMan == null) {
+    return {
+      status: 'unconfirmed',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  if (grossRevenueMan < 850 || (totalIncomeMan != null && totalIncomeMan < 655.5)) {
+    return {
+      status: 'met',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  // 収入850万円以上でも所得額を確定できない場合は、
+  // 所得655.5万円未満の可能性が残るため不該当と断定しない。
+  if (totalIncomeMan == null) {
+    return {
+      status: 'unconfirmed',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+
+  // 基準以上でも、おおむね5年以内に基準未満へ下がる見込みがあれば
+  // 生計維持として認定され得る。Q7でその可能性が見える場合は不該当と断定しない。
+  const futureEntries =
+    input.futureIncomeByMember?.[input.recipient.id] ??
+    input.incomeByMember[input.recipient.id] ??
+    [];
+  if (futureEntries.length === 0) {
+    return {
+      status: 'unconfirmed',
+      incomeReferenceYear,
+      grossRevenueMan,
+      totalIncomeMan,
+      resolution,
+    };
+  }
+  for (let year = input.death.year; year <= input.death.year + 5; year += 1) {
+    const profile = resolveMemberYearIncomeProfile(
+      input.recipient,
+      futureEntries,
+      input.referenceDate,
+      year,
+      1,
+      12,
+    );
+    if (
+      !profile.hasActiveIncomeBlock ||
+      profile.grossRevenueMan < 850 ||
+      profile.totalIncomeMan < 655.5
+    ) {
+      return {
+        status: 'unconfirmed',
+        incomeReferenceYear,
+        grossRevenueMan,
+        totalIncomeMan,
+        resolution,
+      };
+    }
+  }
+
+  return {
+    status: 'not_met',
+    incomeReferenceYear,
+    grossRevenueMan,
+    totalIncomeMan,
+    resolution,
+  };
+}
+
+function isOnOrAfterSurvivorReformDate(date: CalendarYearMonth): boolean {
+  return date.year > 2028 || (date.year === 2028 && date.month >= 4);
 }
 
 export function createDefaultMemberWorkDesign(): RequiredCoverageMemberWorkDesign {
@@ -529,6 +726,7 @@ function extractSurvivorEmployeesPaymentParts(breakdown: PensionBreakdown): {
   const detail = breakdown.survivor.employees;
   const basic =
     detail.basic +
+    detail.children +
     detail.occupational +
     detail.transitional +
     detail.payment;
@@ -544,11 +742,11 @@ function calcCoveragePensionEntitlementMonth(
   input: Pick<CashFlowInput, 'pensionByMember' | 'referenceDate' | 'incomeByMember' | 'familyMembers'>,
   incomeByMember: IncomeByMember,
   household: FamilyMember[],
-  taxHeadId: string,
   calendarYear: number,
   calendarMonth: number,
   subject: RequiredCoverageSubject,
   death: CalendarYearMonth,
+  survivorEmployeesFamilyMembers: FamilyMember[] = input.familyMembers,
 ): { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth } {
   const entitlement = calcMonthlyPensionEntitlementBreakdownMan(
     household,
@@ -560,7 +758,7 @@ function calcCoveragePensionEntitlementMonth(
   );
   entitlement.survivor.employees = createEmptySurvivorEmployeesDetail();
   const survivorAuto = calcCoverageSurvivorEmployeesDetail({
-    familyMembers: input.familyMembers,
+    familyMembers: survivorEmployeesFamilyMembers,
     subject,
     pensionByMember: input.pensionByMember,
     originalIncomeByMember: input.incomeByMember,
@@ -572,30 +770,23 @@ function calcCoveragePensionEntitlementMonth(
   });
   entitlement.survivor.employees = survivorAuto.detail;
   const allOldAgeMan: Record<string, number> = {};
-  let memberAllOldAge = 0;
 
   for (const member of household) {
-    if (member.role !== 'head' && member.role !== 'spouse') continue;
     const memberState =
       input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
-    const memberBreakdown = calcMemberMonthlyPensionBreakdownMan(
-      member,
-      memberState,
-      incomeByMember[member.id] ?? [],
-      input.referenceDate,
-      calendarYear,
-      calendarMonth,
-    );
-    const allOldAge = sumOldAgePension(memberBreakdown.oldAge);
-    allOldAgeMan[member.id] = allOldAge;
-    memberAllOldAge += allOldAge;
-  }
-
-  const householdAllOldAge = sumOldAgePension(entitlement.oldAge);
-  const allOldAgeAdditions = Math.max(0, householdAllOldAge - memberAllOldAge);
-  if (allOldAgeAdditions > 0) {
-    allOldAgeMan[taxHeadId] =
-      (allOldAgeMan[taxHeadId] ?? 0) + allOldAgeAdditions;
+    const memberBreakdown =
+      calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+        member,
+        memberState,
+        incomeByMember[member.id] ?? [],
+        household,
+        input.pensionByMember,
+        incomeByMember,
+        input.referenceDate,
+        calendarYear,
+        calendarMonth,
+      );
+    allOldAgeMan[member.id] = sumOldAgePension(memberBreakdown.oldAge);
   }
 
   return {
@@ -629,20 +820,199 @@ export function accumulateCoverageIncome(
   if (endIdx < startIdx) return emptyCoverageIncomeTotals();
 
   const workers = input.familyMembers.filter((member) => member.role !== 'pet');
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const spouseReceives = input.familyMembers.some(
-    (member) => member.role === survivorRole,
+  const survivorSpouse =
+    subject === 'head'
+      ? input.familyMembers.find((member) => isPensionSpouseLikeMember(member))
+      : input.familyMembers.find((member) => member.role === 'head');
+  const spouseLivelihoodIncomeAssessment = survivorSpouse
+    ? resolveSurvivorLivelihoodIncomeAssessment({
+        recipient: survivorSpouse,
+        incomeByMember: input.incomeByMember,
+        priorYearIncomeByMember: input.priorYearIncomeByMember,
+        referenceDate: input.referenceDate,
+        death: start,
+      })
+    : null;
+  const spouseIncomeClearlyNotMet =
+    spouseLivelihoodIncomeAssessment?.status === 'not_met';
+  const survivorSpouseSameLivelihood =
+    !survivorSpouse ||
+    subject !== 'head' ||
+    isInHeadLivelihoodAt(survivorSpouse, input.referenceDate, start);
+  const deceased = input.familyMembers.find((member) => member.role === subject);
+  const deceasedState = deceased
+    ? input.pensionByMember[deceased.id] ?? createDefaultPensionMemberState()
+    : null;
+  const deceasedEntries = deceased
+    ? input.incomeByMember[deceased.id] ?? []
+    : [];
+  const deceasedAge = deceased
+    ? getMemberAgeMonth(
+        deceased,
+        input.referenceDate,
+        start.year,
+        start.month,
+      )
+    : null;
+  const deceasedEmployeesInsured =
+    deceased && deceasedAge
+      ? isEmployeesInsuredAt(
+          deceasedEntries,
+          deceasedAge.age,
+          deceasedAge.month,
+          calcBirthYear(
+            deceased.age,
+            deceased.birthMonth,
+            input.referenceDate,
+          ),
+          deceased.birthMonth ?? 1,
+        )
+      : false;
+  const survivorPremiumAssessment =
+    deceased && deceasedState
+      ? resolveSurvivorPremiumRequirementAssessment(
+          deceased,
+          deceasedState,
+          input.referenceDate,
+          start,
+        )
+      : null;
+  const survivorBasicDeathRequirementMet =
+    deceasedState != null &&
+    (hasConfirmedLongTermSurvivorQualification(deceasedState) ||
+      ((deceasedAge?.age ?? 99) < 65 &&
+        survivorPremiumAssessment?.status === 'met' &&
+        // 20〜59歳は国民年金の強制加入年齢。60〜64歳は、少なくとも
+        // 厚生年金加入中と確認できる場合に自動判定する。
+        ((deceasedAge?.age ?? 99) < 60 || deceasedEmployeesInsured)));
+
+  const reformAtDeath = isOnOrAfterSurvivorReformDate(start);
+  const livelihoodIncomeAssessmentByMember = new Map<
+    string,
+    SurvivorLivelihoodIncomeAssessment
+  >();
+  const getLivelihoodIncomeAssessment = (
+    member: FamilyMember,
+  ): SurvivorLivelihoodIncomeAssessment => {
+    const cached = livelihoodIncomeAssessmentByMember.get(member.id);
+    if (cached) return cached;
+    const assessment = resolveSurvivorLivelihoodIncomeAssessment({
+      recipient: member,
+      incomeByMember: input.incomeByMember,
+      priorYearIncomeByMember: input.priorYearIncomeByMember,
+      referenceDate: input.referenceDate,
+      death: start,
+    });
+    livelihoodIncomeAssessmentByMember.set(member.id, assessment);
+    return assessment;
+  };
+
+  // 生計維持の収入要件は配偶者だけでなく、子・父母・孫・祖父母にもある。
+  // 「明らかに基準を満たさない」と確認できる候補だけ受給順位から外す。
+  // 不明な場合は、必要保障額を制度上の個別認定で断定しないため候補に残す。
+  const survivorEmployeesBaseFamilyMembers = input.familyMembers.filter(
+    (member) => {
+      if (member.role === 'pet' || member.id === deceased?.id) return true;
+      if (
+        subject === 'head' &&
+        !isInHeadLivelihoodAt(member, input.referenceDate, start)
+      ) {
+        return false;
+      }
+      // 配偶者の850万円基準は、2028年改正の有期給付へ移った時点で
+      // 月ごとに撤廃されるため、ここでは一旦残して後で判定する。
+      if (survivorSpouse && member.id === survivorSpouse.id) return true;
+      return getLivelihoodIncomeAssessment(member).status !== 'not_met';
+    },
   );
+  const resolveSurvivorEmployeesFamilyMembers = (
+    year: number,
+    month: number,
+  ): FamilyMember[] => {
+    if (
+      !survivorSpouse ||
+      !survivorSpouseSameLivelihood ||
+      !spouseIncomeClearlyNotMet
+    ) {
+      return survivorEmployeesBaseFamilyMembers;
+    }
+    const remaining = survivorEmployeesBaseFamilyMembers.filter(
+      (member) => member.id !== deceased?.id && member.role !== 'pet',
+    );
+    const incomeRequirementRemoved =
+      isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+        survivorSpouse,
+        remaining,
+        input.referenceDate,
+        start,
+        { year, month },
+      );
+    return incomeRequirementRemoved
+      ? survivorEmployeesBaseFamilyMembers
+      : survivorEmployeesBaseFamilyMembers.filter(
+          (member) => member.id !== survivorSpouse.id,
+        );
+  };
+
+  // 遺族基礎年金の収入要件は2028年改正後も維持される。
+  // 改正後は高収入の配偶者を外した上で、要件を満たす子自身が受給できる。
+  const survivorBasicFamilyMembers = input.familyMembers.filter((member) => {
+    if (member.role === 'pet' || member.id === deceased?.id) return true;
+    if (
+      subject === 'head' &&
+      !isInHeadLivelihoodAt(member, input.referenceDate, start)
+    ) {
+      return false;
+    }
+    if (
+      member.role !== 'child' &&
+      !(
+        member.role === 'other' &&
+        member.otherRelationship === 'grandchild'
+      ) &&
+      member.id !== survivorSpouse?.id
+    ) {
+      return true;
+    }
+    return getLivelihoodIncomeAssessment(member).status !== 'not_met';
+  });
   const eligibleChildCountStart = listEligibleSurvivorBasicChildren(
-    input.familyMembers,
+    survivorBasicFamilyMembers,
     input.referenceDate,
     start.year,
     start.month,
   ).length;
-  const survivorBasicYenPerYearStart = calcSurvivorBasicYenPerYear(
-    eligibleChildCountStart,
-    spouseReceives,
-  );
+  const survivorSpouseReceivesBasic =
+    Boolean(
+      survivorSpouse &&
+        survivorBasicFamilyMembers.some(
+          (member) => member.id === survivorSpouse.id,
+        ),
+    );
+  const survivorBasicBlockedByIneligibleParent =
+    Boolean(survivorSpouse) &&
+    !reformAtDeath &&
+    eligibleChildCountStart > 0 &&
+    (
+      spouseIncomeClearlyNotMet ||
+      // 改正前は「子と生計を同じくする父母」がいると子は支給停止。
+      // Q1は各人と世帯主の生計期間しか持たず、親子間の生計同一を
+      // 直接確認できない。 surviving parent が死亡者の生計維持要件を
+      // 満たさない場合に、子へ自動で給付を移すと過大計上し得るため、
+      // 2028年3月までは保守的に自動計上しない。
+      !survivorSpouseSameLivelihood
+    );
+  const survivorBasicYenPerYearStart =
+    survivorBasicDeathRequirementMet &&
+    !survivorBasicBlockedByIneligibleParent
+      ? calcSurvivorBasicYenPerYear(
+          eligibleChildCountStart,
+          survivorSpouseReceivesBasic,
+          undefined,
+          start.year,
+          start.month,
+        )
+      : 0;
   const byMemberAmounts: Record<string, number> = {};
   const byYearEarned: Record<number, number> = {};
   const byYearSurvivorBasic: Record<number, number> = {};
@@ -659,10 +1029,6 @@ export function accumulateCoverageIncome(
     input.familyMembers,
     subject,
   );
-  const taxHousehold = buildCoverageTaxHousehold(input.familyMembers, subject);
-  const taxHead =
-    taxHousehold.find((member) => member.role === 'head') ?? taxHousehold[0];
-  const taxHeadId = taxHead?.id ?? '';
   const pensionMonthCache = new Map<
     number,
     { entitlement: PensionBreakdown; tax: CoveragePensionTaxMonth }
@@ -675,11 +1041,11 @@ export function accumulateCoverageIncome(
       input,
       incomeByMember,
       pensionHousehold,
-      taxHeadId,
       year,
       month,
       subject,
       start,
+      resolveSurvivorEmployeesFamilyMembers(year, month),
     );
     pensionMonthCache.set(idx, next);
     return next;
@@ -701,20 +1067,58 @@ export function accumulateCoverageIncome(
     const monthEarned = sumIncomeBreakdown(
       calcMonthlyEarnedIncomeBreakdown(earnedInput, year, month),
     );
-    const monthBasic = calcCoverageSurvivorBasicMonthlyMan(
-      input.familyMembers,
-      subject,
-      input.referenceDate,
-      year,
+    const survivorBasicEntitlement = (calendarIdx: number): PensionBreakdown => {
+      const target = indexToYearMonth(calendarIdx);
+      const entitlement = createEmptyPensionBreakdown();
+      if (!survivorBasicDeathRequirementMet) return entitlement;
+      // 遺族基礎年金は死亡月の翌月分から発生する。
+      if (calendarIdx <= startIdx) return entitlement;
+
+      if (survivorBasicBlockedByIneligibleParent) {
+        return entitlement;
+      }
+      const basicDetail = calcCoverageSurvivorBasicDetailMonthlyMan(
+        survivorBasicFamilyMembers,
+        subject,
+        input.referenceDate,
+        target.year,
+        target.month,
+      );
+      const employeesDetail = calcCoverageSurvivorEmployeesDetail({
+        familyMembers: resolveSurvivorEmployeesFamilyMembers(
+          target.year,
+          target.month,
+        ),
+        subject,
+        pensionByMember: input.pensionByMember,
+        originalIncomeByMember: input.incomeByMember,
+        coverageIncomeByMember: incomeByMember,
+        referenceDate: input.referenceDate,
+        death: start,
+        year: target.year,
+        month: target.month,
+      }).detail;
+
+      // 2028年4月以降の子の加算は、基礎・厚生の両方に該当する場合
+      // 厚生年金側を優先して同じ子を二重加算しない。
+      if (employeesDetail.children > 0) {
+        basicDetail.children = 0;
+      }
+      entitlement.survivor.basic = basicDetail;
+      return entitlement;
+    };
+    const survivorBasicPayment = calcPensionPaymentFromEntitlements(
       month,
+      survivorBasicEntitlement(prevCalendarIndex(idx)),
+      survivorBasicEntitlement(prevCalendarIndex(prevCalendarIndex(idx))),
     );
+    const monthBasic = sumPensionBreakdown(survivorBasicPayment);
     const monthChildAllowance = calcHouseholdMonthlyChildAllowanceMan(
       input.familyMembers,
       input.referenceDate,
       year,
       month,
     );
-    const pensionMonth = getPensionMonth(idx);
     const pensionPayment = calcPensionPaymentFromEntitlements(
       month,
       getPensionMonth(prevCalendarIndex(idx)).entitlement,
@@ -727,15 +1131,28 @@ export function accumulateCoverageIncome(
       middleAged: monthMiddleAgedWidow,
       employees: monthSurvivorEmployees,
     } = extractSurvivorEmployeesPaymentParts(pensionPayment);
-    for (const [memberId, amount] of Object.entries(
-      pensionMonth.tax.allOldAgeMan,
-    )) {
-      addCoverageAnnualPensionMan(
-        annualPensionAllOldAgeByYear,
-        year,
-        memberId,
-        amount,
-      );
+    // 税計算へ渡す老齢年金も、CFの現金収入と同じ偶数月・前2か月分の
+    // 実支払ベースにそろえる。遺族年金は tax.allOldAgeMan に含めていない。
+    if (month % 2 === 0) {
+      const oneMonthAgoTax =
+        getPensionMonth(prevCalendarIndex(idx)).tax.allOldAgeMan;
+      const twoMonthsAgoTax =
+        getPensionMonth(
+          prevCalendarIndex(prevCalendarIndex(idx)),
+        ).tax.allOldAgeMan;
+      const memberIds = new Set([
+        ...Object.keys(oneMonthAgoTax),
+        ...Object.keys(twoMonthsAgoTax),
+      ]);
+      for (const memberId of memberIds) {
+        addCoverageAnnualPensionMan(
+          annualPensionAllOldAgeByYear,
+          year,
+          memberId,
+          (oneMonthAgoTax[memberId] ?? 0) +
+            (twoMonthsAgoTax[memberId] ?? 0),
+        );
+      }
     }
     survivorBasic += monthBasic;
     childAllowance += monthChildAllowance;

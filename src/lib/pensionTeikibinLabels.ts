@@ -2,6 +2,7 @@ export const NATIONAL_PENSION_PAYMENT_OPTIONS = [
   { value: '', label: '' },
   { value: 'paid', label: '納付済み' },
   { value: 'unpaid', label: '未納' },
+  { value: 'pending', label: '確認中' },
   { value: 'type3', label: '3号' },
   { value: 'full-exemption', label: '全額免除' },
   { value: 'half-exemption', label: '半額免除' },

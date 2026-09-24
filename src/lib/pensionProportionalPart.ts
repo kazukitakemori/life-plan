@@ -47,7 +47,7 @@ export function isPostHeisei15ReformMonth(
  *
  * 加入月数は各月の標準報酬の合計（Σ）に反映される。
  * 定額部分（特別支給の老齢厚生年金）は含まない。
- * v1: 標準賞与・共済組合の別計算は未対応。
+ * 平成15年4月以降は標準賞与額も総報酬制として算入する。
  */
 export function calcProportionalPartAnnualYen(
   acc: ProportionalPartAccumulation,
@@ -81,10 +81,11 @@ export function addEmployeesEnrollmentMonth(
   calendarYear: number,
   calendarMonth: number,
   standardRemunerationYen: number,
+  standardBonusYen: number = 0,
 ): void {
   if (isPostHeisei15ReformMonth(calendarYear, calendarMonth)) {
     acc.postMonths += 1;
-    acc.postRemunerationSumYen += standardRemunerationYen;
+    acc.postRemunerationSumYen += standardRemunerationYen + standardBonusYen;
   } else {
     acc.preMonths += 1;
     acc.preRemunerationSumYen += standardRemunerationYen;

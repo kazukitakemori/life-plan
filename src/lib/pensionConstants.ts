@@ -1,14 +1,25 @@
-/** 老齢基礎年金の満額（2026年度・昭和31年4月2日以降生まれ。物価スライドは v1 未対応） */
+/**
+ * 年金計算の基準年度。
+ * 年度改定値はこのファイルへ集約し、将来額は原則としてこの年度の実質水準で試算する。
+ */
+export const PENSION_STANDARD_YEAR = 2026;
+
+/** 老齢基礎年金の満額（2026年度・昭和31年4月2日以降生まれ） */
 export const FULL_BASIC_PENSION_YEN_PER_MONTH = 70_608;
-export const FULL_BASIC_PENSION_YEN_PER_YEAR =
-  FULL_BASIC_PENSION_YEN_PER_MONTH * 12;
+/** 公表年額を直接保持（月額×12の丸め差を持ち込まない） */
+export const FULL_BASIC_PENSION_YEN_PER_YEAR = 847_300;
+/** 2026年度・昭和31年4月1日以前生まれの基礎年金満額 */
+export const FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY = 844_900;
 
 /** 国民年金保険料（第1号被保険者・2026年度） */
-export const NATIONAL_PENSION_MONTHLY_YEN = 17_570;
+export const NATIONAL_PENSION_MONTHLY_YEN = 17_920;
 export const NATIONAL_PENSION_ANNUAL_YEN = NATIONAL_PENSION_MONTHLY_YEN * 12;
 
 /** 老齢基礎年金の満額算定に必要な加入月数 */
 export const FULL_BASIC_PENSION_MONTHS = 480;
+
+/** 老齢基礎・老齢厚生年金の受給資格期間（10年） */
+export const OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS = 120;
 
 /**
  * 4年生大学在学中の国民年金猶予（ねんきん定期便なし推計時）。
@@ -40,8 +51,10 @@ export const STANDARD_OLD_AGE_START = 65;
  */
 export const EMPLOYEES_PENSION_MAX_INSURED_AGE = 70;
 
-/** 繰上げ受給: 1ヶ月あたりの減額率（老齢基礎・厚生共通の簡易値） */
+/** 繰上げ受給: 昭和37年4月2日以降生まれの1ヶ月あたり減額率 */
 export const EARLY_CLAIM_REDUCTION_PER_MONTH = 0.004;
+/** 昭和37年4月1日以前生まれの1ヶ月あたり減額率 */
+export const EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY = 0.005;
 
 /** 繰下げ受給: 1ヶ月あたりの増額率 */
 export const DEFERRAL_INCREASE_PER_MONTH = 0.007;
@@ -49,15 +62,28 @@ export const DEFERRAL_INCREASE_PER_MONTH = 0.007;
 /** 年金加入期間の走査開始年齢 */
 export const PENSION_ENROLLMENT_START_AGE = 20;
 
+/** 老齢基礎年金の原則的な強制加入期間の終了年齢（60歳到達まで） */
+export const NATIONAL_PENSION_MANDATORY_END_AGE = 60;
+
 /**
  * 加給年金（老齢厚生年金）2026年度。
  * 受給権者が昭和18年4月2日以後生まれ（現在の受給年齢層はほぼ該当）を前提に統一。
  * 基本額 243,800円＋特別加算 179,900円 = 合計 423,700円。
  */
-export const DEPENDENT_SPOUSE_PENSION_YEN_PER_YEAR = 423_700;
+export const DEPENDENT_SPOUSE_PENSION_BASE_YEN_PER_YEAR = 243_800;
+/** 2028年4月以後に新たに配偶者加給の対象となる場合の2026年度価格 */
+export const DEPENDENT_SPOUSE_PENSION_REFORM_YEN_PER_YEAR = 381_300;
+/** 2026年度・加給年金の子1人目・2人目 */ 
+export const DEPENDENT_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR = 243_800;
+/** 2026年度・加給年金の子3人目以降 */
+export const DEPENDENT_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR = 81_300;
 
-/** 加給年金の支給要件：老齢厚生年金の被保険者期間の最低月数（20年） */
+/** 加給年金の支給要件：配偶者は厚生年金20年以上 */
 export const DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS = 240;
+/** 2028年4月以後に受給権を取得する老齢厚生年金の子加算は厚生年金10年以上 */
+export const DEPENDENT_CHILD_REFORM_MIN_EMPLOYEES_MONTHS = 120;
+export const PENSION_CHILD_ADD_REFORM_START_YEAR = 2028;
+export const PENSION_CHILD_ADD_REFORM_START_MONTH = 4;
 
 /** 遺族厚生年金：死亡した人の報酬比例部分に乗じる割合 */
 export const SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE = 0.75;
@@ -111,6 +137,16 @@ export const DEPENDENT_PENSION_CUTOFF_AGE = 65;
  */
 export const SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR = 243_800;
 export const SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR = 81_300;
+
+/**
+ * 2028年4月施行の子の加算拡充を、2026年度の実質水準へ換算した年額。
+ * 改正後の法定基準額 269,600円 ÷ 現行基準額 224,700円 ×
+ * 2026年度の第1・2子加算 243,800円 = 約292,500円（法定の100円丸め相当）。
+ * 改正後は第1子以降すべて同額。
+ */
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR = 292_500;
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR = 2028;
+export const SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH = 4;
 
 /** 障害のある子の遺族基礎の対象上限（20歳未満） */
 export const SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE = 20;

@@ -3,16 +3,24 @@ import {
   getWesternYearOptions,
   MONTH_OPTIONS,
 } from '../../lib/pensionTeikibinLabels';
-import type { NenkinTeikibinMonthlyFields } from '../../types/pension';
+import type { NenkinTeikibinMonthlyFields, NenkinTeikibinMonthlyRow } from '../../types/pension';
 
 interface RecentMonthlyTableProps {
   form: NenkinTeikibinMonthlyFields;
   onChange: (patch: Partial<NenkinTeikibinMonthlyFields>) => void;
 }
 
-const READONLY_CELL_COUNT = 4;
-
 export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) {
+  const updateRow = (
+    index: number,
+    patch: Partial<NenkinTeikibinMonthlyRow>,
+  ) => {
+    const monthlyRows = form.monthlyRows.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, ...patch } : row,
+    );
+    onChange({ monthlyRows });
+  };
+
   const monthLabels = buildMonthlyLabelsFromWestern(
     form.recentMonthlyYear,
     form.recentMonthlyMonth,
@@ -39,18 +47,35 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
             </tr>
           </thead>
           <tbody>
-            {monthLabels.map((label) => (
-              <tr key={label}>
-                <td className="teikibin-monthly-label">{label}</td>
-                {Array.from({ length: READONLY_CELL_COUNT }, (_, index) => (
-                  <td
-                    key={`${label}-readonly-${index}`}
-                    className="teikibin-monthly-readonly"
-                  />
-                ))}
-                <td className="teikibin-monthly-premium" />
-              </tr>
-            ))}
+            {monthLabels.map((label, index) => {
+              const row = form.monthlyRows[index];
+              if (!row) return null;
+              return (
+                <tr key={label}>
+                  <td className="teikibin-monthly-label">{label}</td>
+                  <td className="teikibin-monthly-readonly">{row.nationalPensionStatus || '—'}</td>
+                  <td className="teikibin-monthly-readonly">{row.employeesPensionCategory || '—'}</td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.standardRemuneration}
+                      onChange={(e) => updateRow(index, { standardRemuneration: e.target.value })}
+                      aria-label={`${label} 標準報酬月額`} />
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.standardBonus}
+                      onChange={(e) => updateRow(index, { standardBonus: e.target.value })}
+                      aria-label={`${label} 標準賞与額`} />
+                  </td>
+                  <td className="teikibin-monthly-input-cell">
+                    <input type="text" inputMode="numeric" className="pension-field-input pension-field-input--table"
+                      value={row.premiumPayment}
+                      onChange={(e) => updateRow(index, { premiumPayment: e.target.value })}
+                      aria-label={`${label} 保険料納付額`} />
+                  </td>
+                </tr>
+              );
+            })}
 
             <tr className="teikibin-monthly-input-row">
               <td className="teikibin-monthly-date">
@@ -85,13 +110,9 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
                 </select>
                 <span className="teikibin-monthly-date-unit">月</span>
               </td>
-              {Array.from({ length: READONLY_CELL_COUNT }, (_, index) => (
-                <td
-                  key={`input-row-readonly-${index}`}
-                  className="teikibin-monthly-readonly"
-                />
-              ))}
-              <td className="teikibin-monthly-premium" />
+              <td colSpan={5} className="teikibin-monthly-readonly">
+                最近の月別状況は詳細入力です。未入力でも年金概算は利用できます
+              </td>
             </tr>
           </tbody>
         </table>

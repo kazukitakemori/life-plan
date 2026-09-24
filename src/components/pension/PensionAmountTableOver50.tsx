@@ -177,6 +177,41 @@ function OldAgeTripleFields({
   );
 }
 
+const SPECIAL_START_AGE_OPTIONS = [60, 61, 62, 63, 64];
+
+function SpecialStartAgeHeader({
+  value,
+  columnLabel,
+  onChange,
+}: {
+  value: number | null;
+  columnLabel: string;
+  onChange: (value: number | null) => void;
+}) {
+  return (
+    <th className="teikibin-amount-col-header">
+      <span className="teikibin-special-age-field">
+        <select
+          className="pension-field-select teikibin-special-age-select"
+          value={value ?? ''}
+          aria-label={`${columnLabel}の受給開始年齢`}
+          onChange={(event) =>
+            onChange(event.target.value === '' ? null : Number(event.target.value))
+          }
+        >
+          <option value="">—</option>
+          {SPECIAL_START_AGE_OPTIONS.map((age) => (
+            <option key={age} value={age}>
+              {age}
+            </option>
+          ))}
+        </select>
+        <span>歳〜</span>
+      </span>
+    </th>
+  );
+}
+
 function TotalCell({
   value,
   primary = false,
@@ -237,18 +272,30 @@ export function PensionAmountTableOver50({
     <div className="teikibin-block">
       <h5 className="teikibin-block-title">
         (2) 老齢年金の種類と見込額（年額）
-        <span className="pension-help-icon" title="老齢年金の種類と見込額について">
-          ?
-        </span>
       </h5>
+      <p className="pension-field-hint">
+        「受給開始年齢」は、ねんきん定期便に印字された「○歳〜」をそのまま選んでください。空欄の列は「—」のままで構いません。
+      </p>
 
       <table className="teikibin-amount-table teikibin-amount-table--over50">
         <tbody>
           <tr>
             <th className="teikibin-amount-row-label">受給開始年齢</th>
-            <th className="teikibin-amount-empty" />
-            <th className="teikibin-amount-empty" />
-            <th className="teikibin-amount-empty" />
+            <SpecialStartAgeHeader
+              value={form.specialStartAgeCol2}
+              columnLabel="1列目"
+              onChange={(specialStartAgeCol2) => onChange({ specialStartAgeCol2 })}
+            />
+            <SpecialStartAgeHeader
+              value={form.specialStartAgeCol3}
+              columnLabel="2列目"
+              onChange={(specialStartAgeCol3) => onChange({ specialStartAgeCol3 })}
+            />
+            <SpecialStartAgeHeader
+              value={form.specialStartAgeCol4}
+              columnLabel="3列目"
+              onChange={(specialStartAgeCol4) => onChange({ specialStartAgeCol4 })}
+            />
             <th className="teikibin-amount-col-header">65歳～</th>
           </tr>
 

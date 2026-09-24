@@ -16,11 +16,20 @@ import { isMemberBirthComplete } from '../../lib/familyDefaults';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { validateMemberDependentDefaults } from '../../lib/dependentValidation';
 import type {
+  DisabilityGrade,
+  DisabilityPensionStatus,
   FamilyMember,
+  PensionChildResidenceStatus,
   HouseholdPeriodMode,
   OtherRelationship,
 } from '../../types/family';
-import { OTHER_RELATIONSHIP_LABELS, ROLE_LABELS } from '../../types/family';
+import {
+  DISABILITY_GRADE_LABELS,
+  DISABILITY_PENSION_LABELS,
+  OTHER_RELATIONSHIP_LABELS,
+  PENSION_CHILD_RESIDENCE_LABELS,
+  ROLE_LABELS,
+} from '../../types/family';
 import {
   DisclosureSection,
   FormChoice,
@@ -223,7 +232,18 @@ export function FamilyMemberRow({
   };
 
   const detailSummaryParts: string[] = [];
-  if (member.disability === 'has') detailSummaryParts.push('障害あり');
+  const disabilityPensionStatus = member.disabilityPension ?? 'none';
+  if (member.disability === 'has') {
+    const grade = member.disabilityGrade ?? 'none';
+    if (grade !== 'none') {
+      detailSummaryParts.push(`障害${DISABILITY_GRADE_LABELS[grade]}`);
+    } else {
+      detailSummaryParts.push('障害あり');
+    }
+  }
+  if (disabilityPensionStatus !== 'none') {
+    detailSummaryParts.push(DISABILITY_PENSION_LABELS[disabilityPensionStatus]);
+  }
   if (member.hobbies.length > 0) {
     detailSummaryParts.push(`趣味${member.hobbies.length}`);
   }
@@ -396,12 +416,17 @@ export function FamilyMemberRow({
             <FormField label="障害">
               <FormSelect
                 value={member.disability === 'none' ? 0 : 1}
-                onValueChange={(raw) =>
+                onValueChange={(raw) => {
+                  const disability =
+                    Number(raw) === 0 ? 'none' : 'has';
                   onChange({
                     ...member,
-                    disability: Number(raw) === 0 ? 'none' : 'has',
-                  })
-                }
+                    disability,
+                    ...(disability === 'none'
+                      ? { disabilityGrade: 'none' as const }
+                      : {}),
+                  });
+                }}
                 options={[
                   { value: 0, label: 'なし' },
                   { value: 1, label: 'あり' },
@@ -409,7 +434,84 @@ export function FamilyMemberRow({
               />
             </FormField>
 
-            <div className="family-hobbies-block">
+            <div className="family-disability-pension-block">
+              {member.disability === 'has' && (
+                <>
+                  <FormField label="障害等級・状態">
+                    <FormSelect
+                      wide
+                      value={member.disabilityGrade ?? 'none'}
+                      onValueChange={(raw) =>
+                        onChange({
+                          ...member,
+                          disabilityGrade: raw as DisabilityGrade,
+                        })
+                      }
+                      options={(
+                        Object.entries(DISABILITY_GRADE_LABELS) as Array<
+                          [DisabilityGrade, string]
+                        >
+                      ).map(([value, label]) => ({ value, label }))}
+                    />
+                  </FormField>
+                  <p className="ui-note">
+                    子の年金加算などでは、1級・2級の障害状態かどうかを使います。
+                  </p>
+                </>
+              )}
+
+              <FormField label="障害年金の受給権（現在）">
+                <FormSelect
+                  wide
+                  value={member.disabilityPension ?? 'none'}
+                  onValueChange={(raw) =>
+                    onChange({
+                      ...member,
+                      disabilityPension: raw as DisabilityPensionStatus,
+                    })
+                  }
+                  options={(
+                    Object.entries(DISABILITY_PENSION_LABELS) as Array<
+                      [DisabilityPensionStatus, string]
+                    >
+                  ).map(([value, label]) => ({ value, label }))}
+                />
+              </FormField>
+              <p className="ui-note">
+                現在の障害状態と障害年金の受給権は別々に保存します。障害の程度が軽くなって支給停止中でも受給権が残る場合があるため、「障害なし」にしても受給権は自動で消しません。障害年金の年額・初診日・障害認定日・受給開始／失権年月・全額支給停止の状況は未入力のため、障害年金額そのものはQ8・キャッシュフローへ自動反映しません。
+              </p>
+            </div>
+
+            {(member.role === 'child' ||
+              (member.role === 'other' &&
+                member.otherRelationship === 'grandchild')) && (
+              <div className="family-disability-pension-block">
+                <FormField label="年金上の居住状況">
+                  <FormSelect
+                    wide
+                    value={member.pensionChildResidence ?? 'unknown'}
+                    onValueChange={(raw) =>
+                      onChange({
+                        ...member,
+                        pensionChildResidence:
+                          raw as PensionChildResidenceStatus,
+                      })
+                    }
+                    options={(
+                      Object.entries(PENSION_CHILD_RESIDENCE_LABELS) as Array<
+                        [PensionChildResidenceStatus, string]
+                      >
+                    ).map(([value, label]) => ({ value, label }))}
+                  />
+                </FormField>
+                <p className="ui-note">
+                  2028年4月以降の年金の子の加算に使います。海外でも、
+                  留学など日本国内に生活の基礎があると認められる場合は例外対象です。
+                </p>
+              </div>
+            )}
+
+                        <div className="family-hobbies-block">
               <div className="family-panel-title-row">
                 <h4 className="family-section-label">趣味・関心</h4>
                 <button

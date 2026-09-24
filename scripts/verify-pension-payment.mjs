@@ -1,59 +1,86 @@
 /**
- * 年金支給スケジュールの簡易検証�E�Eode scripts/verify-pension-payment.mjs�E�E
+ * 公的年金の偶数月支給スケジュールを検証する。
+ * npx tsx scripts/verify-pension-payment.mjs
  */
-import { calcPensionPaymentFromEntitlements } from '../src/lib/pensionPaymentSchedule.ts';
+import assert from 'node:assert/strict';
+import {
+  calcPensionPaymentFromEntitlements,
+  calcTaxableOldAgePensionPaymentMan,
+} from '../src/lib/pensionPaymentSchedule.ts';
 import {
   createEmptyPensionBreakdown,
   sumPensionBreakdown,
 } from '../src/types/cashFlow.ts';
 
-function entitlementWithMonthlyMan(monthlyMan) {
+function oldAgeEntitlement(monthlyMan) {
   const b = createEmptyPensionBreakdown();
   b.oldAge.basic.basic = monthlyMan;
   return b;
 }
 
-function paidMonthsInYear(entitlements) {
-  let total = 0;
-  for (let month = 1; month <= 12; month++) {
-    const payment = calcPensionPaymentFromEntitlements(
-      month,
-      entitlements[month - 1] ?? createEmptyPensionBreakdown(),
-      entitlements[month - 2] ?? createEmptyPensionBreakdown(),
-    );
-    total += sumPensionBreakdown(payment);
-  }
-  return total;
+function survivorBasicEntitlement(monthlyMan) {
+  const b = createEmptyPensionBreakdown();
+  b.survivor.basic.basic = monthlyMan;
+  return b;
 }
 
-// 3月から受給開始（誕生朁E月�E65歳�E��E 3、E2月が賁E��10か月
-const entitlements = Array.from({ length: 13 }, () =>
-  createEmptyPensionBreakdown(),
-);
-for (let month = 3; month <= 12; month++) {
-  entitlements[month] = entitlementWithMonthlyMan(1);
+function payment(month, oneMonthAgo, twoMonthsAgo) {
+  return sumPensionBreakdown(
+    calcPensionPaymentFromEntitlements(month, oneMonthAgo, twoMonthsAgo),
+  );
 }
 
-const received = paidMonthsInYear(entitlements);
-console.assert(
-  received === 9,
-  `受給開始年の入金�E9か月刁E ${received}`,
+// 奇数月は支給しない。
+assert.equal(payment(3, oldAgeEntitlement(1), oldAgeEntitlement(1)), 0);
+
+// 偶数月は直前2か月分を支給する。
+assert.equal(payment(4, oldAgeEntitlement(1), oldAgeEntitlement(1)), 2);
+
+// 受給権発生直後は、資格がある月だけを支給する。
+assert.equal(payment(4, oldAgeEntitlement(1), createEmptyPensionBreakdown()), 1);
+
+// 遺族基礎年金も老齢年金と同じ支給スケジュールへ載せる。
+assert.equal(
+  payment(4, survivorBasicEntitlement(1), survivorBasicEntitlement(1)),
+  2,
+);
+assert.equal(
+  payment(3, survivorBasicEntitlement(1), survivorBasicEntitlement(1)),
+  0,
 );
 
-// 通年受給�E�前年12月�Eも賁E��あり�E�なめE2か月刁E�E入釁E
-const fullYear = Array.from({ length: 13 }, (_, month) =>
-  month >= 1 ? entitlementWithMonthlyMan(1) : createEmptyPensionBreakdown(),
-);
-fullYear[0] = entitlementWithMonthlyMan(1);
-let failed = false;
-if (received !== 9) {
-  console.error(`受給開始年の入金�E9か月刁E ${received}`);
-  failed = true;
+// 内訳が違っても合計額を壊さない。
+const mixedOne = oldAgeEntitlement(1);
+mixedOne.survivor.basic.basic = 2;
+const mixedTwo = oldAgeEntitlement(3);
+mixedTwo.survivor.basic.basic = 4;
+assert.equal(payment(6, mixedOne, mixedTwo), 10);
+
+// 課税年金は支払ベースの老齢年金だけ。遺族年金は非課税なので除外する。
+{
+  const oneMonthAgo = oldAgeEntitlement(1);
+  oneMonthAgo.survivor.basic.basic = 10;
+  const twoMonthsAgo = oldAgeEntitlement(2);
+  twoMonthsAgo.survivor.basic.basic = 20;
+
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(4, oneMonthAgo, twoMonthsAgo),
+    3,
+  );
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(3, oneMonthAgo, twoMonthsAgo),
+    0,
+  );
 }
-if (paidMonthsInYear(fullYear) !== 12) {
-  console.error(`通年受給は12か月刁E ${paidMonthsInYear(fullYear)}`);
-  failed = true;
+
+// 年跨ぎも「支払月に前2か月分」を渡せば、2月支払へ前年12月分が帰属する。
+{
+  const january = oldAgeEntitlement(1);
+  const previousDecember = oldAgeEntitlement(2);
+  assert.equal(
+    calcTaxableOldAgePensionPaymentMan(2, january, previousDecember),
+    3,
+  );
 }
-if (failed) process.exit(1);
 
 console.log('verify-pension-payment: all checks passed');

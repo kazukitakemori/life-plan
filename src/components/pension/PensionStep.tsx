@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { createDefaultPensionMemberState } from '../../lib/pensionDefaults';
-import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { memberHasPensionData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
 import type { FamilyMember } from '../../types/family';
@@ -68,6 +67,15 @@ export function PensionStep({
   const memberState =
     pensionByMember[resolvedActiveId] ?? createDefaultPensionMemberState();
   const incomeEntries = incomeByMember[resolvedActiveId] ?? [];
+  const hasCurrentDisabilityPension =
+    (activeMember?.disabilityPension ?? 'none') !== 'none';
+  const hasUnconfirmedPensionChildResidence = members.some(
+    (member) =>
+      (member.role === 'child' ||
+        (member.role === 'other' &&
+          member.otherRelationship === 'grandchild')) &&
+      (member.pensionChildResidence ?? 'unknown') === 'unknown',
+  );
 
   const updateMemberState = (
     memberId: string,
@@ -101,6 +109,22 @@ export function PensionStep({
         </p>
       ) : null}
 
+      {hasCurrentDisabilityPension ? (
+        <p className="purpose-input-note" role="note">
+          Q1で障害年金の受給権が登録されています。障害年金額は自動計算対象外のため、現時点ではQ8・キャッシュフローへ金額を自動反映していません。また、障害年金の全額支給停止、受給開始・失権年月、65歳前の特別支給の老齢厚生年金との選択、65歳以降の年金選択は保存していないため、加給年金・振替加算・経過的寡婦加算などとの調整や、65歳前に受給権を失った場合の繰下げ可否までは完全に自動判定できません。現在登録されている受給権が続く前提で、確認できる範囲だけを反映します。
+        </p>
+      ) : null}
+
+      {hasUnconfirmedPensionChildResidence ? (
+        <p className="purpose-input-note" role="note">
+          2028年4月以降の「子の加算」を正確に試算するには、Q1「家族」の詳細設定で対象となる子の「年金上の居住状況」を確認してください。未確認のままでは加算を自動計上しません。
+        </p>
+      ) : null}
+
+      <p className="purpose-input-note" role="note">
+        寡婦年金は現在、自動計算・キャッシュフロー反映の対象外です。Q8の年金見込み額には含まれていません。
+      </p>
+
       <MemberIncomeTabs
         members={visibleMembers}
         activeMemberId={resolvedActiveId}
@@ -115,9 +139,6 @@ export function PensionStep({
 
       <PublicPensionSection
         member={activeMember}
-        headOfHouseholdLabel={
-          headMember ? getMemberTabLabel(headMember) : '世帯主さん'
-        }
         referenceDate={referenceDate}
         memberState={memberState}
         onChange={(state) => updateMemberState(resolvedActiveId, state)}
@@ -127,6 +148,9 @@ export function PensionStep({
         member={activeMember}
         memberState={memberState}
         incomeEntries={incomeEntries}
+        familyMembers={members}
+        pensionByMember={pensionByMember}
+        incomeByMember={incomeByMember}
         referenceDate={referenceDate}
       />
     </div>

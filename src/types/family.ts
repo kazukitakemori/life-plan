@@ -4,6 +4,27 @@ export type Gender = 'male' | 'female';
 
 export type DisabilityStatus = 'none' | 'has';
 
+export type PensionChildResidenceStatus =
+  | 'unknown'
+  | 'japan'
+  | 'overseas_exception'
+  | 'overseas';
+
+export type DisabilityGrade =
+  | 'none'
+  | 'grade1'
+  | 'grade2'
+  | 'grade3'
+  | 'other';
+
+export type DisabilityPensionStatus =
+  | 'none'
+  | 'basic_grade1'
+  | 'basic_grade2'
+  | 'employees_grade1'
+  | 'employees_grade2'
+  | 'employees_grade3';
+
 export type HouseholdPeriodMode = 'lifetime' | 'by_education' | 'custom';
 
 /**
@@ -41,6 +62,22 @@ export interface FamilyMember {
   gender: Gender;
   expectedLifespan: number;
   disability: DisabilityStatus;
+  /**
+   * 2028年4月以降の年金「子の加算」の国内居住要件。
+   * child と other/grandchild で使用する。旧データはunknown。
+   */
+  pensionChildResidence?: PensionChildResidenceStatus;
+  /**
+   * 現在の障害等級・状態。
+   * 子の年金加算等では「1級・2級の障害状態」を判定するために使用する。
+   * 未入力・旧データはnoneとして扱い、障害ありだけから等級を推測しない。
+   */
+  disabilityGrade?: DisabilityGrade;
+  /**
+   * 現在の障害年金受給状況。
+   * 未入力・旧データはnoneとして扱い、障害があるだけで受給権を推測しない。
+   */
+  disabilityPension?: DisabilityPensionStatus;
   hobbies: string[];
   householdPeriod: HouseholdPeriod;
   /** roleが'other'のときのみ使用。続柄による控除区分の判定に使用 */
@@ -71,4 +108,31 @@ export const OTHER_RELATIONSHIP_LABELS: Record<OtherRelationship, string> = {
   sibling: '兄弟姉妹',
   common_law_partner: '内縁の配偶者',
   other_relative: 'その他（その他親族など）',
+};
+
+export const DISABILITY_PENSION_LABELS: Record<DisabilityPensionStatus, string> = {
+  none: '受給権なし・不明',
+  basic_grade1: '障害基礎年金 1級',
+  basic_grade2: '障害基礎年金 2級',
+  employees_grade1: '障害厚生年金 1級',
+  employees_grade2: '障害厚生年金 2級',
+  employees_grade3: '障害厚生年金 3級',
+};
+
+export const DISABILITY_GRADE_LABELS: Record<DisabilityGrade, string> = {
+  none: '等級なし・不明',
+  grade1: '1級',
+  grade2: '2級',
+  grade3: '3級',
+  other: 'その他・等級外',
+};
+
+export const PENSION_CHILD_RESIDENCE_LABELS: Record<
+  PensionChildResidenceStatus,
+  string
+> = {
+  unknown: '未確認',
+  japan: '日本国内',
+  overseas_exception: '海外（留学等の例外）',
+  overseas: '海外（その他）',
 };

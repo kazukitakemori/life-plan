@@ -71,6 +71,7 @@ function createDefaultRecentMonthlyInputRow(): TeikibinRecentMonthlyInputRow {
     employeesPensionCategory: '',
     standardRemuneration: '',
     standardBonus: '',
+    premiumPayment: '',
   };
 }
 
@@ -98,7 +99,12 @@ export function createDefaultBenefitSettings(): BenefitSettings {
     survivorDeathYear: 2024,
     survivorDeathMonth: 1,
     survivorBasicPerYear: null,
+    survivorBasicEndYear: null,
+    survivorBasicEndMonth: null,
     survivorEmployeesMutualPerYear: null,
+    survivorEmployeesMutualEndYear: null,
+    survivorEmployeesMutualEndMonth: null,
+    survivorPremiumRequirement: 'auto',
     dependentSpousePension: createDefaultDependentSpousePension(),
   };
 }
@@ -144,6 +150,9 @@ export function createDefaultTeikibinOver50Form(): NenkinTeikibinOver50Form {
   return {
     ...createDefaultParticipationFields(),
     basicPension65: null,
+    specialStartAgeCol2: null,
+    specialStartAgeCol3: null,
+    specialStartAgeCol4: null,
     general: {
       specialCol3: createDefaultAmountPair(),
       specialCol4: createDefaultAmountPair(),

@@ -84,3 +84,42 @@ export function standardRemunerationYenFromMonthlyMan(
     purpose,
   );
 }
+
+/**
+ * 令和7年改正で成立した厚生年金の標準報酬月額上限を暦年月に応じて返す。
+ * 2027年9月: 68万円、2028年9月: 71万円、2029年9月: 75万円。
+ */
+export function pensionStandardRemunerationCapYenAt(
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  const serial = calendarYear * 12 + calendarMonth;
+  if (serial >= 2029 * 12 + 9) return 750_000;
+  if (serial >= 2028 * 12 + 9) return 710_000;
+  if (serial >= 2027 * 12 + 9) return 680_000;
+  return PENSION_STANDARD_REMUNERATION_CAP_YEN;
+}
+
+export function resolvePensionStandardRemunerationYenAt(
+  monthlyRemunerationYen: number,
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  if (monthlyRemunerationYen <= 0) return 0;
+  return Math.min(
+    resolveHealthStandardRemunerationYen(monthlyRemunerationYen),
+    pensionStandardRemunerationCapYenAt(calendarYear, calendarMonth),
+  );
+}
+
+export function standardRemunerationYenFromMonthlyManAt(
+  monthlyAmountMan: number,
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  return resolvePensionStandardRemunerationYenAt(
+    Math.max(0, monthlyAmountMan) * 10_000,
+    calendarYear,
+    calendarMonth,
+  );
+}

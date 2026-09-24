@@ -45,14 +45,12 @@ import {
   sumLifeEventExpenseDetail,
   sumOtherInsurancePremiumDetail,
   sumOtherLoanRepaymentDetail,
-  sumPensionBreakdown,
   sumVehicleExpenseDetail,
 } from '../types/cashFlow';
 import {
-  calcMemberMonthlyPensionBreakdownMan,
+  calcMemberAnnualTaxableOldAgePensionPaymentManByMember,
   calcMonthlyPensionEntitlementBreakdownMan,
 } from './pensionIncome';
-import { createDefaultPensionMemberState } from './pensionDefaults';
 import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
 import { calcMemberMonthlyEducationYen, yenToMan } from './educationCashFlow';
 import type { FamilyMember } from '../types/family';
@@ -461,8 +459,17 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
   let savingsResidualCash = 0;
   let savingsInitialized = false;
   const useSavingsProjection = hasSavingsEntries(input.savingsState);
+  // 開始年が1〜2月でも、2月支払には前年12月分が含まれる。
+  // 最初の年だけ前年分を空扱いせず、実際の前年12月受給権を初期値にする。
   let entitlementPreviousYearDecember =
-    createEmptyPensionBreakdown();
+    calcMonthlyPensionEntitlementBreakdownMan(
+      input.familyMembers,
+      input.pensionByMember,
+      input.incomeByMember,
+      input.referenceDate,
+      startYear - 1,
+      12,
+    );
 
   for (let year = startYear; year <= endYear; year++) {
     const incomeBreakdown = createEmptyIncomeBreakdown();
@@ -508,48 +515,19 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         );
     }
 
-    // ── メンバー別年間年金受給額（税計算用）────────────────────────────────
-    // 課税標準は支払ベースではなく受給権ベース（毎月の受給額合計）で近似する。
-    // 加給年金・振替加算などの世帯加算分は世帯主に帰属させる。
-    const memberAnnualPensionMan: Record<string, number> = {};
-    for (const member of input.familyMembers) {
-      if (member.role === 'pet') continue;
-      const memberState =
-        input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
-      const incomeEntries = input.incomeByMember[member.id] ?? [];
-      let memberPension = 0;
-      for (let month = monthStart; month <= monthEnd; month++) {
-        memberPension += sumPensionBreakdown(
-          calcMemberMonthlyPensionBreakdownMan(
-            member,
-            memberState,
-            incomeEntries,
-            input.referenceDate,
-            year,
-            month,
-          ),
-        );
-      }
-      memberAnnualPensionMan[member.id] = memberPension;
-    }
-    // 世帯合計（加給年金・振替加算を含む）と個人合計の差を世帯主に帰属
-    const householdPensionTotal = Array.from(
-      { length: monthEnd - monthStart + 1 },
-      (_, i) => monthStart + i,
-    ).reduce(
-      (sum, m) =>
-        sum + sumPensionBreakdown(entitlementsByMonth[m] ?? createEmptyPensionBreakdown()),
-      0,
-    );
-    const memberPensionTotal = Object.values(memberAnnualPensionMan).reduce(
-      (sum, v) => sum + v,
-      0,
-    );
-    const pensionAdditions = Math.max(0, householdPensionTotal - memberPensionTotal);
-    if (pensionAdditions > 0) {
-      memberAnnualPensionMan[head.id] =
-        (memberAnnualPensionMan[head.id] ?? 0) + pensionAdditions;
-    }
+    // ── メンバー別年間課税年金額（税計算用）──────────────────────────────
+    // 税務上の実支払時期に合わせ、非課税の遺族・障害年金を除外しつつ、
+    // 加給年金・子の加算・振替加算も実際の受給者本人へ帰属させる。
+    const memberAnnualPensionMan =
+      calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+        familyMembers: input.familyMembers,
+        incomeByMember: input.incomeByMember,
+        pensionByMember: input.pensionByMember,
+        referenceDate: input.referenceDate,
+        calendarYear: year,
+        monthStart,
+        monthEnd,
+      });
 
     for (let month = monthStart; month <= monthEnd; month++) {
       const pensionPayment = calcPensionPaymentFromEntitlements(

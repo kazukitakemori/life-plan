@@ -60,6 +60,8 @@ export interface OldAgeBasicDetail {
 
   basic: number;
 
+  children: number;
+
   additional: number;
 
   transfer: number;
@@ -166,6 +168,8 @@ export interface SurvivorEmployeesDetail {
 
   basic: number;
 
+  children: number;
+
   occupational: number;
 
   middleAged: number;
@@ -247,6 +251,8 @@ export const OLD_AGE_BASIC_DETAIL_ROWS: {
 }[] = [
 
   { key: 'basic', label: '基本' },
+
+  { key: 'children', label: '子の加算' },
 
   { key: 'additional', label: '付加' },
 
@@ -334,7 +340,7 @@ export const DISABILITY_BASIC_DETAIL_ROWS: {
 
   { key: 'basic', label: '基本' },
 
-  { key: 'children', label: '子の' },
+  { key: 'children', label: '子の加算' },
 
 ];
 
@@ -401,6 +407,8 @@ export const SURVIVOR_EMPLOYEES_DETAIL_ROWS: {
 }[] = [
 
   { key: 'basic', label: '基本' },
+
+  { key: 'children', label: '子の加算' },
 
   { key: 'occupational', label: '職域' },
 
@@ -1399,7 +1407,14 @@ function roundNumericRecord<T extends object>(
 
 export function createEmptyOldAgeBasicDetail(): OldAgeBasicDetail {
 
-  return { basic: 0, additional: 0, transfer: 0, earlyPayment: 0, fund: 0 };
+  return {
+    basic: 0,
+    children: 0,
+    additional: 0,
+    transfer: 0,
+    earlyPayment: 0,
+    fund: 0,
+  };
 
 }
 
@@ -1506,6 +1521,8 @@ export function createEmptySurvivorEmployeesDetail(): SurvivorEmployeesDetail {
   return {
 
     basic: 0,
+
+    children: 0,
 
     occupational: 0,
 

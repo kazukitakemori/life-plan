@@ -33,6 +33,7 @@ export interface TeikibinRecentMonthlyInputRow {
   employeesPensionCategory: string;
   standardRemuneration: string;
   standardBonus: string;
+  premiumPayment: string;
 }
 
 export interface NenkinTeikibinUnder50AmountFields {
@@ -66,6 +67,13 @@ export interface TeikibinOver50OldAgeTriple {
 
 export interface NenkinTeikibinOver50AmountFields {
   basicPension65: number | null;
+  /**
+   * 50歳以上のねんきん定期便に印字される、65歳前の3つの
+   * 「受給開始年齢 ○歳〜」欄。空欄の列は null。
+   */
+  specialStartAgeCol2: number | null;
+  specialStartAgeCol3: number | null;
+  specialStartAgeCol4: number | null;
   general: {
     specialCol3: TeikibinOver50AmountPair;
     specialCol4: TeikibinOver50AmountPair;
@@ -97,6 +105,11 @@ export type NenkinTeikibinOver50Form = NenkinTeikibinParticipationFields &
 
 export type BenefitAmountMode = 'auto' | 'manual';
 
+export type SurvivorPremiumRequirementSetting =
+  | 'auto'
+  | 'met'
+  | 'not_met';
+
 export interface OldAgeBenefitRowSettings {
   startAge: number;
   /** 受給開始年齢の月オフセット（0〜11）。0 = startAge の誕生月と同月。 */
@@ -122,7 +135,24 @@ export interface BenefitSettings {
   survivorDeathYear: number;
   survivorDeathMonth: number;
   survivorBasicPerYear: number | null;
+  /**
+   * Q8で手入力した受給中の遺族基礎年金の最終支給月。
+   * 年・月が両方ある場合のみ、その月分まで計上する。旧データの未設定は終了なしとして扱う。
+   */
+  survivorBasicEndYear?: number | null;
+  survivorBasicEndMonth?: number | null;
   survivorEmployeesMutualPerYear: number | null;
+  /**
+   * Q8で手入力した受給中の遺族厚生・共済年金の最終支給月。
+   * 年・月が両方ある場合のみ、その月分まで計上する。旧データの未設定は終了なしとして扱う。
+   */
+  survivorEmployeesMutualEndYear?: number | null;
+  survivorEmployeesMutualEndMonth?: number | null;
+  /**
+   * 遺族基礎年金・遺族厚生年金の保険料納付要件。
+   * auto はねんきん定期便等から確認できる場合だけ確定し、確認できなければ未確認扱い。
+   */
+  survivorPremiumRequirement?: SurvivorPremiumRequirementSetting;
   dependentSpousePension: DependentSpousePensionSettings;
 }
 
@@ -147,14 +177,14 @@ export const PAST_ENROLLMENT_OPTIONS: {
   value: PastEnrollmentMode;
   label: string;
 }[] = [
-  { value: 'none', label: '入力しない' },
+  { value: 'none', label: '収入情報から概算する' },
   {
     value: 'nenkin-teikibin-under50',
-    label: 'ねんきん定期便（50歳未満の方タイプ）',
+    label: 'ねんきん定期便から入力（50歳未満）',
   },
   {
     value: 'nenkin-teikibin-over50',
-    label: 'ねんきん定期便（50歳以上の方タイプ）',
+    label: 'ねんきん定期便から入力（50歳以上）',
   },
 ];
 

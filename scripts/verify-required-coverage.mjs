@@ -55,6 +55,7 @@ import {
 import {
   createCoverageWorkIncomeEntry,
   createDefaultWorkDesigns,
+  resolveSurvivorLivelihoodIncomeAssessment,
 } from '../src/lib/requiredCoverageIncome.ts';
 import { resolveDeathTimeBalancesMan } from '../src/lib/requiredCoverageYearlyCashFlow.ts';
 import {
@@ -1920,6 +1921,153 @@ assert.equal(
 );
 console.log('OK survivor basic yen by child count');
 
+{
+  const lowIncome = createIncomeEntry(spouse.id, 'employee', 20, 1, spouse);
+  lowIncome.periods[0].startAge = 20;
+  lowIncome.periods[0].startMonth = 1;
+  lowIncome.periods[0].endAge = 65;
+  lowIncome.periods[0].endMonth = 12;
+  lowIncome.periods[0].monthlyAmountMan = 50;
+  lowIncome.periods[0].bonuses = [];
+  const lowAssessment = resolveSurvivorLivelihoodIncomeAssessment({
+    recipient: spouse,
+    incomeByMember: { [spouse.id]: [lowIncome] },
+    referenceDate,
+    death: { year: 2026, month: 7 },
+  });
+  assert.equal(lowAssessment.status, 'met');
+
+  const selfEmployedOverrideAssessment =
+    resolveSurvivorLivelihoodIncomeAssessment({
+      recipient: spouse,
+      incomeByMember: {},
+      priorYearIncomeByMember: {
+        [spouse.id]: {
+          differsFromCurrentYear: true,
+          category: 'self_employed',
+          monthlyAmountMan: 100,
+        },
+      },
+      referenceDate,
+      death: { year: 2026, month: 7 },
+    });
+  assert.equal(selfEmployedOverrideAssessment.grossRevenueMan, 1200);
+  assert.equal(selfEmployedOverrideAssessment.totalIncomeMan, null);
+  assert.equal(selfEmployedOverrideAssessment.status, 'unconfirmed');
+
+  const highIncome = createIncomeEntry(spouse.id, 'employee', 20, 1, spouse);
+  highIncome.periods[0].startAge = 20;
+  highIncome.periods[0].startMonth = 1;
+  highIncome.periods[0].endAge = 65;
+  highIncome.periods[0].endMonth = 12;
+  highIncome.periods[0].monthlyAmountMan = 100;
+  highIncome.periods[0].bonuses = [];
+  const highAssessment = resolveSurvivorLivelihoodIncomeAssessment({
+    recipient: spouse,
+    incomeByMember: { [spouse.id]: [highIncome] },
+    referenceDate,
+    death: { year: 2026, month: 7 },
+  });
+  assert.equal(highAssessment.status, 'not_met');
+
+  const postDeathStopAssessment = resolveSurvivorLivelihoodIncomeAssessment({
+    recipient: spouse,
+    incomeByMember: { [spouse.id]: [highIncome] },
+    futureIncomeByMember: { [spouse.id]: [] },
+    referenceDate,
+    death: { year: 2026, month: 7 },
+  });
+  assert.equal(postDeathStopAssessment.status, 'unconfirmed');
+
+  const retiringHighIncome = {
+    ...highIncome,
+    periods: highIncome.periods.map((period) => ({
+      ...period,
+      endAge: 40,
+      endMonth: 12,
+    })),
+  };
+  const retirementAssessment = resolveSurvivorLivelihoodIncomeAssessment({
+    recipient: spouse,
+    incomeByMember: { [spouse.id]: [retiringHighIncome] },
+    referenceDate,
+    death: { year: 2026, month: 7 },
+  });
+  assert.equal(retirementAssessment.status, 'unconfirmed');
+  console.log('OK survivor livelihood income: low met, sustained high not met, post-death/planned drop stays unconfirmed');
+}
+
+{
+  const separateSpouse = {
+    ...spouse,
+    id: 'separate-spouse',
+    householdPeriod: { mode: 'custom', endAge: 30, endMonth: 12 },
+  };
+  const pension = createDefaultPensionByMember([head, separateSpouse]);
+  pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const outsideLivelihood = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, separateSpouse],
+      incomeByMember: { [head.id]: [headEmployee] },
+      pensionByMember: pension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.equal(outsideLivelihood.income.survivorBasic, 0);
+  assert.equal(outsideLivelihood.income.survivorEmployeesGross, 0);
+
+  const outsideLivelihoodWithChildPension = createDefaultPensionByMember([
+    head,
+    separateSpouse,
+    child,
+  ]);
+  outsideLivelihoodWithChildPension[
+    head.id
+  ].benefitSettings.survivorPremiumRequirement = 'met';
+  const outsideLivelihoodWithChild = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, separateSpouse, child],
+      incomeByMember: { [head.id]: [headEmployee] },
+      pensionByMember: outsideLivelihoodWithChildPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  // 改正前は、子と surviving parent の生計同一を直接保存していないため、
+  // 親が死亡者の生計維持要件を外れても子へ自動で給付を移さない。
+  assert.equal(outsideLivelihoodWithChild.income.survivorBasic, 0);
+
+  const outsideLivelihoodReformPension = createDefaultPensionByMember([
+    head,
+    separateSpouse,
+    child,
+  ]);
+  outsideLivelihoodReformPension[
+    head.id
+  ].benefitSettings.survivorPremiumRequirement = 'met';
+  const outsideLivelihoodAfterReform = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, separateSpouse, child],
+      incomeByMember: { [head.id]: [headEmployee] },
+      pensionByMember: outsideLivelihoodReformPension,
+      referenceDate: new Date(2028, 3, 1),
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      kind: 'custom',
+      customEndYear: 2028,
+      customEndMonth: 12,
+    },
+  );
+  assert.ok(outsideLivelihoodAfterReform.income.survivorBasic > 0);
+  console.log('OK head-death survivor eligibility respects Q1 livelihood period');
+}
+
 const survivorFamilyInput = buildInput({
   familyMembers: [head, spouse, child],
   incomeByMember: {
@@ -1957,6 +2105,140 @@ assert.ok(
   survivorBasicResult.chartPoints.some((point) => point.yearSurvivorBasic > 0),
 );
 console.log('OK coverage survivor basic from eligible child');
+
+{
+  // 60〜64歳で国民年金の被保険者だった人は、日本国内住所が死亡要件の一部。
+  // 成人の住所を現データで確認できないため、納付要件だけで自動成立させない。
+  const formerNationalHead = {
+    ...head,
+    id: 'former-national-head',
+    age: 62,
+  };
+  const formerNationalPension = createDefaultPensionByMember([
+    formerNationalHead,
+    spouse,
+    child,
+  ]);
+  formerNationalPension[
+    formerNationalHead.id
+  ].benefitSettings.survivorPremiumRequirement = 'met';
+
+  const formerNationalResult = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [formerNationalHead, spouse, child],
+      incomeByMember: {
+        [spouse.id]: [spousePartTime],
+      },
+      pensionByMember: formerNationalPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.equal(formerNationalResult.income.survivorBasic, 0);
+  console.log('OK survivor basic: former national pension age 60-64 requires unrecorded domestic-address confirmation');
+}
+
+
+{
+  const highSpouseIncome = createIncomeEntry(spouse.id, 'employee', 20, 1, spouse);
+  highSpouseIncome.periods[0].startAge = 20;
+  highSpouseIncome.periods[0].startMonth = 1;
+  highSpouseIncome.periods[0].endAge = 65;
+  highSpouseIncome.periods[0].endMonth = 12;
+  highSpouseIncome.periods[0].monthlyAmountMan = 100;
+  highSpouseIncome.periods[0].bonuses = [];
+
+  const pension = createDefaultPensionByMember([head, spouse, child]);
+  pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const preReform = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse, child],
+      incomeByMember: {
+        [head.id]: [headEmployee],
+        [spouse.id]: [highSpouseIncome],
+      },
+      pensionByMember: pension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.equal(preReform.income.survivorBasic, 0);
+  assert.ok(preReform.income.survivorEmployeesGross > 0);
+
+  // 必要保障額の「万一後は働かない」は仮想シナリオであり、
+  // 死亡時点の生計維持（収入要件）を後から満たした扱いにはしない。
+  const childlessPreReformPension = createDefaultPensionByMember([head, spouse]);
+  childlessPreReformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const childlessPreReformStopWork = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse],
+      incomeByMember: {
+        [head.id]: [headEmployee],
+        [spouse.id]: [highSpouseIncome],
+      },
+      pensionByMember: childlessPreReformPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+      workDesigns: {
+        ...createDefaultWorkDesigns(),
+        head: {
+          [spouse.id]: { mode: 'stop', entries: [] },
+        },
+      },
+    },
+  );
+  assert.equal(childlessPreReformStopWork.income.survivorEmployeesGross, 0);
+
+  const reformReferenceDate = new Date(2028, 3, 1);
+  const reformPension = createDefaultPensionByMember([head, spouse, child]);
+  reformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const postReform = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse, child],
+      incomeByMember: {
+        [head.id]: [headEmployee],
+        [spouse.id]: [highSpouseIncome],
+      },
+      pensionByMember: reformPension,
+      referenceDate: reformReferenceDate,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      kind: 'custom',
+      customEndYear: 2028,
+      customEndMonth: 12,
+    },
+  );
+  assert.ok(postReform.income.survivorBasic > 0);
+
+  const childlessReformPension = createDefaultPensionByMember([head, spouse]);
+  childlessReformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
+  const childlessPostReform = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse],
+      incomeByMember: {
+        [head.id]: [headEmployee],
+        [spouse.id]: [highSpouseIncome],
+      },
+      pensionByMember: childlessReformPension,
+      referenceDate: reformReferenceDate,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      kind: 'custom',
+      customEndYear: 2028,
+      customEndMonth: 12,
+    },
+  );
+  assert.ok(childlessPostReform.income.survivorEmployeesGross > 0);
+  console.log('OK survivor livelihood integrates current child suspension and 2028 reforms');
+}
 
 const noChildBasic = buildRequiredCoverageResult(incomeInput, {
   ...createDefaultRequiredCoverageState(),

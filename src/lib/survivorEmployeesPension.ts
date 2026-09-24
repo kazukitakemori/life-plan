@@ -5,10 +5,14 @@
  * 参照: 日本年金機構「遺族厚生年金（受給要件・対象者・年金額）」
  * https://www.nenkin.go.jp/service/jukyu/seido/izokunenkin/jukyu-yoken/20150424.html
  *
- * v1 で未対応: 障害厚生による死亡、初診から5年以内の死亡、
- * 経過的寡婦加算、平成19年4月1日前の65歳以上の選択、物価スライド。
+ * 主な未対応: 初診から5年以内の傷病死亡、生計維持の個別認定、
+ * 平成19年4月1日前の65歳以上の選択、物価スライド。
  */
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
+import {
+  isPensionSpouseLikeMember,
+  resolveMemberBirthMonth,
+} from './familyDefaults';
 import {
   CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH,
   CHILDLESS_HUSBAND_PAYMENT_START_AGE,
@@ -16,7 +20,6 @@ import {
   DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS,
   MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR,
   MIDDLE_AGED_WIDOW_MIN_AGE,
-  PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
   SURVIVOR_EMPLOYEES_DEEMED_MONTHS,
   SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS,
@@ -25,27 +28,27 @@ import {
   SURVIVOR_PARENT_PAYMENT_START_AGE,
   SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH,
   SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR,
-  UNIVERSITY_EXEMPTION_END_AGE,
-  UNIVERSITY_EXEMPTION_END_MONTH,
-  UNIVERSITY_EXEMPTION_START_AGE,
-  UNIVERSITY_EXEMPTION_START_MONTH,
 } from './pensionConstants';
 import { createDefaultPensionMemberState, migrateTeikibinOver50Form } from './pensionDefaults';
 import {
   accumulateEmployeesEnrollmentUntilAgeMonth,
   getActiveEmployeesMonthlyRemunerationMan,
-  getNationalPensionCreditedMonthCount,
 } from './pensionEnrollmentEstimate';
 import {
   calcMemberEmployeesProportionalYenPerYear,
-  calcMemberMonthlyPensionBreakdownMan,
+  calcMemberMonthlyOldAgePensionBeforeZaishokuMan,
   getTotalEmployeesMonths,
 } from './pensionIncome';
 import { toMonthlyMan } from './pensionOldAge';
+import { resolveMemberYearIncomeProfile } from './memberYearIncome';
+import { buildMemberYearIncomeProfileFromOverride } from './priorYearIncomeResolution';
 import { calcProportionalPartAnnualYen } from './pensionProportionalPart';
 import {
+  isEligiblePensionChildAdditionResidence,
   listEligibleSurvivorBasicChildren,
   isEligibleSurvivorBasicChild,
+  survivorBasicChildAddYenPerYear,
+  survivorChildOrdinaryEnd,
 } from './survivorBasicPension';
 import {
   createEmptySurvivorEmployeesDetail,
@@ -53,42 +56,37 @@ import {
   type SurvivorEmployeesDetail,
 } from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
-import type { IncomeByMember, IncomeEntry } from '../types/income';
-import type { PensionByMember, PensionMemberState } from '../types/pension';
-import type { CalendarYearMonth } from './housingLoanAmortization';
+import type {
+  IncomeByMember,
+  IncomeEntry,
+  PriorYearIncomeByMember,
+} from '../types/income';
+import type {
+  NenkinTeikibinMonthlyRow,
+  PensionByMember,
+  PensionMemberState,
+} from '../types/pension';
+import {
+  addCalendarMonths,
+  type CalendarYearMonth,
+} from './housingLoanAmortization';
 import type { RequiredCoverageSubject } from '../types/requiredCoverage';
 
 function calendarIndex(year: number, month: number): number {
   return year * 12 + month;
 }
 
+function findSurvivorSpouseLike(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+): FamilyMember | undefined {
+  return subject === 'head'
+    ? familyMembers.find((member) => isPensionSpouseLikeMember(member))
+    : familyMembers.find((member) => member.role === 'head');
+}
+
 function ageMonthIndex(age: number, month: number): number {
   return age * 12 + month;
-}
-
-function isUniversityExemptionMonth(age: number, month: number): boolean {
-  const current = ageMonthIndex(age, month);
-  return (
-    current >=
-      ageMonthIndex(
-        UNIVERSITY_EXEMPTION_START_AGE,
-        UNIVERSITY_EXEMPTION_START_MONTH,
-      ) &&
-    current <=
-      ageMonthIndex(UNIVERSITY_EXEMPTION_END_AGE, UNIVERSITY_EXEMPTION_END_MONTH)
-  );
-}
-
-function possibleNationalPensionMonthsUntil(untilAge: number, untilMonth: number): number {
-  let count = 0;
-  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
-    for (let month = 1; month <= 12; month++) {
-      if (ageMonthIndex(age, month) > ageMonthIndex(untilAge, untilMonth)) continue;
-      if (isUniversityExemptionMonth(age, month)) continue;
-      count += 1;
-    }
-  }
-  return count;
 }
 
 export function isEmployeesInsuredAt(
@@ -109,30 +107,232 @@ export function isEmployeesInsuredAt(
   );
 }
 
-export function hasTwoThirdsPremiumPaid(
-  member: FamilyMember,
-  entries: IncomeEntry[],
-  referenceDate: Date,
-  deathAge: { age: number; month: number },
-): boolean {
-  const possible = possibleNationalPensionMonthsUntil(deathAge.age, deathAge.month);
-  if (possible <= 0) return true;
-  const credited = getNationalPensionCreditedMonthCount(member, entries, referenceDate, {
-    age: deathAge.age,
-    month: deathAge.month,
-  });
-  return credited * 3 >= possible * 2;
+function isUnpaidNationalPensionStatus(status: string): boolean {
+  return (
+    status === 'unpaid' ||
+    status === 'half-unpaid' ||
+    status === 'three-quarter-unpaid' ||
+    status === 'quarter-unpaid'
+  );
 }
 
-function isWithinOneYearPremiumException(
+function isConfirmedCoveredMonthlyRow(
+  row: NenkinTeikibinMonthlyRow,
+): boolean {
+  // 厚生年金加入月は国民年金欄が空欄でも納付要件上の加入期間になる。
+  if (row.employeesPensionCategory) return true;
+  if (!row.nationalPensionStatus || row.nationalPensionStatus === 'pending') {
+    return false;
+  }
+  return !isUnpaidNationalPensionStatus(row.nationalPensionStatus);
+}
+
+function listRecordedMonthlyRows(
+  memberState: PensionMemberState,
+): Array<{ serial: number; row: NenkinTeikibinMonthlyRow }> {
+  if (memberState.pastEnrollment === 'none') return [];
+
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  const latestSerial =
+    form.recentMonthlyYear * 12 + (form.recentMonthlyMonth - 1);
+  const rows = form.monthlyRows.slice(0, 12).map((row, index) => ({
+    serial: latestSerial - 12 + index,
+    row,
+  }));
+
+  if (memberState.pastEnrollment === 'nenkin-teikibin-over50') {
+    rows.push({
+      serial: latestSerial,
+      row: migrateTeikibinOver50Form(memberState.teikibinOver50)
+        .recentMonthlyInputRow,
+    });
+  }
+  return rows;
+}
+
+export function hasConfirmedNoUnpaidInRecentYear(
+  memberState: PensionMemberState,
+  deathYear: number,
+  deathMonth: number,
+): boolean {
+  const requiredEndSerial = deathYear * 12 + (deathMonth - 1) - 2;
+  const requiredStartSerial = requiredEndSerial - 11;
+  const selected = listRecordedMonthlyRows(memberState).filter(
+    ({ serial }) =>
+      serial >= requiredStartSerial && serial <= requiredEndSerial,
+  );
+  if (selected.length !== 12) return false;
+  return selected.every(({ row }) => isConfirmedCoveredMonthlyRow(row));
+}
+
+function recordedPremiumEligibleMonths(memberState: PensionMemberState): number {
+  if (memberState.pastEnrollment === 'none') return 0;
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  // 「これまでの年金加入期間」の第1号は未納月を除き、
+  // 納付済・免除（学生納付特例等を含む）を計上する。第3号・厚生年金も
+  // 納付要件上の期間に含められる。合算対象期間は3分の2要件には含めない。
+  return [
+    form.nationalPensionType1Months,
+    form.nationalPensionType3Months,
+    form.seamenInsuranceMonths,
+    form.employeesPensionGeneralMonths,
+    form.employeesPensionPublicServantMonths,
+    form.employeesPensionPrivateSchoolMonths,
+  ].reduce<number>((sum, value) => sum + Math.max(0, value ?? 0), 0);
+}
+
+function recordedLongTermQualifyingMonths(memberState: PensionMemberState): number {
+  if (memberState.pastEnrollment === 'none') return 0;
+  const form =
+    memberState.pastEnrollment === 'nenkin-teikibin-over50'
+      ? migrateTeikibinOver50Form(memberState.teikibinOver50)
+      : memberState.teikibinUnder50;
+  return (
+    recordedPremiumEligibleMonths(memberState) +
+    Math.max(0, form.consolidationPeriodMonths ?? 0)
+  );
+}
+
+export function hasConfirmedLongTermSurvivorQualification(
+  memberState: PensionMemberState,
+): boolean {
+  // 第1号の前納は最大24か月まで将来月が混在し得るため安全側に控除する。
+  const recordedLongTermMonths = Math.max(
+    0,
+    recordedLongTermQualifyingMonths(memberState) - 24,
+  );
+  return recordedLongTermMonths >= SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS;
+}
+
+function maximumNationalPensionInsuredMonthsUntil(
+  member: FamilyMember,
+  referenceDate: Date,
+  cutoff: CalendarYearMonth,
+): number {
+  const cutoffAge = getMemberAgeMonth(
+    member,
+    referenceDate,
+    cutoff.year,
+    cutoff.month,
+  );
+  if (!cutoffAge || cutoffAge.age < 20) return 0;
+  const start = ageMonthIndex(20, 1);
+  const end = Math.min(
+    ageMonthIndex(cutoffAge.age, cutoffAge.month),
+    ageMonthIndex(59, 12),
+  );
+  return Math.max(0, end - start + 1);
+}
+
+/**
+ * ねんきん定期便の累計加入期間だけで3分の2要件を確実に満たすといえるか。
+ *
+ * 第1号欄は未納月数を除くが、前納期間が将来月まで含まれる場合があるため、
+ * 最大2年（24月）を安全側に差し引いた下限値で判定する。
+ * 判定できない場合はfalseであり、「要件を満たさない」と断定する意味ではない。
+ */
+export function hasConfirmedTwoThirdsPremiumRequirement(
+  member: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (memberState.pastEnrollment === 'none') return false;
+  const cutoff = addCalendarMonths(death, -2);
+  const possible = maximumNationalPensionInsuredMonthsUntil(
+    member,
+    referenceDate,
+    cutoff,
+  );
+  if (possible <= 0) return true;
+  const conservativeRecorded = Math.max(
+    0,
+    recordedPremiumEligibleMonths(memberState) - 24,
+  );
+  return conservativeRecorded * 3 >= possible * 2;
+}
+
+export type SurvivorPremiumRequirementAssessment =
+  | {
+      status: 'met';
+      basis: 'manual' | 'one_year_no_unpaid' | 'two_thirds_recorded';
+    }
+  | {
+      status: 'not_met';
+      basis: 'manual';
+    }
+  | {
+      status: 'unconfirmed';
+      basis: 'insufficient_record';
+    };
+
+export function resolveSurvivorPremiumRequirementAssessment(
+  deceased: FamilyMember,
+  memberState: PensionMemberState,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): SurvivorPremiumRequirementAssessment {
+  const setting =
+    memberState.benefitSettings.survivorPremiumRequirement ?? 'auto';
+  if (setting === 'met') return { status: 'met', basis: 'manual' };
+  if (setting === 'not_met') {
+    return { status: 'not_met', basis: 'manual' };
+  }
+
+  const deathAge = getMemberAgeMonth(
+    deceased,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  if (!deathAge) {
+    return { status: 'unconfirmed', basis: 'insufficient_record' };
+  }
+
+  if (
+    isWithinOneYearPremiumException(
+      memberState,
+      death.year,
+      death.month,
+      deathAge.age,
+    )
+  ) {
+    return { status: 'met', basis: 'one_year_no_unpaid' };
+  }
+  if (
+    hasConfirmedTwoThirdsPremiumRequirement(
+      deceased,
+      memberState,
+      referenceDate,
+      death,
+    )
+  ) {
+    return { status: 'met', basis: 'two_thirds_recorded' };
+  }
+  return { status: 'unconfirmed', basis: 'insufficient_record' };
+}
+
+export function isWithinOneYearPremiumException(
+  memberState: PensionMemberState,
   deathYear: number,
   deathMonth: number,
   deceasedAge: number,
 ): boolean {
   if (deceasedAge >= STANDARD_OLD_AGE_START) return false;
-  if (deathYear < SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR) return true;
   if (deathYear > SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR) return false;
-  return deathMonth <= SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH;
+  if (
+    deathYear === SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR &&
+    deathMonth > SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH
+  ) {
+    return false;
+  }
+  return hasConfirmedNoUnpaidInRecentYear(memberState, deathYear, deathMonth);
 }
 
 export type SurvivorEmployeesDeathRequirement = 'short_term' | 'long_term' | 'none';
@@ -154,33 +354,31 @@ export function resolveSurvivorEmployeesDeathRequirement(
     calcBirthYear(deceased.age, deceased.birthMonth, referenceDate),
     deceased.birthMonth ?? 1,
   );
-  if (insured) {
-    if (
-      isWithinOneYearPremiumException(death.year, death.month, deathAge.age) ||
-      hasTwoThirdsPremiumPaid(deceased, entries, referenceDate, deathAge)
-    ) {
-      return 'short_term';
-    }
-    return 'none';
+
+  // 1級・2級の障害厚生年金受給権者の死亡は、保険料納付要件を別途求めず
+  // 短期要件と同じ300月みなしの対象となる。
+  const disabilityEmployeesQualification =
+    deceased.disabilityPension === 'employees_grade1' ||
+    deceased.disabilityPension === 'employees_grade2';
+  if (disabilityEmployeesQualification) {
+    return 'short_term';
   }
 
-  const credited = getNationalPensionCreditedMonthCount(
-    deceased,
-    entries,
-    referenceDate,
-    { age: deathAge.age, month: deathAge.month },
-  );
-  const monthsUntilDeath = calcEmployeesMonthsUntilDeath(
-    deceased,
-    entries,
-    memberState,
-    referenceDate,
-    death,
-  );
-  if (
-    Math.max(credited, monthsUntilDeath) >=
-    SURVIVOR_EMPLOYEES_OLD_AGE_QUALIFYING_MONTHS
-  ) {
+  if (insured) {
+    const premiumAssessment = resolveSurvivorPremiumRequirementAssessment(
+      deceased,
+      memberState,
+      referenceDate,
+      death,
+    );
+    if (premiumAssessment.status === 'met') {
+      return 'short_term';
+    }
+  }
+
+  // 現在の被保険者かどうかにかかわらず、25年以上の長期要件を
+  // ねんきん定期便の記録で確認できる場合は長期要件を優先できる。
+  if (hasConfirmedLongTermSurvivorQualification(memberState)) {
     return 'long_term';
   }
   return 'none';
@@ -318,19 +516,554 @@ export function applySurvivorEmployeesOwnOldAgeOffsetMan(
   return Math.max(0, amount - ownEmployeesMonthlyMan);
 }
 
-function fiveYearEnd(death: CalendarYearMonth): CalendarYearMonth {
-  const total = calendarIndex(death.year, death.month) + 59;
+/**
+ * 配偶者以外の65歳以上の受給権者は、按分後の遺族厚生年金から
+ * 自身の老齢厚生年金額に相当する部分を支給停止する。
+ */
+export function applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(
+  shareMonthlyMan: number,
+  ownEmployeesMonthlyMan: number,
+  recipientAge: number,
+): number {
+  if (shareMonthlyMan <= 0) return 0;
+  if (recipientAge < STANDARD_OLD_AGE_START || ownEmployeesMonthlyMan <= 0) {
+    return shareMonthlyMan;
+  }
+  return Math.max(0, shareMonthlyMan - ownEmployeesMonthlyMan);
+}
+
+function fiveYearEnd(startEvent: CalendarYearMonth): CalendarYearMonth {
+  // 受給権取得日等から5年を経過した「日の属する月」までは有期給付。
+  // CalendarYearMonth は日を持たないため、開始事由の月から60か月後を終端月とする。
+  const total = calendarIndex(startEvent.year, startEvent.month) + 60;
   return {
     year: Math.floor((total - 1) / 12),
     month: ((total - 1) % 12) + 1,
   };
 }
 
-function isOnOrAfterAge(
-  ageMonth: { age: number; month: number },
-  minAge: number,
+/**
+ * 2028年改正後の継続給付で参照する所得年。
+ * 法律上、1〜9月分は前々年、10〜12月分は前年の所得を参照する。
+ */
+export function resolveSurvivorContinuationIncomeReferenceYear(
+  paymentYear: number,
+  paymentMonth: number,
+): number {
+  return paymentYear - (paymentMonth <= 9 ? 2 : 1);
+}
+
+export type SurvivorContinuationIncomeBasisResolution =
+  | 'q7_reference_year'
+  | 'prior_year_override'
+  | 'unavailable';
+
+export interface SurvivorContinuationIncomeBasis {
+  incomeReferenceYear: number;
+  /** 税務上の合計所得金額ベース（円）。自動推計できない場合はnull。 */
+  totalIncomeYen: number | null;
+  resolution: SurvivorContinuationIncomeBasisResolution;
+  /**
+   * Q7や「前年度の収入」から組み立てるため、税務署・自治体の確定所得そのものではない。
+   * 継続給付の最終判定では公式所得情報による確認が必要。
+   */
+  isEstimate: true;
+}
+
+/**
+ * 継続給付の「前年所得」の概算元を解決する。
+ *
+ * residentTax用の resolveMemberPriorYearIncome は、試算初年度に現年収proxyを使うことが
+ * あるため、そのまま流用しない。法律で指定された参照暦年を直接Q7から組み立てる。
+ * Q7「前年度の収入」上書きは、試算開始年の前年を参照する場合だけ利用する。
+ */
+export function resolveSurvivorContinuationIncomeBasis(input: {
+  recipient: FamilyMember;
+  incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: PriorYearIncomeByMember;
+  referenceDate: Date;
+  paymentYear: number;
+  paymentMonth: number;
+}): SurvivorContinuationIncomeBasis {
+  const incomeReferenceYear = resolveSurvivorContinuationIncomeReferenceYear(
+    input.paymentYear,
+    input.paymentMonth,
+  );
+  const simulationStartYear = input.referenceDate.getFullYear();
+  const priorOverride = input.priorYearIncomeByMember?.[input.recipient.id];
+
+  if (
+    incomeReferenceYear === simulationStartYear - 1 &&
+    priorOverride?.differsFromCurrentYear
+  ) {
+    // Q7の前年度上書きは月額・収入区分しか持たない。
+    // 給与系は給与所得控除から概算できるが、自営業等は必要経費を
+    // 保存していないため、継続給付の「前年所得」を確定しない。
+    const canEstimateTotalIncomeFromOverride =
+      priorOverride.category === 'employee' ||
+      priorOverride.category === 'civil_servant' ||
+      priorOverride.category === 'part_time';
+    if (!canEstimateTotalIncomeFromOverride) {
+      return {
+        incomeReferenceYear,
+        totalIncomeYen: null,
+        resolution: 'unavailable',
+        isEstimate: true,
+      };
+    }
+    const profile = buildMemberYearIncomeProfileFromOverride(priorOverride);
+    return {
+      incomeReferenceYear,
+      totalIncomeYen: Math.round(profile.totalIncomeMan * 10_000),
+      resolution: 'prior_year_override',
+      isEstimate: true,
+    };
+  }
+
+  const entries = input.incomeByMember[input.recipient.id] ?? [];
+  if (entries.length === 0) {
+    return {
+      incomeReferenceYear,
+      totalIncomeYen: null,
+      resolution: 'unavailable',
+      isEstimate: true,
+    };
+  }
+
+  const profile = resolveMemberYearIncomeProfile(
+    input.recipient,
+    entries,
+    input.referenceDate,
+    incomeReferenceYear,
+    1,
+    12,
+  );
+  return {
+    incomeReferenceYear,
+    totalIncomeYen: Math.round(profile.totalIncomeMan * 10_000),
+    resolution: 'q7_reference_year',
+    isEstimate: true,
+  };
+}
+
+export interface SurvivorContinuationIncomeThresholdsYen {
+  first: number;
+  second: number;
+}
+
+/**
+ * 2028年改正後の継続給付の所得による年額支給停止額。
+ *
+ * 厚生年金保険法65条2項の確定式のみを実装する。
+ * - 第一所得基準額超〜第二所得基準額以下: 超過額の1/3
+ * - 第二所得基準額超: 第一〜第二の1/3 + 第二超過分の1/2
+ * - 支給停止額は年金年額を上限とする
+ *
+ * 第一・第二所得基準額そのものは政令事項のため、呼び出し側が公式確定値を
+ * 渡せる場合に限って使用する。目安値をここへ固定しない。
+ */
+export function calcSurvivorContinuationSuspensionYen(input: {
+  priorIncomeYen: number;
+  annualPensionYen: number;
+  thresholds: SurvivorContinuationIncomeThresholdsYen;
+}): number {
+  const income = Math.max(0, input.priorIncomeYen);
+  const pension = Math.max(0, input.annualPensionYen);
+  const first = Math.max(0, input.thresholds.first);
+  const second = Math.max(first, input.thresholds.second);
+
+  let suspension = 0;
+  if (income > second) {
+    suspension =
+      (second - first) / 3 +
+      (income - second) / 2;
+  } else if (income > first) {
+    suspension = (income - first) / 3;
+  }
+
+  return Math.min(pension, Math.max(0, suspension));
+}
+
+export type SurvivorContinuationAnnualPensionResolution =
+  | 'qualifying_disability'
+  | 'income_adjusted'
+  | 'thresholds_unavailable'
+  | 'income_unavailable';
+
+export interface SurvivorContinuationAnnualPensionResult {
+  annualPensionYen: number | null;
+  suspensionYen: number | null;
+  resolution: SurvivorContinuationAnnualPensionResolution;
+  incomeBasis: SurvivorContinuationIncomeBasis | null;
+}
+
+/**
+ * 5年有期給付終了後の継続給付年額を解決する。
+ *
+ * 障害要件は「障害状態」だけでは足りず、法令上の障害年金受給権等の要件を
+ * 満たすことを呼び出し側が確認できた場合だけ true を渡す。
+ * 所得基準額は政令の公式確定値を外部から渡す。未確定の目安値は使用しない。
+ */
+export function resolveSurvivorContinuationAnnualPensionYen(input: {
+  recipient: FamilyMember;
+  incomeByMember: IncomeByMember;
+  priorYearIncomeByMember?: PriorYearIncomeByMember;
+  referenceDate: Date;
+  paymentYear: number;
+  paymentMonth: number;
+  enhancedAnnualPensionYen: number;
+  thresholds?: SurvivorContinuationIncomeThresholdsYen;
+  hasQualifyingDisabilityPensionEntitlement: boolean;
+}): SurvivorContinuationAnnualPensionResult {
+  const pension = Math.max(0, input.enhancedAnnualPensionYen);
+
+  if (input.hasQualifyingDisabilityPensionEntitlement) {
+    return {
+      annualPensionYen: pension,
+      suspensionYen: 0,
+      resolution: 'qualifying_disability',
+      incomeBasis: null,
+    };
+  }
+
+  if (!input.thresholds) {
+    return {
+      annualPensionYen: null,
+      suspensionYen: null,
+      resolution: 'thresholds_unavailable',
+      incomeBasis: null,
+    };
+  }
+
+  const incomeBasis = resolveSurvivorContinuationIncomeBasis({
+    recipient: input.recipient,
+    incomeByMember: input.incomeByMember,
+    priorYearIncomeByMember: input.priorYearIncomeByMember,
+    referenceDate: input.referenceDate,
+    paymentYear: input.paymentYear,
+    paymentMonth: input.paymentMonth,
+  });
+  if (incomeBasis.totalIncomeYen == null) {
+    return {
+      annualPensionYen: null,
+      suspensionYen: null,
+      resolution: 'income_unavailable',
+      incomeBasis,
+    };
+  }
+
+  const suspensionYen = calcSurvivorContinuationSuspensionYen({
+    priorIncomeYen: incomeBasis.totalIncomeYen,
+    annualPensionYen: pension,
+    thresholds: input.thresholds,
+  });
+  return {
+    annualPensionYen: Math.max(0, pension - suspensionYen),
+    suspensionYen,
+    resolution: 'income_adjusted',
+    incomeBasis,
+  };
+}
+
+/**
+ * 所得判定を免除して継続給付を全額支給できる障害年金の受給状況か。
+ *
+ * 2028年改正後の厚生年金保険法65条4項は、
+ * - 障害基礎年金: 1級・2級
+ * - 障害厚生年金: 1級・2級・3級
+ * の受給権者で、現に障害等級に該当する状態にある場合を対象とする。
+ * 「障害あり」だけでは受給権を推測しない。
+ */
+export function hasQualifyingSurvivorContinuationDisabilityPension(
+  member: FamilyMember,
 ): boolean {
-  return ageMonth.age > minAge || ageMonth.age === minAge;
+  const status = member.disabilityPension ?? 'none';
+  const grade = member.disabilityGrade ?? 'none';
+  switch (status) {
+    case 'basic_grade1':
+    case 'employees_grade1':
+      return grade === 'grade1';
+    case 'basic_grade2':
+    case 'employees_grade2':
+      return grade === 'grade2';
+    case 'employees_grade3':
+      return grade === 'grade3';
+    default:
+      return false;
+  }
+}
+
+function isOnOrAfterSurvivorReform(death: CalendarYearMonth): boolean {
+  return (
+    death.year > 2028 ||
+    (death.year === 2028 && death.month >= 4)
+  );
+}
+
+function survivorReformWifeFiniteMaxAge(start: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(start)) return CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE;
+  // 2028年度は40歳未満から開始し、その後は毎年度1歳ずつ対象上限を引き上げ、
+  // 2048年度に60歳未満へ到達する。子の失権後に有期給付へ移る場合は
+  // 死亡時ではなく、その有期給付の開始時点で判定する。
+  const fiscalYear = start.month >= 4 ? start.year : start.year - 1;
+  return Math.min(60, 40 + Math.max(0, fiscalYear - 2028));
+}
+
+function resolveReformSpouseFiniteStart(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  survivorBasicLoss: CalendarYearMonth | null,
+): CalendarYearMonth | null {
+  if (!isOnOrAfterSurvivorReform(death)) return null;
+  const start =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+  const startAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    start.year,
+    start.month,
+  );
+  if (!startAge || startAge.age >= 60) return null;
+  if (spouse.gender === 'male') return start;
+  return startAge.age < survivorReformWifeFiniteMaxAge(start) ? start : null;
+}
+
+function isSpouseFiniteSurvivorEmployeesBenefit(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  receivesSurvivorBasicNow: boolean,
+  survivorBasicLoss: CalendarYearMonth | null,
+): boolean {
+  if (receivesSurvivorBasicNow) return false;
+  if (isOnOrAfterSurvivorReform(death)) {
+    return Boolean(
+      resolveReformSpouseFiniteStart(
+        spouse,
+        hadEligibleChildrenAtDeath,
+        referenceDate,
+        death,
+        survivorBasicLoss,
+      ),
+    );
+  }
+
+  const start =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+  const startAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    start.year,
+    start.month,
+  );
+  return Boolean(
+    startAge &&
+      spouse.gender === 'female' &&
+      startAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE,
+  );
+}
+
+export function isSurvivorEmployeesSpouseIncomeRequirementRemoved(
+  spouse: FamilyMember,
+  hadEligibleChildrenAtDeath: boolean,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (!isOnOrAfterSurvivorReform(death) || hadEligibleChildrenAtDeath) {
+    return false;
+  }
+  return isSpouseFiniteSurvivorEmployeesBenefit(
+    spouse,
+    false,
+    referenceDate,
+    death,
+    false,
+    null,
+  );
+}
+
+/**
+ * 2028年改正後の配偶者について、その月が「収入要件を撤廃する5年有期給付」
+ * 以後の期間に入っているかを返す。
+ *
+ * 子がいる間は現行給付を維持するため収入要件を残し、最後の対象児が
+ * 遺族基礎年金の対象外となって有期給付へ移る月から撤廃する。
+ * 有期給付終了後の継続給付は別の所得調整で判定するため、旧850万円基準へ戻さない。
+ */
+export function isSurvivorEmployeesSpouseIncomeRequirementRemovedAt(
+  spouse: FamilyMember,
+  remainingFamilyMembers: FamilyMember[],
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+): boolean {
+  if (!isOnOrAfterSurvivorReform(death)) return false;
+
+  const childrenAtDeath = listEligibleSurvivorBasicChildren(
+    remainingFamilyMembers,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (childrenAtDeath.length > 0) {
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset += 1) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      if (
+        listEligibleSurvivorBasicChildren(
+          remainingFamilyMembers,
+          referenceDate,
+          year,
+          month,
+        ).length === 0
+      ) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
+
+  const finiteStart = resolveReformSpouseFiniteStart(
+    spouse,
+    childrenAtDeath.length > 0,
+    referenceDate,
+    death,
+    survivorBasicLoss,
+  );
+  if (!finiteStart) return false;
+
+  return (
+    calendarIndex(now.year, now.month) >=
+    calendarIndex(finiteStart.year, finiteStart.month)
+  );
+}
+
+export interface SurvivorContinuationAssessmentTarget {
+  member: FamilyMember;
+  finiteBenefitStart: CalendarYearMonth;
+  finiteBenefitEnd: CalendarYearMonth;
+  assessmentEndAge: number;
+  /**
+   * 現行保存データだけでは所得基準額・障害年金受給権を確定できないため、
+   * この段階では支給可否ではなく「継続給付の判定対象」であることだけを示す。
+   */
+  reason: 'income_or_disability';
+}
+
+/**
+ * 2028年改正の5年有期給付が終了した後、最長65歳までの継続給付を
+ * 判定する必要がある配偶者を特定する。
+ *
+ * ここでは所得基準額や障害年金受給権を推測せず、判定対象の時間軸だけを確定する。
+ */
+export function resolveSurvivorContinuationAssessmentTarget(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+  now: CalendarYearMonth,
+): SurvivorContinuationAssessmentTarget | null {
+  if (!isOnOrAfterSurvivorReform(death)) return null;
+
+  const deceased = familyMembers.find((member) => member.role === subject);
+  if (!deceased) return null;
+  const remaining = familyMembers.filter(
+    (member) => member.role !== 'pet' && member.id !== deceased.id,
+  );
+  const spouse = findSurvivorSpouseLike(remaining, subject);
+  if (!spouse) return null;
+
+  const childrenAtDeath = listEligibleSurvivorBasicChildren(
+    remaining,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  const childrenNow = listEligibleSurvivorBasicChildren(
+    remaining,
+    referenceDate,
+    now.year,
+    now.month,
+  );
+  const receivesSurvivorBasicNow = childrenNow.length > 0;
+
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (childrenAtDeath.length > 0) {
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset++) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      if (
+        listEligibleSurvivorBasicChildren(
+          remaining,
+          referenceDate,
+          year,
+          month,
+        ).length === 0
+      ) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
+
+  if (
+    !isSpouseFiniteSurvivorEmployeesBenefit(
+      spouse,
+      childrenAtDeath.length > 0,
+      referenceDate,
+      death,
+      receivesSurvivorBasicNow,
+      survivorBasicLoss,
+    )
+  ) {
+    return null;
+  }
+
+  const finiteBenefitStart =
+    childrenAtDeath.length > 0 && survivorBasicLoss
+      ? survivorBasicLoss
+      : death;
+  const finiteBenefitEnd = fiveYearEnd(finiteBenefitStart);
+  if (
+    calendarIndex(now.year, now.month) <=
+    calendarIndex(finiteBenefitEnd.year, finiteBenefitEnd.month)
+  ) {
+    return null;
+  }
+
+  const nowAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    now.year,
+    now.month,
+  );
+  if (
+    !nowAge ||
+    isMonthAfterAgeReached(
+      spouse,
+      referenceDate,
+      STANDARD_OLD_AGE_START,
+      now,
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    member: spouse,
+    finiteBenefitStart,
+    finiteBenefitEnd,
+    assessmentEndAge: STANDARD_OLD_AGE_START,
+    reason: 'income_or_disability',
+  };
 }
 
 export function isSurvivingSpouseEligibleForEmployees(
@@ -340,6 +1073,7 @@ export function isSurvivingSpouseEligibleForEmployees(
   death: CalendarYearMonth,
   now: CalendarYearMonth,
   receivesSurvivorBasicNow: boolean,
+  survivorBasicLoss: CalendarYearMonth | null = null,
 ): boolean {
   const deathAge = getMemberAgeMonth(spouse, referenceDate, death.year, death.month);
   const nowAge = getMemberAgeMonth(spouse, referenceDate, now.year, now.month);
@@ -348,42 +1082,174 @@ export function isSurvivingSpouseEligibleForEmployees(
     return false;
   }
 
-  if (hadEligibleChildrenAtDeath) return true;
+  // 子がいる間は現行制度の給付順位を維持する。
+  // 妻は受給、夫は死亡時55歳以上で遺族基礎年金の受給権がある場合に限り、
+  // 60歳前の支給停止が解除される。55歳未満の夫へは遺族厚生年金を付けず、
+  // 子の受給へ回す。
+  if (hadEligibleChildrenAtDeath && receivesSurvivorBasicNow) {
+    if (spouse.gender === 'female') return true;
+    return deathAge.age >= CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH;
+  }
+  const fiveYearStart =
+    hadEligibleChildrenAtDeath && survivorBasicLoss ? survivorBasicLoss : death;
+
+  if (isOnOrAfterSurvivorReform(death)) {
+    const reformFiniteStart = resolveReformSpouseFiniteStart(
+      spouse,
+      hadEligibleChildrenAtDeath,
+      referenceDate,
+      death,
+      survivorBasicLoss,
+    );
+    if (reformFiniteStart) {
+      const end = fiveYearEnd(reformFiniteStart);
+      return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
+    }
+
+    // 子の遺族基礎年金が60歳以後に失権した場合や、女性の段階移行で
+    // 有期給付の対象外となる場合は5年で打ち切らず、従来どおりの期間判定へ進む。
+    if (hadEligibleChildrenAtDeath && survivorBasicLoss) return true;
+    if (spouse.gender === 'female') return true;
+    if (deathAge.age < 60) return false;
+  }
 
   if (spouse.gender === 'female') {
-    if (deathAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE) {
-      const end = fiveYearEnd(death);
+    const fiveYearStartAge = getMemberAgeMonth(
+      spouse,
+      referenceDate,
+      fiveYearStart.year,
+      fiveYearStart.month,
+    );
+    if (
+      fiveYearStartAge &&
+      fiveYearStartAge.age < CHILDLESS_WIFE_FIVE_YEAR_MAX_AGE
+    ) {
+      const end = fiveYearEnd(fiveYearStart);
       return calendarIndex(now.year, now.month) <= calendarIndex(end.year, end.month);
     }
     return true;
   }
 
   if (deathAge.age < CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH) return false;
-  if (receivesSurvivorBasicNow && isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH)) {
-    return true;
-  }
-  return isOnOrAfterAge(nowAge, CHILDLESS_HUSBAND_PAYMENT_START_AGE);
+  if (receivesSurvivorBasicNow) return true;
+  return isMonthAfterAgeReached(
+    spouse,
+    referenceDate,
+    CHILDLESS_HUSBAND_PAYMENT_START_AGE,
+    now,
+  );
 }
 
-function isParentLikeEligible(
+function isEligibleSurvivorEmployeesGrandchild(
   member: FamilyMember,
-  minRelationship: 'parent' | 'grandparent',
+  referenceDate: Date,
+  year: number,
+  month: number,
+): boolean {
+  if (
+    member.role !== 'other' ||
+    member.otherRelationship !== 'grandchild'
+  ) {
+    return false;
+  }
+  const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
+  if (!ageMonth) return false;
+
+  const ordinaryEnd = survivorChildOrdinaryEnd(member, referenceDate);
+  if (
+    ordinaryEnd &&
+    calendarIndex(year, month) <=
+      calendarIndex(ordinaryEnd.year, ordinaryEnd.month)
+  ) {
+    return true;
+  }
+
+  return (
+    member.disability === 'has' &&
+    (member.disabilityGrade === 'grade1' ||
+      member.disabilityGrade === 'grade2') &&
+    ageMonth.age < 20
+  );
+}
+
+function hasParentLikeSurvivorRightAtDeath(
+  member: FamilyMember,
+  relationship: 'parent' | 'grandparent',
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  if (member.role !== 'other') return false;
+  if (member.otherRelationship !== relationship) return false;
+  const deathAge = getMemberAgeMonth(
+    member,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  if (!deathAge) return false;
+
+  // 2028年4月改正後は、父母・祖父母は死亡時60歳以上で受給権が発生する。
+  // 改正前の「55歳以上で受給権を取得し、60歳まで支給停止」は廃止。
+  const minAgeAtDeath = isOnOrAfterSurvivorReform(death)
+    ? SURVIVOR_PARENT_PAYMENT_START_AGE
+    : SURVIVOR_PARENT_MIN_AGE_AT_DEATH;
+  return deathAge.age >= minAgeAtDeath;
+}
+
+function isParentLikePaymentActive(
+  member: FamilyMember,
+  relationship: 'parent' | 'grandparent',
   referenceDate: Date,
   death: CalendarYearMonth,
   now: CalendarYearMonth,
 ): boolean {
-  if (member.role !== 'other') return false;
-  if (member.otherRelationship !== minRelationship) return false;
-  const deathAge = getMemberAgeMonth(member, referenceDate, death.year, death.month);
-  const nowAge = getMemberAgeMonth(member, referenceDate, now.year, now.month);
-  if (!deathAge || !nowAge) return false;
-  if (deathAge.age < SURVIVOR_PARENT_MIN_AGE_AT_DEATH) return false;
-  return isOnOrAfterAge(nowAge, SURVIVOR_PARENT_PAYMENT_START_AGE);
+  if (
+    !hasParentLikeSurvivorRightAtDeath(
+      member,
+      relationship,
+      referenceDate,
+      death,
+    )
+  ) {
+    return false;
+  }
+
+  // 2028年4月改正後は死亡時60歳以上が受給権要件なので、
+  // 年齢による追加の支給停止期間はない（実支給は死亡月の翌月分から）。
+  if (isOnOrAfterSurvivorReform(death)) return true;
+
+  return isMonthAfterAgeReached(
+    member,
+    referenceDate,
+    SURVIVOR_PARENT_PAYMENT_START_AGE,
+    now,
+  );
+}
+
+function hasSpouseSurvivorEmployeesRightAtDeath(
+  spouse: FamilyMember,
+  referenceDate: Date,
+  death: CalendarYearMonth,
+): boolean {
+  const deathAge = getMemberAgeMonth(
+    spouse,
+    referenceDate,
+    death.year,
+    death.month,
+  );
+  if (!deathAge) return false;
+  if (spouse.gender === 'female') return true;
+
+  // 2028年改正後は60歳未満の夫にも原則5年の有期給付が創設される。
+  if (isOnOrAfterSurvivorReform(death)) return true;
+
+  // 改正前の夫は死亡時55歳以上で受給権を取得する。
+  return deathAge.age >= CHILDLESS_HUSBAND_MIN_AGE_AT_DEATH;
 }
 
 export interface SurvivorEmployeesRecipient {
   member: FamilyMember;
-  kind: 'spouse' | 'child' | 'parent' | 'grandparent';
+  kind: 'spouse' | 'child' | 'parent' | 'grandchild' | 'grandparent';
 }
 
 export function resolveSurvivorEmployeesRecipient(
@@ -406,37 +1272,134 @@ export function resolveSurvivorEmployeesRecipient(
   const childrenNow = remaining.filter((member) =>
     isEligibleSurvivorBasicChild(member, referenceDate, now.year, now.month),
   );
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const spouse = remaining.find((member) => member.role === survivorRole);
-  const receivesSurvivorBasicNow = childrenNow.length > 0 && Boolean(spouse);
-
-  if (
+  const spouse = findSurvivorSpouseLike(remaining, subject);
+  const spouseHadRightAtDeath = Boolean(
     spouse &&
-    isSurvivingSpouseEligibleForEmployees(
-      spouse,
-      childrenAtDeath.length > 0,
+      hasSpouseSurvivorEmployeesRightAtDeath(
+        spouse,
+        referenceDate,
+        death,
+      ),
+  );
+  const receivesSurvivorBasicNow =
+    childrenNow.length > 0 && Boolean(spouse);
+
+  let survivorBasicLoss: CalendarYearMonth | null = null;
+  if (spouse && childrenAtDeath.length > 0) {
+    // 最後の対象児が遺族基礎年金の対象外となる最初の月を求める。
+    // 障害児は20歳未満まで対象となり得るため、死亡月から25年を上限に走査する。
+    const start = calendarIndex(death.year, death.month);
+    for (let offset = 1; offset <= 25 * 12; offset++) {
+      const serial = start + offset;
+      const year = Math.floor((serial - 1) / 12);
+      const month = ((serial - 1) % 12) + 1;
+      const eligible = listEligibleSurvivorBasicChildren(
+        remaining,
+        referenceDate,
+        year,
+        month,
+      );
+      if (eligible.length === 0) {
+        survivorBasicLoss = { year, month };
+        break;
+      }
+    }
+  }
+
+  // 配偶者または子が死亡時に受給権順位を占めた場合、父母・孫・祖父母へ
+  // 後から順位を繰り上げない。支給停止中や有期給付終了後も同様。
+  if (spouseHadRightAtDeath || childrenAtDeath.length > 0) {
+    if (
+      spouse &&
+      isSurvivingSpouseEligibleForEmployees(
+        spouse,
+        childrenAtDeath.length > 0,
+        referenceDate,
+        death,
+        now,
+        receivesSurvivorBasicNow,
+        survivorBasicLoss,
+      )
+    ) {
+      return { member: spouse, kind: 'spouse' };
+    }
+
+    if (childrenNow.length > 0) {
+      return { member: childrenNow[0], kind: 'child' };
+    }
+
+    return null;
+  }
+
+  // 父母に受給権者がいれば、その支給が60歳まで停止していても
+  // 孫・祖父母へ順位を移さない。
+  const parentsWithRight = remaining.filter((member) =>
+    hasParentLikeSurvivorRightAtDeath(
+      member,
+      'parent',
       referenceDate,
       death,
-      now,
-      receivesSurvivorBasicNow,
-    )
-  ) {
-    return { member: spouse, kind: 'spouse' };
+    ),
+  );
+  if (parentsWithRight.length > 0) {
+    const parent = parentsWithRight.find((member) =>
+      isParentLikePaymentActive(
+        member,
+        'parent',
+        referenceDate,
+        death,
+        now,
+      ),
+    );
+    return parent ? { member: parent, kind: 'parent' } : null;
   }
 
-  if (childrenNow.length > 0) {
-    return { member: childrenNow[0], kind: 'child' };
+  // 孫も死亡時の受給権順位で固定する。後に年齢要件を外れても
+  // 祖父母へ新たに受給権を移さない。
+  const grandchildrenWithRight = remaining.filter((member) =>
+    isEligibleSurvivorEmployeesGrandchild(
+      member,
+      referenceDate,
+      death.year,
+      death.month,
+    ),
+  );
+  if (grandchildrenWithRight.length > 0) {
+    const grandchild = grandchildrenWithRight.find((member) =>
+      isEligibleSurvivorEmployeesGrandchild(
+        member,
+        referenceDate,
+        now.year,
+        now.month,
+      ),
+    );
+    return grandchild
+      ? { member: grandchild, kind: 'grandchild' }
+      : null;
   }
 
-  const parent = remaining.find((member) =>
-    isParentLikeEligible(member, 'parent', referenceDate, death, now),
+  const grandparentsWithRight = remaining.filter((member) =>
+    hasParentLikeSurvivorRightAtDeath(
+      member,
+      'grandparent',
+      referenceDate,
+      death,
+    ),
   );
-  if (parent) return { member: parent, kind: 'parent' };
-
-  const grandparent = remaining.find((member) =>
-    isParentLikeEligible(member, 'grandparent', referenceDate, death, now),
-  );
-  if (grandparent) return { member: grandparent, kind: 'grandparent' };
+  if (grandparentsWithRight.length > 0) {
+    const grandparent = grandparentsWithRight.find((member) =>
+      isParentLikePaymentActive(
+        member,
+        'grandparent',
+        referenceDate,
+        death,
+        now,
+      ),
+    );
+    return grandparent
+      ? { member: grandparent, kind: 'grandparent' }
+      : null;
+  }
 
   return null;
 }
@@ -451,29 +1414,227 @@ function yearMonthWhenAgeReached(
   age: number,
 ): CalendarYearMonth | null {
   if (member.age == null || member.birthMonth == null) return null;
-  return {
+  const nominal = {
     year: calcBirthYear(member.age, member.birthMonth, referenceDate) + age,
     month: member.birthMonth,
   };
+  return member.birthDay === 1
+    ? addCalendarMonths(nominal, -1)
+    : nominal;
 }
 
-export function calcMiddleAgedWidowAddYenPerYear(input: {
+function isMonthAfterAgeReached(
+  member: FamilyMember,
+  referenceDate: Date,
+  age: number,
+  now: CalendarYearMonth,
+): boolean {
+  const reached = yearMonthWhenAgeReached(member, referenceDate, age);
+  return Boolean(
+    reached &&
+      calendarIndex(now.year, now.month) >
+        calendarIndex(reached.year, reached.month),
+  );
+}
+
+const MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR: Record<number, number> = {
+  2028: 0.962,
+  2029: 0.923,
+  2030: 0.885,
+  2031: 0.846,
+  2032: 0.808,
+  2033: 0.769,
+  2034: 0.731,
+  2035: 0.692,
+  2036: 0.654,
+  2037: 0.615,
+  2038: 0.577,
+  2039: 0.538,
+  2040: 0.5,
+  2041: 0.462,
+  2042: 0.423,
+  2043: 0.385,
+  2044: 0.346,
+  2045: 0.308,
+  2046: 0.269,
+  2047: 0.231,
+  2048: 0.192,
+  2049: 0.154,
+  2050: 0.115,
+  2051: 0.077,
+  2052: 0.038,
+};
+
+function middleAgedWidowAddPhaseRatio(start: CalendarYearMonth): number {
+  if (!isOnOrAfterSurvivorReform(start)) return 1;
+  const fiscalYear = start.month >= 4 ? start.year : start.year - 1;
+  if (fiscalYear < 2028) return 1;
+  if (fiscalYear >= 2053) return 0;
+
+  // 令和7年法律74号附則別表第一の法定率。
+  // 基準は死亡年度ではなく「中高齢寡婦加算が新規に発生した年度」。
+  // 法律上は2028年4月1日までは1.000、4月2日から0.962だが、
+  // 本ソフトは月単位のため2028年4月発生は改正後の0.962として扱う。
+  return MIDDLE_AGED_WIDOW_PHASE_RATIOS_BY_FISCAL_YEAR[fiscalYear] ?? 0;
+}
+
+const TRANSITIONAL_WIDOW_ADD_2026_TABLE: Array<{
+  from: [number, number, number] | null;
+  amountYen: number;
+}> = [
+  { from: null, amountYen: 633_700 },
+  { from: [1926, 4, 2], amountYen: 633_700 },
+  { from: [1927, 4, 2], amountYen: 601_204 },
+  { from: [1928, 4, 2], amountYen: 571_115 },
+  { from: [1929, 4, 2], amountYen: 543_175 },
+  { from: [1930, 4, 2], amountYen: 517_162 },
+  { from: [1931, 4, 2], amountYen: 492_883 },
+  { from: [1932, 4, 2], amountYen: 470_171 },
+  { from: [1933, 4, 2], amountYen: 448_878 },
+  { from: [1934, 4, 2], amountYen: 428_876 },
+  { from: [1935, 4, 2], amountYen: 410_050 },
+  { from: [1936, 4, 2], amountYen: 392_300 },
+  { from: [1937, 4, 2], amountYen: 375_536 },
+  { from: [1938, 4, 2], amountYen: 359_678 },
+  { from: [1939, 4, 2], amountYen: 344_655 },
+  { from: [1940, 4, 2], amountYen: 330_403 },
+  { from: [1941, 4, 2], amountYen: 316_862 },
+  { from: [1942, 4, 2], amountYen: 295_740 },
+  { from: [1943, 4, 2], amountYen: 274_617 },
+  { from: [1944, 4, 2], amountYen: 253_495 },
+  { from: [1945, 4, 2], amountYen: 232_372 },
+  { from: [1946, 4, 2], amountYen: 211_250 },
+  { from: [1947, 4, 2], amountYen: 190_127 },
+  { from: [1948, 4, 2], amountYen: 169_005 },
+  { from: [1949, 4, 2], amountYen: 147_882 },
+  { from: [1950, 4, 2], amountYen: 126_760 },
+  { from: [1951, 4, 2], amountYen: 105_637 },
+  { from: [1952, 4, 2], amountYen: 84_515 },
+  { from: [1953, 4, 2], amountYen: 63_392 },
+  { from: [1954, 4, 2], amountYen: 42_270 },
+  { from: [1955, 4, 2], amountYen: 21_147 },
+];
+
+function compareBirthDate(
+  year: number,
+  month: number,
+  day: number,
+  target: [number, number, number],
+): number {
+  if (year !== target[0]) return year - target[0];
+  if (month !== target[1]) return month - target[1];
+  return day - target[2];
+}
+
+/** 2026年度価格の経過的寡婦加算額。昭和31年4月2日以後生まれは対象外。 */
+export function getTransitionalWidowAddYenPerYear(
+  wife: FamilyMember,
+  referenceDate: Date,
+): number {
+  if (wife.gender !== 'female' || wife.age == null || wife.birthMonth == null) {
+    return 0;
+  }
+  const birthYear = calcBirthYear(wife.age, wife.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(wife);
+  const birthDay = wife.birthDay ?? (birthMonth === 4 ? 2 : 1);
+  if (compareBirthDate(birthYear, birthMonth, birthDay, [1956, 4, 2]) >= 0) {
+    return 0;
+  }
+
+  let amountYen = TRANSITIONAL_WIDOW_ADD_2026_TABLE[0].amountYen;
+  for (const row of TRANSITIONAL_WIDOW_ADD_2026_TABLE) {
+    if (!row.from) continue;
+    if (compareBirthDate(birthYear, birthMonth, birthDay, row.from) >= 0) {
+      amountYen = row.amountYen;
+    } else {
+      break;
+    }
+  }
+  return amountYen;
+}
+
+function hadMiddleAgedWidowAdditionBefore65(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  requirement: SurvivorEmployeesDeathRequirement;
+  deceasedEmployeesMonths: number;
+}): boolean {
+  const age65 = yearMonthWhenAgeReached(
+    input.wife,
+    input.referenceDate,
+    STANDARD_OLD_AGE_START,
+  );
+  if (!age65) return false;
+  const finalMiddleAgedMonth = age65;
+  const childrenBefore65 =
+    listEligibleSurvivorBasicChildren(
+      input.remainingFamilyMembers,
+      input.referenceDate,
+      finalMiddleAgedMonth.year,
+      finalMiddleAgedMonth.month,
+    ).length > 0;
+  const childrenAtDeath =
+    listEligibleSurvivorBasicChildren(
+      input.remainingFamilyMembers,
+      input.referenceDate,
+      input.death.year,
+      input.death.month,
+    ).length > 0;
+  return (
+    calcMiddleAgedWidowAddYenPerYear({
+      wife: input.wife,
+      remainingFamilyMembers: input.remainingFamilyMembers,
+      referenceDate: input.referenceDate,
+      death: input.death,
+      now: finalMiddleAgedMonth,
+      hadEligibleChildrenAtDeath: childrenAtDeath,
+      hasEligibleChildrenNow: childrenBefore65,
+      requirement: input.requirement,
+      deceasedEmployeesMonths: input.deceasedEmployeesMonths,
+    }) > 0
+  );
+}
+
+export function calcTransitionalWidowAddYenPerYear(input: {
   wife: FamilyMember;
   remainingFamilyMembers: FamilyMember[];
   referenceDate: Date;
   death: CalendarYearMonth;
   now: CalendarYearMonth;
-  hadEligibleChildrenAtDeath: boolean;
-  hasEligibleChildrenNow: boolean;
   requirement: SurvivorEmployeesDeathRequirement;
   deceasedEmployeesMonths: number;
 }): number {
-  if (input.wife.gender !== 'female') return 0;
-  const nowAge = ageAt(input.wife, input.referenceDate, input.now.year, input.now.month);
-  if (nowAge == null || nowAge < MIDDLE_AGED_WIDOW_MIN_AGE || nowAge >= STANDARD_OLD_AGE_START) {
+  if (
+    !isMonthAfterAgeReached(
+      input.wife,
+      input.referenceDate,
+      STANDARD_OLD_AGE_START,
+      input.now,
+    )
+  ) {
     return 0;
   }
-  if (input.hasEligibleChildrenNow) return 0;
+
+  const amount = getTransitionalWidowAddYenPerYear(
+    input.wife,
+    input.referenceDate,
+  );
+  if (amount <= 0) return 0;
+
+  // 障害基礎年金を受けられる間は経過的寡婦加算を停止する。
+  // 受給権だけでなく現在等級も一致する場合に自動停止する。
+  // 障害年金が全額支給停止中かどうかは現データでは判定できない。
+  if (
+    (input.wife.disabilityPension === 'basic_grade1' &&
+      input.wife.disabilityGrade === 'grade1') ||
+    (input.wife.disabilityPension === 'basic_grade2' &&
+      input.wife.disabilityGrade === 'grade2')
+  ) {
+    return 0;
+  }
+
   if (
     input.requirement === 'long_term' &&
     input.deceasedEmployeesMonths < DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
@@ -489,31 +1650,154 @@ export function calcMiddleAgedWidowAddYenPerYear(input: {
   );
   if (deathAge == null) return 0;
 
+  // 65歳以上で初めて遺族厚生年金の受給権が発生した場合。
+  if (deathAge >= STANDARD_OLD_AGE_START) return amount;
+
+  // 65歳未満で発生した場合は、中高齢寡婦加算が65歳直前まで
+  // 実際に付いていた妻が65歳到達後に経過的寡婦加算へ移る。
+  return hadMiddleAgedWidowAdditionBefore65(input) ? amount : 0;
+}
+
+function resolveMiddleAgedWidowAdditionStart(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  hadEligibleChildrenAtDeath: boolean;
+}): CalendarYearMonth | null {
+  const deathAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.death.year,
+    input.death.month,
+  );
+  if (deathAge == null) return null;
+
+  // 子がいない場合は、夫の死亡が加算開始事由。
   if (!input.hadEligibleChildrenAtDeath) {
-    if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE && deathAge < STANDARD_OLD_AGE_START) {
-      return MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR;
+    return deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE &&
+      deathAge < STANDARD_OLD_AGE_START
+      ? input.death
+      : null;
+  }
+
+  // 40歳未満で死別した場合は、40歳到達時に遺族基礎年金の対象児が
+  // 残っていることが中高齢寡婦加算への移行要件。
+  if (deathAge < MIDDLE_AGED_WIDOW_MIN_AGE) {
+    const atForty = yearMonthWhenAgeReached(
+      input.wife,
+      input.referenceDate,
+      MIDDLE_AGED_WIDOW_MIN_AGE,
+    );
+    if (!atForty) return null;
+    const hadChildrenAtForty =
+      listEligibleSurvivorBasicChildren(
+        input.remainingFamilyMembers,
+        input.referenceDate,
+        atForty.year,
+        atForty.month,
+      ).length > 0;
+    if (!hadChildrenAtForty) return null;
+  }
+
+  // 子のある妻は、遺族基礎年金を受給できなくなる最初の月から
+  // 中高齢寡婦加算へ移る。逓減率もこの新規発生月を基準に固定する。
+  const deathIndex = calendarIndex(input.death.year, input.death.month);
+  for (let offset = 1; offset <= 25 * 12; offset++) {
+    const serial = deathIndex + offset;
+    const year = Math.floor((serial - 1) / 12);
+    const month = ((serial - 1) % 12) + 1;
+    if (
+      listEligibleSurvivorBasicChildren(
+        input.remainingFamilyMembers,
+        input.referenceDate,
+        year,
+        month,
+      ).length > 0
+    ) {
+      continue;
     }
+    const startAge = ageAt(
+      input.wife,
+      input.referenceDate,
+      year,
+      month,
+    );
+    if (
+      startAge == null ||
+      startAge < MIDDLE_AGED_WIDOW_MIN_AGE ||
+      isMonthAfterAgeReached(
+        input.wife,
+        input.referenceDate,
+        STANDARD_OLD_AGE_START,
+        { year, month },
+      )
+    ) {
+      return null;
+    }
+    return { year, month };
+  }
+
+  return null;
+}
+
+export function calcMiddleAgedWidowAddYenPerYear(input: {
+  wife: FamilyMember;
+  remainingFamilyMembers: FamilyMember[];
+  referenceDate: Date;
+  death: CalendarYearMonth;
+  now: CalendarYearMonth;
+  hadEligibleChildrenAtDeath: boolean;
+  hasEligibleChildrenNow: boolean;
+  requirement: SurvivorEmployeesDeathRequirement;
+  deceasedEmployeesMonths: number;
+}): number {
+  if (input.wife.gender !== 'female') return 0;
+  const nowAge = ageAt(
+    input.wife,
+    input.referenceDate,
+    input.now.year,
+    input.now.month,
+  );
+  if (
+    nowAge == null ||
+    nowAge < MIDDLE_AGED_WIDOW_MIN_AGE ||
+    isMonthAfterAgeReached(
+      input.wife,
+      input.referenceDate,
+      STANDARD_OLD_AGE_START,
+      input.now,
+    )
+  ) {
+    return 0;
+  }
+  if (input.hasEligibleChildrenNow) return 0;
+  if (
+    input.requirement === 'long_term' &&
+    input.deceasedEmployeesMonths < DEPENDENT_PENSION_MIN_EMPLOYEES_MONTHS
+  ) {
     return 0;
   }
 
-  if (deathAge >= MIDDLE_AGED_WIDOW_MIN_AGE) {
-    return MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR;
+  const start = resolveMiddleAgedWidowAdditionStart({
+    wife: input.wife,
+    remainingFamilyMembers: input.remainingFamilyMembers,
+    referenceDate: input.referenceDate,
+    death: input.death,
+    hadEligibleChildrenAtDeath: input.hadEligibleChildrenAtDeath,
+  });
+  if (!start) return 0;
+  if (
+    calendarIndex(input.now.year, input.now.month) <
+    calendarIndex(start.year, start.month)
+  ) {
+    return 0;
   }
 
-  const atForty = yearMonthWhenAgeReached(
-    input.wife,
-    input.referenceDate,
-    MIDDLE_AGED_WIDOW_MIN_AGE,
+  return (
+    MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR *
+    middleAgedWidowAddPhaseRatio(start)
   );
-  if (!atForty) return 0;
-  const hadChildrenAtForty =
-    listEligibleSurvivorBasicChildren(
-      input.remainingFamilyMembers,
-      input.referenceDate,
-      atForty.year,
-      atForty.month,
-    ).length > 0;
-  return hadChildrenAtForty ? MIDDLE_AGED_WIDOW_ADD_YEN_PER_YEAR : 0;
 }
 
 export function calcCoverageSurvivorEmployeesDetail(input: {
@@ -526,10 +1810,15 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   death: CalendarYearMonth;
   year: number;
   month: number;
-}): { detail: SurvivorEmployeesDetail; recipientId: string | null } {
+}): {
+  detail: SurvivorEmployeesDetail;
+  recipientId: string | null;
+  continuationAssessment: SurvivorContinuationAssessmentTarget | null;
+} {
   const empty = {
     detail: createEmptySurvivorEmployeesDetail(),
     recipientId: null,
+    continuationAssessment: null,
   };
   const deceased = input.familyMembers.find((member) => member.role === input.subject);
   if (!deceased) return empty;
@@ -547,14 +1836,33 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   if (requirement === 'none') return empty;
 
   const now: CalendarYearMonth = { year: input.year, month: input.month };
-  const recipient = resolveSurvivorEmployeesRecipient(
-    input.familyMembers,
-    input.subject,
-    input.referenceDate,
-    input.death,
-    now,
-  );
-  if (!recipient) return empty;
+  if (
+    calendarIndex(now.year, now.month) <=
+    calendarIndex(input.death.year, input.death.month)
+  ) {
+    return empty;
+  }
+  const continuationAssessment =
+    resolveSurvivorContinuationAssessmentTarget(
+      input.familyMembers,
+      input.subject,
+      input.referenceDate,
+      input.death,
+      now,
+    );
+
+  // 継続給付の判定期間中は、後順位の遺族へ受給者を移さない。
+  // 障害年金の受給権を確認できる場合だけ、この後で全額継続へ解決する。
+  const recipient = continuationAssessment
+    ? null
+    : resolveSurvivorEmployeesRecipient(
+        input.familyMembers,
+        input.subject,
+        input.referenceDate,
+        input.death,
+        now,
+      );
+  if (!continuationAssessment && !recipient) return empty;
 
   const monthsUntilDeath = calcEmployeesMonthsUntilDeath(
     deceased,
@@ -577,6 +1885,38 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   });
   if (baseYen <= 0) return empty;
 
+  if (continuationAssessment) {
+    const continuation = resolveSurvivorContinuationAnnualPensionYen({
+      recipient: continuationAssessment.member,
+      incomeByMember: input.coverageIncomeByMember,
+      referenceDate: input.referenceDate,
+      paymentYear: input.year,
+      paymentMonth: input.month,
+      enhancedAnnualPensionYen:
+        baseYen / SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE,
+      hasQualifyingDisabilityPensionEntitlement:
+        hasQualifyingSurvivorContinuationDisabilityPension(
+          continuationAssessment.member,
+        ),
+    });
+
+    // 障害年金受給権を確認できれば所得に関係なく全額継続。
+    // それ以外は政令の所得基準額が公式確定するまで推測額を計上しない。
+    if (continuation.annualPensionYen == null) {
+      return { ...empty, continuationAssessment };
+    }
+    return {
+      detail: {
+        ...createEmptySurvivorEmployeesDetail(),
+        basic: toMonthlyMan(continuation.annualPensionYen),
+      },
+      recipientId: continuationAssessment.member.id,
+      continuationAssessment: null,
+    };
+  }
+
+  if (!recipient) return empty;
+
   const remaining = input.familyMembers.filter(
     (member) => member.role !== 'pet' && member.id !== deceased.id,
   );
@@ -594,8 +1934,73 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
   );
 
   let basicMan = toMonthlyMan(baseYen);
-  const recipientState =
-    input.pensionByMember[recipient.member.id] ?? createDefaultPensionMemberState();
+  // 2028年4月以降の5年間の有期給付には、死亡者の老齢厚生年金
+  // 報酬比例部分の1/4相当を上乗せし、合計4/4相当とする。
+  if (recipient.kind === 'spouse' && isOnOrAfterSurvivorReform(input.death)) {
+    const spouse = findSurvivorSpouseLike(remaining, input.subject);
+    const receivesSurvivorBasicNow =
+      childrenNow.length > 0 && Boolean(spouse);
+    let survivorBasicLoss: CalendarYearMonth | null = null;
+    if (childrenAtDeath.length > 0) {
+      const start = calendarIndex(input.death.year, input.death.month);
+      for (let offset = 1; offset <= 25 * 12; offset++) {
+        const serial = start + offset;
+        const year = Math.floor((serial - 1) / 12);
+        const month = ((serial - 1) % 12) + 1;
+        if (
+          listEligibleSurvivorBasicChildren(
+            remaining,
+            input.referenceDate,
+            year,
+            month,
+          ).length === 0
+        ) {
+          survivorBasicLoss = { year, month };
+          break;
+        }
+      }
+    }
+    if (
+      isSpouseFiniteSurvivorEmployeesBenefit(
+        recipient.member,
+        childrenAtDeath.length > 0,
+        input.referenceDate,
+        input.death,
+        receivesSurvivorBasicNow,
+        survivorBasicLoss,
+      )
+    ) {
+      basicMan += toMonthlyMan(
+        baseYen / SURVIVOR_EMPLOYEES_PROPORTIONAL_RATE * 0.25,
+      );
+    }
+  }
+
+  let childrenMan = 0;
+  if (
+    isOnOrAfterSurvivorReform(now) &&
+    (recipient.kind === 'spouse' || recipient.kind === 'child')
+  ) {
+    const residentChildrenNow = childrenNow.filter((member) =>
+      isEligiblePensionChildAdditionResidence(
+        member,
+        input.year,
+        input.month,
+      ),
+    );
+    const childAdditionCount =
+      recipient.kind === 'spouse'
+        ? residentChildrenNow.length
+        : Math.max(0, residentChildrenNow.length - 1);
+    childrenMan = toMonthlyMan(
+      survivorBasicChildAddYenPerYear(
+        childAdditionCount,
+        input.year,
+        input.month,
+      ),
+    );
+  }
+
   const recipientAge = getMemberAgeMonth(
     recipient.member,
     input.referenceDate,
@@ -603,7 +2008,10 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     input.month,
   );
   if (recipient.kind === 'spouse' && recipientAge) {
-    const ownBreakdown = calcMemberMonthlyPensionBreakdownMan(
+    const recipientState =
+      input.pensionByMember[recipient.member.id] ??
+      createDefaultPensionMemberState();
+    const ownOldAge = calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
       recipient.member,
       recipientState,
       input.coverageIncomeByMember[recipient.member.id] ?? [],
@@ -613,12 +2021,71 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
     );
     basicMan = applySurvivorEmployeesOwnOldAgeOffsetMan(
       basicMan,
-      ownOldAgeEmployeesWithoutDependentMan(ownBreakdown.oldAge),
+      ownOldAgeEmployeesWithoutDependentMan(ownOldAge),
       recipientAge.age,
     );
+  } else if (
+    recipient.kind === 'parent' ||
+    recipient.kind === 'grandparent'
+  ) {
+    const relationship = recipient.kind;
+    const rightHolders = remaining.filter((member) =>
+      hasParentLikeSurvivorRightAtDeath(
+        member,
+        relationship,
+        input.referenceDate,
+        input.death,
+      ),
+    );
+
+    // 同順位者が複数いる場合は、受給権者数でまず按分する。
+    // 改正前に60歳未満で支給停止中の者も「受給権者」なので分母に含める。
+    const shareMan =
+      rightHolders.length > 0 ? basicMan / rightHolders.length : basicMan;
+    basicMan = rightHolders.reduce((sum, current) => {
+      if (
+        !isParentLikePaymentActive(
+          current,
+          relationship,
+          input.referenceDate,
+          input.death,
+          now,
+        )
+      ) {
+        return sum;
+      }
+
+      const currentAge = getMemberAgeMonth(
+        current,
+        input.referenceDate,
+        input.year,
+        input.month,
+      );
+      if (!currentAge) return sum + shareMan;
+
+      const currentState =
+        input.pensionByMember[current.id] ?? createDefaultPensionMemberState();
+      const ownOldAge = calcMemberMonthlyOldAgePensionBeforeZaishokuMan(
+        current,
+        currentState,
+        input.coverageIncomeByMember[current.id] ?? [],
+        input.referenceDate,
+        input.year,
+        input.month,
+      );
+      return (
+        sum +
+        applyNonSpouseSurvivorEmployeesOwnOldAgeOffsetMan(
+          shareMan,
+          ownOldAgeEmployeesWithoutDependentMan(ownOldAge),
+          currentAge.age,
+        )
+      );
+    }, 0);
   }
 
   let middleAgedMan = 0;
+  let transitionalMan = 0;
   if (recipient.kind === 'spouse') {
     middleAgedMan = toMonthlyMan(
       calcMiddleAgedWidowAddYenPerYear({
@@ -633,15 +2100,29 @@ export function calcCoverageSurvivorEmployeesDetail(input: {
         deceasedEmployeesMonths: monthsUntilDeath,
       }),
     );
+    transitionalMan = toMonthlyMan(
+      calcTransitionalWidowAddYenPerYear({
+        wife: recipient.member,
+        remainingFamilyMembers: remaining,
+        referenceDate: input.referenceDate,
+        death: input.death,
+        now,
+        requirement,
+        deceasedEmployeesMonths: monthsUntilDeath,
+      }),
+    );
   }
 
   return {
     detail: {
       ...createEmptySurvivorEmployeesDetail(),
       basic: basicMan,
+      children: childrenMan,
       middleAged: middleAgedMan,
+      transitional: transitionalMan,
     },
     recipientId: recipient.member.id,
+    continuationAssessment: null,
   };
 }
 
@@ -649,5 +2130,12 @@ export function calcCoverageSurvivorEmployeesMonthlyMan(
   input: Parameters<typeof calcCoverageSurvivorEmployeesDetail>[0],
 ): number {
   const { detail } = calcCoverageSurvivorEmployeesDetail(input);
-  return detail.basic + detail.middleAged + detail.occupational + detail.transitional + detail.payment;
+  return (
+    detail.basic +
+    detail.children +
+    detail.middleAged +
+    detail.occupational +
+    detail.transitional +
+    detail.payment
+  );
 }

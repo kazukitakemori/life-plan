@@ -17,6 +17,15 @@ function defaultGender(role: FamilyMemberRole) {
   return 'male' as const;
 }
 
+/** 年金制度上の配偶者候補。Q1で明示された事実婚（内縁）も含む。 */
+export function isPensionSpouseLikeMember(member: FamilyMember): boolean {
+  return (
+    member.role === 'spouse' ||
+    (member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner')
+  );
+}
+
 /** 生年月日（年齢・月・日）がすべて入力済みか */
 export function isMemberBirthComplete(
   member: Pick<FamilyMember, 'age' | 'birthMonth' | 'birthDay'>,
@@ -57,11 +66,19 @@ export function resolveMemberBirthDay(
   return member?.birthDay ?? fallback;
 }
 
-/** 旧データ互換: birthDay 欠落を null で補完 */
+/** 旧データ互換: 欠落した任意項目を安全な未設定値で補完 */
 export function migrateFamilyMember(member: FamilyMember): FamilyMember {
   return {
     ...member,
     birthDay: member.birthDay ?? null,
+    disabilityGrade: member.disabilityGrade ?? 'none',
+    disabilityPension: member.disabilityPension ?? 'none',
+    pensionChildResidence:
+      member.pensionChildResidence ??
+      (member.role === 'child' ||
+      (member.role === 'other' && member.otherRelationship === 'grandchild')
+        ? 'unknown'
+        : undefined),
   };
 }
 
@@ -80,6 +97,9 @@ export function createFamilyMember(role: FamilyMemberRole): FamilyMember {
     gender: defaultGender(role),
     expectedLifespan: 90,
     disability: 'none',
+    disabilityGrade: 'none',
+    disabilityPension: 'none',
+    pensionChildResidence: role === 'child' ? 'unknown' : undefined,
     hobbies: [],
     householdPeriod: defaultHouseholdPeriod(role),
   };

@@ -1,5 +1,10 @@
 import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
-import { calcBirthYear, calcYearAtAge, isAgeCalendarMonthInRange } from './birthDate';
+import {
+  calcBirthYear,
+  calcYearAtAge,
+  calendarYearFromAgeCalendarMonth,
+  isAgeCalendarMonthInRange,
+} from './birthDate';
 import {
   careerAnnualIncomeToMonthlyMan,
   getCareerStartAnnualYen,
@@ -19,11 +24,13 @@ import {
   EMPLOYEES_PENSION_MAX_INSURED_AGE,
   FULL_BASIC_PENSION_MONTHS,
   FULL_BASIC_PENSION_YEN_PER_YEAR,
+  FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
+  NATIONAL_PENSION_MANDATORY_END_AGE,
+  OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS,
   PENSION_ENROLLMENT_START_AGE,
   STANDARD_OLD_AGE_START,
   UNIVERSITY_EXEMPTION_END_AGE,
   UNIVERSITY_EXEMPTION_END_MONTH,
-  UNIVERSITY_EXEMPTION_MONTHS,
   UNIVERSITY_EXEMPTION_START_AGE,
   UNIVERSITY_EXEMPTION_START_MONTH,
 } from './pensionConstants';
@@ -54,6 +61,7 @@ interface ActiveIncome {
   category: IncomeCategory;
   streamType: IncomeStreamType;
   monthlyAmountMan: number;
+  standardBonusYen: number;
 }
 
 interface AgeMonth {
@@ -160,6 +168,13 @@ function findActiveIncomeAtAgeMonth(
           category: entry.category,
           streamType: period.streamType,
           monthlyAmountMan: period.monthlyAmountMan,
+          standardBonusYen: (period.bonuses ?? [])
+            .filter((bonus) => bonus.paymentMonth === month)
+            .reduce(
+              (sum, bonus) =>
+                sum + resolvePensionStandardBonusYen(bonus.amountMan * 10_000),
+              0,
+            ),
         };
       }
     }
@@ -188,7 +203,10 @@ function findCareerEnd(entries: IncomeEntry[]): AgeMonth | null {
   return { age: end.age, month: end.month };
 }
 
-import { standardRemunerationYenFromMonthlyMan } from './standardRemuneration';
+import {
+  resolvePensionStandardBonusYen,
+  standardRemunerationYenFromMonthlyManAt,
+} from './standardRemuneration';
 
 function resolveEmployeesEnrollmentAtAgeMonth(
   entries: IncomeEntry[],
@@ -198,8 +216,13 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   workProfile: CurrentWorkProfile,
   careerEnd: AgeMonth | null,
   birthYear: number,
-): { kind: EmployeesEnrollmentKind; monthlyAmountMan: number } | null {
-  if (!isEmployeesPensionLiableAtAgeMonth(age, month, resolveMemberBirthMonth(member))) {
+): { kind: EmployeesEnrollmentKind; monthlyAmountMan: number; standardBonusYen: number } | null {
+  if (!isEmployeesPensionLiableAtAgeMonth(
+    age,
+    month,
+    resolveMemberBirthMonth(member),
+    member.birthDay,
+  )) {
     return null;
   }
 
@@ -224,6 +247,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
     return {
       kind: explicitKind,
       monthlyAmountMan: active?.monthlyAmountMan ?? 0,
+      standardBonusYen: active?.standardBonusYen ?? 0,
     };
   }
 
@@ -251,6 +275,7 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   return {
     kind: workProfile.employeesKind,
     monthlyAmountMan: careerAnnualIncomeToMonthlyMan(annualYen),
+    standardBonusYen: 0,
   };
 }
 
@@ -298,14 +323,21 @@ function accumulateEmployeesEnrollmentFromIncome(
       if (!enrollment) continue;
 
       const calendarYear = calcYearAtAge(birthYear, resolveMemberBirthMonth(member), age, month);
-      const remunerationYen = standardRemunerationYenFromMonthlyMan(
+      const remunerationYen = standardRemunerationYenFromMonthlyManAt(
         enrollment.monthlyAmountMan,
-        'pension',
+        calendarYear,
+        month,
       );
       const target =
         enrollment.kind === 'general' ? general : publicServant;
 
-      addEmployeesEnrollmentMonth(target, calendarYear, month, remunerationYen);
+      addEmployeesEnrollmentMonth(
+        target,
+        calendarYear,
+        month,
+        remunerationYen,
+        enrollment.standardBonusYen,
+      );
     }
   }
 
@@ -347,11 +379,9 @@ function isUniversityExemptionMonth(age: number, month: number): boolean {
  * 加入月数が満額480に達する場合でも、大学在学猶予24か月分は控除する。
  */
 function finalizeNationalPensionCreditedMonths(coveredMonths: number): number {
-  const capped = Math.min(coveredMonths, FULL_BASIC_PENSION_MONTHS);
-  if (coveredMonths >= FULL_BASIC_PENSION_MONTHS) {
-    return Math.max(0, capped - UNIVERSITY_EXEMPTION_MONTHS);
-  }
-  return capped;
+  // 学生納付特例の想定月は hasNationalPensionCoverageAtAgeMonth 側で
+  // すでに年金額算定から除外している。ここで再度24月を引かない。
+  return Math.min(Math.max(0, coveredMonths), FULL_BASIC_PENSION_MONTHS);
 }
 
 function hasNationalPensionCoverageAtAgeMonth(
@@ -363,10 +393,7 @@ function hasNationalPensionCoverageAtAgeMonth(
   careerEnd: AgeMonth | null,
   birthYear: number,
 ): boolean {
-  if (isUniversityExemptionMonth(age, month)) {
-    return false;
-  }
-
+  // 大学在学想定の期間でも、Q7に厚生年金加入が明示されていれば実績を優先する。
   if (resolveEmployeesEnrollmentAtAgeMonth(
     entries,
     age,
@@ -377,6 +404,11 @@ function hasNationalPensionCoverageAtAgeMonth(
     birthYear,
   )) {
     return true;
+  }
+
+  // Q7に加入実績がない場合のみ、20歳4月〜22歳3月を学生納付特例の既定値として扱う。
+  if (isUniversityExemptionMonth(age, month)) {
+    return false;
   }
 
   if (!isAssumedEmploymentStarted(age, month)) {
@@ -408,7 +440,7 @@ function hasNationalPensionCoverageAtAgeMonth(
 
 /**
  * ねんきん定期便なし推計用の国民年金加入月数（満額480か月で上限）。
- * 大学在学猶予24か月は算入しない。
+ * 大学在学猶予24か月は既定では算入しないが、Q7に加入実績があれば実績を優先する。
  */
 export function getNationalPensionCreditedMonthCount(
   member: FamilyMember,
@@ -421,15 +453,16 @@ export function getNationalPensionCreditedMonthCount(
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   const untilIndex = untilAgeMonth
     ? ageMonthIndex(untilAgeMonth.age, untilAgeMonth.month)
-    : ageMonthIndex(STANDARD_OLD_AGE_START, 12);
+    : ageMonthIndex(NATIONAL_PENSION_MANDATORY_END_AGE - 1, 12);
   let count = 0;
 
-  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
+  for (
+    let age = PENSION_ENROLLMENT_START_AGE;
+    age < NATIONAL_PENSION_MANDATORY_END_AGE;
+    age++
+  ) {
     for (let month = 1; month <= 12; month++) {
       if (ageMonthIndex(age, month) > untilIndex) continue;
-      if (isUniversityExemptionMonth(age, month)) {
-        continue;
-      }
       if (
         hasNationalPensionCoverageAtAgeMonth(
           entries,
@@ -449,34 +482,235 @@ export function getNationalPensionCreditedMonthCount(
   return finalizeNationalPensionCreditedMonths(count);
 }
 
+/**
+ * 定期便なし概算で老齢年金の10年資格期間を推計する。
+ * 年金額へは反映しない学生納付特例の想定期間も、受給資格期間には含める。
+ */
+export function getEstimatedOldAgeQualifyingMonthCount(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+): number {
+  const workProfile = resolveCurrentWorkProfile(member, entries, referenceDate);
+  const careerEnd = findCareerEnd(entries);
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  let count = 0;
+
+  for (
+    let age = PENSION_ENROLLMENT_START_AGE;
+    age < NATIONAL_PENSION_MANDATORY_END_AGE;
+    age++
+  ) {
+    for (let month = 1; month <= 12; month++) {
+      if (
+        hasNationalPensionCoverageAtAgeMonth(
+          entries,
+          age,
+          month,
+          member,
+          workProfile,
+          careerEnd,
+          birthYear,
+        ) ||
+        isUniversityExemptionMonth(age, month)
+      ) {
+        count++;
+      }
+    }
+  }
+
+  return Math.min(Math.max(0, count), FULL_BASIC_PENSION_MONTHS);
+}
+
 export function calcBasicPensionYenFromCreditedMonths(
   creditedMonths: number,
+  fullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
 ): number {
   const months = Math.max(0, Math.min(creditedMonths, FULL_BASIC_PENSION_MONTHS));
-  return (months / FULL_BASIC_PENSION_MONTHS) * FULL_BASIC_PENSION_YEN_PER_YEAR;
+  return (months / FULL_BASIC_PENSION_MONTHS) * fullBasicPensionYenPerYear;
+}
+
+function resolveFullBasicPensionYenPerYearForMember(
+  member: FamilyMember,
+  referenceDate: Date,
+): number {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
+  const birthDay = member.birthDay ?? 1;
+  const isLegacy =
+    birthYear < 1956 ||
+    (birthYear === 1956 &&
+      (birthMonth < 4 || (birthMonth === 4 && birthDay <= 1)));
+  return isLegacy
+    ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
+    : FULL_BASIC_PENSION_YEN_PER_YEAR;
+}
+
+type PensionBirthDate = {
+  year: number;
+  month: number;
+  day: number;
+};
+
+function comparePensionBirthDate(
+  value: PensionBirthDate,
+  target: PensionBirthDate,
+): number {
+  if (value.year !== target.year) return value.year - target.year;
+  if (value.month !== target.month) return value.month - target.month;
+  return value.day - target.day;
+}
+
+function resolvePensionBirthDate(
+  member: FamilyMember,
+  referenceDate: Date,
+): PensionBirthDate {
+  const year = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const month = resolveMemberBirthMonth(member);
+  // 4月の制度境界では、日未入力を若い側として扱う既存方針に合わせる。
+  const day = member.birthDay ?? (month === 4 ? 2 : 1);
+  return { year, month, day };
+}
+
+const TRANSITIONAL_FIXED_PART_MULTIPLIERS: Array<{
+  from: PensionBirthDate;
+  multiplier: number;
+}> = [
+  { from: { year: 1927, month: 4, day: 2 }, multiplier: 1.817 },
+  { from: { year: 1928, month: 4, day: 2 }, multiplier: 1.761 },
+  { from: { year: 1929, month: 4, day: 2 }, multiplier: 1.707 },
+  { from: { year: 1930, month: 4, day: 2 }, multiplier: 1.654 },
+  { from: { year: 1931, month: 4, day: 2 }, multiplier: 1.603 },
+  { from: { year: 1932, month: 4, day: 2 }, multiplier: 1.553 },
+  { from: { year: 1933, month: 4, day: 2 }, multiplier: 1.505 },
+  { from: { year: 1934, month: 4, day: 2 }, multiplier: 1.458 },
+  { from: { year: 1935, month: 4, day: 2 }, multiplier: 1.413 },
+  { from: { year: 1936, month: 4, day: 2 }, multiplier: 1.369 },
+  { from: { year: 1937, month: 4, day: 2 }, multiplier: 1.327 },
+  { from: { year: 1938, month: 4, day: 2 }, multiplier: 1.286 },
+  { from: { year: 1939, month: 4, day: 2 }, multiplier: 1.246 },
+  { from: { year: 1940, month: 4, day: 2 }, multiplier: 1.208 },
+  { from: { year: 1941, month: 4, day: 2 }, multiplier: 1.170 },
+  { from: { year: 1942, month: 4, day: 2 }, multiplier: 1.134 },
+  { from: { year: 1943, month: 4, day: 2 }, multiplier: 1.099 },
+  { from: { year: 1944, month: 4, day: 2 }, multiplier: 1.065 },
+  { from: { year: 1945, month: 4, day: 2 }, multiplier: 1.032 },
+  { from: { year: 1946, month: 4, day: 2 }, multiplier: 1.0 },
+];
+
+function getTransitionalFixedPartMultiplier(birth: PensionBirthDate): number {
+  let multiplier = 1.875;
+  for (const row of TRANSITIONAL_FIXED_PART_MULTIPLIERS) {
+    if (comparePensionBirthDate(birth, row.from) >= 0) {
+      multiplier = row.multiplier;
+    } else {
+      break;
+    }
+  }
+  return multiplier;
+}
+
+function getTransitionalFixedPartMaxMonths(birth: PensionBirthDate): number {
+  if (
+    comparePensionBirthDate(
+      birth,
+      { year: 1929, month: 4, day: 2 },
+    ) < 0
+  ) {
+    return 420;
+  }
+  if (
+    comparePensionBirthDate(
+      birth,
+      { year: 1934, month: 4, day: 2 },
+    ) < 0
+  ) {
+    return 432;
+  }
+  if (
+    comparePensionBirthDate(
+      birth,
+      { year: 1944, month: 4, day: 2 },
+    ) < 0
+  ) {
+    return 444;
+  }
+  if (
+    comparePensionBirthDate(
+      birth,
+      { year: 1945, month: 4, day: 2 },
+    ) < 0
+  ) {
+    return 456;
+  }
+  if (
+    comparePensionBirthDate(
+      birth,
+      { year: 1946, month: 4, day: 2 },
+    ) < 0
+  ) {
+    return 468;
+  }
+  return 480;
+}
+
+function getTransitionalAvailableMonths(birth: PensionBirthDate): number {
+  // 「加入可能年数」は昭和36年4月1日以後60歳までの年数。
+  // 4月2日〜翌4月1日を1 cohort として15〜40年の範囲になる。
+  const cohortYear =
+    birth.month > 4 || (birth.month === 4 && birth.day >= 2)
+      ? birth.year
+      : birth.year - 1;
+  const years = Math.max(15, Math.min(40, cohortYear - 1901));
+  return years * 12;
 }
 
 /**
- * 経過的加算（年額・円）を計算する。
+ * 経過的加算（2026年度価格・年額円）。
  *
- * 経過的加算 = max(0, 定額部分相当額 − 老齢基礎年金額)
+ * 日本年金機構の令和8年度式:
+ *   定額部分
+ *   − 老齢基礎年金満額 ×
+ *     「昭和36年4月以降の20歳以上60歳未満の厚生年金月数」
+ *     / 「加入可能年数×12」
  *
- * 定額部分単価 ≈ 老齢基礎年金満額 / 480 として近似。
- *   定額部分相当額 = 満額 × min(厚生年金加入月数, 480) / 480
- *   老齢基礎年金額  = 満額 × 算定基礎月数 / 480
- * ∴ 経過的加算     = 満額 × (min(厚生月数, 480) − 算定基礎月数) / 480
- *
- * 主な発生要因（このアプリの推計モデルにおける）:
- *   大学在学猶予 24 か月（20歳4月〜22歳3月）が老齢基礎算定月数から除外されているが
- *   厚生年金加入月数には算入されているケース。
+ * 定額部分は生年月日別の単価・読替率・被保険者月数上限を使用する。
  */
-export function calcTransitionalAdditionYenPerYear(
-  totalEmployeesMonths: number,
-  basicCreditedMonths: number,
-): number {
-  const cappedMonths = Math.min(totalEmployeesMonths, FULL_BASIC_PENSION_MONTHS);
-  const diff = Math.max(0, cappedMonths - basicCreditedMonths);
-  return (diff / FULL_BASIC_PENSION_MONTHS) * FULL_BASIC_PENSION_YEN_PER_YEAR;
+export function calcTransitionalAdditionYenPerYear(input: {
+  member: FamilyMember;
+  referenceDate: Date;
+  totalEmployeesMonths: number;
+  employeesMonthsAge20To59: number;
+}): number {
+  const birth = resolvePensionBirthDate(input.member, input.referenceDate);
+  const isLegacy =
+    comparePensionBirthDate(
+      birth,
+      { year: 1956, month: 4, day: 2 },
+    ) < 0;
+  const fixedPartBaseYen = isLegacy ? 1_761 : 1_766;
+  const fullBasicPensionYen = isLegacy
+    ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
+    : FULL_BASIC_PENSION_YEN_PER_YEAR;
+  const fixedPartMonths = Math.min(
+    Math.max(0, input.totalEmployeesMonths),
+    getTransitionalFixedPartMaxMonths(birth),
+  );
+  const fixedPartYen =
+    fixedPartBaseYen *
+    getTransitionalFixedPartMultiplier(birth) *
+    fixedPartMonths;
+
+  const availableMonths = getTransitionalAvailableMonths(birth);
+  const age20To59EmployeesMonths = Math.min(
+    Math.max(0, input.employeesMonthsAge20To59),
+    availableMonths,
+  );
+  const oldAgeBasicEquivalentYen =
+    fullBasicPensionYen *
+    (age20To59EmployeesMonths / availableMonths);
+
+  return Math.max(0, fixedPartYen - oldAgeBasicEquivalentYen);
 }
 
 /**
@@ -504,6 +738,101 @@ export function getActiveEmployeesMonthlyRemunerationMan(
   const kind = classifyEmployeesEnrollmentFromIncome(active.category, active.streamType);
   if (!kind) return 0;
   return active.monthlyAmountMan;
+}
+
+/**
+ * 在職老齢年金の「総報酬月額相当額」（万円）をQ7から算出する。
+ *
+ * 総報酬月額相当額 =
+ *   当月の標準報酬月額 + 直近12か月の標準賞与額合計 / 12
+ *
+ * 標準賞与額は1,000円未満を切り捨て、厚生年金の1回150万円上限を適用する。
+ * Q7の賞与は各収入期間の paymentMonth に毎年支給される前提。
+ */
+export function getActiveEmployeesTotalRemunerationMan(
+  entries: IncomeEntry[],
+  age: number,
+  calendarMonth: number,
+  birthYear: number,
+  birthMonth = 1,
+): number {
+  const active = findActiveIncomeAtAgeMonth(
+    entries,
+    age,
+    calendarMonth,
+    birthYear,
+    birthMonth,
+  );
+  if (!active) return 0;
+  const activeKind = classifyEmployeesEnrollmentFromIncome(
+    active.category,
+    active.streamType,
+  );
+  if (!activeKind) return 0;
+
+  const currentCalendarYear = calendarYearFromAgeCalendarMonth(
+    birthYear,
+    birthMonth,
+    age,
+    calendarMonth,
+  );
+  const standardMonthlyYen = standardRemunerationYenFromMonthlyManAt(
+    active.monthlyAmountMan,
+    currentCalendarYear,
+    calendarMonth,
+  );
+  const currentSerial = currentCalendarYear * 12 + (calendarMonth - 1);
+  let standardBonusTotalYen = 0;
+
+  for (let offset = 0; offset < 12; offset++) {
+    const serial = currentSerial - offset;
+    const targetYear = Math.floor(serial / 12);
+    const targetMonth = (serial % 12) + 1;
+
+    for (const entry of entries) {
+      for (const period of entry.periods) {
+        const kind = classifyEmployeesEnrollmentFromIncome(
+          entry.category,
+          period.streamType,
+        );
+        if (!kind) continue;
+
+        for (const bonus of period.bonuses ?? []) {
+          if (bonus.paymentMonth !== targetMonth) continue;
+
+          const targetAgeMonthIndex =
+            (targetYear - birthYear) * 12 +
+            targetMonth -
+            birthMonth;
+          const targetAge = Math.floor(targetAgeMonthIndex / 12);
+          const monthSinceBirthday =
+            ((targetAgeMonthIndex % 12) + 12) % 12;
+          const targetAgeCalendarMonth = monthSinceBirthday + 1;
+
+          if (
+            !isAgeCalendarMonthInRange(
+              targetAge,
+              targetAgeCalendarMonth,
+              period.startAge,
+              period.startMonth,
+              period.endAge,
+              period.endMonth,
+              birthYear,
+              birthMonth,
+            )
+          ) {
+            continue;
+          }
+
+          standardBonusTotalYen += resolvePensionStandardBonusYen(
+            bonus.amountMan * 10_000,
+          );
+        }
+      }
+    }
+  }
+
+  return (standardMonthlyYen + standardBonusTotalYen / 12) / 10_000;
 }
 
 export function getEmployeesEnrollmentMonthCounts(
@@ -565,12 +894,105 @@ function hasAnyEmployeesPensionInQ7(entries: IncomeEntry[]): {
  * 定期便ありの場合、定期便の記録最終月の翌月以降の Q7 収入期間を加算し、
  * 定期便の実績月数との二重計上を避けるために使用する。
  */
+export interface FuturePensionAdditionsYen {
+  basicYenPerYear: number;
+  generalEmployeesYenPerYear: number;
+  publicServantYenPerYear: number;
+  /** 老齢年金の10年受給資格期間へ加える将来月数 */
+  qualifyingMonths: number;
+}
+
+/**
+ * ねんきん定期便の記録最終月より後にQ7へ明示されている就労期間だけを使い、
+ * 65歳までの将来加入分を年金額へ換算する。
+ * 50歳未満の定期便は「これまでの加入実績額」なので、将来分を二重計上せず足す用途。
+ */
+export function estimateQ7FuturePensionAdditionsAfterDate(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+  afterYear: number,
+  afterMonth: number,
+): FuturePensionAdditionsYen {
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = resolveMemberBirthMonth(member);
+  const general = createEmptyProportionalAccumulation();
+  const publicServant = createEmptyProportionalAccumulation();
+  let basicMonths = 0;
+  let qualifyingMonths = 0;
+
+  for (let age = PENSION_ENROLLMENT_START_AGE; age < STANDARD_OLD_AGE_START; age++) {
+    for (let month = 1; month <= 12; month++) {
+      const calendarYear = calcYearAtAge(birthYear, birthMonth, age, month);
+      const isAfter =
+        calendarYear > afterYear ||
+        (calendarYear === afterYear && month > afterMonth);
+      if (!isAfter) continue;
+
+      const active = findActiveIncomeAtAgeMonth(
+        entries,
+        age,
+        month,
+        birthYear,
+        birthMonth,
+      );
+      if (!active) continue;
+
+      const employeesKind = classifyEmployeesEnrollmentFromIncome(
+        active.category,
+        active.streamType,
+      );
+      if (employeesKind) {
+        if (!isEmployeesPensionLiableAtAgeMonth(
+          age,
+          month,
+          birthMonth,
+          member.birthDay,
+        )) continue;
+        qualifyingMonths += 1;
+        if (age < NATIONAL_PENSION_MANDATORY_END_AGE) basicMonths += 1;
+        const remunerationYen = standardRemunerationYenFromMonthlyManAt(
+          active.monthlyAmountMan,
+          calendarYear,
+          month,
+        );
+        addEmployeesEnrollmentMonth(
+          employeesKind === 'general' ? general : publicServant,
+          calendarYear,
+          month,
+          remunerationYen,
+          active.standardBonusYen,
+        );
+        continue;
+      }
+
+      if (
+        age < NATIONAL_PENSION_MANDATORY_END_AGE &&
+        isNationalPensionOnlyIncome(active.category, active.streamType)
+      ) {
+        basicMonths += 1;
+        qualifyingMonths += 1;
+      }
+    }
+  }
+
+  return {
+    basicYenPerYear:
+      (Math.min(basicMonths, FULL_BASIC_PENSION_MONTHS) / FULL_BASIC_PENSION_MONTHS) *
+      FULL_BASIC_PENSION_YEN_PER_YEAR,
+    generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
+    publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
+    qualifyingMonths,
+  };
+}
+
 export function countQ7EmployeesMonthsAfterDate(
   entries: IncomeEntry[],
   member: FamilyMember,
   referenceDate: Date,
   afterYear: number,
   afterMonth: number,
+  maxAgeExclusive = EMPLOYEES_PENSION_MAX_INSURED_AGE,
 ): { general: number; publicServant: number } {
   const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
   let general = 0;
@@ -586,7 +1008,7 @@ export function countQ7EmployeesMonthsAfterDate(
 
       for (
         let age = period.startAge;
-        age <= period.endAge;
+        age <= period.endAge && age < maxAgeExclusive;
         age++
       ) {
         const mStart = age === period.startAge ? period.startMonth : 1;
@@ -602,7 +1024,12 @@ export function countQ7EmployeesMonthsAfterDate(
             calYear > afterYear ||
             (calYear === afterYear && month > afterMonth);
           if (!isAfter) continue;
-          if (!isEmployeesPensionLiableAtAgeMonth(age, month, resolveMemberBirthMonth(member))) {
+          if (!isEmployeesPensionLiableAtAgeMonth(
+            age,
+            month,
+            resolveMemberBirthMonth(member),
+            member.birthDay,
+          )) {
             continue;
           }
 
@@ -687,15 +1114,35 @@ export function estimateOldAgeAmountsFromIncome(
     entries,
     referenceDate,
   );
+  const qualifyingMonths = getEstimatedOldAgeQualifyingMonthCount(
+    member,
+    entries,
+    referenceDate,
+  );
 
   const generalMonths = general.preMonths + general.postMonths;
   const publicMonths = publicServant.preMonths + publicServant.postMonths;
   const totalEmployeesMonths = generalMonths + publicMonths;
-
-  const totalTransitional = calcTransitionalAdditionYenPerYear(
-    totalEmployeesMonths,
-    creditedMonths,
+  const under60 = accumulateEmployeesEnrollmentFromIncome(
+    member,
+    entries,
+    referenceDate,
+    { age: 59, month: 12 },
   );
+  const employeesMonthsAge20To59 =
+    under60.general.preMonths +
+    under60.general.postMonths +
+    under60.publicServant.preMonths +
+    under60.publicServant.postMonths;
+
+  const fullBasicPensionYenPerYear =
+    resolveFullBasicPensionYenPerYearForMember(member, referenceDate);
+  const totalTransitional = calcTransitionalAdditionYenPerYear({
+    member,
+    referenceDate,
+    totalEmployeesMonths,
+    employeesMonthsAge20To59,
+  });
 
   // 経過的加算を厚生年金加入月数の比率で一般・公務員に按分
   const generalTransitionalYenPerYear =
@@ -703,11 +1150,317 @@ export function estimateOldAgeAmountsFromIncome(
       ? totalTransitional * (generalMonths / totalEmployeesMonths)
       : 0;
 
+  if (qualifyingMonths < OLD_AGE_PENSION_MIN_QUALIFYING_MONTHS) {
+    return {
+      basicYenPerYear: 0,
+      generalEmployeesYenPerYear: 0,
+      publicServantYenPerYear: 0,
+      generalTransitionalYenPerYear: 0,
+      publicTransitionalYenPerYear: 0,
+    };
+  }
+
   return {
-    basicYenPerYear: calcBasicPensionYenFromCreditedMonths(creditedMonths),
+    basicYenPerYear: calcBasicPensionYenFromCreditedMonths(
+      creditedMonths,
+      fullBasicPensionYenPerYear,
+    ),
     generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
     publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
     generalTransitionalYenPerYear,
     publicTransitionalYenPerYear: totalTransitional - generalTransitionalYenPerYear,
+  };
+}
+
+/**
+ * 暦年月を比較用の連続月番号へ変換する。
+ */
+function pensionCalendarSerial(year: number, month: number): number {
+  return year * 12 + (month - 1);
+}
+
+function pensionCalendarFromSerial(serial: number): {
+  year: number;
+  month: number;
+} {
+  return {
+    year: Math.floor(serial / 12),
+    month: (serial % 12) + 1,
+  };
+}
+
+function pensionAgeAtCalendarMonth(
+  birthYear: number,
+  birthMonth: number,
+  year: number,
+  month: number,
+): number {
+  let age = year - birthYear;
+  if (month < birthMonth) age -= 1;
+  return age;
+}
+
+/**
+ * 70歳到達に伴う厚生年金被保険者期間の最終月と、
+ * 70歳到達改定が年金額へ反映される最初の月を返す。
+ *
+ * 年齢は誕生日の前日に到達するため、1日生まれだけ月境界が1か月前へずれる。
+ * birthDay が未入力の場合は、2日以後生まれと同じ月単位の概算とする。
+ */
+function getAge70RevisionBoundarySerials(
+  member: FamilyMember,
+  birthYear: number,
+  birthMonth: number,
+): {
+  lastInsuredSerial: number;
+  revisionStartSerial: number;
+} {
+  const birthdayMonthSerial = pensionCalendarSerial(
+    birthYear + EMPLOYEES_PENSION_MAX_INSURED_AGE,
+    birthMonth,
+  );
+  const age70ReachedMonthSerial =
+    member.birthDay === 1 ? birthdayMonthSerial - 1 : birthdayMonthSerial;
+
+  return {
+    // 70歳到達日（厚生年金資格喪失日）が属する月は被保険者期間へ算入しない。
+    lastInsuredSerial: age70ReachedMonthSerial - 1,
+    // 70歳到達時の再計算は、70歳に到達した月の翌月分から反映。
+    revisionStartSerial: age70ReachedMonthSerial + 1,
+  };
+}
+
+function hasEmployeesPensionAtSerial(
+  entries: IncomeEntry[],
+  birthYear: number,
+  birthMonth: number,
+  serial: number,
+  lastInsuredSerial: number,
+): boolean {
+  if (serial > lastInsuredSerial) return false;
+
+  const { year, month } = pensionCalendarFromSerial(serial);
+  const age = pensionAgeAtCalendarMonth(
+    birthYear,
+    birthMonth,
+    year,
+    month,
+  );
+
+  for (const entry of entries) {
+    for (const period of entry.periods) {
+      if (
+        isAgeCalendarMonthInRange(
+          age,
+          month,
+          period.startAge,
+          period.startMonth,
+          period.endAge,
+          period.endMonth,
+          birthYear,
+          birthMonth,
+        ) &&
+        classifyEmployeesEnrollmentFromIncome(
+          entry.category,
+          period.streamType,
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * 65〜69歳の退職改定で年金額へ反映済みとなる、直近の被保険者最終月。
+ *
+ * Q7は月単位の就労期間なので「終了月の月末退職」として扱う。
+ * 翌月も厚生年金加入が続く場合は、1か月以内の再就職相当として退職改定を発生させない。
+ * 70歳到達による資格喪失は退職改定とは分け、70歳到達改定の境界で処理する。
+ */
+function findLatestRetirementRevisionThroughSerial(
+  entries: IncomeEntry[],
+  birthYear: number,
+  birthMonth: number,
+  currentSerial: number,
+  lastInsuredSerial: number,
+): number | null {
+  const startSerial = pensionCalendarSerial(
+    birthYear + STANDARD_OLD_AGE_START,
+    birthMonth,
+  );
+  const scanEnd = Math.min(currentSerial - 1, lastInsuredSerial);
+  let latest: number | null = null;
+
+  for (let serial = startSerial; serial <= scanEnd; serial++) {
+    if (
+      !hasEmployeesPensionAtSerial(
+        entries,
+        birthYear,
+        birthMonth,
+        serial,
+        lastInsuredSerial,
+      )
+    ) {
+      continue;
+    }
+
+    // 最終被保険者月の次月が70歳到達による資格喪失月なら、
+    // 退職改定ではなく70歳到達改定として扱う。
+    if (serial === lastInsuredSerial) {
+      continue;
+    }
+
+    const nextSerial = serial + 1;
+    if (nextSerial > currentSerial) continue;
+
+    if (
+      !hasEmployeesPensionAtSerial(
+        entries,
+        birthYear,
+        birthMonth,
+        nextSerial,
+        lastInsuredSerial,
+      )
+    ) {
+      latest = serial;
+    }
+  }
+
+  return latest;
+}
+
+/**
+ * 65歳以降の厚生年金加入分のうち、指定月までに
+ * 在職定時改定・退職改定・70歳到達時の改定で年金額へ反映済みとなる
+ * 報酬比例部分（年額・円）を返す。
+ *
+ * - 65〜69歳の在職中: 毎年10月に前年9月〜当年8月分を追加
+ * - 65〜69歳で退職: 1か月以内に再加入しない場合、退職翌月分から未反映期間を追加
+ * - 70歳到達: 70歳到達月の翌月分から、被保険者最終月までの未反映期間を追加
+ * - Q7の給与・賞与から標準報酬月額・標準賞与額を用いて推計
+ */
+export function estimatePost65EmployeesPensionIncreaseMan(
+  member: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+  currentAge: number,
+  currentMonth: number,
+): { generalEmployeesYenPerYear: number; publicServantYenPerYear: number } {
+  if (currentAge < STANDARD_OLD_AGE_START) {
+    return {
+      generalEmployeesYenPerYear: 0,
+      publicServantYenPerYear: 0,
+    };
+  }
+
+  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthMonth = member.birthMonth ?? 1;
+  const currentYear = calendarYearFromAgeCalendarMonth(
+    birthYear,
+    birthMonth,
+    currentAge,
+    currentMonth,
+  );
+  const currentSerial = pensionCalendarSerial(currentYear, currentMonth);
+
+  const age70Boundary = getAge70RevisionBoundarySerials(
+    member,
+    birthYear,
+    birthMonth,
+  );
+
+  // 在職定時改定:
+  // 10月分から当年8月まで、それ以前は前年8月までを反映済みとする。
+  const annualRevisionThroughSerial =
+    currentMonth >= 10
+      ? pensionCalendarSerial(currentYear, 8)
+      : pensionCalendarSerial(currentYear - 1, 8);
+
+  let reflectedThroughSerial = annualRevisionThroughSerial;
+
+  // 退職改定:
+  // Q7上で厚生年金加入が終了し、翌月も再加入していない場合は、
+  // その終了月までを退職翌月分から反映する。
+  const retirementThroughSerial = findLatestRetirementRevisionThroughSerial(
+    entries,
+    birthYear,
+    birthMonth,
+    currentSerial,
+    age70Boundary.lastInsuredSerial,
+  );
+  if (retirementThroughSerial != null) {
+    reflectedThroughSerial = Math.max(
+      reflectedThroughSerial,
+      retirementThroughSerial,
+    );
+  }
+
+  // 70歳到達時の改定:
+  // 誕生日の前日に70歳へ到達し、その「翌月分」から最終被保険者月までを反映する。
+  if (currentSerial >= age70Boundary.revisionStartSerial) {
+    reflectedThroughSerial = Math.max(
+      reflectedThroughSerial,
+      age70Boundary.lastInsuredSerial,
+    );
+  }
+
+  const firstPost65Serial = pensionCalendarSerial(
+    birthYear + STANDARD_OLD_AGE_START,
+    birthMonth,
+  );
+  const accumulationEndSerial = Math.min(
+    reflectedThroughSerial,
+    age70Boundary.lastInsuredSerial,
+  );
+
+  const general = createEmptyProportionalAccumulation();
+  const publicServant = createEmptyProportionalAccumulation();
+
+  for (
+    let serial = firstPost65Serial;
+    serial <= accumulationEndSerial;
+    serial++
+  ) {
+    const { year: calendarYear, month } = pensionCalendarFromSerial(serial);
+    const age = pensionAgeAtCalendarMonth(
+      birthYear,
+      birthMonth,
+      calendarYear,
+      month,
+    );
+
+    const active = findActiveIncomeAtAgeMonth(
+      entries,
+      age,
+      month,
+      birthYear,
+      birthMonth,
+    );
+    if (!active) continue;
+    const kind = classifyEmployeesEnrollmentFromIncome(
+      active.category,
+      active.streamType,
+    );
+    if (!kind) continue;
+
+    const remunerationYen = standardRemunerationYenFromMonthlyManAt(
+      active.monthlyAmountMan,
+      calendarYear,
+      month,
+    );
+    addEmployeesEnrollmentMonth(
+      kind === 'publicServant' ? publicServant : general,
+      calendarYear,
+      month,
+      remunerationYen,
+      active.standardBonusYen,
+    );
+  }
+
+  return {
+    generalEmployeesYenPerYear: calcProportionalPartAnnualYen(general),
+    publicServantYenPerYear: calcProportionalPartAnnualYen(publicServant),
   };
 }

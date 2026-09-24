@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import type { CashFlowInput } from '../../lib/cashFlow';
 import type { CashFlowTableData } from '../../types/cashFlow';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
+import { resolveSurvivorLivelihoodIncomeAssessment } from '../../lib/requiredCoverageIncome';
 import {
   REQUIRED_COVERAGE_CUSTOM_OPTION,
   buildRequiredCoverageResult,
@@ -163,6 +164,11 @@ export function RequiredCoverageView({
   const spouseMember = cashFlowInput.familyMembers.find(
     (member) => member.role === 'spouse',
   );
+  const commonLawPartner = cashFlowInput.familyMembers.find(
+    (member) =>
+      member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner',
+  );
   const headLabel = headMember
     ? getMemberTabLabel(headMember)
     : '世帯主さん';
@@ -171,6 +177,31 @@ export function RequiredCoverageView({
     : '配偶者さん';
   const hasSpouse = spouseMember != null;
   const subjectLabel = subject === 'spouse' ? spouseLabel : headLabel;
+  const survivorMember =
+    subject === 'head'
+      ? (spouseMember ??
+        cashFlowInput.familyMembers.find(
+          (member) =>
+            member.role === 'other' &&
+            member.otherRelationship === 'common_law_partner',
+        ))
+      : headMember;
+  const survivorLivelihoodIncomeAssessment = survivorMember
+    ? resolveSurvivorLivelihoodIncomeAssessment({
+        recipient: survivorMember,
+        incomeByMember: cashFlowInput.incomeByMember,
+        priorYearIncomeByMember: cashFlowInput.priorYearIncomeByMember,
+        referenceDate: cashFlowInput.referenceDate,
+        death: result.coverageStart,
+      })
+    : null;
+  const shouldWarnSurvivorLivelihoodIncome =
+    survivorLivelihoodIncomeAssessment != null &&
+    survivorLivelihoodIncomeAssessment.status !== 'met' &&
+    survivorLivelihoodIncomeAssessment.grossRevenueMan != null;
+  const survivorLabel = survivorMember
+    ? getMemberTabLabel(survivorMember)
+    : '残されたご家族';
   const chartKey = `${result.coverageStart.year}-${result.coverageEnd?.year ?? 0}-${result.coverageEnd?.month ?? 0}`;
   const showExpenseForm = detailPane === 'expense';
   const showIncomeForm = detailPane === 'income';
@@ -363,6 +394,11 @@ export function RequiredCoverageView({
                       : `${spouseLabel}に万一`}
                   </SubjectSwitchButton>
                 </div>
+                {!hasSpouse && commonLawPartner ? (
+                  <p className="required-coverage-card-note">
+                    内縁の配偶者は遺族年金の受給者としては計算しますが、「内縁の配偶者本人に万一」の必要保障額試算は現在未対応です。
+                  </p>
+                ) : null}
               </section>
 
               {!isMedicalRisk ? (
@@ -499,6 +535,11 @@ export function RequiredCoverageView({
               </header>
 
               <div className="required-coverage-body">
+                {shouldWarnSurvivorLivelihoodIncome ? (
+                  <p className="required-coverage-card-note" role="note">
+                    Q7の入力からみると、{survivorLabel}の前年相当の収入・所得が、遺族年金の生計維持に使う基準（収入850万円未満または所得655.5万円未満）を超える可能性があります。定年退職などでおおむね5年以内に基準未満となる場合等は認定されることもあるため、この画面では自動失権にはしていません。自動計上されている遺族年金は個別確認が必要です。
+                  </p>
+                ) : null}
                 {showForm ? (
                   <>
                     <div className="required-coverage-detail-forms">

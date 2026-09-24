@@ -1,12 +1,22 @@
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
-import { resolveMemberBirthMonth } from './familyDefaults';
+import {
+  isPensionSpouseLikeMember,
+  resolveMemberBirthMonth,
+} from './familyDefaults';
 import {
   FULL_BASIC_PENSION_YEN_PER_YEAR,
+  FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY,
   SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH,
+  SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR,
   SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR,
-  SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE,
 } from './pensionConstants';
 import { toMonthlyMan } from './pensionOldAge';
+import {
+  createEmptySurvivorBasicDetail,
+  type SurvivorBasicDetail,
+} from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
 import type { RequiredCoverageSubject } from '../types/requiredCoverage';
 import type { CalendarYearMonth } from './housingLoanAmortization';
@@ -38,12 +48,19 @@ export function isEligibleSurvivorBasicChild(
   if (member.role !== 'child') return false;
   const ageMonth = getMemberAgeMonth(member, referenceDate, year, month);
   if (!ageMonth) return false;
-  if (member.disability === 'has') {
-    return ageMonth.age < SURVIVOR_BASIC_DISABLED_CHILD_MAX_AGE;
-  }
+  // 通常は18歳到達年度末まで。Q1で障害等級1級・2級の状態が
+  // 明示されている場合だけ、制度どおり20歳未満まで延長する。
   const end = survivorChildOrdinaryEnd(member, referenceDate);
   if (!end) return false;
-  return calendarIndex(year, month) <= calendarIndex(end.year, end.month);
+  if (calendarIndex(year, month) <= calendarIndex(end.year, end.month)) {
+    return true;
+  }
+
+  const hasGradeOneOrTwoDisability =
+    member.disability === 'has' &&
+    (member.disabilityGrade === 'grade1' ||
+      member.disabilityGrade === 'grade2');
+  return hasGradeOneOrTwoDisability && ageMonth.age < 20;
 }
 
 export function listEligibleSurvivorBasicChildren(
@@ -57,35 +74,142 @@ export function listEligibleSurvivorBasicChildren(
   );
 }
 
-export function survivorBasicChildAddYenPerYear(childCount: number): number {
+export function isEligiblePensionChildAdditionResidence(
+  member: FamilyMember,
+  year: number,
+  month: number,
+): boolean {
+  if (
+    year < SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR ||
+    (year === SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR &&
+      month < SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH)
+  ) {
+    return true;
+  }
+  return (
+    member.pensionChildResidence === 'japan' ||
+    member.pensionChildResidence === 'overseas_exception'
+  );
+}
+
+function isOnOrAfterSurvivorChildAddReform(
+  year: number,
+  month: number,
+): boolean {
+  return (
+    year > SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR ||
+    (year === SURVIVOR_BASIC_CHILD_ADD_REFORM_START_YEAR &&
+      month >= SURVIVOR_BASIC_CHILD_ADD_REFORM_START_MONTH)
+  );
+}
+
+export function survivorBasicChildAddYenPerYear(
+  childCount: number,
+  year = 2026,
+  month = 4,
+): number {
   const count = Math.max(0, Math.floor(childCount));
   if (count <= 0) return 0;
-  const firstTwo = Math.min(count, 2) * SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
+
+  if (isOnOrAfterSurvivorChildAddReform(year, month)) {
+    return (
+      count * SURVIVOR_BASIC_CHILD_ADD_REFORM_2026_LEVEL_YEN_PER_YEAR
+    );
+  }
+
+  const firstTwo =
+    Math.min(count, 2) * SURVIVOR_BASIC_CHILD_ADD_FIRST_TWO_YEN_PER_YEAR;
   const rest =
-    Math.max(0, count - 2) * SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
+    Math.max(0, count - 2) *
+    SURVIVOR_BASIC_CHILD_ADD_THIRD_ONWARD_YEN_PER_YEAR;
   return firstTwo + rest;
 }
 
 /**
  * その月の遺族基礎年金額（円/年の12分の1を万円）。
  * 残る配偶者がいて対象の子がいれば配偶者が受給。配偶者がいなければ子が受給。
- * 対象の子がいなければ 0。遺族厚生・保険料納付要件は未対応。
+ * 対象の子がいなければ 0。死亡した方の受給要件・保険料納付要件は
+ * 必要保障額側の呼び出し元で確認する。
  */
 export function calcSurvivorBasicYenPerYear(
   eligibleChildCount: number,
   spouseReceives: boolean,
+  spouseFullBasicPensionYenPerYear = FULL_BASIC_PENSION_YEN_PER_YEAR,
+  year = 2026,
+  month = 4,
+  childAdditionCount = eligibleChildCount,
 ): number {
   if (eligibleChildCount <= 0) return 0;
   if (spouseReceives) {
     return (
-      FULL_BASIC_PENSION_YEN_PER_YEAR +
-      survivorBasicChildAddYenPerYear(eligibleChildCount)
+      spouseFullBasicPensionYenPerYear +
+      survivorBasicChildAddYenPerYear(childAdditionCount, year, month)
     );
   }
   return (
     FULL_BASIC_PENSION_YEN_PER_YEAR +
-    survivorBasicChildAddYenPerYear(eligibleChildCount - 1)
+    survivorBasicChildAddYenPerYear(
+      Math.max(0, childAdditionCount - 1),
+      year,
+      month,
+    )
   );
+}
+
+export function calcCoverageSurvivorBasicDetailMonthlyMan(
+  familyMembers: FamilyMember[],
+  subject: RequiredCoverageSubject,
+  referenceDate: Date,
+  year: number,
+  month: number,
+): SurvivorBasicDetail {
+  const detail = createEmptySurvivorBasicDetail();
+  const survivorSpouse =
+    subject === 'head'
+      ? familyMembers.some((member) => isPensionSpouseLikeMember(member))
+      : familyMembers.some((member) => member.role === 'head');
+  const children = listEligibleSurvivorBasicChildren(
+    familyMembers,
+    referenceDate,
+    year,
+    month,
+  );
+  if (children.length <= 0) return detail;
+
+  const spouse =
+    subject === 'head'
+      ? familyMembers.find((member) => isPensionSpouseLikeMember(member))
+      : familyMembers.find((member) => member.role === 'head');
+  const spouseFullBasicPensionYenPerYear = (() => {
+    if (!spouse) return FULL_BASIC_PENSION_YEN_PER_YEAR;
+    const birthYear = calcBirthYear(spouse.age, spouse.birthMonth, referenceDate);
+    const birthMonth = resolveMemberBirthMonth(spouse);
+    const birthDay = spouse.birthDay ?? 1;
+    return birthYear < 1956 ||
+      (birthYear === 1956 &&
+        (birthMonth < 4 || (birthMonth === 4 && birthDay <= 1)))
+      ? FULL_BASIC_PENSION_YEN_PER_YEAR_LEGACY
+      : FULL_BASIC_PENSION_YEN_PER_YEAR;
+  })();
+  const childAdditionCount = children.filter((member) =>
+    isEligiblePensionChildAdditionResidence(member, year, month),
+  ).length;
+
+  detail.basic = toMonthlyMan(
+    survivorSpouse
+      ? spouseFullBasicPensionYenPerYear
+      : FULL_BASIC_PENSION_YEN_PER_YEAR,
+  );
+  detail.children = toMonthlyMan(
+    survivorBasicChildAddYenPerYear(
+      survivorSpouse
+        ? childAdditionCount
+        : Math.max(0, childAdditionCount - 1),
+      year,
+      month,
+    ),
+  );
+  return detail;
 }
 
 export function calcCoverageSurvivorBasicMonthlyMan(
@@ -95,16 +219,12 @@ export function calcCoverageSurvivorBasicMonthlyMan(
   year: number,
   month: number,
 ): number {
-  const survivorRole = subject === 'head' ? 'spouse' : 'head';
-  const survivorSpouse = familyMembers.some(
-    (member) => member.role === survivorRole,
-  );
-  const children = listEligibleSurvivorBasicChildren(
+  const detail = calcCoverageSurvivorBasicDetailMonthlyMan(
     familyMembers,
+    subject,
     referenceDate,
     year,
     month,
   );
-  const yen = calcSurvivorBasicYenPerYear(children.length, survivorSpouse);
-  return toMonthlyMan(yen);
+  return detail.basic + detail.children + detail.widow;
 }
