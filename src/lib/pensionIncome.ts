@@ -86,7 +86,7 @@ import {
   PENSION_CHILD_ADD_REFORM_START_MONTH,
   PENSION_CHILD_ADD_REFORM_START_YEAR,
   STANDARD_OLD_AGE_START,
-  ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH,
+  getZaishokuSuspensionThresholdYenPerMonth,
 } from './pensionConstants';
 
 function getMemberAgeMonth(
@@ -252,12 +252,12 @@ function calcDeferralAveragePaymentRate(
     referenceDate,
     STANDARD_OLD_AGE_START,
   );
-  const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
-
   let paymentRateTotal = 0;
   for (let offset = 1; offset <= deferralMonths; offset++) {
     const serial = age65ReachedSerial + offset;
     const { year, month } = pensionCalendarFromSerial(serial);
+    const thresholdMan =
+      getZaishokuSuspensionThresholdYenPerMonth(year, month) / 10_000;
     let age = year - birthYear;
     if (month < birthMonth) age -= 1;
 
@@ -1221,6 +1221,8 @@ function calcOldAgeMonthlyManByRow(
         result,
         remunerationMan,
         ageMonth.age,
+        currentCalendarYear,
+        ageMonth.month,
       );
     }
   }
@@ -1349,10 +1351,16 @@ function applyZaishokuSuspension(
   breakdown: OldAgePensionBreakdown,
   totalRemunerationMan: number,
   age: number,
+  calendarYear: number,
+  calendarMonth: number,
 ): OldAgePensionBreakdown {
   if (totalRemunerationMan <= 0) return breakdown;
 
-  const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
+  const thresholdMan =
+    getZaishokuSuspensionThresholdYenPerMonth(
+      calendarYear,
+      calendarMonth,
+    ) / 10_000;
 
   if (age >= STANDARD_OLD_AGE_START) {
     const generalSuspendible =
