@@ -8,7 +8,6 @@ import {
   roundInsuranceIncomeBreakdown,
   roundPensionBreakdown,
   sumIncomeBreakdown,
-  sumPensionBreakdown,
   sumTaxSocialBreakdown,
   type IncomeBreakdown,
   type MemberCashFlowYearSlice,
@@ -32,7 +31,7 @@ import {
 } from './memberEarnedIncome';
 import { prorateAnnualLevyYen } from './otherCashFlowLinkage';
 import { createDefaultPensionMemberState } from './pensionDefaults';
-import { calcMemberMonthlyPensionBreakdownMan } from './pensionIncome';
+import { calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan } from './pensionIncome';
 import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
 import type { MemberTaxBreakdownData } from './taxCalculator';
 
@@ -47,41 +46,11 @@ export interface BuildMemberCashFlowYearSlicesInput {
   monthStart: number;
   monthEnd: number;
   levyPaymentFactor: number;
-  householdEntitlementsByMonth: PensionBreakdown[];
   memberTaxBreakdownByMemberId: Record<string, MemberTaxBreakdownData>;
 }
 
 function roundMan(value: number): number {
   return Math.round(value * 10) / 10;
-}
-
-function scalePensionBreakdown(
-  source: PensionBreakdown,
-  factor: number,
-): PensionBreakdown {
-  if (factor <= 0) return createEmptyPensionBreakdown();
-  if (factor >= 1) {
-    const copy = createEmptyPensionBreakdown();
-    addPensionBreakdown(copy, source);
-    return copy;
-  }
-
-  const scaled = JSON.parse(JSON.stringify(source)) as PensionBreakdown;
-  const scaleRecord = (record: Record<string, number>) => {
-    for (const key of Object.keys(record)) {
-      record[key] = record[key] * factor;
-    }
-  };
-
-  scaleRecord(scaled.oldAge.basic as unknown as Record<string, number>);
-  scaleRecord(scaled.oldAge.generalEmployees as unknown as Record<string, number>);
-  scaleRecord(scaled.oldAge.publicServant as unknown as Record<string, number>);
-  scaleRecord(scaled.disability.basic as unknown as Record<string, number>);
-  scaleRecord(scaled.disability.employees as unknown as Record<string, number>);
-  scaleRecord(scaled.survivor.basic as unknown as Record<string, number>);
-  scaleRecord(scaled.survivor.employees as unknown as Record<string, number>);
-
-  return scaled;
 }
 
 function calcMemberSelectiveDcManForYear(input: {
@@ -120,46 +89,6 @@ function calcMemberSelectiveDcManForYear(input: {
   }
 
   return total;
-}
-
-function resolveMemberMonthlyPensionEntitlement(
-  member: FamilyMember,
-  memberState: PensionMemberState,
-  incomeEntries: IncomeEntry[],
-  referenceDate: Date,
-  calendarYear: number,
-  calendarMonth: number,
-  householdEntitlement: PensionBreakdown,
-  memberEntitlements: Record<string, PensionBreakdown>,
-  headMember: FamilyMember | undefined,
-): PensionBreakdown {
-  const entitlement = calcMemberMonthlyPensionBreakdownMan(
-    member,
-    memberState,
-    incomeEntries,
-    referenceDate,
-    calendarYear,
-    calendarMonth,
-  );
-
-  if (!headMember || member.id !== headMember.id) {
-    return entitlement;
-  }
-
-  const householdTotal = sumPensionBreakdown(householdEntitlement);
-  const memberTotal = Object.values(memberEntitlements).reduce(
-    (sum, value) => sum + sumPensionBreakdown(value),
-    0,
-  );
-  const gap = Math.max(0, householdTotal - memberTotal);
-  if (gap <= 0) {
-    return entitlement;
-  }
-
-  const adjusted = createEmptyPensionBreakdown();
-  addPensionBreakdown(adjusted, entitlement);
-  adjusted.oldAge.generalEmployees.dependent += gap;
-  return adjusted;
 }
 
 export function buildMemberTaxSocialBreakdownForCashFlow(
@@ -256,45 +185,36 @@ function buildMemberIncomeBreakdown(
     referenceDate: input.referenceDate,
   };
   const incomeBreakdown = createEmptyIncomeBreakdown();
-  const headMember = input.familyMembers.find((m) => m.role === 'head');
   const memberState =
     input.pensionByMember[member.id] ?? createDefaultPensionMemberState();
   const incomeEntries = input.incomeByMember[member.id] ?? [];
 
   const memberEntitlementsByMonth: PensionBreakdown[] = [];
-  for (let month = 0; month <= 12; month += 1) {
-    if (month === 0) {
-      memberEntitlementsByMonth[month] =
-        input.householdEntitlementsByMonth[0] ?? createEmptyPensionBreakdown();
-      continue;
-    }
-
-    const perMember: Record<string, PensionBreakdown> = {};
-    for (const familyMember of input.familyMembers) {
-      if (familyMember.role === 'pet') continue;
-      perMember[familyMember.id] = calcMemberMonthlyPensionBreakdownMan(
-        familyMember,
-        input.pensionByMember[familyMember.id] ??
-          createDefaultPensionMemberState(),
-        input.incomeByMember[familyMember.id] ?? [],
+  memberEntitlementsByMonth[0] =
+    calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+      member,
+      memberState,
+      incomeEntries,
+      input.familyMembers,
+      input.pensionByMember,
+      input.incomeByMember,
+      input.referenceDate,
+      input.calendarYear - 1,
+      12,
+    );
+  for (let month = 1; month <= 12; month += 1) {
+    memberEntitlementsByMonth[month] =
+      calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+        member,
+        memberState,
+        incomeEntries,
+        input.familyMembers,
+        input.pensionByMember,
+        input.incomeByMember,
         input.referenceDate,
         input.calendarYear,
         month,
       );
-    }
-
-    memberEntitlementsByMonth[month] = resolveMemberMonthlyPensionEntitlement(
-      member,
-      memberState,
-      incomeEntries,
-      input.referenceDate,
-      input.calendarYear,
-      month,
-      input.householdEntitlementsByMonth[month] ??
-        createEmptyPensionBreakdown(),
-      perMember,
-      headMember,
-    );
   }
 
   for (let month = input.monthStart; month <= input.monthEnd; month += 1) {
@@ -308,36 +228,15 @@ function buildMemberIncomeBreakdown(
       ),
     );
 
-    const householdPayment = calcPensionPaymentFromEntitlements(
-      month,
-      input.householdEntitlementsByMonth[month - 1] ??
-        createEmptyPensionBreakdown(),
-      input.householdEntitlementsByMonth[month - 2] ??
-        createEmptyPensionBreakdown(),
-    );
-    const householdEntitlementTotal =
-      sumPensionBreakdown(
-        input.householdEntitlementsByMonth[month - 1] ??
-          createEmptyPensionBreakdown(),
-      ) +
-      sumPensionBreakdown(
-        input.householdEntitlementsByMonth[month - 2] ??
-          createEmptyPensionBreakdown(),
-      );
-    const memberEntitlementTotal =
-      sumPensionBreakdown(
-        memberEntitlementsByMonth[month - 1] ?? createEmptyPensionBreakdown(),
-      ) +
-      sumPensionBreakdown(
-        memberEntitlementsByMonth[month - 2] ?? createEmptyPensionBreakdown(),
-      );
-    const share =
-      householdEntitlementTotal > 0
-        ? memberEntitlementTotal / householdEntitlementTotal
-        : 0;
     addPensionBreakdown(
       incomeBreakdown.pension,
-      scalePensionBreakdown(householdPayment, share),
+      calcPensionPaymentFromEntitlements(
+        month,
+        memberEntitlementsByMonth[month - 1] ??
+          createEmptyPensionBreakdown(),
+        memberEntitlementsByMonth[month - 2] ??
+          createEmptyPensionBreakdown(),
+      ),
     );
 
     if (input.insuranceState) {
