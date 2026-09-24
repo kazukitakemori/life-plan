@@ -18,12 +18,14 @@ import {
 } from '../../lib/planPurpose';
 import type { LicenseEntitlements } from '../../types/licenseEdition';
 import { canCreatePlan } from '../../types/licenseEdition';
+import { maskPersonalInfo, type OperatorMode } from '../../lib/operatorMode';
 import { PlanCreateModal } from './PlanMetaModal';
 import { PlanDeleteConfirmModal } from './PlanDeleteConfirmModal';
 import { PlanMetaModal } from './PlanMetaModal';
 
 interface PlanAdminViewProps {
   summaries: PlanSummary[];
+  operatorMode?: OperatorMode;
   currentPlanId: string | null;
   transferBusy?: boolean;
   entitlements: LicenseEntitlements;
@@ -57,6 +59,7 @@ const EMPTY_META: PlanMetaInput = {
 
 export function PlanAdminView({
   summaries,
+  operatorMode = { enabled: false, hidePersonalInfo: false },
   currentPlanId,
   transferBusy = false,
   entitlements,
@@ -238,7 +241,7 @@ export function PlanAdminView({
                     <td>
                       <div className="plan-admin-name">
                         <span className="plan-admin-name-text">
-                          {formatPlanDisplayName(item.customerName, {
+                          {formatPlanDisplayName(maskPersonalInfo(item.customerName, operatorMode), {
                             honorific: entitlements.showHonorific,
                           })}
                         </span>
