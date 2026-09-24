@@ -11,7 +11,15 @@ export type ContentModelTargetView =
   | 'required-coverage';
 
 export interface ContentModelCaptureSpec {
+  id: string;
   view: ContentModelTargetView;
+  /** 撮影時の表示状態。UI selector ではなく意味的な状態を記述する。 */
+  displayState?: Record<string, string | number | boolean>;
+  /** 画面全体か、意味的な撮影領域ID。 */
+  captureRegion?: 'viewport' | string;
+  viewport?: { width: number; height: number };
+  privacyMode?: 'content-safe';
+  purpose: string;
   /** 撮影時に再現したい補足条件。UI selector には依存させない。 */
   note?: string;
 }
@@ -65,6 +73,14 @@ export function validateContentModelCase(
   }
   if (!Array.isArray(model.captureSpecs) || model.captureSpecs.length === 0) {
     errors.push('At least one captureSpec is required.');
+  } else {
+    for (const spec of model.captureSpecs) {
+      if (!clean(spec.id)) errors.push('captureSpec.id is required.');
+      if (!clean(spec.purpose)) errors.push('captureSpec.purpose is required.');
+      if (spec.viewport && (spec.viewport.width < 320 || spec.viewport.height < 320)) {
+        errors.push('captureSpec.viewport is too small.');
+      }
+    }
   }
   if (!model.payload || typeof model.payload !== 'object') {
     errors.push('payload is required.');
