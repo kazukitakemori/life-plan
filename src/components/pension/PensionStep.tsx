@@ -254,6 +254,7 @@ export function PensionStep({
         member={activeMember}
         referenceDate={referenceDate}
         memberState={memberState}
+        incomeEntries={incomeEntries}
         onChange={(state) => updateMemberState(resolvedActiveId, state)}
       />
 
