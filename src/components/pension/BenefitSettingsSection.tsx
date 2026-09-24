@@ -31,6 +31,7 @@ interface BenefitSettingsSectionProps {
   specialEmployeesStartAge?: number | null;
   generalSpecialStartAge?: number | null;
   publicSpecialStartAge?: number | null;
+  survivorEstimateSource: 'input' | 'teikibin';
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -295,6 +296,7 @@ export function BenefitSettingsSection({
   specialEmployeesStartAge = null,
   generalSpecialStartAge = null,
   publicSpecialStartAge = null,
+  survivorEstimateSource,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -579,6 +581,37 @@ export function BenefitSettingsSection({
         </table>
 
       </div>
+
+      {(member.role === 'head' || member.role === 'spouse') && (
+        <div className="benefit-settings-block benefit-survivor-estimate">
+          <div className="benefit-survivor-section-heading">
+            <h4 className="pension-subsection-title">万一の場合の遺族年金</h4>
+            <InfoDialog title="遺族年金の試算について" label="試算の前提">
+              <p>
+                入力内容と選択中の年金情報を使って、遺族基礎年金・遺族厚生年金を自動試算します。実際の受給可否や金額は加入記録やご家族の状況等により異なる場合があります。
+              </p>
+            </InfoDialog>
+          </div>
+          <div className="benefit-survivor-estimate-source">
+            <span className="benefit-survivor-estimate-label">試算方法</span>
+            <strong>
+              {survivorEstimateSource === 'input'
+                ? '入力内容から試算'
+                : 'ねんきん定期便から試算'}
+            </strong>
+          </div>
+          <div className="benefit-survivor-estimate-rows" aria-label="遺族年金の試算対象">
+            <div className="benefit-survivor-estimate-row">
+              <span>遺族基礎年金</span>
+              <span className="benefit-survivor-estimate-status">自動試算</span>
+            </div>
+            <div className="benefit-survivor-estimate-row">
+              <span>遺族厚生年金</span>
+              <span className="benefit-survivor-estimate-status">自動試算</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <details className="benefit-settings-block benefit-settings-block--optional benefit-survivor-details">
         <summary className="benefit-survivor-summary">
