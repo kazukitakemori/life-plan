@@ -36,12 +36,12 @@ async function authorize(request, env) {
   }
 
   const session = await getSessionContext(request, env);
-  if (!session || String(session.workspace_id) !== workspaceId) {
+  if (session && String(session.workspace_id) !== workspaceId) {
     return {
       response: jsonResponse(
         {
-          error: 'CONTENT_MODEL_WORKSPACE_REQUIRED',
-          message: 'コンテンツ制作専用アカウントでログインしてください。',
+          error: 'CONTENT_MODEL_WORKSPACE_MISMATCH',
+          message: '別のアカウントの作業領域には投入できません。',
         },
         403,
       ),
