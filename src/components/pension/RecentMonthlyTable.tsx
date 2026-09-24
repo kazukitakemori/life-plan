@@ -110,9 +110,7 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
                 </select>
                 <span className="teikibin-monthly-date-unit">月</span>
               </td>
-              <td colSpan={5} className="teikibin-monthly-readonly">
-                最近の月別状況は詳細入力です。未入力でも年金概算は利用できます
-              </td>
+              <td colSpan={5} />
             </tr>
           </tbody>
         </table>
