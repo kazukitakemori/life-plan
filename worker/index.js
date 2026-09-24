@@ -2,6 +2,7 @@ import { handleAccountApi } from './accountApi.js';
 import { handleAccountEntitlementApi } from './accountEntitlementApi.js';
 import { handleAuthApi } from './authApi.js';
 import { handleLicenseApi } from './licenseApi.js';
+import { handleContentModelApi } from './contentModelApi.js';
 
 export default {
   /**
@@ -13,6 +14,9 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       try {
+        const contentModelResponse = await handleContentModelApi(request, env);
+        if (contentModelResponse) return contentModelResponse;
+
         const authResponse = await handleAuthApi(request, env);
         if (authResponse) return authResponse;
 
