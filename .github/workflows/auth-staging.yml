@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   deploy-auth-staging:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/google-cloud-sync'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feature/google-cloud-sync' || github.head_ref == 'fix/cloud-existing-plan-migration'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
