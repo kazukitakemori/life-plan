@@ -48,21 +48,8 @@
     min-width: 0;
   }
 
-  .pension-step .pension-enrollment-field {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
-    gap: 8px;
-    align-items: end;
-  }
-
   .pension-step .pension-enrollment-label {
-    grid-column: 1 / -1;
     margin: 0;
-  }
-
-  .pension-step .pension-enrollment-select {
-    width: 100%;
-    min-width: 0;
   }
 
   .pension-step .pension-info-box {
@@ -71,15 +58,6 @@
     line-height: 1.65;
   }
 
-  .pension-step .teikibin-form {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    min-width: 0;
-  }
-
-  .pension-step .teikibin-form-left,
-  .pension-step .teikibin-form-right,
   .pension-step .teikibin-block {
     min-width: 0;
     width: 100%;
@@ -156,8 +134,7 @@
   }
 
   .pension-step .benefit-start-age-cell::before,
-  .pension-step .benefit-amount-cell::before,
-  .pension-step .benefit-survivor-cell::before {
+  .pension-step .benefit-amount-cell::before {
     display: block;
     margin-bottom: 8px;
     font-size: var(--text-sm);
@@ -167,7 +144,6 @@
 
   .pension-step .benefit-start-age-cell::before { content: '受取開始年齢'; }
   .pension-step .benefit-amount-cell::before { content: '基本金額'; }
-  .pension-step .benefit-survivor-cell::before { content: '遺族年金'; }
 
   .pension-step .benefit-start-age-inner,
   .pension-step .benefit-amount-options,
