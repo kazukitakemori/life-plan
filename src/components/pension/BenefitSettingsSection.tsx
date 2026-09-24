@@ -250,9 +250,6 @@ function DependentSpousePensionRow({
             </span>
           </label>
         </div>
-        <p className="ui-note">
-          配偶者が65歳に達した場合や、一定の老齢厚生年金・障害年金の受給権がある場合は支給停止を反映します。
-        </p>
       </td>
     </tr>
   );
@@ -531,19 +528,6 @@ export function BenefitSettingsSection({
             </InfoDialog>
           </div>
         ) : null}
-        <div className="pension-context-info pension-context-info--benefit">
-          <InfoDialog title="加給年金・子の加算について" label="加給年金・子の加算">
-            <p>
-              加給年金や子の加算には、生計維持関係など個別確認が必要な条件があります。
-            </p>
-            <p>
-              配偶者加給は、対象外と確認できている場合は手入力で0円に調整できます。
-            </p>
-            <p>
-              子の加算は、Q1の詳細設定で受給者ごとの「年金上の生計維持」が「満たす」と確認できた子だけを自動計上し、未確認の子は計上しません。
-            </p>
-          </InfoDialog>
-        </div>
         <table className="benefit-settings-table">
           <thead>
             <tr>
@@ -601,18 +585,6 @@ export function BenefitSettingsSection({
 
         {(member.role === 'head' || member.role === 'spouse') && (
           <>
-            <div className="pension-auto-benefit-note" role="note">
-              <strong>万一の場合の年金</strong>
-              <InfoDialog title="万一の場合の遺族年金" label="自動計算の範囲">
-                <p>
-                  {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから確認できる範囲を自動計算します。
-                </p>
-                <p>
-                  遺族側の生計維持関係・収入要件や、厚生年金加入中の傷病が原因で初診から5年以内に亡くなるケースなど、現在の入力だけで確定できない要件は自動成立扱いにしません。
-                </p>
-              </InfoDialog>
-            </div>
-
             <div className="benefit-survivor-premium-setting">
               <label
                 className="pension-enrollment-label"
@@ -635,17 +607,9 @@ export function BenefitSettingsSection({
                 <option value="met">満たしている</option>
                 <option value="not_met">満たしていない</option>
               </select>
-              <div className="pension-context-notice" role="note">
-                <span>自動判定できない場合は、遺族年金を試算へ自動計上しません。</span>
-                <InfoDialog title="遺族年金の保険料納付要件" label="確認方法">
-                  <p>
-                    自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
-                  </p>
-                  <p>
-                    ねんきんネット等で要件を確認できる場合は手動で指定できます。
-                  </p>
-                </InfoDialog>
-              </div>
+              <p className="benefit-compact-note">
+                判定できない場合は自動計上しません。
+              </p>
             </div>
           </>
         )}
@@ -777,19 +741,6 @@ export function BenefitSettingsSection({
               </tr>
             </tbody>
           </table>
-          <div className="pension-context-info benefit-survivor-end-note">
-            <InfoDialog title="終了予定年月の扱い" label="終了予定年月について">
-              <p>
-                終了予定年月は分かる場合だけ設定してください。設定した月分までを対象とし、翌月分から終了として扱います。
-              </p>
-              <p>
-                実際の入金は支給月の都合で後の月に現れる場合があります。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。
-              </p>
-              <p>
-                受給途中で年額だけが変わる場合は現在の入力では自動反映できないため、金額変更のあるケースは個別確認が必要です。
-              </p>
-            </InfoDialog>
-          </div>
         </div>
       </details>
     </div>
