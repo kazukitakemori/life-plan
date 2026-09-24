@@ -115,3 +115,46 @@ export function toContentModelPlanRecord(
     }),
   );
 }
+
+
+export interface SaveContentModelCaseResult {
+  plan: PlanRecord;
+  created: boolean;
+}
+
+/**
+ * 記事用モデルケースを任意の PlanRepository へ保存し、直後に読み戻して
+ * 同じID・記事ID・モデルケースIDで再現できることを確認する。
+ *
+ * Repository は通常プランと同じ抽象を使うため、Preview の IndexedDB と
+ * cloud-storage entitlement のある専用アカウントの D1 の双方で利用できる。
+ */
+export async function saveContentModelCase(
+  repository: import('./planRepository').PlanRepository,
+  model: ContentModelCase,
+  now = new Date(),
+): Promise<SaveContentModelCaseResult> {
+  const id = getContentModelPlanId(model.modelCaseId);
+  const existing = await repository.get(id);
+  const record = toContentModelPlanRecord(model, existing, now);
+  await repository.save(record);
+
+  const reloaded = await repository.get(id);
+  if (!reloaded) {
+    throw new Error('Saved content model case could not be read back.');
+  }
+  if (!isContentModelPlan(reloaded) || reloaded.id !== id) {
+    throw new Error('Reloaded content model case has an unexpected id.');
+  }
+
+  const expectedArticle = `articleId=${clean(model.articleId)}`;
+  const expectedModel = `modelCaseId=${clean(model.modelCaseId)}`;
+  if (
+    !reloaded.note.includes(expectedArticle) ||
+    !reloaded.note.includes(expectedModel)
+  ) {
+    throw new Error('Reloaded content model case metadata does not match.');
+  }
+
+  return { plan: reloaded, created: existing == null };
+}
