@@ -30,6 +30,7 @@ import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
   EARLY_CLAIM_REDUCTION_PER_MONTH,
   EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
+  getZaishokuSuspensionThresholdYenPerMonth,
 } from '../src/lib/pensionConstants.ts';
 
 assert.equal(
@@ -61,6 +62,10 @@ assert.equal(
   getOldAgeAmountFactor(60, 0, EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY),
   0.7,
 );
+
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2025, 4), 510_000);
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2026, 3), 510_000);
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2026, 4), 650_000);
 
 
 // 繰下げの制度境界: 65歳の途中開始はなく、75歳0か月が現行上限。
@@ -1027,6 +1032,11 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
 
   const highIncome = employeeIncome();
   highIncome[0].periods[0].monthlyAmountMan = 100;
+  // 標準報酬月額は65万円で頭打ちのため、2026年度65万円基準で
+  // 報酬比例10万円/月を全額停止させるには賞与按分も必要。
+  highIncome[0].periods[0].bonuses = [
+    { id: 'deferral-full-suspension-bonus', amountMan: 120, paymentMonth: 4 },
+  ];
   const working = calcMemberMonthlyPensionBreakdownMan(
     member,
     makeOver50State(),
