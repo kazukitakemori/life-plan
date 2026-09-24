@@ -92,6 +92,12 @@ export function PublicPensionSection({
       },
       incomeEntries,
     );
+  const survivorPremiumAssessmentReason =
+    survivorPremiumAssessment.status !== 'unconfirmed'
+      ? null
+      : pastEnrollment === 'none'
+        ? 'Q7だけでは直近1年の厚生年金加入を確認できないため'
+        : '入力された加入記録だけでは納付要件を確認できないため';
 
   const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
     onChange({ ...memberState, pastEnrollment: mode });
@@ -200,6 +206,7 @@ export function PublicPensionSection({
         generalSpecialStartAge={generalSpecialStartAge}
         publicSpecialStartAge={publicSpecialStartAge}
         survivorPremiumAssessmentStatus={survivorPremiumAssessment.status}
+        survivorPremiumAssessmentReason={survivorPremiumAssessmentReason}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
