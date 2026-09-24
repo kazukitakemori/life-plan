@@ -84,6 +84,7 @@ import {
   getRequiredCoverageBlockedDescription,
 } from './lib/planPurposeInput';
 import { getLocalPlanRepository } from './lib/localPlanRepository';
+import { maskPersonalInfo, type OperatorMode } from './lib/operatorMode';
 import { useLicense } from './lib/license/useLicense';
 import {
   getDefaultPlanPurposes,
@@ -153,6 +154,11 @@ export default function App() {
   const INITIAL_PLAN = sessionInitialPlan;
   const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
+  const [operatorPersonalInfoHidden, setOperatorPersonalInfoHidden] = useState(false);
+  const operatorMode: OperatorMode = {
+    enabled: license.isLicensed,
+    hidePersonalInfo: operatorPersonalInfoHidden,
+  };
   const [adminTab, setAdminTab] = useState<AdminTabId>('license');
   const landingTabAppliedRef = useRef(false);
   const previousLicenseStateRef = useRef(license.licenseState);
@@ -1989,7 +1995,7 @@ export default function App() {
       analysisStale={analysisStale}
       isAnalyzing={isAnalyzing}
       hasOpenPlan={planId != null}
-      customerName={customerName}
+      customerName={maskPersonalInfo(customerName, operatorMode)}
       planStatus={planStatus}
       autosaveStatus={autosaveStatus}
       undoAvailable={undoAvailable}
@@ -2015,6 +2021,8 @@ export default function App() {
           ? 'medical'
           : 'death'
       }
+      operatorPersonalInfoHidden={operatorPersonalInfoHidden}
+      onOperatorPersonalInfoHiddenChange={setOperatorPersonalInfoHidden}
       onRequiredCoverageRiskKindChange={(riskKind) => {
         markPlanDataChanged();
         setRequiredCoverageState((prev) =>
