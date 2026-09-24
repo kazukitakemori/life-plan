@@ -66,8 +66,8 @@ assert.equal(
 // 繰下げの制度境界: 65歳の途中開始はなく、75歳0か月が現行上限。
 assert.equal(getOldAgeAmountFactor(65, 5), 1);
 assert.equal(getOldAgeAmountFactor(66, 0), 1.084);
-assert.equal(getOldAgeAmountFactor(75, 0), 1.84);
-assert.equal(getOldAgeAmountFactor(75, 11), 1.84);
+assert.ok(Math.abs(getOldAgeAmountFactor(75, 0) - 1.84) < 1e-12);
+assert.ok(Math.abs(getOldAgeAmountFactor(75, 11) - 1.84) < 1e-12);
 assert.deepEqual(
   normalizeOldAgeBenefitStart(65, 5),
   { startAge: 65, startMonth: 0 },
