@@ -6,7 +6,6 @@ import type {
   TeikibinOver50OldAgePair,
   TeikibinOver50OldAgeTriple,
 } from '../../types/pension';
-import { InfoDialog } from '../ui';
 import { TeikibinYenInput } from './TeikibinYenInput';
 
 interface PensionAmountTableOver50Props {
@@ -274,14 +273,6 @@ export function PensionAmountTableOver50({
       <h5 className="teikibin-block-title">
         (2) 老齢年金の種類と見込額（年額）
       </h5>
-      <div className="pension-context-info">
-        <InfoDialog title="受給開始年齢の入力" label="入力方法">
-          <p>
-            「受給開始年齢」は、ねんきん定期便に印字された「○歳〜」をそのまま選んでください。空欄の列は「—」のままで構いません。
-          </p>
-        </InfoDialog>
-      </div>
-
       <table className="teikibin-amount-table teikibin-amount-table--over50">
         <tbody>
           <tr>
