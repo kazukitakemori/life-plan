@@ -2177,6 +2177,33 @@ assert.ok(
 console.log('OK coverage survivor basic from eligible child');
 
 {
+  // 「入力内容から試算」では、Q7に現在の厚生年金加入しか登録されていなくても、
+  // 通常どおり公的年金へ加入・納付している標準ケースとして扱う。
+  const q7CoveredHead = createIncomeEntry(head.id, 'employee', 40, 6, head);
+  q7CoveredHead.periods[0].startAge = 40;
+  q7CoveredHead.periods[0].startMonth = 6;
+  q7CoveredHead.periods[0].monthlyAmountMan = 50;
+  const autoPension = createDefaultPensionByMember([head, spouse, child]);
+  const autoSurvivor = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, spouse, child],
+      incomeByMember: {
+        [head.id]: [q7CoveredHead],
+        [spouse.id]: [spousePartTime],
+      },
+      pensionByMember: autoPension,
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      ...shortWindow,
+    },
+  );
+  assert.ok(autoSurvivor.income.survivorBasic > 0);
+  assert.ok(autoSurvivor.income.survivorEmployeesGross > 0);
+  console.log('OK input-based survivor pension uses the standard enrollment assumption');
+}
+
+{
   // 60〜64歳で国民年金の被保険者だった人は、日本国内住所が死亡要件の一部。
   // 成人の住所を現データで確認できないため、納付要件だけで自動成立させない。
   const formerNationalHead = {

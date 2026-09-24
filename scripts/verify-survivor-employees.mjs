@@ -145,14 +145,16 @@ headIncome.periods[0].monthlyAmountMan = 50;
 const pension = createDefaultPensionMemberState();
 
 {
-  // Q7で会社員と分かっても、過去の納付実績までは推測しない。
+  // 「入力内容から試算」は、通常どおり公的年金へ加入・納付している
+  // 標準ケースとして扱い、現在の厚生年金加入から短期要件を試算する。
   const autoAssessment = resolveSurvivorPremiumRequirementAssessment(
     head,
     pension,
     referenceDate,
     death,
   );
-  assert.equal(autoAssessment.status, 'unconfirmed');
+  assert.equal(autoAssessment.status, 'met');
+  assert.equal(autoAssessment.basis, 'standard_assumption');
   assert.equal(
     resolveSurvivorEmployeesDeathRequirement(
       head,
@@ -161,10 +163,10 @@ const pension = createDefaultPensionMemberState();
       referenceDate,
       death,
     ),
-    'none',
+    'short_term',
   );
 
-  // ねんきんネット等で納付要件を確認できた場合は手動確定できる。
+  // 旧保存データ等で納付要件を明示した場合は、その設定を引き続き尊重する。
   const confirmedPension = createDefaultPensionMemberState();
   confirmedPension.benefitSettings.survivorPremiumRequirement = 'met';
   const requirement = resolveSurvivorEmployeesDeathRequirement(
@@ -214,7 +216,38 @@ const pension = createDefaultPensionMemberState();
     ),
     'none',
   );
-  console.log('OK premium requirement is not inferred from Q7; manual confirmation controls eligibility');
+  console.log('OK incomplete Q7 history does not over-assume the premium requirement');
+}
+
+{
+  // 「入力内容から試算」では標準加入前提を優先するため、
+  // Q7で直近12か月を確認できる場合でも結果は標準前提として扱う。
+  const q7CoveredIncome = createIncomeEntry(head.id, 'employee', 39, 6, head);
+  q7CoveredIncome.periods[0].startAge = 39;
+  q7CoveredIncome.periods[0].startMonth = 6;
+  q7CoveredIncome.periods[0].monthlyAmountMan = 50;
+
+  assert.deepEqual(
+    resolveSurvivorPremiumRequirementAssessment(
+      head,
+      pension,
+      referenceDate,
+      death,
+      [q7CoveredIncome],
+    ),
+    { status: 'met', basis: 'standard_assumption' },
+  );
+  assert.equal(
+    resolveSurvivorEmployeesDeathRequirement(
+      head,
+      [q7CoveredIncome],
+      pension,
+      referenceDate,
+      death,
+    ),
+    'short_term',
+  );
+  console.log('OK Q7 continuous employees coverage can confirm the one-year premium exception');
 }
 
 {

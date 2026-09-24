@@ -34,8 +34,20 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
-    padding-top: 46px;
-    padding-bottom: 4px;
+    padding-top: 0;
+    padding-bottom: 78px;
+  }
+
+  .pension-step .pension-timeline-pivot-bubble {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+
+  .pension-step .pension-timeline-pivot-bubble::after {
+    top: auto;
+    bottom: 100%;
+    border-top: 0;
+    border-bottom: 6px solid #212121;
   }
 
   .pension-step .pension-timeline-axis,
@@ -48,21 +60,8 @@
     min-width: 0;
   }
 
-  .pension-step .pension-enrollment-field {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
-    gap: 8px;
-    align-items: end;
-  }
-
   .pension-step .pension-enrollment-label {
-    grid-column: 1 / -1;
     margin: 0;
-  }
-
-  .pension-step .pension-enrollment-select {
-    width: 100%;
-    min-width: 0;
   }
 
   .pension-step .pension-info-box {
@@ -71,33 +70,66 @@
     line-height: 1.65;
   }
 
-  .pension-step .teikibin-form {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    min-width: 0;
-  }
-
-  .pension-step .teikibin-form-left,
-  .pension-step .teikibin-form-right,
   .pension-step .teikibin-block {
     min-width: 0;
     width: 100%;
   }
 
   .pension-step .teikibin-block {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
     padding-bottom: 4px;
   }
 
+  .pension-step .teikibin-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .pension-step .teikibin-period-table,
-  .pension-step .teikibin-amount-table,
-  .pension-step .teikibin-recent-table,
-  .pension-step .teikibin-recent-table-over50,
-  .pension-step .teikibin-amount-table-over50 {
+  .pension-step .teikibin-amount-table {
     min-width: 700px;
+  }
+
+  .pension-step .teikibin-monthly-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pension-step .teikibin-monthly-table {
+    width: 860px;
+    min-width: 860px;
+    table-layout: fixed;
+  }
+
+  .pension-step .teikibin-monthly-table th {
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  .pension-step .teikibin-monthly-col--date {
+    width: 112px;
+  }
+
+  .pension-step .teikibin-monthly-col--national {
+    width: 176px;
+  }
+
+  .pension-step .teikibin-monthly-col--category {
+    width: 132px;
+  }
+
+  .pension-step .teikibin-monthly-col--remuneration,
+  .pension-step .teikibin-monthly-col--bonus {
+    width: 150px;
+  }
+
+  .pension-step .teikibin-monthly-col--premium {
+    width: 140px;
   }
 
   .pension-step .pension-field-input,
@@ -156,8 +188,7 @@
   }
 
   .pension-step .benefit-start-age-cell::before,
-  .pension-step .benefit-amount-cell::before,
-  .pension-step .benefit-survivor-cell::before {
+  .pension-step .benefit-amount-cell::before {
     display: block;
     margin-bottom: 8px;
     font-size: var(--text-sm);
@@ -167,7 +198,6 @@
 
   .pension-step .benefit-start-age-cell::before { content: '受取開始年齢'; }
   .pension-step .benefit-amount-cell::before { content: '基本金額'; }
-  .pension-step .benefit-survivor-cell::before { content: '遺族年金'; }
 
   .pension-step .benefit-start-age-inner,
   .pension-step .benefit-amount-options,

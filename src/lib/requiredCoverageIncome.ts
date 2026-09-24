@@ -875,6 +875,7 @@ export function accumulateCoverageIncome(
           deceasedState,
           input.referenceDate,
           start,
+          deceasedEntries,
         )
       : null;
   const survivorBasicDeathRequirementMet =

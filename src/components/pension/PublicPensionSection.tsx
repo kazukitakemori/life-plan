@@ -28,27 +28,24 @@ interface PublicPensionSectionProps {
   onChange: (state: PensionMemberState) => void;
 }
 
+type PensionSourceChoice = 'input' | 'teikibin';
+
 const PENSION_SOURCE_OPTIONS: Array<{
-  value: PastEnrollmentMode;
+  value: PensionSourceChoice;
   title: string;
   description: string;
   badge?: string;
 }> = [
   {
-    value: 'none',
-    title: '収入情報から概算',
-    description: 'Q7「収入」の内容から加入状況を推定して試算します。',
+    value: 'input',
+    title: '入力内容から試算',
+    description: 'Q1・Q7などの入力内容から公的年金を試算します。',
     badge: 'かんたん',
   },
   {
-    value: 'nenkin-teikibin-under50',
-    title: 'ねんきん定期便から入力',
-    description: '50歳未満の方向けの定期便をお持ちの場合。',
-  },
-  {
-    value: 'nenkin-teikibin-over50',
-    title: 'ねんきん定期便から入力',
-    description: '50歳以上の方向けの定期便をお持ちの場合。',
+    value: 'teikibin',
+    title: 'ねんきん定期便から試算',
+    description: 'ねんきん定期便の記載内容をもとに試算します。',
   },
 ];
 
@@ -78,8 +75,22 @@ export function PublicPensionSection({
       ? resolveOver50PublicPrivateSpecialStartAge(resolvedTeikibinOver50)
       : null;
 
-  const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
-    onChange({ ...memberState, pastEnrollment: mode });
+  const sourceChoice: PensionSourceChoice =
+    pastEnrollment === 'none' ? 'input' : 'teikibin';
+
+  const handleSourceChange = (choice: PensionSourceChoice) => {
+    if (choice === 'input') {
+      onChange({ ...memberState, pastEnrollment: 'none' });
+      return;
+    }
+    const teikibinMode: PastEnrollmentMode =
+      pastEnrollment === 'nenkin-teikibin-under50' ||
+      pastEnrollment === 'nenkin-teikibin-over50'
+        ? pastEnrollment
+        : member.age != null && member.age >= 50
+          ? 'nenkin-teikibin-over50'
+          : 'nenkin-teikibin-under50';
+    onChange({ ...memberState, pastEnrollment: teikibinMode });
   };
 
   return (
@@ -124,8 +135,8 @@ export function PublicPensionSection({
                     type="radio"
                     name={`past-enrollment-${member.id}`}
                     value={option.value}
-                    checked={pastEnrollment === option.value}
-                    onChange={() => handlePastEnrollmentChange(option.value)}
+                    checked={sourceChoice === option.value}
+                    onChange={() => handleSourceChange(option.value)}
                   />
                   <span className="pension-source-option-copy">
                     <span className="pension-source-option-title-row">
@@ -152,9 +163,6 @@ export function PublicPensionSection({
               <InfoDialog title="概算の前提" label="概算の前提">
                 <p>
                   20歳〜22歳は学生納付特例等を利用し、追納していない期間として概算します。受給資格期間には含めます。
-                </p>
-                <p>
-                  遺族年金の保険料納付要件は、収入情報からは推測しません。
                 </p>
               </InfoDialog>
             </div>
@@ -187,6 +195,7 @@ export function PublicPensionSection({
         specialEmployeesStartAge={specialEmployeesStartAge}
         generalSpecialStartAge={generalSpecialStartAge}
         publicSpecialStartAge={publicSpecialStartAge}
+        survivorEstimateSource={pastEnrollment === 'none' ? 'input' : 'teikibin'}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }

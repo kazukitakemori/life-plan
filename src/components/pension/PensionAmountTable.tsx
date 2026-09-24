@@ -21,7 +21,8 @@ export function PensionAmountTable({ form, onChange }: PensionAmountTableProps) 
         (2) これまでの加入実績に応じた年金額
       </h5>
 
-      <table className="teikibin-amount-table">
+      <div className="teikibin-table-scroll">
+        <table className="teikibin-amount-table">
         <tbody>
           <tr>
             <th className="teikibin-amount-corner" />
@@ -96,7 +97,8 @@ export function PensionAmountTable({ form, onChange }: PensionAmountTableProps) 
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

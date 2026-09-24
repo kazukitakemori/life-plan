@@ -28,18 +28,17 @@ export function NenkinTeikibinUnder50FormPanel({
 
   return (
     <div className="teikibin-form">
-      <div className="teikibin-form-left">
-        <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
-        <PensionAmountTable form={form} onChange={updateForm} />
-      </div>
-      <div className="teikibin-form-right">
-        <details className="benefit-survivor-details">
-          <summary>
-            最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
-          </summary>
+      <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
+      <PensionAmountTable form={form} onChange={updateForm} />
+      <details className="teikibin-monthly-details">
+        <summary className="teikibin-monthly-summary">
+          <span>最近の月別状況</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
+        </summary>
+        <div className="teikibin-monthly-details-body">
           <RecentMonthlyTable form={form} onChange={updateForm} />
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -63,18 +62,17 @@ export function NenkinTeikibinOver50FormPanel({
 
   return (
     <div className="teikibin-form">
-      <div className="teikibin-form-left">
-        <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
-        <PensionAmountTableOver50 form={form} onChange={updateForm} />
-      </div>
-      <div className="teikibin-form-right">
-        <details className="benefit-survivor-details">
-          <summary>
-            最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
-          </summary>
+      <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
+      <PensionAmountTableOver50 form={form} onChange={updateForm} />
+      <details className="teikibin-monthly-details">
+        <summary className="teikibin-monthly-summary">
+          <span>最近の月別状況</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
+        </summary>
+        <div className="teikibin-monthly-details-body">
           <RecentMonthlyTableOver50 form={form} onChange={updateForm} />
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }
