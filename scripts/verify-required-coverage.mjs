@@ -59,6 +59,7 @@ import {
 } from '../src/lib/requiredCoverageIncome.ts';
 import { resolveDeathTimeBalancesMan } from '../src/lib/requiredCoverageYearlyCashFlow.ts';
 import {
+  calcCoverageSurvivorBasicDetailMonthlyMan,
   calcCoverageSurvivorBasicMonthlyMan,
   calcSurvivorBasicYenPerYear,
 } from '../src/lib/survivorBasicPension.ts';
@@ -155,6 +156,50 @@ function calcCoverageOldAgePaymentGross({
     basic: Math.round(basic),
     employees: Math.round(employees),
   };
+}
+
+function calcCoverageSurvivorBasicPaymentGross({
+  familyMembers,
+  subject,
+  start,
+  end,
+  referenceDate: refDate,
+}) {
+  const entitlementCache = new Map();
+  const startIdx = calendarIndex(start.year, start.month);
+  const getEntitlement = (idx) => {
+    if (!entitlementCache.has(idx)) {
+      const { year, month } = indexToYearMonth(idx);
+      const breakdown = createEmptyPensionBreakdown();
+      if (idx > startIdx) {
+        breakdown.survivor.basic = calcCoverageSurvivorBasicDetailMonthlyMan(
+          familyMembers,
+          subject,
+          refDate,
+          year,
+          month,
+        );
+      }
+      entitlementCache.set(idx, breakdown);
+    }
+    return entitlementCache.get(idx);
+  };
+
+  let basic = 0;
+  const endIdx = calendarIndex(end.year, end.month);
+  for (let idx = startIdx; idx <= endIdx; idx += 1) {
+    const { month } = indexToYearMonth(idx);
+    const payment = calcPensionPaymentFromEntitlements(
+      month,
+      getEntitlement(prevCalendarIndex(idx)),
+      getEntitlement(prevCalendarIndex(prevCalendarIndex(idx))),
+    );
+    basic +=
+      payment.survivor.basic.basic +
+      payment.survivor.basic.children +
+      payment.survivor.basic.widow;
+  }
+  return { basic: Math.round(basic) };
 }
 
 function calcCoverageSurvivorEmployeesPaymentGross({
@@ -2105,9 +2150,16 @@ const expectedBasicMonthly = calcCoverageSurvivorBasicMonthlyMan(
   7,
 );
 assert.ok(expectedBasicMonthly > 0);
+const expectedBasicPayment = calcCoverageSurvivorBasicPaymentGross({
+  familyMembers: [head, spouse, child],
+  subject: 'head',
+  start: survivorBasicResult.coverageStart,
+  end: survivorBasicResult.coverageEnd,
+  referenceDate,
+});
 assert.equal(
   survivorBasicResult.income.survivorBasic,
-  Math.round(expectedBasicMonthly * 6),
+  expectedBasicPayment.basic,
 );
 assert.ok(survivorBasicResult.income.survivorEmployeesGross > 0);
 assert.equal(
