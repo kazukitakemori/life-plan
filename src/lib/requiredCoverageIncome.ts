@@ -991,10 +991,17 @@ export function accumulateCoverageIncome(
     );
   const survivorBasicBlockedByIneligibleParent =
     Boolean(survivorSpouse) &&
-    survivorSpouseSameLivelihood &&
-    spouseIncomeClearlyNotMet &&
     !reformAtDeath &&
-    eligibleChildCountStart > 0;
+    eligibleChildCountStart > 0 &&
+    (
+      spouseIncomeClearlyNotMet ||
+      // 改正前は「子と生計を同じくする父母」がいると子は支給停止。
+      // Q1は各人と世帯主の生計期間しか持たず、親子間の生計同一を
+      // 直接確認できない。 surviving parent が死亡者の生計維持要件を
+      // 満たさない場合に、子へ自動で給付を移すと過大計上し得るため、
+      // 2028年3月までは保守的に自動計上しない。
+      !survivorSpouseSameLivelihood
+    );
   const survivorBasicYenPerYearStart =
     survivorBasicDeathRequirementMet &&
     !survivorBasicBlockedByIneligibleParent
