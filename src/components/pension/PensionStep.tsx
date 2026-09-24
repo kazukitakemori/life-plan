@@ -121,6 +121,10 @@ export function PensionStep({
         </p>
       ) : null}
 
+      <p className="purpose-input-note" role="note">
+        寡婦年金は現在、自動計算・キャッシュフロー反映の対象外です。Q8の年金見込み額には含まれていません。
+      </p>
+
       <MemberIncomeTabs
         members={visibleMembers}
         activeMemberId={resolvedActiveId}
