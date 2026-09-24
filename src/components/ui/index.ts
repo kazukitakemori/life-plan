@@ -9,3 +9,5 @@ export { StepHeading } from './StepHeading';
 export { CopySettingsBar } from './CopySettingsBar';
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlOption } from './SegmentedControl';
+
+export { InfoDialog } from './InfoDialog';
