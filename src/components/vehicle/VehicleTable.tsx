@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FamilyMember } from '../../types/family';
 import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
@@ -55,22 +55,40 @@ export function VehicleTable({
   const [mobileExpandedEntryId, setMobileExpandedEntryId] = useState(
     entries[0]?.id ?? '',
   );
+  const previousEntryIdsRef = useRef(
+    new Set(entries.map((entry) => entry.id)),
+  );
 
   useEffect(() => {
+    const previousEntryIds = previousEntryIdsRef.current;
+
     if (entries.length === 0) {
       setActiveEntryId('');
       setMobileExpandedEntryId('');
+      previousEntryIdsRef.current = new Set();
       return;
     }
+
     if (!entries.some((entry) => entry.id === activeEntryId)) {
       setActiveEntryId(entries[0].id);
     }
+
+    const addedEntry = entries.find(
+      (entry) => !previousEntryIds.has(entry.id),
+    );
     if (
+      addedEntry &&
+      (!mobileExpandedEntryId || previousEntryIds.has(mobileExpandedEntryId))
+    ) {
+      setMobileExpandedEntryId(addedEntry.id);
+    } else if (
       mobileExpandedEntryId &&
       !entries.some((entry) => entry.id === mobileExpandedEntryId)
     ) {
       setMobileExpandedEntryId(entries[0].id);
     }
+
+    previousEntryIdsRef.current = new Set(entries.map((entry) => entry.id));
   }, [entries, activeEntryId, mobileExpandedEntryId]);
 
   const updateEntry = (entryId: string, updated: VehicleEntry) => {
