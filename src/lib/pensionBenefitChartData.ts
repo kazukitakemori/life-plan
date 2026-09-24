@@ -1,10 +1,16 @@
 import { calcBirthYear } from './birthDate';
 import { calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan } from './pensionIncome';
-import { resolveSimulationStartYear } from './simulationTiming';
 import {
+  resolveSimulationMonthStart,
+  resolveSimulationStartYear,
+} from './simulationTiming';
+import { calcPensionPaymentFromEntitlements } from './pensionPaymentSchedule';
+import {
+  createEmptyPensionBreakdown,
   sumGeneralEmployeesDetail,
   sumOldAgeBasicDetail,
   sumPublicServantDetail,
+  type PensionBreakdown,
 } from '../types/cashFlow';
 import type { FamilyMember } from '../types/family';
 import type { IncomeByMember, IncomeEntry } from '../types/income';
@@ -19,6 +25,7 @@ export interface PensionBenefitChartPoint {
   oldAgeBasic: number;
   oldAgeEmployeesGeneral: number;
   oldAgeEmployeesPublic: number;
+  familyAdditions: number;
 }
 
 function roundMan(value: number): number {
@@ -49,9 +56,24 @@ export function buildPensionBenefitChartPoints(input: {
     let basic = 0;
     let general = 0;
     let publicServant = 0;
+    let familyAdditions = 0;
+
+    const entitlements: PensionBreakdown[] = [];
+    entitlements[0] =
+      calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
+        input.member,
+        input.memberState,
+        input.incomeEntries,
+        input.familyMembers,
+        input.pensionByMember,
+        input.incomeByMember,
+        input.referenceDate,
+        year - 1,
+        12,
+      );
 
     for (let month = 1; month <= 12; month++) {
-      const oldAge =
+      entitlements[month] =
         calcMemberMonthlyPensionBreakdownWithHouseholdAdditionsMan(
           input.member,
           input.memberState,
@@ -62,10 +84,29 @@ export function buildPensionBenefitChartPoints(input: {
           input.referenceDate,
           year,
           month,
-        ).oldAge;
+        );
+    }
+
+    const monthStart =
+      year === startYear
+        ? resolveSimulationMonthStart(input.referenceDate)
+        : 1;
+
+    for (let month = monthStart; month <= 12; month++) {
+      const payment = calcPensionPaymentFromEntitlements(
+        month,
+        entitlements[month - 1] ?? createEmptyPensionBreakdown(),
+        entitlements[month - 2] ?? createEmptyPensionBreakdown(),
+      );
+      const oldAge = payment.oldAge;
       basic += sumOldAgeBasicDetail(oldAge.basic);
       general += sumGeneralEmployeesDetail(oldAge.generalEmployees);
       publicServant += sumPublicServantDetail(oldAge.publicServant);
+      familyAdditions +=
+        oldAge.basic.children +
+        oldAge.basic.transfer +
+        oldAge.generalEmployees.dependent +
+        oldAge.publicServant.dependent;
     }
 
     points.push({
@@ -75,6 +116,7 @@ export function buildPensionBenefitChartPoints(input: {
       oldAgeBasic: roundMan(basic),
       oldAgeEmployeesGeneral: roundMan(general),
       oldAgeEmployeesPublic: roundMan(publicServant),
+      familyAdditions: roundMan(familyAdditions),
     });
   }
 
