@@ -8486,20 +8486,9 @@ button:disabled {
   border-bottom: 7px solid #f5f5f5;
 }
 
-.pension-enrollment-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
 .pension-enrollment-label {
   color: #333;
   white-space: nowrap;
-}
-
-.pension-enrollment-select {
-  min-width: 320px;
 }
 
 .pension-estimate-panel {
@@ -8597,18 +8586,6 @@ button:disabled {
 }
 
 /* Nenkin teikibin form (under 50) */
-
-.teikibin-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.teikibin-form-left,
-.teikibin-form-right {
-  min-width: 0;
-}
 
 .teikibin-block + .teikibin-block {
   margin-top: 20px;
@@ -9000,12 +8977,6 @@ button:disabled {
   min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .teikibin-form {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Benefit settings (2) ???? */
 
 .benefit-settings {
@@ -9074,13 +9045,6 @@ button:disabled {
   font-weight: 600;
   color: #1565c0;
   text-align: center;
-}
-
-.benefit-col-header--survivor {
-  background: linear-gradient(180deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #e65100;
-  font-size: 0.8125rem;
-  line-height: 1.35;
 }
 
 .benefit-row-label {
@@ -9174,14 +9138,6 @@ button:disabled {
 .pension-field-input--benefit-wide {
   width: 120px;
   text-align: right;
-}
-
-.benefit-survivor-cell {
-  width: 28%;
-  background: #fff8f0;
-  text-align: center;
-  color: #555;
-  font-size: 0.8125rem;
 }
 
 .benefit-survivor-input-cell {
