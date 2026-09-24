@@ -18,7 +18,10 @@ export interface ContentModelCaptureSpec {
   /** 画面全体か、意味的な撮影領域ID。 */
   captureRegion?: 'viewport' | string;
   viewport?: { width: number; height: number };
-  privacyMode?: 'content-safe';
+  /** 事業者モードで個人情報を非表示にして撮影する。通常UIは維持する。 */
+  operatorMode?: {
+    hidePersonalInfo: boolean;
+  };
   purpose: string;
   /** 撮影時に再現したい補足条件。UI selector には依存させない。 */
   note?: string;
