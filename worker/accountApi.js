@@ -190,15 +190,25 @@ function parsePlanId(path) {
 async function handleListPlans(request, env) {
   const auth = await requireCloudStorage(request, env);
   if (auth.response) return auth.response;
-  const { results } = await env.DB
-    .prepare(
-      `SELECT document_json, revision
-       FROM account_plans
-       WHERE workspace_id = ?
-       ORDER BY updated_at DESC`,
-    )
-    .bind(auth.context.workspace_id)
-    .all();
+  const [{ results }, { results: deletedRows }] = await Promise.all([
+    env.DB
+      .prepare(
+        `SELECT document_json, revision
+         FROM account_plans
+         WHERE workspace_id = ?
+         ORDER BY updated_at DESC`,
+      )
+      .bind(auth.context.workspace_id)
+      .all(),
+    env.DB
+      .prepare(
+        `SELECT plan_id
+         FROM account_plan_tombstones
+         WHERE workspace_id = ?`,
+      )
+      .bind(auth.context.workspace_id)
+      .all(),
+  ]);
   const plans = [];
   for (const row of results ?? []) {
     try {
@@ -210,7 +220,33 @@ async function handleListPlans(request, env) {
       console.error('Invalid cloud plan JSON', error);
     }
   }
-  return jsonResponse({ plans });
+  return jsonResponse({
+    plans,
+    deletedPlanIds: (deletedRows ?? []).map((row) => String(row.plan_id)),
+  });
+}
+
+async function hasDeletedPlan(env, workspaceId, planId) {
+  const row = await env.DB
+    .prepare(
+      `SELECT 1 AS deleted
+       FROM account_plan_tombstones
+       WHERE workspace_id = ? AND plan_id = ?
+       LIMIT 1`,
+    )
+    .bind(workspaceId, planId)
+    .first();
+  return Boolean(row);
+}
+
+function deletedPlanResponse() {
+  return jsonResponse(
+    {
+      error: 'PLAN_DELETED',
+      message: 'このプランは別の端末を含むクラウド上で削除済みです。',
+    },
+    410,
+  );
 }
 
 async function handleGetPlan(request, env, planId) {
@@ -224,7 +260,12 @@ async function handleGetPlan(request, env, planId) {
     )
     .bind(auth.context.workspace_id, planId)
     .first();
-  if (!row) return jsonResponse({ error: 'PLAN_NOT_FOUND' }, 404);
+  if (!row) {
+    if (await hasDeletedPlan(env, auth.context.workspace_id, planId)) {
+      return deletedPlanResponse();
+    }
+    return jsonResponse({ error: 'PLAN_NOT_FOUND' }, 404);
+  }
   try {
     return jsonResponse({
       plan: JSON.parse(row.document_json),
@@ -284,12 +325,28 @@ async function handleSavePlan(request, env, planId) {
       .prepare(
         `INSERT INTO account_plans
            (workspace_id, plan_id, document_json, revision, created_at, updated_at)
-         VALUES (?, ?, ?, 1, ?, ?)
+         SELECT ?, ?, ?, 1, ?, ?
+         WHERE NOT EXISTS (
+           SELECT 1
+           FROM account_plan_tombstones
+           WHERE workspace_id = ? AND plan_id = ?
+         )
          ON CONFLICT(workspace_id, plan_id) DO NOTHING`,
       )
-      .bind(auth.context.workspace_id, planId, documentJson, createdAt, now)
+      .bind(
+        auth.context.workspace_id,
+        planId,
+        documentJson,
+        createdAt,
+        now,
+        auth.context.workspace_id,
+        planId,
+      )
       .run();
     if (changedRows(inserted) !== 1) {
+      if (await hasDeletedPlan(env, auth.context.workspace_id, planId)) {
+        return deletedPlanResponse();
+      }
       return conflictResponse(env, auth.context.workspace_id, planId);
     }
     revision = 1;
@@ -309,6 +366,9 @@ async function handleSavePlan(request, env, planId) {
       )
       .run();
     if (changedRows(updated) !== 1) {
+      if (await hasDeletedPlan(env, auth.context.workspace_id, planId)) {
+        return deletedPlanResponse();
+      }
       return conflictResponse(env, auth.context.workspace_id, planId);
     }
     revision = expectedRevision + 1;
@@ -342,6 +402,9 @@ async function handleDeletePlan(request, env, planId) {
     .bind(auth.context.workspace_id, planId, expectedRevision)
     .run();
   if (changedRows(deleted) !== 1) {
+    if (await hasDeletedPlan(env, auth.context.workspace_id, planId)) {
+      return jsonResponse({ ok: true, alreadyDeleted: true });
+    }
     return conflictResponse(env, auth.context.workspace_id, planId);
   }
   return jsonResponse({ ok: true });
