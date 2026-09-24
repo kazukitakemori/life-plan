@@ -33,7 +33,7 @@ export function NenkinTeikibinUnder50FormPanel({
       <details className="teikibin-monthly-details">
         <summary className="teikibin-monthly-summary">
           <span>最近の月別状況</span>
-          <span className="pension-choice-badge">任意・精度アップ</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
         </summary>
         <div className="teikibin-monthly-details-body">
           <RecentMonthlyTable form={form} onChange={updateForm} />
@@ -67,7 +67,7 @@ export function NenkinTeikibinOver50FormPanel({
       <details className="teikibin-monthly-details">
         <summary className="teikibin-monthly-summary">
           <span>最近の月別状況</span>
-          <span className="pension-choice-badge">任意・精度アップ</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
         </summary>
         <div className="teikibin-monthly-details-body">
           <RecentMonthlyTableOver50 form={form} onChange={updateForm} />
