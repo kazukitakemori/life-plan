@@ -139,45 +139,6 @@
   display: none;
 }
 
-.pension-step .pension-info-box {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border: 1px solid var(--ui-border, #dfe5e1);
-  border-radius: 9px;
-  background: var(--ui-bg-surface, #fff);
-  color: var(--ui-text-muted, #65726b);
-}
-
-.pension-step .pension-info-emphasis {
-  color: var(--ui-text, #26322c);
-  font-weight: 700;
-}
-
-.pension-assumption-details {
-  margin-top: 9px;
-  padding-top: 8px;
-  border-top: 1px solid var(--ui-border, #dfe5e1);
-}
-
-.pension-assumption-details summary {
-  width: fit-content;
-  color: var(--ui-brand, #2f6f4e);
-  font-size: var(--text-xs, 0.8125rem);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.pension-assumption-details p {
-  margin-top: 8px !important;
-}
-
-.pension-source-helper {
-  margin: 14px 0 0;
-  color: var(--ui-text-muted, #65726b);
-  font-size: var(--text-xs, 0.8125rem);
-  line-height: 1.55;
-}
-
 .pension-step .benefit-settings {
   margin-top: 28px;
 }
@@ -239,22 +200,14 @@
   color: var(--ui-brand, #2f6f4e);
 }
 
-.pension-auto-benefit-note {
-  display: flex;
-  gap: 8px 12px;
-  align-items: baseline;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: var(--ui-bg-subtle, #f7f9f8);
-  color: var(--ui-text-muted, #65726b);
-  font-size: var(--text-xs, 0.8125rem);
-  line-height: 1.5;
+.pension-step .benefit-survivor-section-heading {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
-.pension-auto-benefit-note strong {
-  flex: 0 0 auto;
-  color: var(--ui-text, #26322c);
+.pension-step .benefit-survivor-section-heading .benefit-settings-block-title {
+  margin-bottom: 12px;
 }
 
 .pension-step .benefit-settings-block--optional {
@@ -302,11 +255,6 @@
 
   .pension-source-option {
     padding: 12px;
-  }
-
-  .pension-auto-benefit-note {
-    display: grid;
-    gap: 4px;
   }
 
   .pension-step .benefit-settings-block--optional {
@@ -678,4 +626,28 @@
   .pension-step .pension-chart-container .recharts-responsive-container {
     max-width: 100%;
   }
+}
+
+
+/* Q8 compact information rows ----------------------------------------- */
+
+.pension-context-notice {
+  margin: 6px 0;
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+  line-height: 1.5;
+}
+
+.pension-context-notice--action {
+  color: var(--ui-text, #26322c);
+}
+
+.pension-context-info {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.pension-context-info--benefit {
+  margin: 2px 0;
 }

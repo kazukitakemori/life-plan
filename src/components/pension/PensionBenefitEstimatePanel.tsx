@@ -341,7 +341,7 @@ export function PensionBenefitEstimatePanel({
     >
       <div className="pension-chart-title-row">
         <h3 className="education-chart-title pension-chart-title">
-          老齢年金のグラフ
+          老齢年金（年額・万円）
         </h3>
         <div className="pension-chart-desktop-controls">
           <CoverageChartZoomToolbar
@@ -357,13 +357,6 @@ export function PensionBenefitEstimatePanel({
       {isMobile && (
         <div className="pension-chart-mobile-summary">
           <PensionLegend visible={visible} onToggle={toggleSeries} />
-          <div className="pension-chart-mobile-meta">
-            <span>横軸：年齢（60歳以降）</span>
-            <span>縦軸：年額（万円）</span>
-          </div>
-          <p className="pension-chart-mobile-hint">
-            グラフをタップすると西暦・年齢・年金額の詳細を確認できます
-          </p>
         </div>
       )}
 

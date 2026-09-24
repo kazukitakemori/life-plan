@@ -13,6 +13,7 @@ import {
   createDefaultTeikibinOver50Form,
   migrateTeikibinOver50Form,
 } from '../../lib/pensionDefaults';
+import { InfoDialog } from '../ui';
 import { BenefitSettingsSection } from './BenefitSettingsSection';
 import { EnrollmentTimeline } from './EnrollmentTimeline';
 import {
@@ -147,51 +148,34 @@ export function PublicPensionSection({
           </fieldset>
 
           {pastEnrollment === 'none' && (
-            <div className="pension-info-box pension-info-box--estimate">
-              <p className="pension-info-emphasis">
-                ねんきん定期便が手元になくても試算できます。
-              </p>
-              <p>
-                Q7「収入」の内容をもとに、これまでと今後の加入状況を推定して老齢年金額を計算します。
-              </p>
-              <p>
-                遺族年金の保険料納付要件は収入情報から推測しません。ねんきん定期便がない場合は、「受給設定」で確認結果を指定できます。
-              </p>
-              <details className="pension-assumption-details">
-                <summary>概算の前提を見る</summary>
+            <div className="pension-context-info">
+              <InfoDialog title="概算の前提" label="概算の前提">
                 <p>
-                  現在の推定では、大卒22歳4月就職を想定し、20歳4月〜22歳3月の24か月は学生納付特例等を利用し、追納していない期間として老齢基礎年金額の算定から除外します。この期間は老齢年金の10年受給資格期間には含めます。
+                  20歳〜22歳は学生納付特例等を利用し、追納していない期間として概算します。受給資格期間には含めます。
                 </p>
-              </details>
+                <p>
+                  遺族年金の保険料納付要件は、収入情報からは推測しません。
+                </p>
+              </InfoDialog>
             </div>
           )}
 
           {pastEnrollment === 'nenkin-teikibin-under50' && (
-            <>
-              <p className="pension-source-helper">
-                お手元のねんきん定期便を見ながら、同じ項目を入力してください。
-              </p>
-              <NenkinTeikibinUnder50FormPanel
-                form={teikibinUnder50}
-                onChange={(form) =>
-                  onChange({ ...memberState, teikibinUnder50: form })
-                }
-              />
-            </>
+            <NenkinTeikibinUnder50FormPanel
+              form={teikibinUnder50}
+              onChange={(form) =>
+                onChange({ ...memberState, teikibinUnder50: form })
+              }
+            />
           )}
 
           {pastEnrollment === 'nenkin-teikibin-over50' && (
-            <>
-              <p className="pension-source-helper">
-                お手元のねんきん定期便を見ながら、同じ項目を入力してください。
-              </p>
-              <NenkinTeikibinOver50FormPanel
-                form={resolvedTeikibinOver50}
-                onChange={(form) =>
-                  onChange({ ...memberState, teikibinOver50: form })
-                }
-              />
-            </>
+            <NenkinTeikibinOver50FormPanel
+              form={resolvedTeikibinOver50}
+              onChange={(form) =>
+                onChange({ ...memberState, teikibinOver50: form })
+              }
+            />
           )}
         </div>
       </div>
