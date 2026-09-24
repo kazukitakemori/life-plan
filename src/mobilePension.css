@@ -34,8 +34,20 @@
     overflow-x: auto;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
-    padding-top: 46px;
-    padding-bottom: 4px;
+    padding-top: 0;
+    padding-bottom: 78px;
+  }
+
+  .pension-step .pension-timeline-pivot-bubble {
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+
+  .pension-step .pension-timeline-pivot-bubble::after {
+    top: auto;
+    bottom: 100%;
+    border-top: 0;
+    border-bottom: 6px solid #212121;
   }
 
   .pension-step .pension-timeline-axis,
