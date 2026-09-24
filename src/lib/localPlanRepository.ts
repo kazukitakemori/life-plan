@@ -112,29 +112,79 @@ export class LocalPlanRepository implements PlanRepository {
 class AccountAwarePlanRepository implements PlanRepository {
   private readonly local = new LocalPlanRepository();
   private readonly cloud = new CloudPlanRepository();
-  private modePromise: Promise<'local' | 'cloud'> | null = null;
+  private lastMode: 'local' | 'cloud' | null = null;
+  private cloudMigrationPromise: Promise<void> | null = null;
 
   private async resolveMode(): Promise<'local' | 'cloud'> {
     if (isLicenseDevUnlock()) return 'local';
-    if (!this.modePromise) {
-      this.modePromise = fetchAccountMe()
-        .then((account) =>
-          account.authenticated && account.entitlement?.cloudStorageEnabled
-            ? 'cloud'
-            : 'local',
-        )
-        .catch((error) => {
-          // Do not silently change storage mode when account rights cannot be
-          // confirmed. Cloud subscribers use D1; everyone else uses IndexedDB.
-          this.modePromise = null;
-          throw error;
-        });
+    const account = await fetchAccountMe();
+    return account.authenticated && account.entitlement?.cloudStorageEnabled
+      ? 'cloud'
+      : 'local';
+  }
+
+  /**
+   * When cloud storage is enabled for an account, carry forward plans that
+   * still exist only in this browser's IndexedDB. Existing cloud plans are
+   * never overwritten automatically; D1 remains authoritative once present.
+   *
+   * Local copies are intentionally kept as a safety backup. They are ignored
+   * while cloud storage is enabled.
+   */
+  private async migrateLocalPlansToCloud(): Promise<void> {
+    let localPlans: PlanRecord[];
+    try {
+      localPlans = await this.local.listAll();
+    } catch (error) {
+      // Cloud access must not depend on legacy IndexedDB being available.
+      console.warn('Could not inspect local plans for cloud migration', error);
+      return;
     }
-    return this.modePromise;
+
+    if (localPlans.length === 0) return;
+
+    const cloudPlans = await this.cloud.listAll();
+    const cloudPlanIds = new Set(cloudPlans.map((plan) => plan.id));
+
+    for (const plan of localPlans) {
+      if (cloudPlanIds.has(plan.id)) continue;
+
+      try {
+        await this.cloud.save(plan);
+        cloudPlanIds.add(plan.id);
+      } catch (error) {
+        // Another browser may have created the same plan after listAll().
+        // If it now exists in D1, keep the cloud copy and continue.
+        const existing = await this.cloud.get(plan.id);
+        if (existing) {
+          cloudPlanIds.add(plan.id);
+          continue;
+        }
+        throw error;
+      }
+    }
   }
 
   private async repository(): Promise<PlanRepository> {
-    return (await this.resolveMode()) === 'cloud' ? this.cloud : this.local;
+    const mode = await this.resolveMode();
+
+    if (mode !== this.lastMode) {
+      this.lastMode = mode;
+      this.cloudMigrationPromise = null;
+    }
+
+    if (mode === 'cloud') {
+      if (!this.cloudMigrationPromise) {
+        this.cloudMigrationPromise = this.migrateLocalPlansToCloud().catch((error) => {
+          this.cloudMigrationPromise = null;
+          throw error;
+        });
+      }
+      await this.cloudMigrationPromise;
+      return this.cloud;
+    }
+
+    return this.local;
   }
 
   async listSummaries(): Promise<PlanSummary[]> {
