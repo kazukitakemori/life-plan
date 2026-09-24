@@ -147,7 +147,7 @@ class AccountAwarePlanRepository implements PlanRepository {
     const cloudPlanIds = new Set(cloudPlans.map((plan) => plan.id));
 
     for (const plan of localPlans) {
-      if (cloudPlanIds.has(plan.id)) continue;
+      if (cloudPlanIds.has(plan.id) || this.cloud.isDeleted(plan.id)) continue;
 
       try {
         await this.cloud.save(plan);
@@ -158,6 +158,9 @@ class AccountAwarePlanRepository implements PlanRepository {
         const existing = await this.cloud.get(plan.id);
         if (existing) {
           cloudPlanIds.add(plan.id);
+          continue;
+        }
+        if (this.cloud.isDeleted(plan.id)) {
           continue;
         }
         throw error;
