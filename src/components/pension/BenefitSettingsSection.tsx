@@ -1,7 +1,6 @@
 import type { FamilyMember } from '../../types/family';
 import { calcBirthYear } from '../../lib/birthDate';
 import { resolveMemberBirthMonth } from '../../lib/familyDefaults';
-import { getMemberTabLabel } from '../../lib/memberDisplay';
 import {
   canDeferOldAgeWithDisabilityPension,
   getMaxOldAgeDeferralAgeByBirth,
@@ -300,7 +299,6 @@ export function BenefitSettingsSection({
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
-  const memberLabel = getMemberTabLabel(member);
   const memberBirthYear = calcBirthYear(
     member.age,
     member.birthMonth,
@@ -607,7 +605,7 @@ export function BenefitSettingsSection({
                 <option value="met">満たしている</option>
                 <option value="not_met">満たしていない</option>
               </select>
-              <p className="benefit-compact-note">
+              <p className="pension-field-hint">
                 判定できない場合は自動計上しません。
               </p>
             </div>
