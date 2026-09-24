@@ -9,10 +9,10 @@ import {
 } from './birthDate';
 import {
   isEligiblePensionChildAdditionResidence,
-  isConfirmedPensionChildAdditionLivelihood,
   isEligibleSurvivorBasicChild,
   survivorBasicChildAddYenPerYear,
 } from './survivorBasicPension';
+import { resolvePensionChildLivelihood } from './pensionChildLivelihood';
 import { calcTaxableOldAgePensionPaymentMan } from './pensionPaymentSchedule';
 import {
   calcTransitionalAdditionYenPerYear,
@@ -2114,6 +2114,7 @@ function calcOldAgeBasicChildrenPensionMonthlyMan(
   pensionerState: PensionMemberState,
   pensionerIncomeEntries: IncomeEntry[],
   familyMembers: FamilyMember[],
+  incomeByMember: IncomeByMember,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -2159,7 +2160,14 @@ function calcOldAgeBasicChildrenPensionMonthlyMan(
         calendarYear,
         calendarMonth,
       ) &&
-      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
+      resolvePensionChildLivelihood({
+        child: member,
+        pensioner,
+        childIncomeEntries: incomeByMember[member.id] ?? [],
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      }) === 'met',
   ).length;
   if (count <= 0) return 0;
 
@@ -2191,6 +2199,7 @@ function calcDependentChildrenPensionMonthlyMan(
   pensionerState: PensionMemberState,
   pensionerIncomeEntries: IncomeEntry[],
   familyMembers: FamilyMember[],
+  incomeByMember: IncomeByMember,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
@@ -2238,7 +2247,14 @@ function calcDependentChildrenPensionMonthlyMan(
         calendarYear,
         calendarMonth,
       ) &&
-      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
+      resolvePensionChildLivelihood({
+        child: member,
+        pensioner,
+        childIncomeEntries: incomeByMember[member.id] ?? [],
+        referenceDate,
+        calendarYear,
+        calendarMonth,
+      }) === 'met',
   ).length;
   if (count <= 0) return 0;
   // 2028年4月以降は令和7年改正により、子の加算は第何子かに
@@ -2635,6 +2651,7 @@ function calcOldAgeHouseholdAdditionsByMemberMan(
         state,
         entries,
         familyMembers,
+        incomeByMember,
         referenceDate,
         calendarYear,
         calendarMonth,
@@ -2670,6 +2687,7 @@ function calcOldAgeHouseholdAdditionsByMemberMan(
             state,
             entries,
             familyMembers,
+            incomeByMember,
             referenceDate,
             calendarYear,
             calendarMonth,
