@@ -1488,6 +1488,7 @@ export default function App() {
       return (
         <PlanAdminView
           summaries={planSummaries}
+          operatorMode={operatorMode}
           currentPlanId={planId}
           transferBusy={planTransferBusy}
           entitlements={license.entitlements}
