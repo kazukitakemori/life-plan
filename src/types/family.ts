@@ -10,6 +10,11 @@ export type PensionChildResidenceStatus =
   | 'overseas_exception'
   | 'overseas';
 
+export type PensionChildLivelihoodStatus =
+  | 'unknown'
+  | 'met'
+  | 'not_met';
+
 export type DisabilityGrade =
   | 'none'
   | 'grade1'
@@ -67,6 +72,11 @@ export interface FamilyMember {
    * child と other/grandchild で使用する。旧データはunknown。
    */
   pensionChildResidence?: PensionChildResidenceStatus;
+  /**
+   * 老齢年金の子の加算で使う、生計維持関係の確認結果。
+   * 年金を受ける本人のmember idごとに保存する。未入力・旧データはunknownとして扱う。
+   */
+  pensionChildLivelihoodByMember?: Record<string, PensionChildLivelihoodStatus>;
   /**
    * 現在の障害等級・状態。
    * 子の年金加算等では「1級・2級の障害状態」を判定するために使用する。
@@ -135,4 +145,13 @@ export const PENSION_CHILD_RESIDENCE_LABELS: Record<
   japan: '日本国内',
   overseas_exception: '海外（留学等の例外）',
   overseas: '海外（その他）',
+};
+
+export const PENSION_CHILD_LIVELIHOOD_LABELS: Record<
+  PensionChildLivelihoodStatus,
+  string
+> = {
+  unknown: '未確認',
+  met: '満たす（確認済み）',
+  not_met: '満たさない',
 };
