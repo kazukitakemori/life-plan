@@ -581,6 +581,9 @@ export function BenefitSettingsSection({
 
         {(member.role === 'head' || member.role === 'spouse') && (
           <>
+            <div className="benefit-survivor-section-heading">
+              <h5 className="benefit-settings-block-title">遺族年金</h5>
+            </div>
             <div className="benefit-survivor-premium-setting">
               <label
                 className="pension-enrollment-label"
