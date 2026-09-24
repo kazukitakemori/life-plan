@@ -172,3 +172,22 @@ export const ADDITIONAL_PENSION_UNIT_YEN_PER_MONTH = 200;
  * 調整対象は老齢厚生年金のみ（老齢基礎年金は対象外）。
  */
 export const ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH = 650_000;
+
+/**
+ * 在職老齢年金の支給停止調整額を対象月ごとに返す。
+ * 日本年金機構公表の年度額:
+ * 2022年度 47万円 / 2023年度 48万円 / 2024年度 50万円 /
+ * 2025年度 51万円 / 2026年度 65万円。
+ * 2026年度より先は、将来の賃金改定率が未確定なため2026年度水準65万円で試算する。
+ */
+export function getZaishokuSuspensionThresholdYenPerMonth(
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  const serial = calendarYear * 12 + calendarMonth;
+  if (serial >= 2026 * 12 + 4) return 650_000;
+  if (serial >= 2025 * 12 + 4) return 510_000;
+  if (serial >= 2024 * 12 + 4) return 500_000;
+  if (serial >= 2023 * 12 + 4) return 480_000;
+  return 470_000;
+}
