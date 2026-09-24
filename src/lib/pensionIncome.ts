@@ -9,6 +9,7 @@ import {
 } from './birthDate';
 import {
   isEligiblePensionChildAdditionResidence,
+  isConfirmedPensionChildAdditionLivelihood,
   isEligibleSurvivorBasicChild,
   survivorBasicChildAddYenPerYear,
 } from './survivorBasicPension';
@@ -2134,7 +2135,8 @@ function calcOldAgeBasicChildrenPensionMonthlyMan(
         member,
         calendarYear,
         calendarMonth,
-      ),
+      ) &&
+      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
   ).length;
   if (count <= 0) return 0;
 
@@ -2212,7 +2214,8 @@ function calcDependentChildrenPensionMonthlyMan(
         member,
         calendarYear,
         calendarMonth,
-      ),
+      ) &&
+      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
   ).length;
   if (count <= 0) return 0;
   // 2028年4月以降は令和7年改正により、子の加算は第何子かに
