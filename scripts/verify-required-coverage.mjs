@@ -59,6 +59,7 @@ import {
 } from '../src/lib/requiredCoverageIncome.ts';
 import { resolveDeathTimeBalancesMan } from '../src/lib/requiredCoverageYearlyCashFlow.ts';
 import {
+  calcCoverageSurvivorBasicDetailMonthlyMan,
   calcCoverageSurvivorBasicMonthlyMan,
   calcSurvivorBasicYenPerYear,
 } from '../src/lib/survivorBasicPension.ts';
@@ -155,6 +156,50 @@ function calcCoverageOldAgePaymentGross({
     basic: Math.round(basic),
     employees: Math.round(employees),
   };
+}
+
+function calcCoverageSurvivorBasicPaymentGross({
+  familyMembers,
+  subject,
+  start,
+  end,
+  referenceDate: refDate,
+}) {
+  const entitlementCache = new Map();
+  const startIdx = calendarIndex(start.year, start.month);
+  const getEntitlement = (idx) => {
+    if (!entitlementCache.has(idx)) {
+      const { year, month } = indexToYearMonth(idx);
+      const breakdown = createEmptyPensionBreakdown();
+      if (idx > startIdx) {
+        breakdown.survivor.basic = calcCoverageSurvivorBasicDetailMonthlyMan(
+          familyMembers,
+          subject,
+          refDate,
+          year,
+          month,
+        );
+      }
+      entitlementCache.set(idx, breakdown);
+    }
+    return entitlementCache.get(idx);
+  };
+
+  let basic = 0;
+  const endIdx = calendarIndex(end.year, end.month);
+  for (let idx = startIdx; idx <= endIdx; idx += 1) {
+    const { month } = indexToYearMonth(idx);
+    const payment = calcPensionPaymentFromEntitlements(
+      month,
+      getEntitlement(prevCalendarIndex(idx)),
+      getEntitlement(prevCalendarIndex(prevCalendarIndex(idx))),
+    );
+    basic +=
+      payment.survivor.basic.basic +
+      payment.survivor.basic.children +
+      payment.survivor.basic.widow;
+  }
+  return { basic: Math.round(basic) };
 }
 
 function calcCoverageSurvivorEmployeesPaymentGross({
@@ -524,6 +569,7 @@ const detailLivingState = {
   byTarget: {
     [HOUSEHOLD_LIVING_KEY]: [
       createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
         items: [foodItem, utilityItem],
       }),
     ],
@@ -798,9 +844,17 @@ const headFood = createLivingExpenseItem({
 const splitFoodState = {
   byTarget: {
     [HOUSEHOLD_LIVING_KEY]: [
-      createLivingExpenseSchedule(40, 6, { items: [householdFood] }),
+      createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
+        items: [householdFood],
+      }),
     ],
-    [head.id]: [createLivingExpenseSchedule(40, 6, { items: [headFood] })],
+    [head.id]: [
+      createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
+        items: [headFood],
+      }),
+    ],
   },
 };
 const livingSplitFood = buildRequiredCoverageResult(
@@ -887,11 +941,13 @@ const twoPeriodLiving = {
         endMode: 'until',
         endAge: 42,
         endMonth: 6,
+        inputMode: 'detail',
         items: [period1Food],
       }),
       createLivingExpenseSchedule(40, 6, {
         startAge: 42,
         startMonth: 7,
+        inputMode: 'detail',
         items: [period2Food],
       }),
     ],
@@ -937,6 +993,7 @@ const detailPlusBulkState = {
         endMode: 'until',
         endAge: 45,
         endMonth: 12,
+        inputMode: 'detail',
         items: [foodItem, utilityItem],
       }),
       bulkAfterHorizon,
@@ -1822,12 +1879,15 @@ const spousePartTime = createIncomeEntry(spouse.id, 'part_time', 38, 6, spouse);
 spousePartTime.periods[0].monthlyAmountMan = 10;
 const headEmployee = createIncomeEntry(head.id, 'employee', 40, 6, head);
 headEmployee.periods[0].monthlyAmountMan = 50;
+const incomePension = createDefaultPensionByMember([head, spouse]);
+incomePension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
 const incomeInput = buildInput({
   familyMembers: [head, spouse],
   incomeByMember: {
     [head.id]: [headEmployee],
     [spouse.id]: [spousePartTime],
   },
+  pensionByMember: incomePension,
 });
 
 const keepWork = buildRequiredCoverageResult(incomeInput, {
@@ -2068,12 +2128,15 @@ console.log('OK survivor basic yen by child count');
   console.log('OK head-death survivor eligibility respects Q1 livelihood period');
 }
 
+const survivorFamilyPension = createDefaultPensionByMember([head, spouse, child]);
+survivorFamilyPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
 const survivorFamilyInput = buildInput({
   familyMembers: [head, spouse, child],
   incomeByMember: {
     [head.id]: [headEmployee],
     [spouse.id]: [spousePartTime],
   },
+  pensionByMember: survivorFamilyPension,
 });
 const survivorBasicResult = buildRequiredCoverageResult(survivorFamilyInput, {
   ...createDefaultRequiredCoverageState(),
@@ -2087,9 +2150,16 @@ const expectedBasicMonthly = calcCoverageSurvivorBasicMonthlyMan(
   7,
 );
 assert.ok(expectedBasicMonthly > 0);
+const expectedBasicPayment = calcCoverageSurvivorBasicPaymentGross({
+  familyMembers: [head, spouse, child],
+  subject: 'head',
+  start: survivorBasicResult.coverageStart,
+  end: survivorBasicResult.coverageEnd,
+  referenceDate,
+});
 assert.equal(
   survivorBasicResult.income.survivorBasic,
-  Math.round(expectedBasicMonthly * 6),
+  expectedBasicPayment.basic,
 );
 assert.ok(survivorBasicResult.income.survivorEmployeesGross > 0);
 assert.equal(
@@ -2196,13 +2266,23 @@ console.log('OK coverage survivor basic from eligible child');
   assert.equal(childlessPreReformStopWork.income.survivorEmployeesGross, 0);
 
   const reformReferenceDate = new Date(2028, 3, 1);
+  const reformHeadEmployee = {
+    ...headEmployee,
+    periods: headEmployee.periods.map((period) => ({
+      ...period,
+      startAge: 20,
+      startMonth: 1,
+      endAge: 65,
+      endMonth: 12,
+    })),
+  };
   const reformPension = createDefaultPensionByMember([head, spouse, child]);
   reformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
   const postReform = buildRequiredCoverageResult(
     buildInput({
       familyMembers: [head, spouse, child],
       incomeByMember: {
-        [head.id]: [headEmployee],
+        [head.id]: [reformHeadEmployee],
         [spouse.id]: [highSpouseIncome],
       },
       pensionByMember: reformPension,
@@ -2223,7 +2303,7 @@ console.log('OK coverage survivor basic from eligible child');
     buildInput({
       familyMembers: [head, spouse],
       incomeByMember: {
-        [head.id]: [headEmployee],
+        [head.id]: [reformHeadEmployee],
         [spouse.id]: [highSpouseIncome],
       },
       pensionByMember: childlessReformPension,
@@ -2256,6 +2336,7 @@ const q8Ignored = buildRequiredCoverageResult(
     },
     pensionByMember: (() => {
       const pension = createDefaultPensionByMember([head, spouse]);
+      pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
       pension[spouse.id].benefitSettings.survivorBasicPerYear = 1_200_000;
       pension[spouse.id].benefitSettings.survivorEmployeesMutualPerYear = 2_400_000;
       return pension;
@@ -2470,6 +2551,7 @@ console.log('OK child allowance is included in coverage income');
 
 {
   const pension = createDefaultPensionByMember([head, spouse]);
+  pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
   pension[spouse.id].benefitSettings.oldAgeBasic = {
     ...pension[spouse.id].benefitSettings.oldAgeBasic,
     startAge: 65,

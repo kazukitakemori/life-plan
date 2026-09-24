@@ -226,14 +226,8 @@ function resolveEmployeesEnrollmentAtAgeMonth(
     return null;
   }
 
-  if (!isAssumedEmploymentStarted(age, month)) {
-    return null;
-  }
-
-  if (!careerEnd || !isOnOrBeforeAgeMonth(age, month, careerEnd.age, careerEnd.month)) {
-    return null;
-  }
-
+  // Q7の明示入力を、22歳就職などの既定推計より優先する。
+  // 20〜21歳で実際に厚生年金へ加入していたケースも、その入力をそのまま採用する。
   const active = findActiveIncomeAtAgeMonth(
     entries,
     age,
@@ -243,15 +237,24 @@ function resolveEmployeesEnrollmentAtAgeMonth(
   );
   const explicitKind = classifyEmployeesEnrollment(active);
 
-  if (explicitKind) {
+  if (explicitKind && active) {
     return {
       kind: explicitKind,
-      monthlyAmountMan: active?.monthlyAmountMan ?? 0,
-      standardBonusYen: active?.standardBonusYen ?? 0,
+      monthlyAmountMan: active.monthlyAmountMan,
+      standardBonusYen: active.standardBonusYen,
     };
   }
 
+  // Q7に別種の収入が明示されている月は、現職プロファイルで厚生年金加入を補完しない。
   if (active) {
+    return null;
+  }
+
+  if (!isAssumedEmploymentStarted(age, month)) {
+    return null;
+  }
+
+  if (!careerEnd || !isOnOrBeforeAgeMonth(age, month, careerEnd.age, careerEnd.month)) {
     return null;
   }
 

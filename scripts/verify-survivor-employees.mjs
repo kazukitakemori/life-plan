@@ -988,8 +988,8 @@ const pension = createDefaultPensionMemberState();
 
   const finalPhaseDeath = { year: 2052, month: 4 };
   const finalPhase = calcMiddleAgedWidowAddYenPerYear({
-    wife: wife45,
-    remainingFamilyMembers: [wife45],
+    wife: wife38,
+    remainingFamilyMembers: [wife38],
     referenceDate,
     death: finalPhaseDeath,
     now: finalPhaseDeath,
@@ -1005,8 +1005,8 @@ const pension = createDefaultPensionMemberState();
 
   const abolishedDeath = { year: 2053, month: 4 };
   const abolished = calcMiddleAgedWidowAddYenPerYear({
-    wife: wife45,
-    remainingFamilyMembers: [wife45],
+    wife: wife38,
+    remainingFamilyMembers: [wife38],
     referenceDate,
     death: abolishedDeath,
     now: abolishedDeath,

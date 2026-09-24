@@ -30,6 +30,7 @@ import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
   EARLY_CLAIM_REDUCTION_PER_MONTH,
   EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
+  getZaishokuSuspensionThresholdYenPerMonth,
 } from '../src/lib/pensionConstants.ts';
 
 assert.equal(
@@ -62,12 +63,16 @@ assert.equal(
   0.7,
 );
 
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2025, 4), 510_000);
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2026, 3), 510_000);
+assert.equal(getZaishokuSuspensionThresholdYenPerMonth(2026, 4), 650_000);
+
 
 // 繰下げの制度境界: 65歳の途中開始はなく、75歳0か月が現行上限。
 assert.equal(getOldAgeAmountFactor(65, 5), 1);
 assert.equal(getOldAgeAmountFactor(66, 0), 1.084);
-assert.equal(getOldAgeAmountFactor(75, 0), 1.84);
-assert.equal(getOldAgeAmountFactor(75, 11), 1.84);
+assert.ok(Math.abs(getOldAgeAmountFactor(75, 0) - 1.84) < 1e-12);
+assert.ok(Math.abs(getOldAgeAmountFactor(75, 11) - 1.84) < 1e-12);
 assert.deepEqual(
   normalizeOldAgeBenefitStart(65, 5),
   { startAge: 65, startMonth: 0 },
@@ -220,7 +225,7 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    66,
     3,
   ).generalEmployeesYenPerYear;
   const april = estimatePost65EmployeesPensionIncreaseMan(
@@ -241,7 +246,7 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    66,
     3,
   ).generalEmployeesYenPerYear;
   const april = estimatePost65EmployeesPensionIncreaseMan(
@@ -425,6 +430,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -700,11 +706,13 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     2028,
     5,
   );
-  assert.ok(after65.oldAge.generalEmployees.basic > 0);
-  assert.notEqual(
-    after65.oldAge.generalEmployees.basic,
-    legacy63.oldAge.generalEmployees.basic,
+  assert.ok(
+    Math.abs(
+      after65.oldAge.generalEmployees.basic -
+        360_000 / 12 / 10_000,
+    ) < 1e-9,
   );
+  assert.equal(after65.oldAge.generalEmployees.earlyPayment, 0);
 }
 
 // 障害年金受給権が確認できる場合の繰下げ制限。
@@ -1024,6 +1032,11 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
 
   const highIncome = employeeIncome();
   highIncome[0].periods[0].monthlyAmountMan = 100;
+  // 標準報酬月額は65万円で頭打ちのため、2026年度65万円基準で
+  // 報酬比例10万円/月を全額停止させるには賞与按分も必要。
+  highIncome[0].periods[0].bonuses = [
+    { id: 'deferral-full-suspension-bonus', amountMan: 120, paymentMonth: 4 },
+  ];
   const working = calcMemberMonthlyPensionBreakdownMan(
     member,
     makeOver50State(),
@@ -1067,8 +1080,9 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.equal(amount.publicServantYenPerYear, 0);
 }
 
-// 20〜59歳までQ7に厚生年金加入が明示されている場合は、大学在学想定の24月を
-// 二重に差し引かず、老齢基礎年金の算定月数は480月まで積み上がる。
+// 20歳到達月〜60歳到達前月までQ7に厚生年金加入が明示されている場合は、
+// 大学在学想定の24月を二重に差し引かず、老齢基礎年金の算定月数は480月まで積み上がる。
+// 4月生まれでは「20歳になる年4月〜60歳になる年3月」がちょうど480月。
 {
   const fullCareer = pensionMember({ age: 60 });
   const entries = [{
@@ -1078,9 +1092,9 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     periods: [{
       id: 'full-career-period',
       startAge: 20,
-      startMonth: 1,
-      endAge: 59,
-      endMonth: 12,
+      startMonth: 4,
+      endAge: 60,
+      endMonth: 3,
       streamType: 'salary_social_insurance',
       monthlyAmountMan: 40,
       bonuses: [],
@@ -1134,6 +1148,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1163,6 +1178,16 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
         (292_500 * (150 / 300)) / 12 / 10_000,
     ) < 1e-9,
   );
+
+  const unconfirmedLivelihood = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, { ...child, pensionChildLivelihoodByMember: {} }],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.equal(unconfirmedLivelihood.oldAge.basic.children, 0);
 }
 
 // 2028年4月以降に老齢厚生年金の受給権を得る人は、子の加給が10年要件。
@@ -1180,6 +1205,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1211,6 +1237,23 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
         292_500 / 12 / 10_000,
     ) < 1e-9,
   );
+
+  const notMaintained = calcMonthlyPensionEntitlementBreakdownMan(
+    [
+      pensioner,
+      {
+        ...child,
+        pensionChildLivelihoodByMember: { [pensioner.id]: 'not_met' },
+      },
+    ],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.equal(notMaintained.oldAge.basic.children, 0);
+  assert.equal(notMaintained.oldAge.generalEmployees.dependent, 0);
 }
 
 // 加給年金は世帯主固定ではなく、配偶者側が年金受給者でも計算する。
@@ -1237,6 +1280,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [olderSpouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1360,6 +1404,7 @@ assert.equal(
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [olderSpouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1389,11 +1434,32 @@ assert.equal(
       referenceDate,
       calendarYear: 2028,
     });
+  const withoutLivelihood =
+    calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+      familyMembers: [
+        youngerHead,
+        olderSpouse,
+        {
+          ...child,
+          pensionChildLivelihoodByMember: {
+            [olderSpouse.id]: 'not_met',
+          },
+        },
+      ],
+      incomeByMember: {},
+      pensionByMember: { [olderSpouse.id]: spouseState },
+      referenceDate,
+      calendarYear: 2028,
+    });
 
   assert.equal(withChild[youngerHead.id] ?? 0, withoutChild[youngerHead.id] ?? 0);
   assert.ok(
     (withChild[olderSpouse.id] ?? 0) >
       (withoutChild[olderSpouse.id] ?? 0),
+  );
+  assert.equal(
+    withoutLivelihood[olderSpouse.id] ?? 0,
+    withoutChild[olderSpouse.id] ?? 0,
   );
 }
 
@@ -1421,6 +1487,7 @@ assert.equal(
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [spouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1453,12 +1520,33 @@ assert.equal(
     incomeByMember: {},
     referenceDate,
   }).find((point) => point.calendarYear === 2028);
+  const withoutLivelihood = buildPensionBenefitChartPoints({
+    member: spouse,
+    memberState: spouseState,
+    incomeEntries: [],
+    familyMembers: [
+      head,
+      spouse,
+      {
+        ...child,
+        pensionChildLivelihoodByMember: { [spouse.id]: 'not_met' },
+      },
+    ],
+    pensionByMember: { [spouse.id]: spouseState },
+    incomeByMember: {},
+    referenceDate,
+  }).find((point) => point.calendarYear === 2028);
 
   assert.ok(withoutChild);
   assert.ok(withChild);
+  assert.ok(withoutLivelihood);
   assert.ok(
     withChild.oldAgeEmployeesGeneral >
       withoutChild.oldAgeEmployeesGeneral,
+  );
+  assert.equal(
+    withoutLivelihood.oldAgeEmployeesGeneral,
+    withoutChild.oldAgeEmployeesGeneral,
   );
 }
 

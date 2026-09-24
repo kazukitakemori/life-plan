@@ -31,7 +31,12 @@ export function survivorChildOrdinaryEnd(
   referenceDate: Date,
 ): CalendarYearMonth | null {
   if (member.age == null || member.birthMonth == null) return null;
-  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+    member.birthDay,
+  );
   const birthMonth = resolveMemberBirthMonth(member);
   if (birthMonth >= 4) {
     return { year: birthYear + 19, month: 3 };
@@ -90,6 +95,17 @@ export function isEligiblePensionChildAdditionResidence(
     member.pensionChildResidence === 'japan' ||
     member.pensionChildResidence === 'overseas_exception'
   );
+}
+
+/**
+ * 老齢年金の子の加算は、年金受給者本人が子の生計を維持していると
+ * 確認できる場合だけ自動計上する。旧データ・未確認は安全側で対象外。
+ */
+export function isConfirmedPensionChildAdditionLivelihood(
+  member: FamilyMember,
+  pensionerId: string,
+): boolean {
+  return member.pensionChildLivelihoodByMember?.[pensionerId] === 'met';
 }
 
 function isOnOrAfterSurvivorChildAddReform(

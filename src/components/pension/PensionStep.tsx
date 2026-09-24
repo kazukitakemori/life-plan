@@ -76,6 +76,19 @@ export function PensionStep({
           member.otherRelationship === 'grandchild')) &&
       (member.pensionChildResidence ?? 'unknown') === 'unknown',
   );
+  const activeMemberCanReceiveChildAddition =
+    activeMember?.role === 'head' ||
+    activeMember?.role === 'spouse' ||
+    (activeMember?.role === 'other' &&
+      activeMember.otherRelationship === 'common_law_partner');
+  const hasUnconfirmedPensionChildLivelihood =
+    activeMemberCanReceiveChildAddition &&
+    members.some(
+      (member) =>
+        member.role === 'child' &&
+        (member.pensionChildLivelihoodByMember?.[resolvedActiveId] ??
+          'unknown') === 'unknown',
+    );
 
   const updateMemberState = (
     memberId: string,
@@ -118,6 +131,12 @@ export function PensionStep({
       {hasUnconfirmedPensionChildResidence ? (
         <p className="purpose-input-note" role="note">
           2028年4月以降の「子の加算」を正確に試算するには、Q1「家族」の詳細設定で対象となる子の「年金上の居住状況」を確認してください。未確認のままでは加算を自動計上しません。
+        </p>
+      ) : null}
+
+      {hasUnconfirmedPensionChildLivelihood ? (
+        <p className="purpose-input-note" role="note">
+          老齢年金の「子の加算」には、年金を受ける本人が子の生計を維持していることの確認が必要です。Q1「家族」の詳細設定で、対象となる子の「年金上の生計維持」を受給者ごとに確認してください。未確認の子は加算を自動計上しません。
         </p>
       ) : null}
 

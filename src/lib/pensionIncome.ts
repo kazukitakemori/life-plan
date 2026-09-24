@@ -9,6 +9,7 @@ import {
 } from './birthDate';
 import {
   isEligiblePensionChildAdditionResidence,
+  isConfirmedPensionChildAdditionLivelihood,
   isEligibleSurvivorBasicChild,
   survivorBasicChildAddYenPerYear,
 } from './survivorBasicPension';
@@ -85,7 +86,7 @@ import {
   PENSION_CHILD_ADD_REFORM_START_MONTH,
   PENSION_CHILD_ADD_REFORM_START_YEAR,
   STANDARD_OLD_AGE_START,
-  ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH,
+  getZaishokuSuspensionThresholdYenPerMonth,
 } from './pensionConstants';
 
 function getMemberAgeMonth(
@@ -251,12 +252,12 @@ function calcDeferralAveragePaymentRate(
     referenceDate,
     STANDARD_OLD_AGE_START,
   );
-  const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
-
   let paymentRateTotal = 0;
   for (let offset = 1; offset <= deferralMonths; offset++) {
     const serial = age65ReachedSerial + offset;
     const { year, month } = pensionCalendarFromSerial(serial);
+    const thresholdMan =
+      getZaishokuSuspensionThresholdYenPerMonth(year, month) / 10_000;
     let age = year - birthYear;
     if (month < birthMonth) age -= 1;
 
@@ -933,6 +934,19 @@ function calcOldAgeMonthlyManByRow(
     pSetting.startAge < STANDARD_OLD_AGE_START &&
     publicActive;
 
+  // 旧保存データの startAge<65 は「特別支給の開始指定」。
+  // 65歳以降の本来年金へ繰上げ減額を引き継がない。
+  const legacyGeneralSpecialSetting =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    gSetting.amountMode === 'auto' &&
+    gSetting.startAge < STANDARD_OLD_AGE_START;
+  const legacyPublicSpecialSetting =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    pSetting.amountMode === 'auto' &&
+    pSetting.startAge < STANDARD_OLD_AGE_START;
+
   let specialBase = createEmptyOldAgePensionBreakdown();
   if (over50Form && inSpecialPaymentPeriod) {
     if (hasSpecialStageAges) {
@@ -1081,9 +1095,10 @@ function calcOldAgeMonthlyManByRow(
       gSetting.amountMode === 'manual'
         ? buildGeneralDetailFromYen(gSetting.manualAmountPerYear ?? 0)
         : autoBase.generalEmployees;
-    const gEffectiveStartMonths = generalInvalidSpecialStartSetting
-      ? STANDARD_OLD_AGE_START * 12
-      : generalStartMonths;
+    const gEffectiveStartMonths =
+      generalInvalidSpecialStartSetting || legacyGeneralSpecialSetting
+        ? STANDARD_OLD_AGE_START * 12
+        : generalStartMonths;
     if (
       gSetting.amountMode !== 'manual' &&
       gEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
@@ -1120,9 +1135,10 @@ function calcOldAgeMonthlyManByRow(
       pSetting.amountMode === 'manual'
         ? buildPublicServantDetailFromYen(pSetting.manualAmountPerYear ?? 0)
         : autoBase.publicServant;
-    const pEffectiveStartMonths = publicInvalidSpecialStartSetting
-      ? STANDARD_OLD_AGE_START * 12
-      : publicStartMonths;
+    const pEffectiveStartMonths =
+      publicInvalidSpecialStartSetting || legacyPublicSpecialSetting
+        ? STANDARD_OLD_AGE_START * 12
+        : publicStartMonths;
     if (
       pSetting.amountMode !== 'manual' &&
       pEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
@@ -1205,6 +1221,8 @@ function calcOldAgeMonthlyManByRow(
         result,
         remunerationMan,
         ageMonth.age,
+        currentCalendarYear,
+        ageMonth.month,
       );
     }
   }
@@ -1333,10 +1351,16 @@ function applyZaishokuSuspension(
   breakdown: OldAgePensionBreakdown,
   totalRemunerationMan: number,
   age: number,
+  calendarYear: number,
+  calendarMonth: number,
 ): OldAgePensionBreakdown {
   if (totalRemunerationMan <= 0) return breakdown;
 
-  const thresholdMan = ZAISHOKU_SUSPENSION_THRESHOLD_YEN_PER_MONTH / 10000;
+  const thresholdMan =
+    getZaishokuSuspensionThresholdYenPerMonth(
+      calendarYear,
+      calendarMonth,
+    ) / 10_000;
 
   if (age >= STANDARD_OLD_AGE_START) {
     const generalSuspendible =
@@ -2134,7 +2158,8 @@ function calcOldAgeBasicChildrenPensionMonthlyMan(
         member,
         calendarYear,
         calendarMonth,
-      ),
+      ) &&
+      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
   ).length;
   if (count <= 0) return 0;
 
@@ -2212,7 +2237,8 @@ function calcDependentChildrenPensionMonthlyMan(
         member,
         calendarYear,
         calendarMonth,
-      ),
+      ) &&
+      isConfirmedPensionChildAdditionLivelihood(member, pensioner.id),
   ).length;
   if (count <= 0) return 0;
   // 2028年4月以降は令和7年改正により、子の加算は第何子かに

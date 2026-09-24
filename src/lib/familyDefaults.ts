@@ -79,6 +79,9 @@ export function migrateFamilyMember(member: FamilyMember): FamilyMember {
       (member.role === 'other' && member.otherRelationship === 'grandchild')
         ? 'unknown'
         : undefined),
+    pensionChildLivelihoodByMember:
+      member.pensionChildLivelihoodByMember ??
+      (member.role === 'child' ? {} : undefined),
   };
 }
 
@@ -100,6 +103,7 @@ export function createFamilyMember(role: FamilyMemberRole): FamilyMember {
     disabilityGrade: 'none',
     disabilityPension: 'none',
     pensionChildResidence: role === 'child' ? 'unknown' : undefined,
+    pensionChildLivelihoodByMember: role === 'child' ? {} : undefined,
     hobbies: [],
     householdPeriod: defaultHouseholdPeriod(role),
   };
