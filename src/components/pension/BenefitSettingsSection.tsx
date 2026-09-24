@@ -33,6 +33,7 @@ interface BenefitSettingsSectionProps {
   generalSpecialStartAge?: number | null;
   publicSpecialStartAge?: number | null;
   survivorPremiumAssessmentStatus: 'met' | 'not_met' | 'unconfirmed';
+  survivorPremiumAssessmentReason?: string | null;
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -298,6 +299,7 @@ export function BenefitSettingsSection({
   generalSpecialStartAge = null,
   publicSpecialStartAge = null,
   survivorPremiumAssessmentStatus,
+  survivorPremiumAssessmentReason = null,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -616,6 +618,10 @@ export function BenefitSettingsSection({
                     : survivorPremiumAssessmentStatus === 'not_met'
                       ? '納付要件を満たさない'
                       : '判定できず'}
+                  {survivorPremiumAssessmentStatus === 'unconfirmed' &&
+                  survivorPremiumAssessmentReason
+                    ? ` — ${survivorPremiumAssessmentReason}`
+                    : ''}
                 </p>
               ) : null}
             </div>
