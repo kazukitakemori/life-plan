@@ -306,7 +306,11 @@ export function hasConfirmedTwoThirdsPremiumRequirement(
 export type SurvivorPremiumRequirementAssessment =
   | {
       status: 'met';
-      basis: 'manual' | 'one_year_no_unpaid' | 'two_thirds_recorded';
+      basis:
+        | 'manual'
+        | 'standard_assumption'
+        | 'one_year_no_unpaid'
+        | 'two_thirds_recorded';
     }
   | {
       status: 'not_met';
@@ -329,6 +333,13 @@ export function resolveSurvivorPremiumRequirementAssessment(
   if (setting === 'met') return { status: 'met', basis: 'manual' };
   if (setting === 'not_met') {
     return { status: 'not_met', basis: 'manual' };
+  }
+
+  // 「入力内容から試算」では、通常どおり公的年金へ加入・納付している
+  // 標準ケースを前提にする。明示的な手動設定は上で優先し、
+  // ねんきん定期便を選んだ場合は実記録から判定する。
+  if (memberState.pastEnrollment === 'none') {
+    return { status: 'met', basis: 'standard_assumption' };
   }
 
   const deathAge = getMemberAgeMonth(
