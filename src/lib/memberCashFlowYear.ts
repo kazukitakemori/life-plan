@@ -1,5 +1,4 @@
 import type { FamilyMember } from '../types/family';
-import type { IncomeEntry } from '../types/income';
 import {
   addInsuranceIncomeBreakdown,
   addPensionBreakdown,
@@ -15,7 +14,7 @@ import {
   type TaxSocialBreakdown,
 } from '../types/cashFlow';
 import type { InsuranceState } from '../types/insurance';
-import type { PensionByMember, PensionMemberState } from '../types/pension';
+import type { PensionByMember } from '../types/pension';
 import type { SavingsState } from '../types/savings';
 import { calcBirthYear, getMemberAgeMonth } from './birthDate';
 import {
