@@ -1080,8 +1080,9 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
   assert.equal(amount.publicServantYenPerYear, 0);
 }
 
-// 20〜59歳までQ7に厚生年金加入が明示されている場合は、大学在学想定の24月を
-// 二重に差し引かず、老齢基礎年金の算定月数は480月まで積み上がる。
+// 20歳到達月〜60歳到達前月までQ7に厚生年金加入が明示されている場合は、
+// 大学在学想定の24月を二重に差し引かず、老齢基礎年金の算定月数は480月まで積み上がる。
+// 4月生まれでは「20歳になる年4月〜60歳になる年3月」がちょうど480月。
 {
   const fullCareer = pensionMember({ age: 60 });
   const entries = [{
@@ -1091,9 +1092,9 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     periods: [{
       id: 'full-career-period',
       startAge: 20,
-      startMonth: 1,
-      endAge: 59,
-      endMonth: 12,
+      startMonth: 4,
+      endAge: 60,
+      endMonth: 3,
       streamType: 'salary_social_insurance',
       monthlyAmountMan: 40,
       bonuses: [],
