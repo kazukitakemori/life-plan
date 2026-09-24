@@ -13,8 +13,7 @@
     "worker:dev": "wrangler dev",
     "db:migrate:local": "wrangler d1 migrations apply life-plan-license --local",
     "db:migrate:remote": "wrangler d1 migrations apply life-plan-license --remote",
-    "license:generate": "node scripts/generate-license-keys.mjs",
-    "test": "vitest run"
+    "license:generate": "node scripts/generate-license-keys.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -28,7 +27,6 @@
     "@vitejs/plugin-react": "^4.4.1",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
-    "wrangler": "^4.128.0",
-    "vitest": "^3.2.4"
+    "wrangler": "^4.128.0"
   }
 }
