@@ -1834,12 +1834,15 @@ const spousePartTime = createIncomeEntry(spouse.id, 'part_time', 38, 6, spouse);
 spousePartTime.periods[0].monthlyAmountMan = 10;
 const headEmployee = createIncomeEntry(head.id, 'employee', 40, 6, head);
 headEmployee.periods[0].monthlyAmountMan = 50;
+const incomePension = createDefaultPensionByMember([head, spouse]);
+incomePension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
 const incomeInput = buildInput({
   familyMembers: [head, spouse],
   incomeByMember: {
     [head.id]: [headEmployee],
     [spouse.id]: [spousePartTime],
   },
+  pensionByMember: incomePension,
 });
 
 const keepWork = buildRequiredCoverageResult(incomeInput, {
@@ -2080,12 +2083,15 @@ console.log('OK survivor basic yen by child count');
   console.log('OK head-death survivor eligibility respects Q1 livelihood period');
 }
 
+const survivorFamilyPension = createDefaultPensionByMember([head, spouse, child]);
+survivorFamilyPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
 const survivorFamilyInput = buildInput({
   familyMembers: [head, spouse, child],
   incomeByMember: {
     [head.id]: [headEmployee],
     [spouse.id]: [spousePartTime],
   },
+  pensionByMember: survivorFamilyPension,
 });
 const survivorBasicResult = buildRequiredCoverageResult(survivorFamilyInput, {
   ...createDefaultRequiredCoverageState(),
