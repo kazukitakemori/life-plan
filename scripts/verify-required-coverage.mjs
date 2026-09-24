@@ -946,6 +946,7 @@ const detailPlusBulkState = {
         endMode: 'until',
         endAge: 45,
         endMonth: 12,
+        inputMode: 'detail',
         items: [foodItem, utilityItem],
       }),
       bulkAfterHorizon,
