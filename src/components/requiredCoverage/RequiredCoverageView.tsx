@@ -164,6 +164,11 @@ export function RequiredCoverageView({
   const spouseMember = cashFlowInput.familyMembers.find(
     (member) => member.role === 'spouse',
   );
+  const commonLawPartner = cashFlowInput.familyMembers.find(
+    (member) =>
+      member.role === 'other' &&
+      member.otherRelationship === 'common_law_partner',
+  );
   const headLabel = headMember
     ? getMemberTabLabel(headMember)
     : '世帯主さん';
@@ -389,6 +394,11 @@ export function RequiredCoverageView({
                       : `${spouseLabel}に万一`}
                   </SubjectSwitchButton>
                 </div>
+                {!hasSpouse && commonLawPartner ? (
+                  <p className="required-coverage-card-note">
+                    内縁の配偶者は遺族年金の受給者としては計算しますが、「内縁の配偶者本人に万一」の必要保障額試算は現在未対応です。
+                  </p>
+                ) : null}
               </section>
 
               {!isMedicalRisk ? (
