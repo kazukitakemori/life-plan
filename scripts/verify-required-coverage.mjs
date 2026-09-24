@@ -524,6 +524,7 @@ const detailLivingState = {
   byTarget: {
     [HOUSEHOLD_LIVING_KEY]: [
       createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
         items: [foodItem, utilityItem],
       }),
     ],
