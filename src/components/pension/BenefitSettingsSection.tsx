@@ -32,6 +32,7 @@ interface BenefitSettingsSectionProps {
   specialEmployeesStartAge?: number | null;
   generalSpecialStartAge?: number | null;
   publicSpecialStartAge?: number | null;
+  survivorPremiumAssessmentStatus: 'met' | 'not_met' | 'unconfirmed';
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -296,6 +297,7 @@ export function BenefitSettingsSection({
   specialEmployeesStartAge = null,
   generalSpecialStartAge = null,
   publicSpecialStartAge = null,
+  survivorPremiumAssessmentStatus,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -582,7 +584,7 @@ export function BenefitSettingsSection({
         {(member.role === 'head' || member.role === 'spouse') && (
           <>
             <div className="benefit-survivor-section-heading">
-              <h5 className="benefit-settings-block-title">遺族年金</h5>
+              <h4 className="pension-subsection-title">遺族年金</h4>
             </div>
             <div className="benefit-survivor-premium-setting">
               <label
@@ -606,9 +608,16 @@ export function BenefitSettingsSection({
                 <option value="met">満たしている</option>
                 <option value="not_met">満たしていない</option>
               </select>
-              <p className="pension-field-hint">
-                判定できない場合は自動計上しません。
-              </p>
+              {(settings.survivorPremiumRequirement ?? 'auto') === 'auto' ? (
+                <p className="benefit-survivor-assessment">
+                  自動判定：
+                  {survivorPremiumAssessmentStatus === 'met'
+                    ? '納付要件を満たす'
+                    : survivorPremiumAssessmentStatus === 'not_met'
+                      ? '納付要件を満たさない'
+                      : '判定できず'}
+                </p>
+              ) : null}
             </div>
           </>
         )}
