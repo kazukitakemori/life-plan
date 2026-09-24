@@ -200,6 +200,16 @@
   color: var(--ui-brand, #2f6f4e);
 }
 
+.pension-step .benefit-survivor-section-heading {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border, #dfe5e1);
+}
+
+.pension-step .benefit-survivor-section-heading .benefit-settings-block-title {
+  margin-bottom: 12px;
+}
+
 .pension-step .benefit-settings-block--optional {
   padding: 14px;
   border: 1px solid var(--ui-border, #dfe5e1);
