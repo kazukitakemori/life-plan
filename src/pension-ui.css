@@ -633,6 +633,15 @@
   visibility: hidden;
 }
 
+.pension-step .pension-chart-tooltip-row--note {
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+}
+
+.pension-step .pension-chart-tooltip-row--note .education-chart-tooltip-swatch {
+  visibility: hidden;
+}
+
 .pension-chart-mobile-summary {
   display: none;
 }
