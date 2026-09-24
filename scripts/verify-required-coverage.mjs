@@ -2336,6 +2336,7 @@ const q8Ignored = buildRequiredCoverageResult(
     },
     pensionByMember: (() => {
       const pension = createDefaultPensionByMember([head, spouse]);
+      pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
       pension[spouse.id].benefitSettings.survivorBasicPerYear = 1_200_000;
       pension[spouse.id].benefitSettings.survivorEmployeesMutualPerYear = 2_400_000;
       return pension;
