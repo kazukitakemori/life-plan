@@ -145,14 +145,16 @@ headIncome.periods[0].monthlyAmountMan = 50;
 const pension = createDefaultPensionMemberState();
 
 {
-  // Q7の厚生年金加入期間が直近1年を覆わない場合は、納付要件を推測しない。
+  // 「入力内容から試算」は、通常どおり公的年金へ加入・納付している
+  // 標準ケースとして扱い、現在の厚生年金加入から短期要件を試算する。
   const autoAssessment = resolveSurvivorPremiumRequirementAssessment(
     head,
     pension,
     referenceDate,
     death,
   );
-  assert.equal(autoAssessment.status, 'unconfirmed');
+  assert.equal(autoAssessment.status, 'met');
+  assert.equal(autoAssessment.basis, 'standard_assumption');
   assert.equal(
     resolveSurvivorEmployeesDeathRequirement(
       head,
@@ -161,10 +163,10 @@ const pension = createDefaultPensionMemberState();
       referenceDate,
       death,
     ),
-    'none',
+    'short_term',
   );
 
-  // ねんきんネット等で納付要件を確認できた場合は手動確定できる。
+  // 旧保存データ等で納付要件を明示した場合は、その設定を引き続き尊重する。
   const confirmedPension = createDefaultPensionMemberState();
   confirmedPension.benefitSettings.survivorPremiumRequirement = 'met';
   const requirement = resolveSurvivorEmployeesDeathRequirement(
