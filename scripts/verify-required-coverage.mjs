@@ -2551,6 +2551,7 @@ console.log('OK child allowance is included in coverage income');
 
 {
   const pension = createDefaultPensionByMember([head, spouse]);
+  pension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
   pension[spouse.id].benefitSettings.oldAgeBasic = {
     ...pension[spouse.id].benefitSettings.oldAgeBasic,
     startAge: 65,
