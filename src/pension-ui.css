@@ -679,3 +679,76 @@
     max-width: 100%;
   }
 }
+
+
+/* Q8 compact information rows ----------------------------------------- */
+
+.pension-context-notice,
+.pension-source-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border, #dfe5e1);
+  border-radius: 9px;
+  background: var(--ui-bg-subtle, #f7f9f8);
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+  line-height: 1.5;
+}
+
+.pension-context-notice--action {
+  color: var(--ui-text, #26322c);
+}
+
+.pension-context-info {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.pension-context-info--benefit {
+  margin: 6px 0;
+}
+
+.pension-source-info-row {
+  margin-top: 14px;
+}
+
+.pension-auto-benefit-note .ui-info-trigger {
+  margin-left: auto;
+}
+
+.pension-chart-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .pension-context-notice,
+  .pension-source-info-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .pension-auto-benefit-note {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .pension-auto-benefit-note .ui-info-trigger {
+    margin-left: 0;
+  }
+
+  .pension-chart-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
