@@ -1,4 +1,5 @@
 import type { FamilyMember } from '../../types/family';
+import type { IncomeEntry } from '../../types/income';
 import type {
   PastEnrollmentMode,
   PensionMemberState,
@@ -8,6 +9,7 @@ import {
   resolveOver50GeneralSpecialStartAge,
   resolveOver50PublicPrivateSpecialStartAge,
 } from '../../lib/pensionIncome';
+import { resolveSurvivorPremiumRequirementAssessment } from '../../lib/survivorEmployeesPension';
 import {
   createDefaultBenefitSettings,
   createDefaultTeikibinOver50Form,
@@ -25,6 +27,7 @@ interface PublicPensionSectionProps {
   member: FamilyMember;
   referenceDate: Date;
   memberState: PensionMemberState;
+  incomeEntries: IncomeEntry[];
   onChange: (state: PensionMemberState) => void;
 }
 
@@ -56,6 +59,7 @@ export function PublicPensionSection({
   member,
   referenceDate,
   memberState,
+  incomeEntries,
   onChange,
 }: PublicPensionSectionProps) {
   const { pastEnrollment, teikibinUnder50, teikibinOver50, benefitSettings } =
@@ -77,6 +81,17 @@ export function PublicPensionSection({
     pastEnrollment === 'nenkin-teikibin-over50'
       ? resolveOver50PublicPrivateSpecialStartAge(resolvedTeikibinOver50)
       : null;
+  const survivorPremiumAssessment =
+    resolveSurvivorPremiumRequirementAssessment(
+      member,
+      memberState,
+      referenceDate,
+      {
+        year: referenceDate.getFullYear(),
+        month: referenceDate.getMonth() + 1,
+      },
+      incomeEntries,
+    );
 
   const handlePastEnrollmentChange = (mode: PastEnrollmentMode) => {
     onChange({ ...memberState, pastEnrollment: mode });
@@ -153,9 +168,6 @@ export function PublicPensionSection({
                 <p>
                   20歳〜22歳は学生納付特例等を利用し、追納していない期間として概算します。受給資格期間には含めます。
                 </p>
-                <p>
-                  遺族年金の保険料納付要件は、収入情報からは推測しません。
-                </p>
               </InfoDialog>
             </div>
           )}
@@ -187,6 +199,7 @@ export function PublicPensionSection({
         specialEmployeesStartAge={specialEmployeesStartAge}
         generalSpecialStartAge={generalSpecialStartAge}
         publicSpecialStartAge={publicSpecialStartAge}
+        survivorPremiumAssessmentStatus={survivorPremiumAssessment.status}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
