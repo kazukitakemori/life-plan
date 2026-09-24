@@ -220,14 +220,14 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    66,
     3,
   ).generalEmployeesYenPerYear;
   const april = estimatePost65EmployeesPensionIncreaseMan(
     member,
     entries,
     referenceDate,
-    68,
+    67,
     4,
   ).generalEmployeesYenPerYear;
   assert.ok(april > march);
@@ -241,14 +241,14 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    66,
     3,
   ).generalEmployeesYenPerYear;
   const april = estimatePost65EmployeesPensionIncreaseMan(
     member,
     entries,
     referenceDate,
-    68,
+    67,
     4,
   ).generalEmployeesYenPerYear;
   assert.equal(april, march);
