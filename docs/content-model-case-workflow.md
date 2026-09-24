@@ -26,7 +26,7 @@
 - displayState
 - captureRegion
 - viewport
-- privacyMode
+- operatorMode（例: 個人情報非表示）
 - purpose
 - note
 
@@ -41,7 +41,7 @@ CSS selector やDOM構造を正本にしない。
   "displayState": { "startAge": 35 },
   "captureRegion": "viewport",
   "viewport": { "width": 1440, "height": 1000 },
-  "privacyMode": "content-safe",
+  "operatorMode": { "hidePersonalInfo": true },
   "purpose": "記事本文で家計改善前後のキャッシュフローを説明する"
 }
 ```
@@ -72,9 +72,9 @@ Phase 1:
 - Capture Spec基礎
 
 Phase 2:
-- capture mode
+- 事業者専用モード
+- 個人情報非表示（通常の編集ボタン等のUIは維持）
 - semantic capture target
-- privacy-safe UI
 - deterministic viewport/display state
 
 Phase 3:
