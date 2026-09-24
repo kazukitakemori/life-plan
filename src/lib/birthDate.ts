@@ -3,13 +3,18 @@ import { formatReferenceMonthLabel } from './simulationTiming';
 import type { FamilyMember } from '../types/family';
 
 export function getMemberAgeMonth(
-  member: Pick<FamilyMember, 'age' | 'birthMonth'>,
+  member: Pick<FamilyMember, 'age' | 'birthMonth' | 'birthDay'>,
   referenceDate: Date,
   calendarYear: number,
   calendarMonth: number,
 ): { age: number; month: number } | null {
   if (member.age == null || member.birthMonth == null) return null;
-  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+    member.birthDay,
+  );
   let age = calendarYear - birthYear;
   if (calendarMonth < member.birthMonth) {
     age -= 1;
@@ -24,13 +29,18 @@ export function calcBirthYear(
   age: number | null | undefined,
   birthMonth: number | null | undefined,
   referenceDate: Date,
+  birthDay?: number | null,
 ): number {
   const safeAge = age ?? 0;
   const safeMonth = birthMonth ?? 1;
   const refYear = referenceDate.getFullYear();
   const refMonth = referenceDate.getMonth() + 1;
+  const refDay = referenceDate.getDate();
   let birthYear = refYear - safeAge;
-  if (safeMonth > refMonth) {
+  if (
+    safeMonth > refMonth ||
+    (safeMonth === refMonth && birthDay != null && birthDay > refDay)
+  ) {
     birthYear -= 1;
   }
   return birthYear;
@@ -43,7 +53,7 @@ export function formatBirthLabel(
   birthDay?: number | null,
 ): string {
   if (age == null || birthMonth == null || birthDay == null) return '';
-  const birthYear = calcBirthYear(age, birthMonth, referenceDate);
+  const birthYear = calcBirthYear(age, birthMonth, referenceDate, birthDay);
   const era = toJapaneseEra(birthYear, birthMonth);
   return `${birthYear}年/${era}${birthMonth}月${birthDay}日生`;
 }
