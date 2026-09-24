@@ -49,6 +49,13 @@ export function buildPensionBenefitChartPoints(input: {
     input.referenceDate,
   );
   const startYear = resolveSimulationStartYear(input.referenceDate);
+  const simulationHead =
+    input.familyMembers.find((member) => member.role === 'head') ?? input.member;
+  const simulationMonthStart = resolveSimulationMonthStart(
+    simulationHead,
+    input.incomeByMember,
+    input.referenceDate,
+  );
   const endYear = birthYear + endAge;
   const points: PensionBenefitChartPoint[] = [];
 
@@ -87,10 +94,7 @@ export function buildPensionBenefitChartPoints(input: {
         );
     }
 
-    const monthStart =
-      year === startYear
-        ? resolveSimulationMonthStart(input.referenceDate)
-        : 1;
+    const monthStart = year === startYear ? simulationMonthStart : 1;
 
     for (let month = monthStart; month <= 12; month++) {
       const payment = calcPensionPaymentFromEntitlements(
