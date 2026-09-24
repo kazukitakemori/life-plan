@@ -799,9 +799,17 @@ const headFood = createLivingExpenseItem({
 const splitFoodState = {
   byTarget: {
     [HOUSEHOLD_LIVING_KEY]: [
-      createLivingExpenseSchedule(40, 6, { items: [householdFood] }),
+      createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
+        items: [householdFood],
+      }),
     ],
-    [head.id]: [createLivingExpenseSchedule(40, 6, { items: [headFood] })],
+    [head.id]: [
+      createLivingExpenseSchedule(40, 6, {
+        inputMode: 'detail',
+        items: [headFood],
+      }),
+    ],
   },
 };
 const livingSplitFood = buildRequiredCoverageResult(
