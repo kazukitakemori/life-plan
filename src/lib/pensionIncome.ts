@@ -934,6 +934,19 @@ function calcOldAgeMonthlyManByRow(
     pSetting.startAge < STANDARD_OLD_AGE_START &&
     publicActive;
 
+  // 旧保存データの startAge<65 は「特別支給の開始指定」。
+  // 65歳以降の本来年金へ繰上げ減額を引き継がない。
+  const legacyGeneralSpecialSetting =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    gSetting.amountMode === 'auto' &&
+    gSetting.startAge < STANDARD_OLD_AGE_START;
+  const legacyPublicSpecialSetting =
+    over50Form != null &&
+    !hasSpecialStageAges &&
+    pSetting.amountMode === 'auto' &&
+    pSetting.startAge < STANDARD_OLD_AGE_START;
+
   let specialBase = createEmptyOldAgePensionBreakdown();
   if (over50Form && inSpecialPaymentPeriod) {
     if (hasSpecialStageAges) {
@@ -1082,9 +1095,10 @@ function calcOldAgeMonthlyManByRow(
       gSetting.amountMode === 'manual'
         ? buildGeneralDetailFromYen(gSetting.manualAmountPerYear ?? 0)
         : autoBase.generalEmployees;
-    const gEffectiveStartMonths = generalInvalidSpecialStartSetting
-      ? STANDARD_OLD_AGE_START * 12
-      : generalStartMonths;
+    const gEffectiveStartMonths =
+      generalInvalidSpecialStartSetting || legacyGeneralSpecialSetting
+        ? STANDARD_OLD_AGE_START * 12
+        : generalStartMonths;
     if (
       gSetting.amountMode !== 'manual' &&
       gEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
@@ -1121,9 +1135,10 @@ function calcOldAgeMonthlyManByRow(
       pSetting.amountMode === 'manual'
         ? buildPublicServantDetailFromYen(pSetting.manualAmountPerYear ?? 0)
         : autoBase.publicServant;
-    const pEffectiveStartMonths = publicInvalidSpecialStartSetting
-      ? STANDARD_OLD_AGE_START * 12
-      : publicStartMonths;
+    const pEffectiveStartMonths =
+      publicInvalidSpecialStartSetting || legacyPublicSpecialSetting
+        ? STANDARD_OLD_AGE_START * 12
+        : publicStartMonths;
     if (
       pSetting.amountMode !== 'manual' &&
       pEffectiveStartMonths !== STANDARD_OLD_AGE_START * 12
