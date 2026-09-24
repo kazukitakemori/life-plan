@@ -896,11 +896,13 @@ const twoPeriodLiving = {
         endMode: 'until',
         endAge: 42,
         endMonth: 6,
+        inputMode: 'detail',
         items: [period1Food],
       }),
       createLivingExpenseSchedule(40, 6, {
         startAge: 42,
         startMonth: 7,
+        inputMode: 'detail',
         items: [period2Food],
       }),
     ],
