@@ -59,7 +59,6 @@ export function FamilyStep({
           <FamilyMemberRow
             key={member.id}
             member={member}
-            members={members}
             referenceDate={referenceDate}
             onChange={(updated) => updateMember(member.id, updated)}
             onRemove={() => removeMember(member.id)}
