@@ -24,6 +24,7 @@ import {
   PENSION_START_AGE_OPTIONS,
   PENSION_START_MONTH_OPTIONS,
 } from '../../types/pension';
+import { InfoDialog } from '../ui';
 
 interface BenefitSettingsSectionProps {
   member: FamilyMember;
@@ -477,6 +478,13 @@ export function BenefitSettingsSection({
   const shouldWarnDisabilitySpecialOldAgeChoice =
     (member.disabilityPension ?? 'none') !== 'none' &&
     specialEmployeesStartAge != null;
+  const hasOldAgeReceiptGuidance =
+    !canDeferBasic ||
+    !canDeferEmployees ||
+    shouldWarnSurvivorDeferral ||
+    shouldWarnDisabilitySpecialOldAgeChoice ||
+    isEarlyPension ||
+    (!isEarlyPension && isEmployeesDeferred);
 
   return (
     <div className="pension-subsection benefit-settings">
@@ -486,40 +494,56 @@ export function BenefitSettingsSection({
         <h5 className="benefit-settings-block-title">
           老齢年金の受け取り方
         </h5>
-        {(!canDeferBasic || !canDeferEmployees) && (
-          <p className="benefit-early-pension-note">
-            {canDeferEmployees
-              ? '※ Q1で障害基礎年金の受給権が設定されているため、老齢基礎年金は繰下げ不可として65才から計算します。老齢厚生年金は繰下げを選べます。'
-              : '※ Q1で障害厚生年金の受給権が設定されているため、老齢基礎・老齢厚生年金は繰下げ不可として65才から計算します。'}
-          </p>
-        )}
-        {shouldWarnSurvivorDeferral && (
-          <p className="benefit-early-pension-note">
-            {hasSurvivorEmployeesInput
-              ? '※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・時期・請求状況で変わります。2028年4月施行の改正では、対象となる人について、遺族厚生年金の受給権があっても老齢基礎年金は繰下げ可能となり、老齢厚生年金は遺族厚生年金を請求していない場合に限り繰下げ可能となります。Q8の「受給中」入力だけでは経過措置まで確定できないため、開始年齢は自動変更せず選択値のまま試算します。'
-              : '※ 遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・取得時期・失権時期などで変わります。Q8の「受給中」入力だけでは時系列を確定できないため、開始年齢は自動変更せず選択値のまま試算します。'}
-          </p>
-        )}
-        {shouldWarnDisabilitySpecialOldAgeChoice && (
-          <p className="benefit-early-pension-note">
-            ※ 65才前に障害年金と特別支給の老齢厚生年金の両方の受給権がある場合は、原則として同時受給ではなく選択になります。Q8では障害年金の現在額・選択履歴を保存していないため、どちらを選ぶかは自動判定せず、老齢年金側の見込みだけを表示します。
-          </p>
-        )}
-        {isEarlyPension && (
-          <p className="benefit-early-pension-note">
-            {specialEmployeesStartAge != null
-              ? '※ 特別支給の老齢厚生年金がある場合、厚生年金の繰上げは本来の特別支給開始前だけ選べます。開始後は特別支給を反映したまま、老齢基礎年金だけ65才前に繰上げできます。'
-              : '※ 繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。'}
-          </p>
-        )}
-        {!isEarlyPension && isEmployeesDeferred && (
-          <p className="benefit-early-pension-note">
-            ※ 一般厚生と公務員厚生・私学共済は、老齢厚生年金の繰下げ請求を同時に行うため、開始年月を連動させています。
-          </p>
-        )}
-        <p className="ui-note">
-          加給年金や子の加算には、生計維持関係など個別確認が必要な条件があります。配偶者加給は、対象外と確認できている場合は手入力で0円に調整できます。子の加算は、Q1の詳細設定で受給者ごとの「年金上の生計維持」が「満たす」と確認できた子だけを自動計上し、未確認の子は計上しません。
-        </p>
+        {hasOldAgeReceiptGuidance ? (
+          <div className="pension-context-info pension-context-info--benefit">
+            <InfoDialog title="老齢年金の受取開始について" label="受取開始の注意">
+              {(!canDeferBasic || !canDeferEmployees) ? (
+                <p>
+                  {canDeferEmployees
+                    ? 'Q1で障害基礎年金の受給権が設定されているため、老齢基礎年金は繰下げ不可として65才から計算します。老齢厚生年金は繰下げを選べます。'
+                    : 'Q1で障害厚生年金の受給権が設定されているため、老齢基礎・老齢厚生年金は繰下げ不可として65才から計算します。'}
+                </p>
+              ) : null}
+              {shouldWarnSurvivorDeferral ? (
+                <p>
+                  {hasSurvivorEmployeesInput
+                    ? '遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・時期・請求状況で変わります。2028年4月施行の改正では、対象となる人について、遺族厚生年金の受給権があっても老齢基礎年金は繰下げ可能となり、老齢厚生年金は遺族厚生年金を請求していない場合に限り繰下げ可能となります。Q8の「受給中」入力だけでは経過措置まで確定できないため、開始年齢は自動変更せず選択値のまま試算します。'
+                    : '遺族年金の受給権がある場合、老齢年金の繰下げ可否は受給権の種類・取得時期・失権時期などで変わります。Q8の「受給中」入力だけでは時系列を確定できないため、開始年齢は自動変更せず選択値のまま試算します。'}
+                </p>
+              ) : null}
+              {shouldWarnDisabilitySpecialOldAgeChoice ? (
+                <p>
+                  65才前に障害年金と特別支給の老齢厚生年金の両方の受給権がある場合は、原則として同時受給ではなく選択になります。Q8では障害年金の現在額・選択履歴を保存していないため、どちらを選ぶかは自動判定せず、老齢年金側の見込みだけを表示します。
+                </p>
+              ) : null}
+              {isEarlyPension ? (
+                <p>
+                  {specialEmployeesStartAge != null
+                    ? '特別支給の老齢厚生年金がある場合、厚生年金の繰上げは本来の特別支給開始前だけ選べます。開始後は特別支給を反映したまま、老齢基礎年金だけ65才前に繰上げできます。'
+                    : '繰上げ受給（65才未満）の場合、老齢基礎・老齢厚生は同時繰上げが必須のため、受取開始年月を連動させています。'}
+                </p>
+              ) : null}
+              {!isEarlyPension && isEmployeesDeferred ? (
+                <p>
+                  一般厚生と公務員厚生・私学共済は、老齢厚生年金の繰下げ請求を同時に行うため、開始年月を連動させています。
+                </p>
+              ) : null}
+            </InfoDialog>
+          </div>
+        ) : null}
+        <div className="pension-context-info pension-context-info--benefit">
+          <InfoDialog title="加給年金・子の加算について" label="加給年金・子の加算">
+            <p>
+              加給年金や子の加算には、生計維持関係など個別確認が必要な条件があります。
+            </p>
+            <p>
+              配偶者加給は、対象外と確認できている場合は手入力で0円に調整できます。
+            </p>
+            <p>
+              子の加算は、Q1の詳細設定で受給者ごとの「年金上の生計維持」が「満たす」と確認できた子だけを自動計上し、未確認の子は計上しません。
+            </p>
+          </InfoDialog>
+        </div>
         <table className="benefit-settings-table">
           <thead>
             <tr>
@@ -579,9 +603,14 @@ export function BenefitSettingsSection({
           <>
             <div className="pension-auto-benefit-note" role="note">
               <strong>万一の場合の年金</strong>
-              <span>
-                {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから確認できる範囲を自動計算します。遺族側の生計維持関係・収入要件や、厚生年金加入中の傷病が原因で初診から5年以内に亡くなるケースなど、現在の入力だけで確定できない要件は自動成立扱いにしません。
-              </span>
+              <InfoDialog title="万一の場合の遺族年金" label="自動計算の範囲">
+                <p>
+                  {memberLabel}に万が一があった場合の遺族基礎年金・遺族厚生年金は、加入状況などから確認できる範囲を自動計算します。
+                </p>
+                <p>
+                  遺族側の生計維持関係・収入要件や、厚生年金加入中の傷病が原因で初診から5年以内に亡くなるケースなど、現在の入力だけで確定できない要件は自動成立扱いにしません。
+                </p>
+              </InfoDialog>
             </div>
 
             <div className="benefit-survivor-premium-setting">
@@ -606,10 +635,17 @@ export function BenefitSettingsSection({
                 <option value="met">満たしている</option>
                 <option value="not_met">満たしていない</option>
               </select>
-              <p className="ui-note">
-                自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
-                ねんきんネット等で要件を確認できる場合は手動で指定できます。
-              </p>
+              <div className="pension-context-notice" role="note">
+                <span>自動判定できない場合は、遺族年金を試算へ自動計上しません。</span>
+                <InfoDialog title="遺族年金の保険料納付要件" label="確認方法">
+                  <p>
+                    自動確認で判定できない場合、遺族基礎年金・遺族厚生年金は試算へ自動計上しません。
+                  </p>
+                  <p>
+                    ねんきんネット等で要件を確認できる場合は手動で指定できます。
+                  </p>
+                </InfoDialog>
+              </div>
             </div>
           </>
         )}
@@ -741,9 +777,19 @@ export function BenefitSettingsSection({
               </tr>
             </tbody>
           </table>
-          <p className="ui-note benefit-survivor-end-note">
-            終了予定年月は分かる場合だけ設定してください。設定した月分までを対象とし、翌月分から終了として扱います。実際の入金は支給月の都合で後の月に現れる場合があります。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。受給途中で年額だけが変わる場合は現在の入力では自動反映できないため、金額変更のあるケースは個別確認が必要です。
-          </p>
+          <div className="pension-context-info benefit-survivor-end-note">
+            <InfoDialog title="終了予定年月の扱い" label="終了予定年月について">
+              <p>
+                終了予定年月は分かる場合だけ設定してください。設定した月分までを対象とし、翌月分から終了として扱います。
+              </p>
+              <p>
+                実際の入金は支給月の都合で後の月に現れる場合があります。未設定の場合は終了時期を自動推測せず、現在額が続く前提で試算します。
+              </p>
+              <p>
+                受給途中で年額だけが変わる場合は現在の入力では自動反映できないため、金額変更のあるケースは個別確認が必要です。
+              </p>
+            </InfoDialog>
+          </div>
         </div>
       </details>
     </div>
