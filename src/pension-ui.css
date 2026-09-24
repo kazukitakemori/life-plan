@@ -191,6 +191,10 @@
   border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
+.pension-step .teikibin-amount-total {
+  border-top-color: var(--ui-brand, #2f6f4e);
+}
+
 .pension-step .benefit-settings {
   margin-top: 28px;
 }
