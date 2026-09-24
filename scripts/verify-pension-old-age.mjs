@@ -1434,11 +1434,32 @@ assert.equal(
       referenceDate,
       calendarYear: 2028,
     });
+  const withoutLivelihood =
+    calcMemberAnnualTaxableOldAgePensionPaymentManByMember({
+      familyMembers: [
+        youngerHead,
+        olderSpouse,
+        {
+          ...child,
+          pensionChildLivelihoodByMember: {
+            [olderSpouse.id]: 'not_met',
+          },
+        },
+      ],
+      incomeByMember: {},
+      pensionByMember: { [olderSpouse.id]: spouseState },
+      referenceDate,
+      calendarYear: 2028,
+    });
 
   assert.equal(withChild[youngerHead.id] ?? 0, withoutChild[youngerHead.id] ?? 0);
   assert.ok(
     (withChild[olderSpouse.id] ?? 0) >
       (withoutChild[olderSpouse.id] ?? 0),
+  );
+  assert.equal(
+    withoutLivelihood[olderSpouse.id] ?? 0,
+    withoutChild[olderSpouse.id] ?? 0,
   );
 }
 
@@ -1499,12 +1520,33 @@ assert.equal(
     incomeByMember: {},
     referenceDate,
   }).find((point) => point.calendarYear === 2028);
+  const withoutLivelihood = buildPensionBenefitChartPoints({
+    member: spouse,
+    memberState: spouseState,
+    incomeEntries: [],
+    familyMembers: [
+      head,
+      spouse,
+      {
+        ...child,
+        pensionChildLivelihoodByMember: { [spouse.id]: 'not_met' },
+      },
+    ],
+    pensionByMember: { [spouse.id]: spouseState },
+    incomeByMember: {},
+    referenceDate,
+  }).find((point) => point.calendarYear === 2028);
 
   assert.ok(withoutChild);
   assert.ok(withChild);
+  assert.ok(withoutLivelihood);
   assert.ok(
     withChild.oldAgeEmployeesGeneral >
       withoutChild.oldAgeEmployeesGeneral,
+  );
+  assert.equal(
+    withoutLivelihood.oldAgeEmployeesGeneral,
+    withoutChild.oldAgeEmployeesGeneral,
   );
 }
 
