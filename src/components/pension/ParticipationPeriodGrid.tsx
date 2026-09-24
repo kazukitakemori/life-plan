@@ -29,7 +29,8 @@ export function ParticipationPeriodGrid({
     <div className="teikibin-block">
       <h5 className="teikibin-block-title">(1) これまでの年金加入期間</h5>
 
-      <table className="teikibin-period-table">
+      <div className="teikibin-table-scroll">
+        <table className="teikibin-period-table">
         <tbody>
           <tr>
             <th colSpan={3} className="teikibin-period-table-section">
@@ -175,7 +176,8 @@ export function ParticipationPeriodGrid({
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }
