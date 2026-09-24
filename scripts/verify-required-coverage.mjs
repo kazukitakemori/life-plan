@@ -2266,13 +2266,23 @@ console.log('OK coverage survivor basic from eligible child');
   assert.equal(childlessPreReformStopWork.income.survivorEmployeesGross, 0);
 
   const reformReferenceDate = new Date(2028, 3, 1);
+  const reformHeadEmployee = {
+    ...headEmployee,
+    periods: headEmployee.periods.map((period) => ({
+      ...period,
+      startAge: 20,
+      startMonth: 1,
+      endAge: 65,
+      endMonth: 12,
+    })),
+  };
   const reformPension = createDefaultPensionByMember([head, spouse, child]);
   reformPension[head.id].benefitSettings.survivorPremiumRequirement = 'met';
   const postReform = buildRequiredCoverageResult(
     buildInput({
       familyMembers: [head, spouse, child],
       incomeByMember: {
-        [head.id]: [headEmployee],
+        [head.id]: [reformHeadEmployee],
         [spouse.id]: [highSpouseIncome],
       },
       pensionByMember: reformPension,
@@ -2293,7 +2303,7 @@ console.log('OK coverage survivor basic from eligible child');
     buildInput({
       familyMembers: [head, spouse],
       incomeByMember: {
-        [head.id]: [headEmployee],
+        [head.id]: [reformHeadEmployee],
         [spouse.id]: [highSpouseIncome],
       },
       pensionByMember: childlessReformPension,
