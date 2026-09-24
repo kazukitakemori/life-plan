@@ -22,7 +22,6 @@ import {
   DisclosureSection,
   FormField,
   FormSelect,
-  InfoDialog,
   StepHeading,
 } from '../ui';
 import { PensionBenefitEstimatePanel } from './PensionBenefitEstimatePanel';
@@ -185,34 +184,13 @@ export function PensionStep({
 
       {hasCurrentDisabilityPension ? (
         <div className="pension-context-notice" role="note">
-          <span>Q1で障害年金の受給権が登録されています。</span>
-          <InfoDialog title="障害年金の受給権がある場合" label="試算への影響">
-            <p>
-              障害年金額は自動計算対象外のため、現時点ではQ8・キャッシュフローへ金額を自動反映していません。
-            </p>
-            <p>
-              障害年金の全額支給停止、受給開始・失権年月、65歳前の特別支給の老齢厚生年金との選択、65歳以降の年金選択は保存していないため、加給年金・振替加算・経過的寡婦加算などとの調整や、65歳前に受給権を失った場合の繰下げ可否までは完全に自動判定できません。
-            </p>
-            <p>
-              現在登録されている受給権が続く前提で、確認できる範囲だけを反映します。
-            </p>
-          </InfoDialog>
+          障害年金額は年金見込み額・キャッシュフローに含みません。
         </div>
       ) : null}
 
       {hasUnconfirmedPensionChildResidence ? (
         <div className="pension-context-notice pension-context-notice--action" role="note">
-          <span>
-            子の加算を試算するには、Q1「家族」で対象となる子の年金上の居住状況を確認してください。
-          </span>
-          <InfoDialog title="子の加算と居住状況" label="なぜ確認が必要？">
-            <p>
-              2028年4月以降の「子の加算」を正確に試算するには、対象となる子の「年金上の居住状況」の確認が必要です。
-            </p>
-            <p>
-              未確認のままでは、条件を推測せず子の加算を自動計上しません。
-            </p>
-          </InfoDialog>
+          子の加算を反映するには、Q1「家族」で居住状況を確認してください。
         </div>
       ) : null}
 
@@ -222,9 +200,6 @@ export function PensionStep({
           summary="自動判定できない場合のみ"
           defaultOpen
         >
-          <p className="ui-note">
-            生計維持は、Q1の「世帯主と生計を一にする期間」と扶養設定、Q7の収入から通常ケースを自動判定します。最終学歴連動、基準を超える収入からの減少見込み、別世帯での仕送りなど、入力済み情報だけでは判断できない場合だけ確認してください。
-          </p>
           {pensionChildLivelihoodConfirmationChildren.map((child) => (
             <FormField
               key={child.id}
@@ -262,14 +237,6 @@ export function PensionStep({
           ))}
         </DisclosureSection>
       ) : null}
-
-      <div className="pension-context-info">
-        <InfoDialog title="現在の自動計算対象外" label="自動計算対象外の年金">
-          <p>
-            寡婦年金は現在、自動計算・キャッシュフロー反映の対象外です。Q8の年金見込み額には含まれていません。
-          </p>
-        </InfoDialog>
-      </div>
 
       <MemberIncomeTabs
         members={visibleMembers}
