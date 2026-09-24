@@ -952,7 +952,6 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         monthStart,
         monthEnd,
         levyPaymentFactor,
-        householdEntitlementsByMonth: entitlementsByMonth,
         memberTaxBreakdownByMemberId: taxYear.memberBreakdownByMemberId,
       }),
     });
