@@ -40,7 +40,6 @@ import { MemberAvatar } from './MemberAvatar';
 
 interface FamilyMemberRowProps {
   member: FamilyMember;
-  members: FamilyMember[];
   referenceDate: Date;
   onChange: (member: FamilyMember) => void;
   onRemove: () => void;
@@ -186,7 +185,6 @@ function HouseholdPeriodSection({
 
 export function FamilyMemberRow({
   member,
-  members,
   referenceDate,
   onChange,
   onRemove,
