@@ -49,8 +49,9 @@
 
 .pension-source-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  max-width: 760px;
 }
 
 .pension-source-option {
@@ -139,6 +140,57 @@
   display: none;
 }
 
+.pension-step .teikibin-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+.pension-step .teikibin-form > .teikibin-block {
+  min-width: 0;
+}
+
+.pension-step .teikibin-monthly-details {
+  overflow: hidden;
+  border: 1px solid var(--ui-border, #dfe5e1);
+  border-radius: 10px;
+  background: var(--ui-bg-surface, #fff);
+}
+
+.pension-step .teikibin-monthly-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ui-text, #26322c);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 700;
+}
+
+.pension-step .teikibin-monthly-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pension-step .teikibin-monthly-summary::after {
+  content: '＋';
+  flex: 0 0 auto;
+  color: var(--ui-brand, #2f6f4e);
+}
+
+.pension-step .teikibin-monthly-details[open] .teikibin-monthly-summary::after {
+  content: '−';
+}
+
+.pension-step .teikibin-monthly-details-body {
+  padding: 14px;
+  border-top: 1px solid var(--ui-border, #dfe5e1);
+}
+
 .pension-step .benefit-settings {
   margin-top: 28px;
 }
@@ -201,7 +253,9 @@
 }
 
 .pension-step .benefit-survivor-estimate {
-  margin-top: 18px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
 .pension-step .benefit-survivor-section-heading {
@@ -288,6 +342,19 @@
   }
 
   .pension-step .pension-enrollment-panel {
+    padding: 12px;
+  }
+
+  .pension-step .teikibin-form {
+    gap: 18px;
+  }
+
+  .pension-step .teikibin-monthly-summary {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .pension-step .teikibin-monthly-details-body {
     padding: 12px;
   }
 
