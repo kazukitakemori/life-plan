@@ -17,7 +17,6 @@ import type {
   BenefitSettings,
   DependentSpousePensionSettings,
   OldAgeBenefitRowSettings,
-  SurvivorPremiumRequirementSetting,
 } from '../../types/pension';
 import {
   PENSION_START_AGE_OPTIONS,
@@ -32,8 +31,6 @@ interface BenefitSettingsSectionProps {
   specialEmployeesStartAge?: number | null;
   generalSpecialStartAge?: number | null;
   publicSpecialStartAge?: number | null;
-  survivorPremiumAssessmentStatus: 'met' | 'not_met' | 'unconfirmed';
-  survivorPremiumAssessmentReason?: string | null;
   onChange: (settings: BenefitSettings) => void;
 }
 
@@ -298,8 +295,6 @@ export function BenefitSettingsSection({
   specialEmployeesStartAge = null,
   generalSpecialStartAge = null,
   publicSpecialStartAge = null,
-  survivorPremiumAssessmentStatus,
-  survivorPremiumAssessmentReason = null,
   onChange,
 }: BenefitSettingsSectionProps) {
   const yearOptions = getWesternYearOptions();
@@ -583,50 +578,6 @@ export function BenefitSettingsSection({
           </tbody>
         </table>
 
-        {(member.role === 'head' || member.role === 'spouse') && (
-          <>
-            <div className="benefit-survivor-section-heading">
-              <h4 className="pension-subsection-title">遺族年金</h4>
-            </div>
-            <div className="benefit-survivor-premium-setting">
-              <label
-                className="pension-enrollment-label"
-                htmlFor={`survivor-premium-requirement-${member.id}`}
-              >
-                遺族年金の保険料納付要件
-              </label>
-              <select
-                id={`survivor-premium-requirement-${member.id}`}
-                className="pension-field-select"
-                value={settings.survivorPremiumRequirement ?? 'auto'}
-                onChange={(e) =>
-                  update({
-                    survivorPremiumRequirement:
-                      e.target.value as SurvivorPremiumRequirementSetting,
-                  })
-                }
-              >
-                <option value="auto">入力内容から自動判定</option>
-                <option value="met">満たしている</option>
-                <option value="not_met">満たしていない</option>
-              </select>
-              {(settings.survivorPremiumRequirement ?? 'auto') === 'auto' ? (
-                <p className="benefit-survivor-assessment">
-                  自動判定：
-                  {survivorPremiumAssessmentStatus === 'met'
-                    ? '納付要件を満たす'
-                    : survivorPremiumAssessmentStatus === 'not_met'
-                      ? '納付要件を満たさない'
-                      : '判定できず'}
-                  {survivorPremiumAssessmentStatus === 'unconfirmed' &&
-                  survivorPremiumAssessmentReason
-                    ? ` — ${survivorPremiumAssessmentReason}`
-                    : ''}
-                </p>
-              ) : null}
-            </div>
-          </>
-        )}
       </div>
 
       <details className="benefit-settings-block benefit-settings-block--optional benefit-survivor-details">
