@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FamilyMember } from '../../types/family';
 import type { LoanEntry, LoanState, VehicleLinkedLoanView } from '../../types/loan';
 import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
 import type { HousingState } from '../../types/housing';
 import type { VehicleEntry, VehiclePresetId, VehicleState } from '../../types/vehicle';
 import { duplicateVehicleEntry, type DuplicateVehicleOptions } from '../../lib/vehicleDuplicate';
+import { VEHICLE_TYPE_LABELS } from '../../lib/vehicleLabels';
 import { AddVehicleCards } from './AddVehicleCards';
 import { VehicleRow } from './VehicleRow';
 
@@ -51,16 +52,44 @@ export function VehicleTable({
 }: VehicleTableProps) {
   const [dragEntryId, setDragEntryId] = useState<string | null>(null);
   const [activeEntryId, setActiveEntryId] = useState(entries[0]?.id ?? '');
+  const [mobileExpandedEntryId, setMobileExpandedEntryId] = useState(
+    entries[0]?.id ?? '',
+  );
+  const previousEntryIdsRef = useRef(
+    new Set(entries.map((entry) => entry.id)),
+  );
 
   useEffect(() => {
+    const previousEntryIds = previousEntryIdsRef.current;
+
     if (entries.length === 0) {
       setActiveEntryId('');
+      setMobileExpandedEntryId('');
+      previousEntryIdsRef.current = new Set();
       return;
     }
+
     if (!entries.some((entry) => entry.id === activeEntryId)) {
       setActiveEntryId(entries[0].id);
     }
-  }, [entries, activeEntryId]);
+
+    const addedEntry = entries.find(
+      (entry) => !previousEntryIds.has(entry.id),
+    );
+    if (
+      addedEntry &&
+      (!mobileExpandedEntryId || previousEntryIds.has(mobileExpandedEntryId))
+    ) {
+      setMobileExpandedEntryId(addedEntry.id);
+    } else if (
+      mobileExpandedEntryId &&
+      !entries.some((entry) => entry.id === mobileExpandedEntryId)
+    ) {
+      setMobileExpandedEntryId(entries[0].id);
+    }
+
+    previousEntryIdsRef.current = new Set(entries.map((entry) => entry.id));
+  }, [entries, activeEntryId, mobileExpandedEntryId]);
 
   const updateEntry = (entryId: string, updated: VehicleEntry) => {
     onChange(entries.map((entry) => (entry.id === entryId ? updated : entry)));
@@ -79,6 +108,9 @@ export function VehicleTable({
     const remaining = entries.filter((entry) => entry.id !== entryId);
     if (activeEntryId === entryId) {
       setActiveEntryId(remaining[0]?.id ?? '');
+    }
+    if (mobileExpandedEntryId === entryId) {
+      setMobileExpandedEntryId(remaining[0]?.id ?? '');
     }
     onChange(remaining);
   };
@@ -109,6 +141,7 @@ export function VehicleTable({
     next[index] = updatedSource;
     next.splice(index + 1, 0, duplicate);
     setActiveEntryId(duplicate.id);
+    setMobileExpandedEntryId(duplicate.id);
     onChange(next);
   };
 
@@ -135,46 +168,97 @@ export function VehicleTable({
               </div>
 
               <div className="life-event-table-body">
-                {entries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className={`vehicle-detail-entry${
-                      entry.id === activeEntryId ? ' is-active' : ''
-                    }`}
-                  >
-                    <VehicleRow
-                      entry={entry}
-                      member={member}
-                      members={members}
-                      referenceDate={referenceDate}
-                      linkedLoans={linkedLoansByVehicleId[entry.id] ?? []}
-                      linkedInsurances={linkedInsurancesByVehicleId[entry.id] ?? []}
-                      insuranceState={insuranceState}
-                      loanState={loanState}
-                      housingState={housingState}
-                      vehicleState={vehicleState}
-                      canRemove
-                      isDragging={dragEntryId === entry.id}
-                      onChange={(updated) => updateEntry(entry.id, updated)}
-                      onDuplicate={(options) => duplicateEntry(entry.id, options)}
-                      onRemove={() => removeEntry(entry.id)}
-                      onAddLoan={() => onAddLoan(entry)}
-                      onRemoveLoan={onRemoveLoan}
-                      onUpdateLoan={onUpdateLoan}
-                      onAddInsurance={
-                        onAddInsurance ? () => onAddInsurance(entry) : undefined
-                      }
-                      onUpdateInsurance={onUpdateInsurance}
-                      onRemoveInsurance={onRemoveInsurance}
-                      onDragStart={() => setDragEntryId(entry.id)}
-                      onDragEnd={() => setDragEntryId(null)}
-                      onDropOn={(fromId) => {
-                        reorderEntries(fromId, entry.id);
-                        setDragEntryId(null);
-                      }}
-                    />
-                  </div>
-                ))}
+                {entries.map((entry, index) => {
+                  const mobileExpanded = entry.id === mobileExpandedEntryId;
+                  const vehicleName =
+                    entry.label.trim() || `乗り物 ${index + 1}`;
+                  const periodLabel =
+                    entry.endMode === 'lifetime'
+                      ? `${entry.startAge}才${entry.startMonth}月から生涯`
+                      : `${entry.startAge}才${entry.startMonth}月から${entry.endAge}才${entry.endMonth}月まで`;
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`vehicle-detail-entry${
+                        entry.id === activeEntryId ? ' is-active' : ''
+                      }${mobileExpanded ? ' is-mobile-expanded' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="vehicle-mobile-summary"
+                        aria-expanded={mobileExpanded}
+                        aria-controls={`vehicle-mobile-detail-${entry.id}`}
+                        onClick={() =>
+                          setMobileExpandedEntryId(
+                            mobileExpanded ? '' : entry.id,
+                          )
+                        }
+                      >
+                        <span className="vehicle-mobile-summary-copy">
+                          <span className="vehicle-mobile-summary-title">
+                            {vehicleName}
+                          </span>
+                          <span className="vehicle-mobile-summary-type ui-entry-type-badge">
+                            {VEHICLE_TYPE_LABELS[entry.type]}
+                          </span>
+                          <span className="vehicle-mobile-summary-meta">
+                            {periodLabel}
+                          </span>
+                        </span>
+                        <span
+                          className="vehicle-mobile-summary-action"
+                          aria-hidden
+                        >
+                          {mobileExpanded ? '閉じる  −' : '詳細を開く  ＋'}
+                        </span>
+                      </button>
+
+                      <div
+                        id={`vehicle-mobile-detail-${entry.id}`}
+                        className="vehicle-mobile-detail"
+                      >
+                        <VehicleRow
+                          entry={entry}
+                          member={member}
+                          members={members}
+                          referenceDate={referenceDate}
+                          linkedLoans={linkedLoansByVehicleId[entry.id] ?? []}
+                          linkedInsurances={
+                            linkedInsurancesByVehicleId[entry.id] ?? []
+                          }
+                          insuranceState={insuranceState}
+                          loanState={loanState}
+                          housingState={housingState}
+                          vehicleState={vehicleState}
+                          canRemove
+                          isDragging={dragEntryId === entry.id}
+                          onChange={(updated) => updateEntry(entry.id, updated)}
+                          onDuplicate={(options) =>
+                            duplicateEntry(entry.id, options)
+                          }
+                          onRemove={() => removeEntry(entry.id)}
+                          onAddLoan={() => onAddLoan(entry)}
+                          onRemoveLoan={onRemoveLoan}
+                          onUpdateLoan={onUpdateLoan}
+                          onAddInsurance={
+                            onAddInsurance
+                              ? () => onAddInsurance(entry)
+                              : undefined
+                          }
+                          onUpdateInsurance={onUpdateInsurance}
+                          onRemoveInsurance={onRemoveInsurance}
+                          onDragStart={() => setDragEntryId(entry.id)}
+                          onDragEnd={() => setDragEntryId(null)}
+                          onDropOn={(fromId) => {
+                            reorderEntries(fromId, entry.id);
+                            setDragEntryId(null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
