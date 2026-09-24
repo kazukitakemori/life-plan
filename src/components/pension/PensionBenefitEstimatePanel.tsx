@@ -41,7 +41,6 @@ import {
   xAxisTotalHeight,
 } from '../requiredCoverage/requiredCoverageChartShared';
 import { useFullscreenPlotHeight } from '../layout/ShellFullscreenContext';
-import { InfoDialog } from '../ui';
 
 interface PensionBenefitEstimatePanelProps {
   member: FamilyMember;
@@ -341,17 +340,9 @@ export function PensionBenefitEstimatePanel({
       aria-label="年金試算結果"
     >
       <div className="pension-chart-title-row">
-        <div className="pension-chart-heading">
-          <h3 className="education-chart-title pension-chart-title">
-            老齢年金のグラフ
-          </h3>
-          <InfoDialog title="老齢年金グラフの見方" label="グラフの見方">
-            <p>横軸は60歳以降の年齢、縦軸は年金の年額（万円）です。</p>
-            <p>
-              凡例で年金の種類ごとに表示・非表示を切り替えられます。グラフをタップまたはポイントすると、西暦・年齢・年金額の詳細を確認できます。
-            </p>
-          </InfoDialog>
-        </div>
+        <h3 className="education-chart-title pension-chart-title">
+          老齢年金（年額・万円）
+        </h3>
         <div className="pension-chart-desktop-controls">
           <CoverageChartZoomToolbar
             canZoomIn={canZoomIn}
