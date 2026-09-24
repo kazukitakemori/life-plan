@@ -1567,10 +1567,6 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
-            onMembersChange={(members) => {
-              markPlanInputsChanged();
-              setFamilyMembers(members);
-            }}
             purposeNote={
               hasPlanPurpose(planPurposes, 'education') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
@@ -1789,6 +1785,10 @@ export default function App() {
             referenceDate={referenceDate}
             memberTabExtras={memberTabExtras}
             onMemberTabExtrasChange={handleMemberTabExtrasChange}
+            onMembersChange={(members) => {
+              markPlanInputsChanged();
+              setFamilyMembers(members);
+            }}
             purposeNote={
               hasPlanPurpose(planPurposes, 'pension') &&
               !hasPlanPurpose(planPurposes, 'life_plan')
