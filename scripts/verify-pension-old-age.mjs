@@ -425,6 +425,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1134,6 +1135,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1163,6 +1165,16 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
         (292_500 * (150 / 300)) / 12 / 10_000,
     ) < 1e-9,
   );
+
+  const unconfirmedLivelihood = calcMonthlyPensionEntitlementBreakdownMan(
+    [pensioner, { ...child, pensionChildLivelihoodByMember: {} }],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.equal(unconfirmedLivelihood.oldAge.basic.children, 0);
 }
 
 // 2028年4月以降に老齢厚生年金の受給権を得る人は、子の加給が10年要件。
@@ -1180,6 +1192,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1211,6 +1224,23 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
         292_500 / 12 / 10_000,
     ) < 1e-9,
   );
+
+  const notMaintained = calcMonthlyPensionEntitlementBreakdownMan(
+    [
+      pensioner,
+      {
+        ...child,
+        pensionChildLivelihoodByMember: { [pensioner.id]: 'not_met' },
+      },
+    ],
+    { [pensioner.id]: state },
+    {},
+    referenceDate,
+    2028,
+    5,
+  );
+  assert.equal(notMaintained.oldAge.basic.children, 0);
+  assert.equal(notMaintained.oldAge.generalEmployees.dependent, 0);
 }
 
 // 加給年金は世帯主固定ではなく、配偶者側が年金受給者でも計算する。
@@ -1237,6 +1267,7 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [olderSpouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1360,6 +1391,7 @@ assert.equal(
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [olderSpouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
@@ -1421,6 +1453,7 @@ assert.equal(
     expectedLifespan: 90,
     disability: 'none',
     pensionChildResidence: 'japan',
+    pensionChildLivelihoodByMember: { [spouse.id]: 'met' },
     hobbies: [],
     householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
   };
