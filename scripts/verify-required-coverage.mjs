@@ -2177,11 +2177,11 @@ assert.ok(
 console.log('OK coverage survivor basic from eligible child');
 
 {
-  // Q7で直近1年の厚生年金加入を確認できる場合は、手動指定なしでも
-  // 遺族基礎・遺族厚生の共通納付要件を満たすものとして試算する。
+  // 「入力内容から試算」では、Q7に現在の厚生年金加入しか登録されていなくても、
+  // 通常どおり公的年金へ加入・納付している標準ケースとして扱う。
   const q7CoveredHead = createIncomeEntry(head.id, 'employee', 40, 6, head);
-  q7CoveredHead.periods[0].startAge = 38;
-  q7CoveredHead.periods[0].startMonth = 1;
+  q7CoveredHead.periods[0].startAge = 40;
+  q7CoveredHead.periods[0].startMonth = 6;
   q7CoveredHead.periods[0].monthlyAmountMan = 50;
   const autoPension = createDefaultPensionByMember([head, spouse, child]);
   const autoSurvivor = buildRequiredCoverageResult(
@@ -2200,7 +2200,7 @@ console.log('OK coverage survivor basic from eligible child');
   );
   assert.ok(autoSurvivor.income.survivorBasic > 0);
   assert.ok(autoSurvivor.income.survivorEmployeesGross > 0);
-  console.log('OK Q7 automatic premium assessment is shared by survivor basic and employees');
+  console.log('OK input-based survivor pension uses the standard enrollment assumption');
 }
 
 {
