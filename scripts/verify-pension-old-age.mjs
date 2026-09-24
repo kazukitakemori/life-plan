@@ -227,7 +227,7 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    68,
     4,
   ).generalEmployeesYenPerYear;
   assert.ok(april > march);
@@ -248,7 +248,7 @@ const referenceDate = new Date(2026, 8, 1);
     member,
     entries,
     referenceDate,
-    67,
+    68,
     4,
   ).generalEmployeesYenPerYear;
   assert.equal(april, march);
