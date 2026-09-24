@@ -245,9 +245,7 @@ body {
     .teikibin-amount-field-label,
     .teikibin-monthly-table,
     .teikibin-monthly-date-unit,
-    .benefit-col-header--survivor,
     .benefit-amount-option-label--auto,
-    .benefit-survivor-cell,
     .benefit-survivor-suffix,
     .second-life-choice-badge,
     .second-life-breakdown-note,
@@ -348,7 +346,6 @@ body {
 }
 
 :is(
-    .pension-enrollment-field,
     .residence-period-row,
     .life-event-inflation-field,
     .second-life-timing,
@@ -434,7 +431,7 @@ body {
     min-height: 36px;
   }
 
-  :is(.pension-enrollment-field, .residence-period-row, .life-event-inflation-field) {
+  :is(.residence-period-row, .life-event-inflation-field) {
     flex-wrap: wrap;
   }
 
