@@ -45,8 +45,6 @@ export function RecentMonthlyTableOver50({
 
   return (
     <div className="teikibin-block teikibin-block--monthly">
-      <h5 className="teikibin-block-title">最近の月別状況</h5>
-
       <div className="teikibin-monthly-table-wrap">
         <table className="teikibin-monthly-table teikibin-monthly-table--over50">
           <thead>
