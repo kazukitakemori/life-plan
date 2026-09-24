@@ -2041,6 +2041,30 @@ console.log('OK survivor basic yen by child count');
   // 改正前は、子と surviving parent の生計同一を直接保存していないため、
   // 親が死亡者の生計維持要件を外れても子へ自動で給付を移さない。
   assert.equal(outsideLivelihoodWithChild.income.survivorBasic, 0);
+
+  const outsideLivelihoodReformPension = createDefaultPensionByMember([
+    head,
+    separateSpouse,
+    child,
+  ]);
+  outsideLivelihoodReformPension[
+    head.id
+  ].benefitSettings.survivorPremiumRequirement = 'met';
+  const outsideLivelihoodAfterReform = buildRequiredCoverageResult(
+    buildInput({
+      familyMembers: [head, separateSpouse, child],
+      incomeByMember: { [head.id]: [headEmployee] },
+      pensionByMember: outsideLivelihoodReformPension,
+      referenceDate: new Date(2028, 3, 1),
+    }),
+    {
+      ...createDefaultRequiredCoverageState(),
+      kind: 'custom',
+      customEndYear: 2028,
+      customEndMonth: 12,
+    },
+  );
+  assert.ok(outsideLivelihoodAfterReform.income.survivorBasic > 0);
   console.log('OK head-death survivor eligibility respects Q1 livelihood period');
 }
 
