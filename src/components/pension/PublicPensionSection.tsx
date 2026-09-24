@@ -87,9 +87,9 @@ export function PublicPensionSection({
       pastEnrollment === 'nenkin-teikibin-under50' ||
       pastEnrollment === 'nenkin-teikibin-over50'
         ? pastEnrollment
-        : member.age < 50
-          ? 'nenkin-teikibin-under50'
-          : 'nenkin-teikibin-over50';
+        : member.age != null && member.age >= 50
+          ? 'nenkin-teikibin-over50'
+          : 'nenkin-teikibin-under50';
     onChange({ ...memberState, pastEnrollment: teikibinMode });
   };
 
