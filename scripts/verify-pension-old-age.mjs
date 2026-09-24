@@ -701,11 +701,13 @@ assert.equal(isEmployeesPensionLiableAtAgeMonth(69, 3, 4, null), true);
     2028,
     5,
   );
-  assert.ok(after65.oldAge.generalEmployees.basic > 0);
-  assert.notEqual(
-    after65.oldAge.generalEmployees.basic,
-    legacy63.oldAge.generalEmployees.basic,
+  assert.ok(
+    Math.abs(
+      after65.oldAge.generalEmployees.basic -
+        360_000 / 12 / 10_000,
+    ) < 1e-9,
   );
+  assert.equal(after65.oldAge.generalEmployees.earlyPayment, 0);
 }
 
 // 障害年金受給権が確認できる場合の繰下げ制限。
