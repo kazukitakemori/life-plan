@@ -31,7 +31,12 @@ export function survivorChildOrdinaryEnd(
   referenceDate: Date,
 ): CalendarYearMonth | null {
   if (member.age == null || member.birthMonth == null) return null;
-  const birthYear = calcBirthYear(member.age, member.birthMonth, referenceDate);
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+    member.birthDay,
+  );
   const birthMonth = resolveMemberBirthMonth(member);
   if (birthMonth >= 4) {
     return { year: birthYear + 19, month: 3 };
