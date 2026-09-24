@@ -200,6 +200,54 @@
   color: var(--ui-brand, #2f6f4e);
 }
 
+.pension-step .benefit-survivor-estimate {
+  margin-top: 18px;
+}
+
+.pension-step .benefit-survivor-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pension-step .benefit-survivor-section-heading .pension-subsection-title {
+  margin-bottom: 0;
+}
+
+.pension-step .benefit-survivor-estimate-source,
+.pension-step .benefit-survivor-estimate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pension-step .benefit-survivor-estimate-source {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--ui-border, #dfe5e1);
+}
+
+.pension-step .benefit-survivor-estimate-label,
+.pension-step .benefit-survivor-estimate-status {
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.pension-step .benefit-survivor-estimate-rows {
+  display: grid;
+}
+
+.pension-step .benefit-survivor-estimate-row {
+  min-height: 44px;
+  border-bottom: 1px solid var(--ui-border, #dfe5e1);
+}
+
+.pension-step .benefit-survivor-estimate-row:last-child {
+  border-bottom: 0;
+}
+
 .pension-step .benefit-settings-block--optional {
   padding: 14px;
   border: 1px solid var(--ui-border, #dfe5e1);
