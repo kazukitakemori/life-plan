@@ -184,6 +184,7 @@ export function PublicPensionSection({
         specialEmployeesStartAge={specialEmployeesStartAge}
         generalSpecialStartAge={generalSpecialStartAge}
         publicSpecialStartAge={publicSpecialStartAge}
+        survivorEstimateSource={pastEnrollment === 'none' ? 'input' : 'teikibin'}
         onChange={(settings) =>
           onChange({ ...memberState, benefitSettings: settings })
         }
