@@ -28,6 +28,10 @@ import {
 } from '../src/lib/pensionIncome.ts';
 import { createDefaultPensionMemberState } from '../src/lib/pensionDefaults.ts';
 import {
+  resolveAutomaticPensionChildLivelihood,
+  resolvePensionChildLivelihood,
+} from '../src/lib/pensionChildLivelihood.ts';
+import {
   EARLY_CLAIM_REDUCTION_PER_MONTH,
   EARLY_CLAIM_REDUCTION_PER_MONTH_LEGACY,
   getZaishokuSuspensionThresholdYenPerMonth,
@@ -1547,6 +1551,90 @@ assert.equal(
   assert.equal(
     withoutLivelihood.oldAgeEmployeesGeneral,
     withoutChild.oldAgeEmployeesGeneral,
+  );
+}
+
+// 子の生計維持は、通常ケースをQ1/Q7から自動判定し、例外時だけ確認値へフォールバックする。
+{
+  const pensioner = {
+    ...pensionMember({ age: 63 }),
+    id: 'auto-livelihood-head',
+    role: 'head',
+  };
+  const child = {
+    id: 'auto-livelihood-child',
+    role: 'child',
+    nickname: '子',
+    gender: 'female',
+    age: 10,
+    birthMonth: 4,
+    birthDay: 2,
+    expectedLifespan: 90,
+    disability: 'none',
+    pensionChildResidence: 'japan',
+    hobbies: [],
+    householdPeriod: { mode: 'custom', endAge: 22, endMonth: 3 },
+    taxDependentDefault: true,
+    socialInsuranceDependentDefault: true,
+  };
+
+  assert.equal(
+    resolveAutomaticPensionChildLivelihood({
+      child,
+      pensioner,
+      childIncomeEntries: [],
+      referenceDate,
+      calendarYear: 2028,
+      calendarMonth: 5,
+    }),
+    'met',
+  );
+
+  assert.equal(
+    resolveAutomaticPensionChildLivelihood({
+      child: {
+        ...child,
+        householdPeriod: { mode: 'custom', endAge: 5, endMonth: 3 },
+      },
+      pensioner,
+      childIncomeEntries: [],
+      referenceDate,
+      calendarYear: 2028,
+      calendarMonth: 5,
+    }),
+    'not_met',
+  );
+
+  const educationLinkedChild = {
+    ...child,
+    householdPeriod: { mode: 'by_education', endAge: 22, endMonth: 3 },
+    taxDependentDefault: false,
+    socialInsuranceDependentDefault: false,
+  };
+  assert.equal(
+    resolveAutomaticPensionChildLivelihood({
+      child: educationLinkedChild,
+      pensioner,
+      childIncomeEntries: [],
+      referenceDate,
+      calendarYear: 2028,
+      calendarMonth: 5,
+    }),
+    'unknown',
+  );
+  assert.equal(
+    resolvePensionChildLivelihood({
+      child: {
+        ...educationLinkedChild,
+        pensionChildLivelihoodByMember: { [pensioner.id]: 'met' },
+      },
+      pensioner,
+      childIncomeEntries: [],
+      referenceDate,
+      calendarYear: 2028,
+      calendarMonth: 5,
+    }),
+    'met',
   );
 }
 

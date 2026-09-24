@@ -20,7 +20,6 @@ import type {
   DisabilityPensionStatus,
   FamilyMember,
   PensionChildResidenceStatus,
-  PensionChildLivelihoodStatus,
   HouseholdPeriodMode,
   OtherRelationship,
 } from '../../types/family';
@@ -29,7 +28,6 @@ import {
   DISABILITY_PENSION_LABELS,
   OTHER_RELATIONSHIP_LABELS,
   PENSION_CHILD_RESIDENCE_LABELS,
-  PENSION_CHILD_LIVELIHOOD_LABELS,
   ROLE_LABELS,
 } from '../../types/family';
 import {
@@ -42,7 +40,6 @@ import { MemberAvatar } from './MemberAvatar';
 
 interface FamilyMemberRowProps {
   member: FamilyMember;
-  members: FamilyMember[];
   referenceDate: Date;
   onChange: (member: FamilyMember) => void;
   onRemove: () => void;
@@ -188,7 +185,6 @@ function HouseholdPeriodSection({
 
 export function FamilyMemberRow({
   member,
-  members,
   referenceDate,
   onChange,
   onRemove,
@@ -237,13 +233,6 @@ export function FamilyMemberRow({
 
   const detailSummaryParts: string[] = [];
   const disabilityPensionStatus = member.disabilityPension ?? 'none';
-  const pensionChildLivelihoodPensioners = members.filter(
-    (candidate) =>
-      candidate.role === 'head' ||
-      candidate.role === 'spouse' ||
-      (candidate.role === 'other' &&
-        candidate.otherRelationship === 'common_law_partner'),
-  );
   if (member.disability === 'has') {
     const grade = member.disabilityGrade ?? 'none';
     if (grade !== 'none') {
@@ -519,41 +508,6 @@ export function FamilyMemberRow({
                   2028年4月以降の年金の子の加算に使います。海外でも、
                   留学など日本国内に生活の基礎があると認められる場合は例外対象です。
                 </p>
-                {member.role === 'child' &&
-                  pensionChildLivelihoodPensioners.map((pensioner) => (
-                    <FormField
-                      key={pensioner.id}
-                      label={`年金上の生計維持（${getMemberTabLabel(pensioner)}）`}
-                    >
-                      <FormSelect
-                        wide
-                        value={
-                          member.pensionChildLivelihoodByMember?.[pensioner.id] ??
-                          'unknown'
-                        }
-                        onValueChange={(raw) =>
-                          onChange({
-                            ...member,
-                            pensionChildLivelihoodByMember: {
-                              ...(member.pensionChildLivelihoodByMember ?? {}),
-                              [pensioner.id]:
-                                raw as PensionChildLivelihoodStatus,
-                            },
-                          })
-                        }
-                        options={(
-                          Object.entries(
-                            PENSION_CHILD_LIVELIHOOD_LABELS,
-                          ) as Array<[PensionChildLivelihoodStatus, string]>
-                        ).map(([value, label]) => ({ value, label }))}
-                      />
-                    </FormField>
-                  ))}
-                {member.role === 'child' && (
-                  <p className="ui-note">
-                    老齢年金の子の加算は、年金を受ける本人が子の生計を維持していることが条件です。生計同一に加え、原則として年収850万円未満または所得655.5万円未満等を確認してください。個別認定があり得る場合は「未確認」のままにし、確認できるまで自動計上しません。
-                  </p>
-                )}
               </div>
             )}
 
