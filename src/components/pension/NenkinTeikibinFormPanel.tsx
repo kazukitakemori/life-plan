@@ -3,7 +3,6 @@ import type {
   NenkinTeikibinParticipationFields,
   NenkinTeikibinUnder50Form,
 } from '../../types/pension';
-import { InfoDialog } from '../ui';
 import { ParticipationPeriodGrid } from './ParticipationPeriodGrid';
 import { PensionAmountTable } from './PensionAmountTable';
 import { PensionAmountTableOver50 } from './PensionAmountTableOver50';
@@ -38,13 +37,6 @@ export function NenkinTeikibinUnder50FormPanel({
           <summary>
             最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
           </summary>
-          <div className="pension-context-info">
-            <InfoDialog title="最近の月別状況" label="この入力について">
-              <p>
-                入力しなくても年金額は概算できます。ねんきん定期便の月別状況を確認したい場合だけ入力してください。
-              </p>
-            </InfoDialog>
-          </div>
           <RecentMonthlyTable form={form} onChange={updateForm} />
         </details>
       </div>
@@ -80,13 +72,6 @@ export function NenkinTeikibinOver50FormPanel({
           <summary>
             最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
           </summary>
-          <div className="pension-context-info">
-            <InfoDialog title="最近の月別状況" label="この入力について">
-              <p>
-                入力しなくても年金額は概算できます。ねんきん定期便の月別状況を転記すると、一部の受給要件判定をより正確にできます。
-              </p>
-            </InfoDialog>
-          </div>
           <RecentMonthlyTableOver50 form={form} onChange={updateForm} />
         </details>
       </div>
