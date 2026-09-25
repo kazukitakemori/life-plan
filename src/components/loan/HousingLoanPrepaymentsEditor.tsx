@@ -44,7 +44,7 @@ function PrepaymentTypeRadios({
   return (
     <div className="housing-owned-payment-options housing-owned-payment-options--compact">
       {PREPAYMENT_TYPES.map((type) => (
-        <label key={type} className="housing-owned-payment-option">
+        <label key={type} className="ui-choice">
           <input
             type="radio"
             name={`${fieldIdPrefix}-prepayment-type-${entryId}`}
@@ -126,7 +126,7 @@ export function HousingLoanPrepaymentsEditor({
       <div className="loan-prepayment-entry-actions">
         <button
           type="button"
-          className="loan-prepayment-add"
+          className="ui-btn ui-btn--secondary ui-btn--compact loan-prepayment-add"
           onClick={addEntry}
         >
           ＋ 繰上げ返済を追加
@@ -162,7 +162,7 @@ export function HousingLoanPrepaymentsEditor({
               <span className="loan-prepayment-execution-label">実行する時期：</span>
               <select
                 id={`${fieldIdPrefix}-prepayment-offset-${entry.id}`}
-                className="select-input select-input--compact loan-prepayment-year-select"
+                className="select-input select-input--compact ui-select ui-select--compact loan-prepayment-year-select"
                 value={entry.offsetYears}
                 onChange={(e) =>
                   updateEntry(entry.id, {
@@ -192,7 +192,7 @@ export function HousingLoanPrepaymentsEditor({
               {isLast ? (
                 <button
                   type="button"
-                  className="loan-prepayment-add"
+                  className="ui-btn ui-btn--secondary ui-btn--compact loan-prepayment-add"
                   onClick={addEntry}
                 >
                   ＋ 繰上げ返済を追加
@@ -201,11 +201,11 @@ export function HousingLoanPrepaymentsEditor({
               {canRemove ? (
                 <button
                   type="button"
-                  className="loan-prepayment-remove"
+                  className="ui-delete-button loan-prepayment-remove"
                   onClick={() => removeEntry(entry.id)}
                   aria-label={`繰上げ返済${index + 1}を削除`}
                 >
-                  削除
+                  繰上げ返済を削除
                 </button>
               ) : null}
             </div>
