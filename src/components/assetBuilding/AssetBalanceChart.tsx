@@ -220,6 +220,7 @@ export function AssetBalanceChart({
     <section
       className="asset-building-chart-card"
       aria-labelledby="asset-balance-chart-heading"
+      data-content-capture-target="asset-balance-chart"
     >
       <div className="lifetime-chart-header">
         <div className="lifetime-chart-header-left">
