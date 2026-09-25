@@ -22,6 +22,7 @@ interface InsuranceEntryCardProps {
   referenceDate: Date;
   housingPropertyName?: string;
   vehicleName?: string;
+  defaultNamePosition?: { index: number; count: number };
   initiallyExpanded?: boolean;
   onChange: (entry: InsuranceEntry) => void;
   onRemove: () => void;
@@ -36,6 +37,7 @@ export function InsuranceEntryCard({
   referenceDate,
   housingPropertyName,
   vehicleName,
+  defaultNamePosition,
   initiallyExpanded = false,
   onChange,
   onRemove,
@@ -43,11 +45,16 @@ export function InsuranceEntryCard({
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const isFireLinked = Boolean(entry.housingLink && housingPropertyName);
   const isAutoLinked = Boolean(entry.vehicleLink && vehicleName);
+  const defaultLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+  const usesDefaultName =
+    entry.name.trim() === '' || entry.name.trim() === defaultLabel;
   const displayName = isFireLinked
     ? formatFireInsuranceName(housingPropertyName!)
     : isAutoLinked
       ? formatAutoInsuranceName(vehicleName!)
-      : entry.name;
+      : usesDefaultName && defaultNamePosition?.count && defaultNamePosition.count > 1
+        ? `${defaultLabel} ${defaultNamePosition.index}`
+        : entry.name.trim() || defaultLabel;
   const sector = INSURANCE_CATEGORY_SECTOR[entry.category];
 
   const confirmRemove = () => {
