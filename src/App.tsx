@@ -84,6 +84,18 @@ import {
   getRequiredCoverageBlockedDescription,
 } from './lib/planPurposeInput';
 import { getLocalPlanRepository } from './lib/localPlanRepository';
+import { maskPersonalInfo, type OperatorMode } from './lib/operatorMode';
+import {
+  getContentCapturePlanId,
+  getContentCaptureSpec,
+  isContentCaptureViewportMatch,
+  parseContentCaptureRequest,
+  readStoredContentModelDefinition,
+  resolveContentCaptureDisplayState,
+  resolveContentCaptureRegion,
+  resolveContentCaptureRoute,
+} from './lib/contentCaptureRuntime';
+import type { ContentModelCaptureSpec } from './lib/contentModelCase';
 import { useLicense } from './lib/license/useLicense';
 import {
   getDefaultPlanPurposes,
@@ -153,6 +165,25 @@ export default function App() {
   const INITIAL_PLAN = sessionInitialPlan;
   const license = useLicense();
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
+  const [operatorPersonalInfoHidden, setOperatorPersonalInfoHidden] = useState(false);
+  const captureRequest = useMemo(
+    () =>
+      typeof window === 'undefined'
+        ? null
+        : parseContentCaptureRequest(window.location.search),
+    [],
+  );
+  const [activeCaptureSpec, setActiveCaptureSpec] =
+    useState<ContentModelCaptureSpec | null>(null);
+  const [activeCaptureArticleId, setActiveCaptureArticleId] = useState<string | null>(null);
+  const captureDisplayState = useMemo(
+    () => resolveContentCaptureDisplayState(activeCaptureSpec),
+    [activeCaptureSpec],
+  );
+  const operatorMode: OperatorMode = {
+    enabled: license.isLicensed && license.entitlements.edition === 'advisor',
+    hidePersonalInfo: operatorPersonalInfoHidden,
+  };
   const [adminTab, setAdminTab] = useState<AdminTabId>('license');
   const landingTabAppliedRef = useRef(false);
   const previousLicenseStateRef = useRef(license.licenseState);
@@ -251,6 +282,8 @@ export default function App() {
   const cashFlowInputRef = useRef<CashFlowInput | null>(null);
   const undoHistoryRef = useRef<PlanUndoSnapshot[]>([]);
   const redoHistoryRef = useRef<PlanUndoSnapshot[]>([]);
+  const captureLoadStartedRef = useRef(false);
+  const captureRouteAppliedRef = useRef(false);
   const snapshotRef = useRef({
     planId: null as string | null,
     customerName: '',
@@ -677,6 +710,92 @@ export default function App() {
   }, [bootstrapped, headerTab]);
 
   useEffect(() => {
+    if (!captureRequest || typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.dataset.contentCapture = 'active';
+    root.dataset.contentCaptureStatus = 'preparing';
+    root.dataset.contentCaptureModel = captureRequest.modelCaseId;
+    root.dataset.contentCaptureSpec = captureRequest.captureSpecId;
+    return () => {
+      delete root.dataset.contentCapture;
+      delete root.dataset.contentCaptureStatus;
+      delete root.dataset.contentCaptureModel;
+      delete root.dataset.contentCaptureSpec;
+      delete root.dataset.contentCaptureRegion;
+      delete root.dataset.contentCaptureViewportMatch;
+      delete root.dataset.contentCaptureManifest;
+      delete root.dataset.contentCaptureError;
+    };
+  }, [captureRequest]);
+
+  useEffect(() => {
+    if (!captureRequest || !bootstrapped || captureLoadStartedRef.current) return;
+    if (license.licenseState === 'checking') return;
+    if (license.licenseState !== 'active') return;
+
+    if (!operatorMode.enabled) {
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.contentCaptureStatus = 'error';
+        document.documentElement.dataset.contentCaptureError =
+          'advisor entitlement is required';
+      }
+      return;
+    }
+
+    captureLoadStartedRef.current = true;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const targetPlanId = getContentCapturePlanId(captureRequest);
+        const record = await planRepository.get(targetPlanId);
+        if (!record) {
+          throw new Error(`Capture model not found: ${captureRequest.modelCaseId}`);
+        }
+        const spec = getContentCaptureSpec(record, captureRequest);
+        if (!spec) {
+          throw new Error(`Capture spec not found: ${captureRequest.captureSpecId}`);
+        }
+        const definition = readStoredContentModelDefinition(record);
+        if (!definition) {
+          throw new Error(`Capture model definition is invalid: ${captureRequest.modelCaseId}`);
+        }
+        if (cancelled) return;
+
+        applyPlanAppState(fromPlanPayload(record.payload), {
+          switchToInput: false,
+        });
+        applyPlanMeta({
+          id: record.id,
+          customerName: record.customerName,
+          phone: record.phone,
+          email: record.email,
+          note: record.note,
+          purposes: normalizePlanPurposes(record.purposes, record.purpose),
+          status: record.status,
+          createdAt: record.createdAt,
+        });
+        setLastOpenedPlanId(record.id);
+        setOperatorPersonalInfoHidden(spec.operatorMode?.hidePersonalInfo === true);
+        setActiveCaptureArticleId(definition.articleId);
+        setActiveCaptureSpec(spec);
+      } catch (error) {
+        console.error(error);
+        captureLoadStartedRef.current = false;
+        if (typeof document !== 'undefined') {
+          document.documentElement.dataset.contentCaptureStatus = 'error';
+          document.documentElement.dataset.contentCaptureError =
+            error instanceof Error ? error.message : 'capture setup failed';
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bootstrapped, captureRequest, license.licenseState, operatorMode.enabled]);
+
+  useEffect(() => {
     if (license.licenseState === 'checking') return;
     if (!landingTabAppliedRef.current) {
       landingTabAppliedRef.current = true;
@@ -764,6 +883,168 @@ export default function App() {
   );
   cashFlowInputRef.current = cashFlowInput;
   analysisSnapshotRef.current = analysisSnapshot;
+
+  useEffect(() => {
+    if (
+      !captureRequest ||
+      !activeCaptureSpec ||
+      captureRouteAppliedRef.current ||
+      planId !== getContentCapturePlanId(captureRequest)
+    ) {
+      return;
+    }
+
+    try {
+      const frozenInput = structuredClone(cashFlowInput) as CashFlowInput;
+      const cashFlowData = buildCashFlowTable(frozenInput);
+      const nextSnapshot: AnalysisSnapshot = {
+        cashFlowInput: frozenInput,
+        cashFlowData,
+      };
+      analysisSnapshotRef.current = nextSnapshot;
+      setAnalysisSnapshot(nextSnapshot);
+      setAnalysisStale(false);
+      setAnalysisSession((session) => session + 1);
+
+      const route = resolveContentCaptureRoute(activeCaptureSpec);
+      if (route.assetBuildingTab) setAssetBuildingTab(route.assetBuildingTab);
+      setHeaderTab(route.headerTab);
+      captureRouteAppliedRef.current = true;
+    } catch (error) {
+      console.error(error);
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.contentCaptureStatus = 'error';
+        document.documentElement.dataset.contentCaptureError =
+          error instanceof Error ? error.message : 'capture analysis failed';
+      }
+    }
+  }, [activeCaptureSpec, captureRequest, cashFlowInput, planId]);
+
+  useEffect(() => {
+    if (
+      !activeCaptureSpec ||
+      !activeCaptureArticleId ||
+      !captureRequest ||
+      !captureRouteAppliedRef.current ||
+      analysisSnapshot == null ||
+      typeof document === 'undefined'
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const markReady = async () => {
+      if ('fonts' in document) await document.fonts.ready;
+      await new Promise<void>((resolve) =>
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() => resolve()),
+        ),
+      );
+      if (cancelled) return;
+
+      const region = resolveContentCaptureRegion(activeCaptureSpec);
+      let target: HTMLElement | null = null;
+      if (region !== 'viewport') {
+        target =
+          Array.from(
+            document.querySelectorAll<HTMLElement>(
+              '[data-content-capture-target]',
+            ),
+          ).find((element) => element.dataset.contentCaptureTarget === region) ??
+          null;
+        if (!target) {
+          document.documentElement.dataset.contentCaptureStatus = 'error';
+          document.documentElement.dataset.contentCaptureError =
+            `capture target not found: ${region}`;
+          return;
+        }
+
+        const renderDeadline = performance.now() + 5_000;
+        while (
+          !cancelled &&
+          target.dataset.contentCaptureRenderStatus === 'pending'
+        ) {
+          if (performance.now() >= renderDeadline) {
+            document.documentElement.dataset.contentCaptureStatus = 'error';
+            document.documentElement.dataset.contentCaptureError =
+              `capture target render timeout: ${region}`;
+            return;
+          }
+          await new Promise<void>((resolve) =>
+            window.requestAnimationFrame(() => resolve()),
+          );
+        }
+        if (cancelled) return;
+        if (target.dataset.contentCaptureRenderStatus === 'error') {
+          document.documentElement.dataset.contentCaptureStatus = 'error';
+          document.documentElement.dataset.contentCaptureError =
+            `capture target render failed: ${region}`;
+          return;
+        }
+      }
+
+      const viewportMatch = isContentCaptureViewportMatch(
+        activeCaptureSpec,
+        window.innerWidth,
+        window.innerHeight,
+      );
+      const root = document.documentElement;
+      root.dataset.contentCaptureRegion = region;
+      root.dataset.contentCaptureViewportMatch = String(viewportMatch);
+      root.dataset.contentCaptureManifest = JSON.stringify({
+        articleId: activeCaptureArticleId,
+        modelCaseId: captureRequest.modelCaseId,
+        captureSpecId: activeCaptureSpec.id,
+        view: activeCaptureSpec.view,
+        purpose: activeCaptureSpec.purpose,
+        note: activeCaptureSpec.note ?? null,
+        captureRegion: region,
+        viewport:
+          activeCaptureSpec.viewport ?? {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          },
+        viewportMatch,
+        operatorMode:
+          activeCaptureSpec.operatorMode ?? {
+            hidePersonalInfo: false,
+          },
+        displayState: activeCaptureSpec.displayState ?? {},
+        sourcePlanId: getContentCapturePlanId(captureRequest),
+      });
+      root.dataset.contentCaptureStatus = 'ready';
+      delete root.dataset.contentCaptureError;
+
+      window.dispatchEvent(
+        new CustomEvent('lifeplan:content-capture-ready', {
+          detail: {
+            modelCaseId: captureRequest.modelCaseId,
+            captureSpecId: captureRequest.captureSpecId,
+            region,
+            viewport: activeCaptureSpec.viewport ?? null,
+            viewportMatch,
+            manifest: JSON.parse(root.dataset.contentCaptureManifest),
+          },
+        }),
+      );
+    };
+
+    void markReady();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeCaptureSpec,
+    activeCaptureArticleId,
+    captureRequest,
+    analysisSnapshot,
+    headerTab,
+    assetBuildingTab,
+    operatorPersonalInfoHidden,
+    captureDisplayState.pageView,
+    captureDisplayState.riskKind,
+  ]);
+
 
   const inputSteps = useMemo(
     () => getInputStepsForPurposes(planPurposes),
@@ -1482,6 +1763,7 @@ export default function App() {
       return (
         <PlanAdminView
           summaries={planSummaries}
+          operatorMode={operatorMode}
           currentPlanId={planId}
           transferBusy={planTransferBusy}
           entitlements={license.entitlements}
@@ -1876,6 +2158,7 @@ export default function App() {
           pensionByMember={analysisSnapshot.cashFlowInput.pensionByMember}
           referenceDate={analysisSnapshot.cashFlowInput.referenceDate}
           secondLifeState={secondLifeState}
+          captureDisplayState={captureDisplayState}
         />
       );
     }
@@ -1911,16 +2194,24 @@ export default function App() {
     const coverageInput = analysisSnapshot?.cashFlowInput ?? cashFlowInput;
     const coverageData = analysisSnapshot?.cashFlowData;
 
+    const requiredCoverageStateForRender =
+      captureDisplayState.riskKind != null
+        ? migrateRequiredCoverageState({
+            ...requiredCoverageState,
+            riskKind: captureDisplayState.riskKind,
+          })
+        : migrateRequiredCoverageState(requiredCoverageState);
+    const requiredCoveragePageViewForRender =
+      captureDisplayState.pageView ??
+      (simpleCoverageDesignOnly ? 'simple' : requiredCoveragePageView);
+
     return (
-      <RequiredCoverageView
+      <div data-content-capture-target="required-coverage">
+        <RequiredCoverageView
         cashFlowInput={coverageInput}
         cashFlowData={coverageData}
-        state={migrateRequiredCoverageState(requiredCoverageState)}
-        pageView={
-          simpleCoverageDesignOnly
-            ? 'simple'
-            : requiredCoveragePageView
-        }
+        state={requiredCoverageStateForRender}
+        pageView={requiredCoveragePageViewForRender}
         simpleDesignOnly={simpleCoverageDesignOnly}
         onChange={(next) => {
           markPlanDataChanged();
@@ -1946,13 +2237,15 @@ export default function App() {
           setRequiredCoverageState(migrated);
         }}
         onPageViewChange={(view) => {
+          if (activeCaptureSpec) return;
           if (simpleCoverageDesignOnly) {
             setRequiredCoveragePageView('simple');
             return;
           }
           setRequiredCoveragePageView(view);
         }}
-      />
+        />
+      </div>
     );
   };
 
@@ -1989,7 +2282,7 @@ export default function App() {
       analysisStale={analysisStale}
       isAnalyzing={isAnalyzing}
       hasOpenPlan={planId != null}
-      customerName={customerName}
+      customerName={maskPersonalInfo(customerName, operatorMode)}
       planStatus={planStatus}
       autosaveStatus={autosaveStatus}
       undoAvailable={undoAvailable}
@@ -2010,11 +2303,14 @@ export default function App() {
       assetBuildingTab={assetBuildingTab}
       onAssetBuildingTabChange={setAssetBuildingTab}
       requiredCoverageRiskKind={
-        migrateRequiredCoverageState(requiredCoverageState).riskKind ===
+        captureDisplayState.riskKind ??
+        (migrateRequiredCoverageState(requiredCoverageState).riskKind ===
         'medical'
           ? 'medical'
-          : 'death'
+          : 'death')
       }
+      operatorPersonalInfoHidden={operatorPersonalInfoHidden}
+      onOperatorPersonalInfoHiddenChange={operatorMode.enabled ? setOperatorPersonalInfoHidden : undefined}
       onRequiredCoverageRiskKindChange={(riskKind) => {
         markPlanDataChanged();
         setRequiredCoverageState((prev) =>

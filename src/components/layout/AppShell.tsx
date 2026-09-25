@@ -51,6 +51,8 @@ interface AppShellProps {
   onAssetBuildingTabChange?: (tab: AssetBuildingTabId) => void;
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
   onRequiredCoverageRiskKindChange?: (kind: RequiredCoverageRiskKind) => void;
+  operatorPersonalInfoHidden?: boolean;
+  onOperatorPersonalInfoHiddenChange?: (hidden: boolean) => void;
   children: ReactNode;
 }
 
@@ -90,6 +92,8 @@ function AppShellFrame(props: AppShellProps) {
     onAssetBuildingTabChange,
     requiredCoverageRiskKind,
     onRequiredCoverageRiskKindChange,
+    operatorPersonalInfoHidden = false,
+    onOperatorPersonalInfoHiddenChange,
     children,
   } = props;
 
@@ -198,6 +202,8 @@ function AppShellFrame(props: AppShellProps) {
           onAssetBuildingTabChange={onAssetBuildingTabChange}
           requiredCoverageRiskKind={requiredCoverageRiskKind}
           onRequiredCoverageRiskKindChange={onRequiredCoverageRiskKindChange}
+          operatorPersonalInfoHidden={operatorPersonalInfoHidden}
+          onOperatorPersonalInfoHiddenChange={onOperatorPersonalInfoHiddenChange}
         />
         <div className="shell-history-controls" aria-label="操作履歴">
           <button

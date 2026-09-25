@@ -36,6 +36,8 @@ interface TopHeaderProps {
   onAssetBuildingTabChange?: (tab: AssetBuildingTabId) => void;
   requiredCoverageRiskKind?: RequiredCoverageRiskKind;
   onRequiredCoverageRiskKindChange?: (kind: RequiredCoverageRiskKind) => void;
+  operatorPersonalInfoHidden?: boolean;
+  onOperatorPersonalInfoHiddenChange?: (hidden: boolean) => void;
 }
 
 function isHeaderTabEnabled(
@@ -85,6 +87,8 @@ export function TopHeader({
   onAssetBuildingTabChange,
   requiredCoverageRiskKind = 'death',
   onRequiredCoverageRiskKindChange,
+  operatorPersonalInfoHidden = false,
+  onOperatorPersonalInfoHiddenChange,
 }: TopHeaderProps) {
   const { isFullscreen, toggleFullscreen } = useShellFullscreen();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -308,6 +312,19 @@ export function TopHeader({
     return null;
   };
 
+  const renderPrivacyToggle = (className: string) =>
+    isLicensed && onOperatorPersonalInfoHiddenChange ? (
+      <button
+        type="button"
+        className={className}
+        aria-pressed={operatorPersonalInfoHidden}
+        title="顧客名・連絡先・プランメモを画面上で隠します。保存・書き出し内容は変更しません"
+        onClick={() => onOperatorPersonalInfoHiddenChange(!operatorPersonalInfoHidden)}
+      >
+        {operatorPersonalInfoHidden ? '個人情報：非表示' : '個人情報：表示'}
+      </button>
+    ) : null;
+
   return (
     <header className={`top-header${anyMenuOpen ? ' has-menu-open' : ''}`}>
       {anyMenuOpen ? (
@@ -408,6 +425,7 @@ export function TopHeader({
                   </div>
                 );
               })}
+              {renderPrivacyToggle(`top-header-mobile-item${operatorPersonalInfoHidden ? ' active' : ''}`)}
             </nav>
           </div>
         </>
@@ -606,6 +624,7 @@ export function TopHeader({
               );
             })}
           </nav>
+          {renderPrivacyToggle(`top-header-fullscreen-btn${operatorPersonalInfoHidden ? ' is-active' : ''}`)}
           <button
             type="button"
             className={

@@ -23,6 +23,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify content model persistence and privacy
+        run: npx --yes tsx@4.20.5 --tsconfig tsconfig.app.json scripts/verify-content-model.mjs
+
       - name: Run Q8 pension regression audit
         run: |
           npx --yes tsx@4.20.5 scripts/verify-pension-old-age.mjs
@@ -44,6 +47,54 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: versions upload --config wrangler.preview.toml --preview-alias pr-${{ github.event.pull_request.number }}
+
+      - name: Capture SIM-001 smoke images
+        run: |
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-CF \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-ASSET \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-LIFETIME \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-COVERAGE \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
+
+      - name: Build SKILL-08 handoff manifest
+        run: |
+          node scripts/build-content-capture-handoff.mjs \
+            --input-dir artifacts/content-captures \
+            --output-file artifacts/content-captures/SKILL-08-handoff.json
+
+      - name: Upload content capture artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-capture-pr-${{ github.event.pull_request.number }}
+          path: artifacts/content-captures
+          if-no-files-found: error
+
+      - name: Add capture manifest to job summary
+        shell: bash
+        run: |
+          echo "## Content capture smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+          cat artifacts/content-captures/*.manifest.json >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add preview output to job summary
         shell: bash

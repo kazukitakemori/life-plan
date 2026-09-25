@@ -18316,3 +18316,14 @@ button:disabled {
 .second-life-reference-apply-btn:hover {
   background: var(--color-brand-soft);
 }
+
+
+/* Content Model Capture: browser automation waits on html data attributes. */
+html[data-content-capture='active'] *,
+html[data-content-capture='active'] *::before,
+html[data-content-capture='active'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+  caret-color: transparent !important;
+}

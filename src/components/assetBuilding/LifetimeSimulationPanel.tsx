@@ -40,6 +40,7 @@ export interface LifetimeSimulationPanelProps extends BuildLifeEventTimelineInpu
   showHeader?: boolean;
   belowChartView?: SimulationBelowChartView;
   onBelowChartViewChange?: (view: SimulationBelowChartView) => void;
+  captureStartAge?: number;
 }
 
 export function LifetimeSimulationPanel({
@@ -55,6 +56,7 @@ export function LifetimeSimulationPanel({
   showHeader = true,
   belowChartView = 'table',
   onBelowChartViewChange,
+  captureStartAge,
 }: LifetimeSimulationPanelProps) {
   const { isFullscreen, enterFullscreen } = useShellFullscreen();
   const chartData = useMemo(
@@ -74,6 +76,15 @@ export function LifetimeSimulationPanel({
   const [manualYAxisMax, setManualYAxisMax] = useState(500);
   const [windowStart, setWindowStart] = useState(0);
   const [windowEnd, setWindowEnd] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (captureStartAge == null) return;
+    const index = chartData.points.findIndex(
+      (point) => point.headAge >= captureStartAge,
+    );
+    setWindowStart(index >= 0 ? index : 0);
+    setWindowEnd(null);
+  }, [captureStartAge, chartData.points]);
 
   const showTimeline = isFullscreen && belowChartView === 'timeline';
   const wasFullscreenRef = useRef(isFullscreen);

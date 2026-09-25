@@ -52,7 +52,7 @@ function changedRows(result) {
   return Number(result?.meta?.changes ?? 0);
 }
 
-async function getSessionContext(request, env) {
+export async function getSessionContext(request, env) {
   const token = parseCookies(request).get(SESSION_COOKIE);
   if (!token) return null;
   const tokenHash = await sha256Hex(token);

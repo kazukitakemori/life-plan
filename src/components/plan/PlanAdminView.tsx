@@ -18,12 +18,14 @@ import {
 } from '../../lib/planPurpose';
 import type { LicenseEntitlements } from '../../types/licenseEdition';
 import { canCreatePlan } from '../../types/licenseEdition';
+import { maskPersonalInfo, type OperatorMode } from '../../lib/operatorMode';
 import { PlanCreateModal } from './PlanMetaModal';
 import { PlanDeleteConfirmModal } from './PlanDeleteConfirmModal';
 import { PlanMetaModal } from './PlanMetaModal';
 
 interface PlanAdminViewProps {
   summaries: PlanSummary[];
+  operatorMode?: OperatorMode;
   currentPlanId: string | null;
   transferBusy?: boolean;
   entitlements: LicenseEntitlements;
@@ -57,6 +59,7 @@ const EMPTY_META: PlanMetaInput = {
 
 export function PlanAdminView({
   summaries,
+  operatorMode = { enabled: false, hidePersonalInfo: false },
   currentPlanId,
   transferBusy = false,
   entitlements,
@@ -76,6 +79,7 @@ export function PlanAdminView({
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const canCreate = canCreatePlan(entitlements, summaries.length);
+  const hidePersonalInfo = operatorMode.enabled && operatorMode.hidePersonalInfo;
   const showToolbar =
     entitlements.allowMultiPlanAdmin && summaries.length > 0;
 
@@ -164,7 +168,8 @@ export function PlanAdminView({
                 ? 'お名前・電話・メールで検索'
                 : 'お名前で検索'
             }
-            value={query}
+            value={hidePersonalInfo ? '' : query}
+            disabled={hidePersonalInfo}
             onChange={(e) => setQuery(e.target.value)}
           />
           {entitlements.showPlanStatusFilter ? (
@@ -238,7 +243,7 @@ export function PlanAdminView({
                     <td>
                       <div className="plan-admin-name">
                         <span className="plan-admin-name-text">
-                          {formatPlanDisplayName(item.customerName, {
+                          {formatPlanDisplayName(maskPersonalInfo(item.customerName, operatorMode), {
                             honorific: entitlements.showHonorific,
                           })}
                         </span>
@@ -322,6 +327,7 @@ export function PlanAdminView({
       />
 
       <PlanMetaModal
+        hidePersonalInfo={hidePersonalInfo}
         open={editTarget != null}
         title="プラン情報の編集"
         confirmLabel="更新"
@@ -352,7 +358,7 @@ export function PlanAdminView({
 
       <PlanDeleteConfirmModal
         open={deleteTarget != null}
-        customerName={deleteTarget?.customerName ?? ''}
+        customerName={maskPersonalInfo(deleteTarget?.customerName, operatorMode)}
         showHonorific={entitlements.showHonorific}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {

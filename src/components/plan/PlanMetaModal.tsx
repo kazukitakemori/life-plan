@@ -23,6 +23,7 @@ interface PlanMetaModalProps {
   confirmLabel?: string;
   initial: PlanEditInput;
   showCrmFields?: boolean;
+  hidePersonalInfo?: boolean;
   onClose: () => void;
   onConfirm: (meta: PlanEditInput) => void;
 }
@@ -105,6 +106,7 @@ function PlanMetaFields({
   onStatusChange,
   nameInputId,
   autoFocus,
+  hidePersonalInfo = false,
 }: {
   customerName: string;
   phone: string;
@@ -120,6 +122,7 @@ function PlanMetaFields({
   onStatusChange: (value: PlanStatus) => void;
   nameInputId: string;
   autoFocus?: boolean;
+  hidePersonalInfo?: boolean;
 }) {
   return (
     <>
@@ -130,7 +133,8 @@ function PlanMetaFields({
         id={nameInputId}
         type="text"
         className="plan-meta-input"
-        value={customerName}
+        value={hidePersonalInfo ? '非表示' : customerName}
+        disabled={hidePersonalInfo}
         onChange={(e) => onCustomerNameChange(e.target.value)}
         placeholder="山田 太郎"
         autoFocus={autoFocus}
@@ -145,7 +149,8 @@ function PlanMetaFields({
             id={`${nameInputId}-phone`}
             type="tel"
             className="plan-meta-input"
-            value={phone}
+            value={hidePersonalInfo ? '非表示' : phone}
+            disabled={hidePersonalInfo}
             onChange={(e) => onPhoneChange(e.target.value)}
             placeholder="090-1234-5678"
           />
@@ -157,9 +162,10 @@ function PlanMetaFields({
             id={`${nameInputId}-email`}
             type="email"
             className="plan-meta-input"
-            value={email}
+            value={hidePersonalInfo ? '' : email}
+            disabled={hidePersonalInfo}
             onChange={(e) => onEmailChange(e.target.value)}
-            placeholder="example@example.com"
+            placeholder={hidePersonalInfo ? '非表示' : 'example@example.com'}
           />
         </>
       ) : null}
@@ -191,7 +197,8 @@ function PlanMetaFields({
         id={`${nameInputId}-note`}
         className="plan-meta-textarea"
         rows={3}
-        value={note}
+        value={hidePersonalInfo ? '非表示' : note}
+        disabled={hidePersonalInfo}
         onChange={(e) => onNoteChange(e.target.value)}
         placeholder={showCrmFields ? '面談メモなど' : '自由記入'}
       />
@@ -313,6 +320,7 @@ export function PlanMetaModal({
   confirmLabel = '保存',
   initial,
   showCrmFields = false,
+  hidePersonalInfo = false,
   onClose,
   onConfirm,
 }: PlanMetaModalProps) {
@@ -378,6 +386,7 @@ export function PlanMetaModal({
           />
 
           <PlanMetaFields
+            hidePersonalInfo={hidePersonalInfo}
             customerName={customerName}
             phone={phone}
             email={email}
@@ -404,10 +413,10 @@ export function PlanMetaModal({
               disabled={!canSubmit}
               onClick={() =>
                 onConfirm({
-                  customerName: trimmed,
-                  phone: showCrmFields ? phone.trim() : initial.phone,
-                  email: showCrmFields ? email.trim() : initial.email,
-                  note: note.trim(),
+                  customerName: hidePersonalInfo ? initial.customerName : trimmed,
+                  phone: hidePersonalInfo ? initial.phone : showCrmFields ? phone.trim() : initial.phone,
+                  email: hidePersonalInfo ? initial.email : showCrmFields ? email.trim() : initial.email,
+                  note: hidePersonalInfo ? initial.note : note.trim(),
                   status,
                   purposes: isPlanPurposeLocked(initial.status, initial.purposes)
                     ? initial.purposes

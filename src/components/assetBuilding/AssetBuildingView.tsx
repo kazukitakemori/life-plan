@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { ASSET_BUILDING_TABS, type AssetBuildingTabId } from '../../types/assetBuildingTabs';
 import type { CashFlowTableData } from '../../types/cashFlow';
+import type { ContentCaptureDisplayState } from '../../lib/contentCaptureRuntime';
 import type { EducationByMember } from '../../types/education';
 import type { FamilyMember } from '../../types/family';
 import type { IncomeByMember, PriorYearIncomeByMember } from '../../types/income';
@@ -39,6 +40,7 @@ interface AssetBuildingViewProps {
   analysisSession: number;
   activeTab: AssetBuildingTabId;
   onTabChange: (tab: AssetBuildingTabId) => void;
+  captureDisplayState?: ContentCaptureDisplayState;
 }
 
 type OpenMenu = 'tab' | 'below' | 'aggregation' | null;
@@ -57,6 +59,7 @@ export function AssetBuildingView({
   analysisSession,
   activeTab,
   onTabChange,
+  captureDisplayState,
 }: AssetBuildingViewProps) {
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [belowChartView, setBelowChartView] =
@@ -155,6 +158,7 @@ export function AssetBuildingView({
             id="asset-building-panel-simulation"
             aria-labelledby="asset-building-tab-simulation"
             className="asset-building-panel"
+            data-content-capture-target="lifetime-balance"
           >
             <LifetimeSimulationPanel
               cashFlowData={data}
@@ -169,6 +173,7 @@ export function AssetBuildingView({
               showHeader={false}
               belowChartView={belowChartView}
               onBelowChartViewChange={setBelowChartView}
+              captureStartAge={captureDisplayState?.startAge}
             />
           </div>
         )}
@@ -208,12 +213,15 @@ export function AssetBuildingView({
             id="asset-building-panel-cashflow"
             aria-labelledby="asset-building-tab-cashflow"
             className="asset-building-panel"
+            data-content-capture-target="cash-flow-table"
           >
             <CashFlowTableView
               key={analysisSession}
               data={data}
               showBackButton={false}
               showTitle={false}
+              captureStartAge={captureDisplayState?.startAge}
+              captureDisplayRange={captureDisplayState?.displayRange}
               taxSocialBreakdown={{
                 members: familyMembers,
                 incomeByMember,

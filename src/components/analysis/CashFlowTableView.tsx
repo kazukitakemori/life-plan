@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { formatCashFlowValue } from '../../lib/cashFlow';
 import type { CashFlowTableData, InvestBreakdown } from '../../types/cashFlow';
@@ -35,6 +35,8 @@ interface CashFlowTableViewProps {
   showBackButton?: boolean;
   showTitle?: boolean;
   taxSocialBreakdown?: TaxSocialBreakdownContext;
+  captureStartAge?: number;
+  captureDisplayRange?: DisplayRange;
 }
 
 type DisplayRange = 'all' | '10' | '20';
@@ -57,8 +59,12 @@ export function CashFlowTableView({
   showBackButton = true,
   showTitle = true,
   taxSocialBreakdown,
+  captureStartAge,
+  captureDisplayRange,
 }: CashFlowTableViewProps) {
-  const [displayRange, setDisplayRange] = useState<DisplayRange>('all');
+  const [displayRange, setDisplayRange] = useState<DisplayRange>(
+    captureDisplayRange ?? 'all',
+  );
   const [breakdownModal, setBreakdownModal] = useState<{
     calendarYear: number;
     memberId?: string;
@@ -101,14 +107,29 @@ export function CashFlowTableView({
     Set<keyof InvestBreakdown>
   >(() => new Set());
 
-  const visibleYears = useMemo(() => {
-    if (displayRange === 'all') return data.years;
-    const count = displayRange === '10' ? 10 : 20;
-    return data.years.slice(0, count);
-  }, [data.years, displayRange]);
+  useEffect(() => {
+    if (captureDisplayRange) setDisplayRange(captureDisplayRange);
+  }, [captureDisplayRange]);
 
   const head = data.memberAgeRows.find((r) => r.role === 'head');
-  const startHeadAge = head ? head.agesByYear[data.startYear] : null;
+  const captureStartIndex = useMemo(() => {
+    if (captureStartAge == null || !head) return 0;
+    const index = data.years.findIndex((year) => {
+      const age = head.agesByYear[year.calendarYear];
+      return typeof age === 'number' && age >= captureStartAge;
+    });
+    return index >= 0 ? index : 0;
+  }, [captureStartAge, data.years, head]);
+
+  const visibleYears = useMemo(() => {
+    const source = data.years.slice(captureStartIndex);
+    if (displayRange === 'all') return source;
+    const count = displayRange === '10' ? 10 : 20;
+    return source.slice(0, count);
+  }, [captureStartIndex, data.years, displayRange]);
+
+  const displayStartYear = visibleYears[0]?.calendarYear ?? data.startYear;
+  const startHeadAge = head ? head.agesByYear[displayStartYear] : null;
 
   const memberFolderRows = useMemo(() => {
     const firstYear = data.years[0];
@@ -276,9 +297,9 @@ export function CashFlowTableView({
         )}
         <div className="cashflow-header-right">
           <label className="cashflow-select-label">
-            <select className="cashflow-select" value={data.startYear} disabled>
-              <option value={data.startYear}>
-                {data.startYear}年
+            <select className="cashflow-select" value={displayStartYear} disabled>
+              <option value={displayStartYear}>
+                {displayStartYear}年
                 {data.simulationMonthStart > 1
                   ? `${data.simulationMonthStart}月〜`
                   : ''}
