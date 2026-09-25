@@ -300,11 +300,25 @@ async function main() {
     const actualViewport = await evaluate(client, '({ width: window.innerWidth, height: window.innerHeight })');
     let clip;
     if (pageManifest.captureRegion !== 'viewport') {
-      clip = await evaluate(client, `(() => {
+      clip = await evaluate(client, `(async () => {
         const region = ${JSON.stringify(pageManifest.captureRegion)};
         const target = Array.from(document.querySelectorAll('[data-content-capture-target]'))
           .find((element) => element.dataset.contentCaptureTarget === region);
         if (!target) return null;
+
+        target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+
+        const renderDeadline = performance.now() + 5_000;
+        while (target.dataset.contentCaptureRenderStatus === 'pending') {
+          if (performance.now() >= renderDeadline) {
+            throw new Error('capture target render timeout after scroll: ' + region);
+          }
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+
         const rect = target.getBoundingClientRect();
         return {
           x: Math.max(0, rect.left + window.scrollX),
