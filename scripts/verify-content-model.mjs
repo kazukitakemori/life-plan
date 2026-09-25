@@ -5,6 +5,15 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createEmptyPlanPayload } from '../src/lib/planDocument.ts';
 import { saveContentModelCase, toContentModelPlanRecord, validateContentModelCase } from '../src/lib/contentModelCase.ts';
+import {
+  getContentCapturePlanId,
+  getContentCaptureSpec,
+  isContentCaptureViewportMatch,
+  parseContentCaptureRequest,
+  resolveContentCaptureDisplayState,
+  resolveContentCaptureRegion,
+  resolveContentCaptureRoute,
+} from '../src/lib/contentCaptureRuntime.ts';
 import { PlanMetaModal } from '../src/components/plan/PlanMetaModal.tsx';
 import { handleContentModelApi } from '../worker/contentModelApi.js';
 
@@ -13,7 +22,14 @@ crypto.subtle.timingSafeEqual = (a, b) => timingSafeEqual(new Uint8Array(a), new
 const model = {
   version: 1, articleId: 'SIM-001', modelCaseId: 'SIM-001-BASE',
   title: '架空の検証モデル', editorialPurpose: '保存と再現の検証', assumptions: ['架空モデル'],
-  captureSpecs: [{ id: 'SIM-001-CF', view: 'cash-flow-table', purpose: '検証', viewport: { width: 1440, height: 1000 } }],
+  captureSpecs: [{
+    id: 'SIM-001-CF',
+    view: 'cash-flow-table',
+    purpose: '検証',
+    viewport: { width: 1440, height: 1000 },
+    displayState: { startAge: 35, displayRange: '10' },
+    operatorMode: { hidePersonalInfo: true },
+  }],
   payload: createEmptyPlanPayload(new Date('2026-09-01T00:00:00Z')),
 };
 assert.equal(validateContentModelCase(model).valid, true);
@@ -37,6 +53,35 @@ assert.equal(second.plan.createdAt, first.plan.createdAt);
 assert.equal(second.plan.schemaVersion, 8);
 assert.equal(second.plan.status, 'in_progress');
 assert.match(second.plan.note, /definition=.*captureSpecs/);
+
+const captureRequest = parseContentCaptureRequest(
+  '?modelCaseId=SIM-001-BASE&captureSpecId=SIM-001-CF',
+);
+assert.deepEqual(captureRequest, {
+  modelCaseId: 'SIM-001-BASE',
+  captureSpecId: 'SIM-001-CF',
+});
+assert.equal(
+  parseContentCaptureRequest('?modelCaseId=bad value&captureSpecId=SIM-001-CF'),
+  null,
+);
+assert.equal(getContentCapturePlanId(captureRequest), 'content-model:SIM-001-BASE');
+const captureSpec = getContentCaptureSpec(second.plan, captureRequest);
+assert.equal(captureSpec?.view, 'cash-flow-table');
+assert.deepEqual(resolveContentCaptureRoute(captureSpec), {
+  headerTab: 'asset-building',
+  assetBuildingTab: 'cashflow',
+});
+assert.deepEqual(resolveContentCaptureDisplayState(captureSpec), {
+  startAge: 35,
+  displayRange: '10',
+  riskKind: undefined,
+  pageView: undefined,
+});
+assert.equal(resolveContentCaptureRegion(captureSpec), 'cash-flow-table');
+assert.equal(isContentCaptureViewportMatch(captureSpec, 1440, 1000), true);
+assert.equal(isContentCaptureViewportMatch(captureSpec, 1440, 900), false);
+
 let reads = 0;
 await assert.rejects(saveContentModelCase({ ...repository, get: async (id) => {
   const record = await repository.get(id);
@@ -83,4 +128,4 @@ for (let revision = 1; revision <= 2; revision++) {
 }
 assert.equal(db.prepare('SELECT COUNT(*) AS n FROM account_plans').get().n, 1);
 db.close();
-console.log('verify-content-model: PASS (validation, idempotency, readback, privacy, API authorization and SQLite persistence)');
+console.log('verify-content-model: PASS (validation, idempotency, readback, capture routing/display state, privacy, API authorization and SQLite persistence)');

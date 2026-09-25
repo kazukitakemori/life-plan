@@ -71,13 +71,17 @@ Phase 1:
 - 制作専用Workspaceへの保護API
 - Capture Spec基礎
 
-Phase 2（個人情報非表示まで実装）:
+Phase 2（Capture Spec実行まで実装）:
 - advisor利用権で個人情報非表示を利用可能（PC・スマホ）
 - 顧客名・連絡先・プランメモを一覧・編集・削除確認で非表示（通常の編集ボタン等のUIは維持）
 - 非表示中のメタデータ更新では元の個人情報を維持。書き出しデータはマスクしない
-- 以下の撮影自動化は未実装
-- semantic capture target
-- deterministic viewport/display state
+- URLの `modelCaseId` / `captureSpecId` から制作プランを自動で開く
+- Capture Specの `view` をsemantic capture targetへ解決し、対象画面を自動表示
+- `displayState.startAge`、キャッシュフロー表の `displayRange`、必要保障額の `riskKind` / `pageView` を表示専用状態として反映
+- Capture Specのviewportと実viewportの一致を `data-content-capture-viewport-match` で機械判定
+- フォント描画と2フレーム待機後に `data-content-capture-status="ready"` を公開
+- capture modeではCSS animation / transitionを停止し、撮影差分を抑える
+- 自動スクリーンショット自体はPhase 3で実装
 
 Phase 3:
 - 記事パイプラインから自動投入
@@ -108,3 +112,22 @@ npx tsx --tsconfig tsconfig.app.json scripts/verify-content-model.mjs
 投入先はstagingの `PUT /api/internal/content-models`。BearerトークンとJSON本文を使用する。同一モデルを2回投入し、初回created=true、次回created=false、同一ID、revision増加、保存payloadの一致を確認する。APIは本文上限・Workspace存在・記事メタデータ・同時更新競合も検証する。
 
 SIM-001-BASEはDrive正本TOP_baseの架空モデルを独立ケースとして固定したもの。標準Preview seedは変更しない。Googleログイン後に制作プランを開き、実計算結果を確認する。通常PRのPreviewは従来どおり認証解除・標準seed有効の別環境とする。
+
+
+## 9. Capture Spec 実行URL
+
+制作stagingへログイン済みの状態で、次のqueryを付けるとCapture Specを自動実行する。
+
+```text
+?modelCaseId=SIM-001-BASE&captureSpecId=SIM-001-CF
+```
+
+実行時は、制作Workspace内の `content-model:<modelCaseId>` を読み込み、保存済みdefinitionから該当Capture Specを取得する。通常顧客プランやURL側の任意payloadは使用しない。
+
+撮影側は `html[data-content-capture-status="ready"]` を待つ。指定viewportがある場合は、`data-content-capture-viewport-match="true"` も確認してから撮影する。 `captureRegion="viewport"` 以外では、同名の `data-content-capture-target` を持つsemantic targetが存在することをready条件とする。
+
+現時点で表示状態として対応するキー:
+- `startAge`: 生涯収支グラフ / キャッシュフロー表の開始年齢
+- `displayRange`: キャッシュフロー表の `all` / `10` / `20`
+- `riskKind`: 必要保障額の `death` / `medical`
+- `pageView`: 必要保障額の `simple` / `detail`
