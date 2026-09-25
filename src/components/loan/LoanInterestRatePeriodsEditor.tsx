@@ -100,7 +100,6 @@ function LoanInterestRatePeriodRow({
   index,
   fieldIdPrefix,
   referenceYear,
-  loanYears,
   schedule,
   isSinglePeriod,
   isLast,
@@ -115,7 +114,6 @@ function LoanInterestRatePeriodRow({
   index: number;
   fieldIdPrefix: string;
   referenceYear: number;
-  loanYears: number;
   schedule: ReturnType<typeof resolveLoanRepaymentSchedule>;
   isSinglePeriod: boolean;
   isLast: boolean;
@@ -129,9 +127,10 @@ function LoanInterestRatePeriodRow({
   const bounds = resolveInterestRatePeriodBounds(period, schedule);
   const startIsLoanStart = isLoanStartBoundary(period);
   const endIsLoanEnd = isLoanEndBoundary(period);
-  const maxEndYears = Math.min(
-    loanYears,
-    computeMaxEndYears(bounds.start, schedule, periodsAfter),
+  const maxEndYears = computeMaxEndYears(
+    bounds.start,
+    schedule,
+    periodsAfter,
   );
   const showStartEditor = isSinglePeriod && index === 0;
 
@@ -261,11 +260,11 @@ function LoanInterestRatePeriodRow({
             {canRemove ? (
               <button
                 type="button"
-                className="loan-rate-period-remove"
+                className="ui-delete-button loan-rate-period-remove"
                 onClick={onRemove}
                 aria-label={`金利期間${index + 1}を削除`}
               >
-                削除
+                金利期間を削除
               </button>
             ) : null}
           </div>
@@ -273,11 +272,11 @@ function LoanInterestRatePeriodRow({
           <div className="loan-rate-period-actions">
             <button
               type="button"
-              className="loan-rate-period-remove"
+              className="ui-delete-button loan-rate-period-remove"
               onClick={onRemove}
               aria-label={`金利期間${index + 1}を削除`}
             >
-              削除
+              金利期間を削除
             </button>
           </div>
         ) : null}
@@ -404,7 +403,6 @@ export function LoanInterestRatePeriodsEditor({
           index={index}
           fieldIdPrefix={fieldIdPrefix}
           referenceYear={referenceYear}
-          loanYears={loanYears}
           schedule={schedule}
           isSinglePeriod={periods.length === 1}
           isLast={index === periods.length - 1}
