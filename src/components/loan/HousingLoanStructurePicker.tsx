@@ -63,7 +63,7 @@ export function HousingLoanStructurePicker({
           return (
             <label
               key={type}
-              className={`radio-option loan-structure-option${disabled ? ' loan-structure-option--disabled' : ''}`}
+              className={`ui-choice loan-structure-option${disabled ? ' loan-structure-option--disabled' : ''}`}
             >
               <input
                 type="radio"
@@ -93,7 +93,7 @@ export function HousingLoanStructurePicker({
       <div className="loan-structure-picker-actions loan-structure-picker-actions--footer">
         <button
           type="button"
-          className="loan-structure-picker-confirm"
+          className="ui-btn ui-btn--primary loan-structure-picker-confirm"
           disabled={!canConfirm}
           onClick={() => onConfirm(selected)}
         >
@@ -101,7 +101,7 @@ export function HousingLoanStructurePicker({
         </button>
         <button
           type="button"
-          className="loan-structure-picker-cancel"
+          className="ui-btn ui-btn--ghost loan-structure-picker-cancel"
           onClick={onCancel}
         >
           キャンセル
