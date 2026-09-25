@@ -14945,9 +14945,12 @@ button:disabled {
 
 .loan-fees-section-title {
   margin: 0 0 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #444;
+  padding-left: 8px;
+  border-left: 3px solid var(--ui-brand);
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 .loan-fees-card {
@@ -15219,26 +15222,6 @@ button:disabled {
   white-space: nowrap;
 }
 
-.loan-structure-picker-confirm {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: #1976d2;
-  color: #fff;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.loan-structure-picker-confirm:hover:not(:disabled) {
-  background: #1565c0;
-}
-
-.loan-structure-picker-confirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .loan-entry-structure-badge {
   flex-shrink: 0;
   padding: 2px 8px;
@@ -15355,6 +15338,67 @@ button:disabled {
 .loan-bank-fees-fetch > :is(.ui-btn, .ui-info-trigger) {
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.loan-reference-section {
+  margin-bottom: 20px;
+}
+
+.loan-reference-section:last-child {
+  margin-bottom: 0;
+}
+
+.loan-reference-section-title {
+  margin: 0 0 8px;
+  padding-left: 8px;
+  border-left: 3px solid var(--ui-brand);
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.loan-reference-section-desc {
+  margin: 0 0 10px;
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+}
+
+.loan-reference-kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+}
+
+.loan-reference-kv-table th,
+.loan-reference-kv-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.loan-reference-kv-table th {
+  width: 38%;
+  background: var(--ui-bg-subtle);
+  font-weight: 600;
+}
+
+.loan-reference-kv-table td {
+  background: var(--ui-bg-surface);
+}
+
+.loan-reference-row--highlight th,
+.loan-reference-row--highlight td {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  font-weight: 700;
+}
+
+.loan-reference-sources {
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-border);
 }
 
 .loan-rate-period-list {
