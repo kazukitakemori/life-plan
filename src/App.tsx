@@ -788,6 +788,95 @@ export default function App() {
   }, [bootstrapped, captureRequest, license.licenseState, operatorMode.enabled]);
 
   useEffect(() => {
+    if (license.licenseState === 'checking') return;
+    if (!landingTabAppliedRef.current) {
+      landingTabAppliedRef.current = true;
+      setHeaderTab('admin');
+      setAdminTab(license.licenseState === 'active' ? 'plans' : 'license');
+      previousLicenseStateRef.current = license.licenseState;
+      return;
+    }
+    const previous = previousLicenseStateRef.current;
+    previousLicenseStateRef.current = license.licenseState;
+    if (
+      previous !== 'active' &&
+      license.licenseState === 'active' &&
+      headerTab === 'admin' &&
+      adminTab === 'license'
+    ) {
+      setAdminTab('plans');
+      return;
+    }
+    if (license.licenseState !== 'active' && adminTab === 'plans') {
+      setAdminTab('license');
+    }
+  }, [adminTab, headerTab, license.licenseState]);
+
+  useEffect(() => {
+    return () => {
+      clearAutosaveTimer();
+    };
+  }, []);
+
+  const secondLifeCalculationStates = useMemo(
+    () =>
+      buildSecondLifeCalculationStates({
+        housingState,
+        livingState,
+        secondLifeState,
+        familyMembers,
+        incomeByMember,
+        pensionByMember,
+        referenceDate,
+      }),
+    [
+      housingState,
+      livingState,
+      secondLifeState,
+      familyMembers,
+      incomeByMember,
+      pensionByMember,
+      referenceDate,
+    ],
+  );
+
+  const cashFlowInput = useMemo<CashFlowInput>(
+    () => ({
+      familyMembers,
+      incomeByMember,
+      priorYearIncomeByMember,
+      livingState: secondLifeCalculationStates.livingState,
+      housingState: secondLifeCalculationStates.housingState,
+      vehicleState,
+      loanState,
+      insuranceState,
+      savingsState,
+      educationByMember,
+      lifeEventState,
+      pensionByMember,
+      taxSocialState,
+      referenceDate,
+    }),
+    [
+      familyMembers,
+      incomeByMember,
+      priorYearIncomeByMember,
+      secondLifeCalculationStates,
+      vehicleState,
+      loanState,
+      insuranceState,
+      savingsState,
+      educationByMember,
+      lifeEventState,
+      pensionByMember,
+      taxSocialState,
+      referenceDate,
+    ],
+  );
+  cashFlowInputRef.current = cashFlowInput;
+  analysisSnapshotRef.current = analysisSnapshot;
+
+  useEffect(() => {
     if (
       !captureRequest ||
       !activeCaptureSpec ||
@@ -896,94 +985,6 @@ export default function App() {
     captureDisplayState.riskKind,
   ]);
 
-  useEffect(() => {
-    if (license.licenseState === 'checking') return;
-    if (!landingTabAppliedRef.current) {
-      landingTabAppliedRef.current = true;
-      setHeaderTab('admin');
-      setAdminTab(license.licenseState === 'active' ? 'plans' : 'license');
-      previousLicenseStateRef.current = license.licenseState;
-      return;
-    }
-    const previous = previousLicenseStateRef.current;
-    previousLicenseStateRef.current = license.licenseState;
-    if (
-      previous !== 'active' &&
-      license.licenseState === 'active' &&
-      headerTab === 'admin' &&
-      adminTab === 'license'
-    ) {
-      setAdminTab('plans');
-      return;
-    }
-    if (license.licenseState !== 'active' && adminTab === 'plans') {
-      setAdminTab('license');
-    }
-  }, [adminTab, headerTab, license.licenseState]);
-
-  useEffect(() => {
-    return () => {
-      clearAutosaveTimer();
-    };
-  }, []);
-
-  const secondLifeCalculationStates = useMemo(
-    () =>
-      buildSecondLifeCalculationStates({
-        housingState,
-        livingState,
-        secondLifeState,
-        familyMembers,
-        incomeByMember,
-        pensionByMember,
-        referenceDate,
-      }),
-    [
-      housingState,
-      livingState,
-      secondLifeState,
-      familyMembers,
-      incomeByMember,
-      pensionByMember,
-      referenceDate,
-    ],
-  );
-
-  const cashFlowInput = useMemo<CashFlowInput>(
-    () => ({
-      familyMembers,
-      incomeByMember,
-      priorYearIncomeByMember,
-      livingState: secondLifeCalculationStates.livingState,
-      housingState: secondLifeCalculationStates.housingState,
-      vehicleState,
-      loanState,
-      insuranceState,
-      savingsState,
-      educationByMember,
-      lifeEventState,
-      pensionByMember,
-      taxSocialState,
-      referenceDate,
-    }),
-    [
-      familyMembers,
-      incomeByMember,
-      priorYearIncomeByMember,
-      secondLifeCalculationStates,
-      vehicleState,
-      loanState,
-      insuranceState,
-      savingsState,
-      educationByMember,
-      lifeEventState,
-      pensionByMember,
-      taxSocialState,
-      referenceDate,
-    ],
-  );
-  cashFlowInputRef.current = cashFlowInput;
-  analysisSnapshotRef.current = analysisSnapshot;
 
   const inputSteps = useMemo(
     () => getInputStepsForPurposes(planPurposes),
