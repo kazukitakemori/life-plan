@@ -49,6 +49,15 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         operatorMode: { hidePersonalInfo: true },
         purpose: '生涯収支グラフの自動撮影E2E検証',
       },
+      {
+        id: 'SIM-001-COVERAGE',
+        view: 'required-coverage',
+        displayState: { riskKind: 'death', pageView: 'simple' },
+        captureRegion: 'required-coverage',
+        viewport: { width: 1440, height: 1000 },
+        operatorMode: { hidePersonalInfo: true },
+        purpose: '必要保障額の自動撮影E2E検証',
+      },
     ],
   },
 };
