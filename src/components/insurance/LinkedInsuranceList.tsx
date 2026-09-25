@@ -164,7 +164,7 @@ function LinkedInsuranceItem({
           onClick={confirmRemove}
           aria-label="保険を削除"
         >
-          −
+          削除
         </button>
       </div>
       {detail}
