@@ -1,5 +1,5 @@
 import type { FamilyMember } from '../../types/family';
-import type { InsuranceEntry, InsuranceState } from '../../types/insurance';
+import type { InsuranceCategory, InsuranceEntry, InsuranceState } from '../../types/insurance';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 
 interface RequiredCoverageInsuranceEditorProps {
@@ -8,6 +8,7 @@ interface RequiredCoverageInsuranceEditorProps {
   riskKind: 'death' | 'medical';
   subjectMemberId: string;
   onEntryChange?: (entry: InsuranceEntry) => void;
+  onEntryAdd?: (category: InsuranceCategory, insuredMemberId: string) => void;
 }
 
 function roundMan(value: number): number {
@@ -20,6 +21,7 @@ export function RequiredCoverageInsuranceEditor({
   riskKind,
   subjectMemberId,
   onEntryChange,
+  onEntryAdd,
 }: RequiredCoverageInsuranceEditorProps) {
   if (!insuranceState) return null;
 
@@ -36,8 +38,6 @@ export function RequiredCoverageInsuranceEditor({
         : entry.category === 'medical' || entry.category === 'cancer';
     });
 
-  if (rows.length === 0) return null;
-
   return (
     <section
       className="required-coverage-card required-coverage-insurance-editor"
@@ -49,8 +49,9 @@ export function RequiredCoverageInsuranceEditor({
       >
         現在の保障
       </h3>
-      <div className="required-coverage-insurance-list">
-        {rows.map(({ contractorMemberId, entry }) => {
+      {rows.length > 0 ? (
+        <div className="required-coverage-insurance-list">
+          {rows.map(({ contractorMemberId, entry }) => {
           const contractor =
             familyMembers.find((member) => member.id === contractorMemberId) ??
             eligibleMembers[0];
@@ -230,8 +231,39 @@ export function RequiredCoverageInsuranceEditor({
               ) : null}
             </div>
           );
-        })}
-      </div>
+          })}
+        </div>
+      ) : null}
+      {onEntryAdd ? (
+        <div className="required-coverage-insurance-add">
+          {riskKind === 'death' ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onEntryAdd('life', subjectMemberId)}
+            >
+              ＋ 死亡保障を追加
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => onEntryAdd('medical', subjectMemberId)}
+              >
+                ＋ 医療保障を追加
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => onEntryAdd('cancer', subjectMemberId)}
+              >
+                ＋ がん保障を追加
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
