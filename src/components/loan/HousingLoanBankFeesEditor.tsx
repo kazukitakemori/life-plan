@@ -101,7 +101,7 @@ export function HousingLoanBankFeesEditor({
           />
         </LoanSettingsField>
 
-        <LoanSettingsField label="費用取得">
+        <LoanSettingsField label="概算入力">
           {referenceActions}
         </LoanSettingsField>
 
@@ -139,7 +139,7 @@ export function HousingLoanBankFeesEditor({
         />
       </div>
       <div className="loan-fees-row">
-        <span className="loan-fees-row-label">費用取得</span>
+        <span className="loan-fees-row-label">概算入力</span>
         {referenceActions}
       </div>
       {modal}
