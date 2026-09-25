@@ -67,7 +67,7 @@ function GroupCreditLifePlanFields({
       <div className="loan-group-credit-life-plan-row">
         <select
           id={`${idPrefix}-group-credit-life`}
-          className="select-input select-input--compact loan-group-credit-life-select"
+          className="select-input select-input--compact ui-select ui-select--compact loan-group-credit-life-select"
           value={plan}
           onChange={(event) =>
             onChange(
@@ -87,7 +87,7 @@ function GroupCreditLifePlanFields({
         <div className="loan-group-credit-life-surcharge">
           <span className="loan-group-credit-life-surcharge-label">金利上乗せ</span>
           <div className="loan-group-credit-life-surcharge-value">
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={surchargeRatePct}
               onChange={(groupCreditLifeSurchargeRatePct) =>
@@ -162,7 +162,7 @@ export function HousingLoanGroupCreditLifeEditor({
         </label>
         <select
           id={`${fieldIdPrefix}-structure-type`}
-          className="select-input select-input--compact loan-group-credit-life-structure-select"
+          className="select-input select-input--compact ui-select ui-select--compact loan-group-credit-life-structure-select"
           value={structureType}
           disabled
         >
