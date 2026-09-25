@@ -9,6 +9,7 @@ interface RequiredCoverageInsuranceEditorProps {
   subjectMemberId: string;
   onEntryChange?: (entry: InsuranceEntry) => void;
   onEntryAdd?: (category: InsuranceCategory, insuredMemberId: string) => void;
+  onEntryRemove?: (entryId: string) => void;
 }
 
 function roundMan(value: number): number {
@@ -22,6 +23,7 @@ export function RequiredCoverageInsuranceEditor({
   subjectMemberId,
   onEntryChange,
   onEntryAdd,
+  onEntryRemove,
 }: RequiredCoverageInsuranceEditorProps) {
   if (!insuranceState) return null;
 
@@ -228,6 +230,21 @@ export function RequiredCoverageInsuranceEditor({
                     <span className="amount-unit">万円</span>
                   </div>
                 </label>
+              ) : null}
+
+              {onEntryRemove ? (
+                <button
+                  type="button"
+                  className="required-coverage-insurance-remove"
+                  onClick={() => {
+                    const label = entry.name || 'この保障';
+                    if (window.confirm(`${label}を削除しますか？`)) {
+                      onEntryRemove(entry.id);
+                    }
+                  }}
+                >
+                  この保障を削除
+                </button>
               ) : null}
             </div>
           );
