@@ -76,7 +76,7 @@ export function HousingLoanBankFeesEditor({
     return (
       <>
         <LoanSettingsField label="融資手数料">
-          <HousingManInput
+          <HousingManInput unified
             compact
             value={settings.financingFeeMan}
             onChange={(financingFeeMan) => onChange({ financingFeeMan })}
@@ -84,7 +84,7 @@ export function HousingLoanBankFeesEditor({
         </LoanSettingsField>
 
         <LoanSettingsField label="保証料">
-          <HousingManInput
+          <HousingManInput unified
             compact
             value={settings.guaranteeFeeMan}
             onChange={(guaranteeFeeMan) => onChange({ guaranteeFeeMan })}
@@ -92,7 +92,7 @@ export function HousingLoanBankFeesEditor({
         </LoanSettingsField>
 
         <LoanSettingsField label="事務手数料">
-          <HousingManInput
+          <HousingManInput unified
             compact
             value={settings.administrativeFeeMan}
             onChange={(administrativeFeeMan) =>
@@ -114,7 +114,7 @@ export function HousingLoanBankFeesEditor({
     <div className="loan-bank-fees-editor">
       <div className="loan-fees-row">
         <span className="loan-fees-row-label">融資手数料</span>
-        <HousingManInput
+        <HousingManInput unified
           compact
           value={settings.financingFeeMan}
           onChange={(financingFeeMan) => onChange({ financingFeeMan })}
@@ -122,7 +122,7 @@ export function HousingLoanBankFeesEditor({
       </div>
       <div className="loan-fees-row">
         <span className="loan-fees-row-label">保証料</span>
-        <HousingManInput
+        <HousingManInput unified
           compact
           value={settings.guaranteeFeeMan}
           onChange={(guaranteeFeeMan) => onChange({ guaranteeFeeMan })}
@@ -130,7 +130,7 @@ export function HousingLoanBankFeesEditor({
       </div>
       <div className="loan-fees-row">
         <span className="loan-fees-row-label">事務手数料</span>
-        <HousingManInput
+        <HousingManInput unified
           compact
           value={settings.administrativeFeeMan}
           onChange={(administrativeFeeMan) =>
