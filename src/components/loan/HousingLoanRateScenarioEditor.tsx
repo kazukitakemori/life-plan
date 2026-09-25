@@ -518,7 +518,7 @@ function CustomRateChangeEditor({
   const [draftRate, setDraftRate] = useState<number | null>(null);
 
   const maxYears = Math.max(
-    1,
+    0,
     Math.floor(monthsBetween(start, schedule.repaymentEnd) / 12),
   );
 
@@ -675,7 +675,11 @@ function CustomRateChangeEditor({
         </div>
       )}
 
-      {draftOpen ? (
+      {maxYears <= 0 ? (
+        <p className="loan-rate-scenario-note">
+          完済まで1年未満のため、追加の金利変更は設定できません。
+        </p>
+      ) : draftOpen ? (
         <div className="loan-rate-custom-draft">
           <label className="loan-rate-rise-field">
             <span>変更時期</span>
@@ -1233,11 +1237,34 @@ export function HousingLoanRateScenarioEditor({
                 id={`${fieldIdPrefix}-post-fixed-scenario`}
                 className="ui-select ui-select--compact loan-rate-scenario-select"
                 value={postFixedScenario}
-                onChange={(event) =>
-                  setPostFixedScenario(
-                    event.target.value as VariableRateScenario,
-                  )
-                }
+                onChange={(event) => {
+                  const nextScenario =
+                    event.target.value as VariableRateScenario;
+                  setPostFixedScenario(nextScenario);
+
+                  if (
+                    nextScenario === 'custom' &&
+                    hasExistingInitialFixed &&
+                    periods[1]
+                  ) {
+                    const variableBounds =
+                      resolveInterestRatePeriodBounds(
+                        periods[1],
+                        schedule,
+                      );
+                    onChange([
+                      periods[0],
+                      {
+                        ...periods[1],
+                        rateType: 'variable',
+                        startYear: variableBounds.start.year,
+                        startMonth: variableBounds.start.month,
+                        endYear: 0,
+                        endMonth: 0,
+                      },
+                    ]);
+                  }
+                }}
               >
                 <option value="current">現状維持</option>
                 <option value="rise">段階的に上昇</option>
