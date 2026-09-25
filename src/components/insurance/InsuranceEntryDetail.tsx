@@ -1046,9 +1046,12 @@ export function InsuranceEntryDetail({
                   {incomeTaxPreviewParts.summary}
                 </div>
                 {incomeTaxPreviewParts.formula ? (
-                  <p className="insurance-income-tax-formula">
-                    {incomeTaxPreviewParts.formula}
-                  </p>
+                  <details className="insurance-income-tax-details">
+                    <summary>計算内容を見る</summary>
+                    <p className="insurance-income-tax-formula">
+                      {incomeTaxPreviewParts.formula}
+                    </p>
+                  </details>
                 ) : null}
                 {incomeTaxPreviewParts.expenseMissing ? (
                   <p className="insurance-link-hint">
