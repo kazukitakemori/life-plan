@@ -6,6 +6,8 @@ interface HousingManInputProps {
   min?: number;
   step?: number;
   unit?: string;
+  /** 共通フォームデザインを適用する */
+  unified?: boolean;
 }
 
 export function HousingManInput({
@@ -16,12 +18,13 @@ export function HousingManInput({
   min = 0,
   step = 1,
   unit = '万円',
+  unified = false,
 }: HousingManInputProps) {
   return (
     <div className="housing-man-input">
       <input
         type="number"
-        className={`amount-input${compact ? ' amount-input--compact' : ''}`}
+        className={`amount-input${compact ? ' amount-input--compact' : ''}${unified ? ' ui-input' : ''}`}
         value={value}
         min={min}
         step={step}

@@ -13613,20 +13613,17 @@ button:disabled {
 
 .loan-payment-mode {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 10px 18px;
   margin-bottom: 16px;
-  padding: 10px 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
 }
 
 .loan-payment-mode-option {
-  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: #333;
-  cursor: pointer;
 }
 
 .vehicle-type-cell {
@@ -14514,6 +14511,22 @@ button:disabled {
   background: #e3f2fd;
 }
 
+.loan-entry-card-main {
+  display: flex;
+  flex: 1 1 360px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.loan-entry-card-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
 .loan-entry-card-wrap--expanded .loan-entry-card {
   border-radius: 8px 8px 0 0;
 }
@@ -14522,11 +14535,6 @@ button:disabled {
   flex: 1 1 200px;
   min-width: 140px;
   max-width: 280px;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fffde7;
-  font-size: 0.8125rem;
 }
 
 .loan-entry-name-label {
@@ -14537,8 +14545,23 @@ button:disabled {
 }
 
 .loan-entry-summary {
+  min-width: 0;
   font-size: 0.8125rem;
+  line-height: 1.45;
   color: #666;
+  overflow-wrap: anywhere;
+}
+
+.loan-entry-link-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid #a7d7b2;
+  border-radius: 999px;
+  background: #f0f8f2;
+  color: #2e6b3d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .loan-entry-housing-badge {
@@ -14550,36 +14573,80 @@ button:disabled {
 }
 
 .loan-entry-open-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100px;
+  width: 124px;
   flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+}
+
+.loan-entry-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 18px 16px;
   background: #fff;
-  color: #333;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.loan-entry-open-btn--active {
-  background: #1976d2;
-  border-color: #1565c0;
-  color: #fff;
-}
-
-.loan-entry-card .housing-row-remove {
-  margin-left: auto;
-  flex-shrink: 0;
 }
 
 .loan-entry-detail {
   padding: 16px 18px 18px;
   border-top: 1px solid #bbdefb;
   background: #fff;
+}
+
+@media (max-width: 720px) {
+  .loan-section {
+    margin-bottom: 20px;
+  }
+
+  .loan-entry-list {
+    gap: 10px;
+  }
+
+  .loan-entry-card {
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .loan-entry-card-main {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .loan-entry-card-heading {
+    align-items: flex-start;
+  }
+
+  .loan-entry-name-input {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  .loan-entry-name-label {
+    flex: 1 1 100%;
+    font-size: 0.875rem;
+  }
+
+  .loan-entry-summary {
+    white-space: normal;
+  }
+
+  .loan-entry-open-btn {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .loan-entry-detail {
+    padding: 14px 12px 16px;
+  }
+
+  .loan-entry-card-footer {
+    padding: 0 12px 14px;
+  }
+
+  .loan-entry-remove-btn {
+    width: 100%;
+  }
 }
 
 .loan-settings-table-card {
@@ -14673,6 +14740,11 @@ button:disabled {
 
 .loan-settings-form-table .loan-amount-linked-detail {
   font-size: 0.8125rem;
+}
+
+.loan-settings-form-table .ui-input,
+.loan-settings-form-table .ui-select {
+  font-size: var(--text-md);
 }
 
 .loan-settings-form-table .loan-settings-form-value--loan-amount {
@@ -14778,7 +14850,7 @@ button:disabled {
   gap: 8px;
   width: 100%;
   padding-top: 12px;
-  border-top: 1px dashed #cfd8dc;
+  border-top: 1px dashed var(--ui-border);
 }
 
 .loan-prepayment-entry:first-child {
@@ -14796,19 +14868,6 @@ button:disabled {
 .loan-prepayment-remove,
 .loan-prepayment-add {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 0.8125rem;
-  color: #555;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.loan-prepayment-add {
-  border-color: #90caf9;
-  color: #1565c0;
 }
 
 @keyframes loan-repayment-bonus-reveal {
@@ -14881,9 +14940,12 @@ button:disabled {
 
 .loan-fees-section-title {
   margin: 0 0 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #444;
+  padding-left: 8px;
+  border-left: 3px solid var(--ui-brand);
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 .loan-fees-card {
@@ -14992,16 +15054,6 @@ button:disabled {
   flex-shrink: 0;
 }
 
-.loan-structure-picker-cancel {
-  padding: 4px 10px;
-  border: none;
-  background: transparent;
-  color: #888;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
 .loan-structure-options {
   margin: 0 0 12px;
   padding: 0;
@@ -15040,7 +15092,8 @@ button:disabled {
 }
 
 .loan-structure-comparison-wrap {
-  margin-top: 4px;
+  margin-top: 0;
+  padding-top: 4px;
 }
 
 .loan-structure-comparison-title {
@@ -15165,26 +15218,6 @@ button:disabled {
   white-space: nowrap;
 }
 
-.loan-structure-picker-confirm {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: #1976d2;
-  color: #fff;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.loan-structure-picker-confirm:hover:not(:disabled) {
-  background: #1565c0;
-}
-
-.loan-structure-picker-confirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .loan-entry-structure-badge {
   flex-shrink: 0;
   padding: 2px 8px;
@@ -15298,16 +15331,242 @@ button:disabled {
   flex-shrink: 0;
 }
 
-.loan-settings-form-table .loan-bank-fees-fetch .loan-fee-fetch-btn {
-  width: auto;
-  min-width: 0;
-  padding: 4px 15px;
-}
-
-.loan-bank-fees-fetch .education-fetch-btn,
-.loan-bank-fees-fetch .education-fetch-detail-link {
+.loan-bank-fees-fetch > :is(.ui-btn, .ui-info-trigger) {
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.loan-reference-section {
+  margin-bottom: 20px;
+}
+
+.loan-reference-section:last-child {
+  margin-bottom: 0;
+}
+
+.loan-reference-section-title {
+  margin: 0 0 8px;
+  padding-left: 8px;
+  border-left: 3px solid var(--ui-brand);
+  color: var(--ui-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.loan-reference-section-desc {
+  margin: 0 0 10px;
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+}
+
+.loan-reference-kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+}
+
+.loan-reference-kv-table th,
+.loan-reference-kv-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.loan-reference-kv-table th {
+  width: 38%;
+  background: var(--ui-bg-subtle);
+  font-weight: 600;
+}
+
+.loan-reference-kv-table td {
+  background: var(--ui-bg-surface);
+}
+
+.loan-reference-row--highlight th,
+.loan-reference-row--highlight td {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
+  font-weight: 700;
+}
+
+.loan-reference-sources {
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.loan-rate-scenario-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.loan-rate-scenario-method {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.loan-rate-scenario-method > label {
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.loan-rate-scenario-select {
+  width: min(100%, 320px);
+}
+
+.loan-rate-scenario-simple,
+.loan-rate-initial-fixed-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
+}
+
+.loan-rate-scenario-rate-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.loan-rate-scenario-rate-label,
+.loan-rate-scenario-range,
+.loan-rate-initial-fixed-field > span:first-child {
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.loan-rate-scenario-note {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+}
+
+.loan-rate-rise-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.loan-rate-rise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+  align-items: end;
+  gap: 10px 16px;
+  width: 100%;
+}
+
+.loan-rate-rise-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.loan-rate-rise-field > span:first-child {
+  color: var(--ui-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.loan-rate-custom-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.loan-rate-custom-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.loan-rate-custom-row,
+.loan-rate-custom-draft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-bg);
+}
+
+.loan-rate-custom-prefix,
+.loan-rate-custom-arrow,
+.loan-rate-custom-date {
+  color: var(--ui-text-muted);
+  font-size: var(--text-xs);
+}
+
+.loan-rate-custom-year {
+  width: auto;
+  min-width: 110px;
+}
+
+.loan-rate-custom-draft {
+  align-items: flex-end;
+}
+
+.loan-rate-custom-draft-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loan-rate-post-fixed-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding-top: 4px;
+}
+
+.loan-rate-initial-fixed-fields {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  width: 100%;
+}
+
+.loan-rate-initial-fixed-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.loan-rate-scenario-native-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.loan-rate-scenario-native-input {
+  width: 88px;
+  min-width: 88px;
 }
 
 .loan-rate-period-list {
@@ -15404,22 +15663,12 @@ button:disabled {
   margin-left: 10px;
 }
 
-.loan-rate-period-remove,
-.loan-rate-period-add {
+.loan-rate-period-remove {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 0.8125rem;
-  color: #555;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 .loan-rate-period-add {
-  border-color: #90caf9;
-  color: #1565c0;
+  flex-shrink: 0;
 }
 
 .loan-settings-form-table .loan-settings-form-value--group-credit-life {

@@ -63,7 +63,7 @@ export function HousingLoanStructurePicker({
           return (
             <label
               key={type}
-              className={`radio-option loan-structure-option${disabled ? ' loan-structure-option--disabled' : ''}`}
+              className={`ui-choice loan-structure-option${disabled ? ' loan-structure-option--disabled' : ''}`}
             >
               <input
                 type="radio"
@@ -93,7 +93,7 @@ export function HousingLoanStructurePicker({
       <div className="loan-structure-picker-actions loan-structure-picker-actions--footer">
         <button
           type="button"
-          className="loan-structure-picker-confirm"
+          className="ui-btn ui-btn--primary loan-structure-picker-confirm"
           disabled={!canConfirm}
           onClick={() => onConfirm(selected)}
         >
@@ -101,18 +101,18 @@ export function HousingLoanStructurePicker({
         </button>
         <button
           type="button"
-          className="loan-structure-picker-cancel"
+          className="ui-btn ui-btn--ghost loan-structure-picker-cancel"
           onClick={onCancel}
         >
           キャンセル
         </button>
       </div>
 
-      <details className="loan-structure-comparison-disclosure">
-        <summary className="loan-structure-comparison-summary">
-          借入形態の違いを比較する
+      <details className="loan-structure-comparison-disclosure ui-disclosure">
+        <summary className="loan-structure-comparison-summary ui-disclosure-summary">
+          <span className="ui-disclosure-title">借入形態の違いを比較する</span>
         </summary>
-        <div className="loan-structure-comparison-wrap">
+        <div className="loan-structure-comparison-wrap ui-disclosure-body">
           <h5 className="loan-structure-comparison-title">ローン比較表</h5>
           <div className="loan-structure-comparison-scroll">
             <table className="loan-structure-comparison-table">

@@ -32,6 +32,7 @@ import {
   type GroupCreditLifePairSide,
 } from './HousingLoanGroupCreditLifeEditor';
 import { LoanInterestRatePeriodsEditor } from './LoanInterestRatePeriodsEditor';
+import { HousingLoanRateScenarioEditor } from './HousingLoanRateScenarioEditor';
 import { HousingLoanBankFeesEditor } from './HousingLoanBankFeesEditor';
 
 interface LoanSettingsFieldsProps {
@@ -277,7 +278,7 @@ export function LoanSettingsFields({
     <>
       <select
         id={`${fieldIdPrefix}-timing`}
-        className="select-input select-input--compact loan-settings-timing-select"
+        className="select-input select-input--compact ui-select ui-select--compact loan-settings-timing-select"
         value={acquisitionTiming ? 'acquisition' : 'custom'}
         onChange={(e) =>
           handleTimingModeChange(e.target.value as 'acquisition' | 'custom')
@@ -287,7 +288,7 @@ export function LoanSettingsFields({
         <option value="custom">日付を指定</option>
       </select>
       {!acquisitionTiming && (
-        <HousingRenewalDateFields
+        <HousingRenewalDateFields unified
           year={customStart.year}
           month={customStart.month}
           referenceYear={referenceYear}
@@ -297,7 +298,7 @@ export function LoanSettingsFields({
       )}
     </>
   ) : (
-    <HousingRenewalDateFields
+    <HousingRenewalDateFields unified
       year={customStart.year}
       month={customStart.month}
       referenceYear={referenceYear}
@@ -314,7 +315,7 @@ export function LoanSettingsFields({
           cellClassName="loan-settings-form-value--loan-amount"
         >
           {!hideAmountField ? (
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={settings.amountMan}
               step={1}
@@ -351,7 +352,7 @@ export function LoanSettingsFields({
 
         {showHousingFields ? (
           <LoanSettingsField label="返済期間">
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={settings.years}
               onChange={(years) => update({ years })}
@@ -367,7 +368,7 @@ export function LoanSettingsFields({
           >
             <select
               id={`${fieldIdPrefix}-repayment-count`}
-              className="select-input select-input--compact"
+              className="select-input select-input--compact ui-select ui-select--compact"
               value={resolveLoanRepaymentCount(settings)}
               onChange={(e) => {
                 const repaymentCount = Number(e.target.value);
@@ -387,21 +388,38 @@ export function LoanSettingsFields({
         )}
 
         <LoanSettingsField label="金利" cellClassName="loan-settings-form-value--rate-periods">
-          <LoanInterestRatePeriodsEditor
-            periods={settings.interestRatePeriods}
-            fieldIdPrefix={fieldIdPrefix}
-            referenceYear={referenceYear}
-            referenceMonth={referenceDate.getMonth() + 1}
-            loanYears={settings.years}
-            loanStartYear={settings.startYear}
-            loanStartMonth={settings.startMonth}
-            linkedHousingProperty={linkedHousingProperty}
-            linkedVehicle={linkedVehicle}
-            memberAgeAtReference={memberAgeAtReference}
-            memberBirthMonth={memberBirthMonth}
-            allowAddPeriod={showHousingFields}
-            onChange={(interestRatePeriods) => update({ interestRatePeriods })}
-          />
+          {showHousingFields ? (
+            <HousingLoanRateScenarioEditor
+              periods={settings.interestRatePeriods}
+              fieldIdPrefix={fieldIdPrefix}
+              referenceYear={referenceYear}
+              referenceMonth={referenceDate.getMonth() + 1}
+              loanYears={settings.years}
+              loanStartYear={settings.startYear}
+              loanStartMonth={settings.startMonth}
+              linkedHousingProperty={linkedHousingProperty}
+              linkedVehicle={linkedVehicle}
+              memberAgeAtReference={memberAgeAtReference}
+              memberBirthMonth={memberBirthMonth}
+              onChange={(interestRatePeriods) => update({ interestRatePeriods })}
+            />
+          ) : (
+            <LoanInterestRatePeriodsEditor
+              periods={settings.interestRatePeriods}
+              fieldIdPrefix={fieldIdPrefix}
+              referenceYear={referenceYear}
+              referenceMonth={referenceDate.getMonth() + 1}
+              loanYears={settings.years}
+              loanStartYear={settings.startYear}
+              loanStartMonth={settings.startMonth}
+              linkedHousingProperty={linkedHousingProperty}
+              linkedVehicle={linkedVehicle}
+              memberAgeAtReference={memberAgeAtReference}
+              memberBirthMonth={memberBirthMonth}
+              allowAddPeriod={false}
+              onChange={(interestRatePeriods) => update({ interestRatePeriods })}
+            />
+          )}
         </LoanSettingsField>
 
         {showHousingFields && structureType ? (
@@ -437,7 +455,7 @@ export function LoanSettingsFields({
           <>
             <LoanSettingsField label="新築/中古">
               <div className="housing-owned-payment-options housing-owned-payment-options--compact">
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-condition`}
@@ -446,7 +464,7 @@ export function LoanSettingsFields({
                   />
                   <span>新築</span>
                 </label>
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-condition`}
@@ -460,7 +478,7 @@ export function LoanSettingsFields({
 
             <LoanSettingsField label="住宅ローン控除">
               <select
-                className="select-input select-input--compact loan-settings-deduction-select"
+                className="select-input select-input--compact ui-select ui-select--compact loan-settings-deduction-select"
                 value={settings.deductionCategory}
                 onChange={(e) =>
                   update({

@@ -83,6 +83,7 @@ export function LoanStep({
   const headMember = members.find((m) => m.role === 'head');
   const spouseMember = members.find((m) => m.role === 'spouse');
   const [activeMemberId, setActiveMemberId] = useState(headMember?.id ?? '');
+  const [autoExpandEntryId, setAutoExpandEntryId] = useState<string | null>(null);
 
   const memberHasData = useCallback(
     (memberId: string) => memberHasLoanData(loanState, memberId),
@@ -218,6 +219,9 @@ export function LoanStep({
     const bucketId = resolveEntryBucket(id) ?? resolvedActiveId;
     if (!bucketId) return;
     const bucketEntries = loanState.byMember[bucketId] ?? [];
+    if (autoExpandEntryId === id) {
+      setAutoExpandEntryId(null);
+    }
     persistEntries(
       bucketId,
       bucketEntries.filter((entry) => entry.id !== id),
@@ -238,16 +242,33 @@ export function LoanStep({
 
   const addEntry = (category: LoanCategory, structureType?: LoanStructureType) => {
     if (!resolvedActiveId) return;
+
     if (category === 'housing' && structureType) {
+      const currentIds = new Set(
+        getMemberLoanEntries(loanState, resolvedActiveId).map((entry) => entry.id),
+      );
       const ids =
         structureType === 'pair' && spouseMember && headMember
           ? ([headMember.id, spouseMember.id] as [string, string])
           : ([resolvedActiveId] as [string]);
-      onChange(addHousingLoanWithStructure(loanState, structureType, ids));
+      const nextState = addHousingLoanWithStructure(
+        loanState,
+        structureType,
+        ids,
+      );
+      const addedForActiveMember = getMemberLoanEntries(
+        nextState,
+        resolvedActiveId,
+      ).find((entry) => !currentIds.has(entry.id));
+      setAutoExpandEntryId(addedForActiveMember?.id ?? null);
+      onChange(nextState);
       return;
     }
+
     const current = getMemberLoanEntries(loanState, resolvedActiveId);
-    persistEntries(resolvedActiveId, [...current, createLoanEntry(category)]);
+    const entry = createLoanEntry(category);
+    setAutoExpandEntryId(entry.id);
+    persistEntries(resolvedActiveId, [...current, entry]);
   };
 
   if (!activeMember) {
@@ -269,7 +290,10 @@ export function LoanStep({
         activeMemberId={resolvedActiveId}
         entryCounts={entryCounts}
         referenceDate={referenceDate}
-        onSelect={setActiveMemberId}
+        onSelect={(memberId) => {
+          setAutoExpandEntryId(null);
+          setActiveMemberId(memberId);
+        }}
         addableMembers={addableMembers}
         onAddMemberTab={handleAddMemberTab}
         removableMemberIds={removableMemberIds}
@@ -300,13 +324,14 @@ export function LoanStep({
                   handleJointDebtShareChange(entry, sharePct)
                 }
                 onPropertyFeeChange={updatePropertyFees}
+                defaultExpanded={entry.id === autoExpandEntryId}
                 onRemove={() => removeEntry(entry.id)}
               />
             ))}
           </div>
         ) : (
           <div className="loan-empty">
-            ローンが登録されていません。下から追加するか、住まい・乗り物から追加してください。
+            ローンはまだ登録されていません。「ローンを追加」から登録するか、Q5 住まい・Q6 乗り物でローンを設定すると、ここにも表示されます。
           </div>
         )}
       </section>

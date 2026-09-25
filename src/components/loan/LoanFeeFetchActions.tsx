@@ -3,6 +3,8 @@ interface LoanFeeFetchActionsProps {
   onFetch: () => void;
   showDetail?: boolean;
   onDetail?: () => void;
+  fetchLabel?: string;
+  detailLabel?: string;
 }
 
 export function LoanFeeFetchActions({
@@ -10,24 +12,27 @@ export function LoanFeeFetchActions({
   onFetch,
   showDetail = false,
   onDetail,
+  fetchLabel = '目安を自動入力',
+  detailLabel = '計算根拠を見る',
 }: LoanFeeFetchActionsProps) {
   return (
     <div className="loan-bank-fees-fetch">
       <button
         type="button"
-        className="education-fetch-btn loan-fee-fetch-btn"
+        className="ui-btn ui-btn--secondary ui-btn--compact loan-fee-fetch-btn"
         disabled={!canFetch}
         onClick={onFetch}
       >
-        参考
+        {fetchLabel}
       </button>
       {showDetail && onDetail ? (
         <button
           type="button"
-          className="education-fetch-detail-link"
+          className="ui-info-trigger loan-fee-detail-btn"
           onClick={onDetail}
         >
-          詳細
+          <span className="ui-info-trigger-icon" aria-hidden="true">i</span>
+          {detailLabel}
         </button>
       ) : null}
     </div>
