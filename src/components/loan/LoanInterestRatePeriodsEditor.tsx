@@ -253,7 +253,7 @@ function LoanInterestRatePeriodRow({
         {isLast && (allowAddPeriod || canRemove) ? (
           <div className="loan-rate-period-actions">
             {allowAddPeriod ? (
-              <button type="button" className="loan-rate-period-add" onClick={onAdd}>
+              <button type="button" className="ui-btn ui-btn--secondary ui-btn--compact loan-rate-period-add" onClick={onAdd}>
                 ＋ 金利期間を追加
               </button>
             ) : null}
