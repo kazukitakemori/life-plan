@@ -199,7 +199,6 @@ export function AssetBuildingView({
             id="asset-building-panel-savings-assets"
             aria-labelledby="asset-building-tab-savings-assets"
             className="asset-building-panel"
-            data-content-capture-target="asset-balance-chart"
           >
             <AssetBuildingChartsPanel
               cashFlowData={data}
