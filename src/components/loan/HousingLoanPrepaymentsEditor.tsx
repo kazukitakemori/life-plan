@@ -180,7 +180,7 @@ export function HousingLoanPrepaymentsEditor({
             </div>
             <div className="loan-prepayment-execution-line">
               <span className="loan-prepayment-execution-label">繰り上げ金額：</span>
-              <HousingManInput
+              <HousingManInput unified
                 compact
                 value={entry.amountMan}
                 min={0}
