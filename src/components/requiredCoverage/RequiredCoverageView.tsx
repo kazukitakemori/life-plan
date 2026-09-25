@@ -54,6 +54,7 @@ interface RequiredCoverageViewProps {
     category: InsuranceCategory,
     insuredMemberId: string,
   ) => void;
+  onInsuranceEntryRemove?: (entryId: string) => void;
   onPageViewChange: (view: RequiredCoveragePageView) => void;
 }
 
@@ -137,6 +138,7 @@ export function RequiredCoverageView({
   onChange,
   onInsuranceEntryChange,
   onInsuranceEntryAdd,
+  onInsuranceEntryRemove,
   onPageViewChange,
 }: RequiredCoverageViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -517,6 +519,7 @@ export function RequiredCoverageView({
                 subjectMemberId={subjectMemberId}
                 onEntryChange={onInsuranceEntryChange}
                 onEntryAdd={onInsuranceEntryAdd}
+                onEntryRemove={onInsuranceEntryRemove}
               />
               <RequiredCoverageMedicalRiskView
                 cashFlowInput={cashFlowInput}
@@ -566,6 +569,7 @@ export function RequiredCoverageView({
                   subjectMemberId={subjectMemberId}
                   onEntryChange={onInsuranceEntryChange}
                   onEntryAdd={onInsuranceEntryAdd}
+                  onEntryRemove={onInsuranceEntryRemove}
                 />
                 {showForm ? (
                   <>
