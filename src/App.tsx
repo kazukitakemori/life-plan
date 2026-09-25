@@ -943,14 +943,42 @@ export default function App() {
       if (cancelled) return;
 
       const region = resolveContentCaptureRegion(activeCaptureSpec);
+      let target: HTMLElement | null = null;
       if (region !== 'viewport') {
-        const target = Array.from(
-          document.querySelectorAll<HTMLElement>('[data-content-capture-target]'),
-        ).find((element) => element.dataset.contentCaptureTarget === region);
+        target =
+          Array.from(
+            document.querySelectorAll<HTMLElement>(
+              '[data-content-capture-target]',
+            ),
+          ).find((element) => element.dataset.contentCaptureTarget === region) ??
+          null;
         if (!target) {
           document.documentElement.dataset.contentCaptureStatus = 'error';
           document.documentElement.dataset.contentCaptureError =
             `capture target not found: ${region}`;
+          return;
+        }
+
+        const renderDeadline = performance.now() + 5_000;
+        while (
+          !cancelled &&
+          target.dataset.contentCaptureRenderStatus === 'pending'
+        ) {
+          if (performance.now() >= renderDeadline) {
+            document.documentElement.dataset.contentCaptureStatus = 'error';
+            document.documentElement.dataset.contentCaptureError =
+              `capture target render timeout: ${region}`;
+            return;
+          }
+          await new Promise<void>((resolve) =>
+            window.requestAnimationFrame(() => resolve()),
+          );
+        }
+        if (cancelled) return;
+        if (target.dataset.contentCaptureRenderStatus === 'error') {
+          document.documentElement.dataset.contentCaptureStatus = 'error';
+          document.documentElement.dataset.contentCaptureError =
+            `capture target render failed: ${region}`;
           return;
         }
       }
