@@ -4919,6 +4919,64 @@ button:disabled {
   background: #f8fafc;
 }
 
+.required-coverage-insurance-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.required-coverage-insurance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.required-coverage-insurance-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 0.8fr) repeat(3, minmax(120px, 0.9fr));
+  gap: 10px;
+  align-items: end;
+  padding: 10px 12px;
+  border: 1px solid #e3e8ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.required-coverage-insurance-name {
+  align-self: center;
+  min-width: 0;
+}
+
+.required-coverage-insurance-name strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.required-coverage-insurance-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.required-coverage-insurance-field > span:first-child {
+  font-size: 0.75rem;
+  color: #667085;
+}
+
+@media (max-width: 760px) {
+  .required-coverage-insurance-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .required-coverage-insurance-name strong {
+    white-space: normal;
+  }
+}
+
 .required-coverage-registered {
   display: flex;
   flex-wrap: wrap;
