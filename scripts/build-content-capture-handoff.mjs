@@ -97,6 +97,8 @@ function main() {
     captures: manifests.map((item) => ({
       captureSpecId: item.captureSpecId,
       view: item.view,
+      purpose: item.purpose ?? null,
+      note: item.note ?? null,
       captureRegion: item.captureRegion,
       viewport: item.viewport,
       actualViewport: item.actualViewport ?? null,
