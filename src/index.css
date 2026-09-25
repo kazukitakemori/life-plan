@@ -16305,25 +16305,6 @@ button:disabled {
   flex-direction: column;
 }
 
-.insurance-drop-line {
-  height: 12px;
-  position: relative;
-  flex-shrink: 0;
-  pointer-events: none;
-}
-
-.insurance-drop-line--active::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 50%;
-  height: 3px;
-  margin-top: -1.5px;
-  border-radius: 2px;
-  background: #1976d2;
-  box-shadow: 0 0 0 1px rgb(25 118 210 / 20%);
-}
 
 .insurance-entry-card-wrap {
   border: 1px solid #bbdefb;
@@ -16332,9 +16313,6 @@ button:disabled {
   overflow: hidden;
 }
 
-.insurance-entry-card-wrap--dragging {
-  opacity: 0.5;
-}
 
 .insurance-entry-card-wrap--nonlife {
   border-color: #90caf9;
@@ -16362,26 +16340,7 @@ button:disabled {
   background: #e3f2fd;
 }
 
-.insurance-entry-drag-handle {
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  font-size: 1rem;
-  line-height: 1;
-  padding: 2px 4px;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-}
 
-.insurance-entry-drag-handle:active {
-  cursor: grabbing;
-}
-
-.insurance-entry-card-wrap--life .insurance-entry-drag-handle {
-  color: #a5d6a7;
-}
 
 .insurance-entry-card-wrap--life .insurance-entry-card {
   background: #e8f5e9;
@@ -16403,7 +16362,7 @@ button:disabled {
 }
 
 .insurance-entry-name-label {
-  flex: 0 1 auto;
+  flex: 1 1 240px;
   font-size: 0.8125rem;
   font-weight: 600;
   color: #333;
@@ -16438,9 +16397,28 @@ button:disabled {
   white-space: nowrap;
 }
 
+.insurance-entry-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.insurance-entry-link-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #51606f;
+  background: #f4f6f8;
+  border: 1px solid #d7dde3;
+  white-space: nowrap;
+}
+
 .insurance-entry-summary {
   font-size: 0.8125rem;
   color: #666;
+  white-space: nowrap;
 }
 
 .insurance-entry-open-btn {
@@ -16470,10 +16448,6 @@ button:disabled {
   border-color: #2e7d32;
 }
 
-.insurance-entry-card .housing-row-remove {
-  margin-left: auto;
-  flex-shrink: 0;
-}
 
 .insurance-entry-detail {
   padding: 16px 18px 18px;
@@ -16483,6 +16457,17 @@ button:disabled {
 
 .insurance-entry-card-wrap--life .insurance-entry-detail {
   border-top-color: #c8e6c9;
+}
+
+.insurance-entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 18px 18px;
+  background: #fff;
+}
+
+.insurance-entry-delete-button {
+  color: var(--ui-danger);
 }
 
 /* ????????????????? */
@@ -16618,8 +16603,20 @@ button:disabled {
   font-weight: 600;
 }
 
+.insurance-income-tax-details {
+  margin-top: 6px;
+}
+
+.insurance-income-tax-details summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #5f6b76;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 .insurance-income-tax-formula {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 0.8125rem;
   font-weight: 400;
   color: #6b7280;
