@@ -181,6 +181,8 @@ export function RequiredCoverageView({
     : '配偶者さん';
   const hasSpouse = spouseMember != null;
   const subjectLabel = subject === 'spouse' ? spouseLabel : headLabel;
+  const subjectMemberId =
+    (subject === 'spouse' ? spouseMember : headMember)?.id ?? '';
   const survivorMember =
     subject === 'head'
       ? (spouseMember ??
@@ -507,6 +509,7 @@ export function RequiredCoverageView({
                 insuranceState={cashFlowInput.insuranceState}
                 familyMembers={cashFlowInput.familyMembers}
                 riskKind="medical"
+                subjectMemberId={subjectMemberId}
                 onEntryChange={onInsuranceEntryChange}
               />
               <RequiredCoverageMedicalRiskView
@@ -554,6 +557,7 @@ export function RequiredCoverageView({
                   insuranceState={cashFlowInput.insuranceState}
                   familyMembers={cashFlowInput.familyMembers}
                   riskKind="death"
+                  subjectMemberId={subjectMemberId}
                   onEntryChange={onInsuranceEntryChange}
                 />
                 {showForm ? (
