@@ -98,7 +98,7 @@ export function HousingLoanFeeInclusionPanel({
   return (
     <div className="loan-fees-panel">
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ 不動産取引の諸費用</h5>
+        <h5 className="loan-fees-section-title">不動産取引の諸費用</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             {isPairLoan ? (
@@ -154,7 +154,7 @@ export function HousingLoanFeeInclusionPanel({
       </div>
 
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ 銀行・保証会社の諸費用</h5>
+        <h5 className="loan-fees-section-title">銀行・保証会社の諸費用</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             <HousingLoanBankFeesEditor
@@ -171,7 +171,7 @@ export function HousingLoanFeeInclusionPanel({
       </div>
 
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ ローンの組み込み設定</h5>
+        <h5 className="loan-fees-section-title">ローンの組み込み設定</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             <LoanSettingsField label="諸費用の扱い">
