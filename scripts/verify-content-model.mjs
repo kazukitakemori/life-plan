@@ -10,6 +10,7 @@ import {
   getContentCaptureSpec,
   isContentCaptureViewportMatch,
   parseContentCaptureRequest,
+  readStoredContentModelDefinition,
   resolveContentCaptureDisplayState,
   resolveContentCaptureRegion,
   resolveContentCaptureRoute,
@@ -53,6 +54,9 @@ assert.equal(second.plan.createdAt, first.plan.createdAt);
 assert.equal(second.plan.schemaVersion, 8);
 assert.equal(second.plan.status, 'in_progress');
 assert.match(second.plan.note, /definition=.*captureSpecs/);
+const storedDefinition = readStoredContentModelDefinition(second.plan);
+assert.equal(storedDefinition?.articleId, 'SIM-001');
+assert.equal(storedDefinition?.modelCaseId, 'SIM-001-BASE');
 
 const captureRequest = parseContentCaptureRequest(
   '?modelCaseId=SIM-001-BASE&captureSpecId=SIM-001-CF',

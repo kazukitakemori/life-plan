@@ -90,6 +90,7 @@ import {
   getContentCaptureSpec,
   isContentCaptureViewportMatch,
   parseContentCaptureRequest,
+  readStoredContentModelDefinition,
   resolveContentCaptureDisplayState,
   resolveContentCaptureRegion,
   resolveContentCaptureRoute,
@@ -174,6 +175,7 @@ export default function App() {
   );
   const [activeCaptureSpec, setActiveCaptureSpec] =
     useState<ContentModelCaptureSpec | null>(null);
+  const [activeCaptureArticleId, setActiveCaptureArticleId] = useState<string | null>(null);
   const captureDisplayState = useMemo(
     () => resolveContentCaptureDisplayState(activeCaptureSpec),
     [activeCaptureSpec],
@@ -721,6 +723,7 @@ export default function App() {
       delete root.dataset.contentCaptureSpec;
       delete root.dataset.contentCaptureRegion;
       delete root.dataset.contentCaptureViewportMatch;
+      delete root.dataset.contentCaptureManifest;
       delete root.dataset.contentCaptureError;
     };
   }, [captureRequest]);
@@ -753,6 +756,10 @@ export default function App() {
         if (!spec) {
           throw new Error(`Capture spec not found: ${captureRequest.captureSpecId}`);
         }
+        const definition = readStoredContentModelDefinition(record);
+        if (!definition) {
+          throw new Error(`Capture model definition is invalid: ${captureRequest.modelCaseId}`);
+        }
         if (cancelled) return;
 
         applyPlanAppState(fromPlanPayload(record.payload), {
@@ -770,6 +777,7 @@ export default function App() {
         });
         setLastOpenedPlanId(record.id);
         setOperatorPersonalInfoHidden(spec.operatorMode?.hidePersonalInfo === true);
+        setActiveCaptureArticleId(definition.articleId);
         setActiveCaptureSpec(spec);
       } catch (error) {
         console.error(error);
@@ -915,6 +923,7 @@ export default function App() {
   useEffect(() => {
     if (
       !activeCaptureSpec ||
+      !activeCaptureArticleId ||
       !captureRequest ||
       !captureRouteAppliedRef.current ||
       analysisSnapshot == null ||
@@ -954,6 +963,25 @@ export default function App() {
       const root = document.documentElement;
       root.dataset.contentCaptureRegion = region;
       root.dataset.contentCaptureViewportMatch = String(viewportMatch);
+      root.dataset.contentCaptureManifest = JSON.stringify({
+        articleId: activeCaptureArticleId,
+        modelCaseId: captureRequest.modelCaseId,
+        captureSpecId: activeCaptureSpec.id,
+        view: activeCaptureSpec.view,
+        captureRegion: region,
+        viewport:
+          activeCaptureSpec.viewport ?? {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          },
+        viewportMatch,
+        operatorMode:
+          activeCaptureSpec.operatorMode ?? {
+            hidePersonalInfo: false,
+          },
+        displayState: activeCaptureSpec.displayState ?? {},
+        sourcePlanId: getContentCapturePlanId(captureRequest),
+      });
       root.dataset.contentCaptureStatus = 'ready';
       delete root.dataset.contentCaptureError;
 
@@ -965,6 +993,7 @@ export default function App() {
             region,
             viewport: activeCaptureSpec.viewport ?? null,
             viewportMatch,
+            manifest: JSON.parse(root.dataset.contentCaptureManifest),
           },
         }),
       );
@@ -976,6 +1005,7 @@ export default function App() {
     };
   }, [
     activeCaptureSpec,
+    activeCaptureArticleId,
     captureRequest,
     analysisSnapshot,
     headerTab,

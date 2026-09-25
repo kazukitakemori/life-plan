@@ -83,9 +83,16 @@ Phase 2（Capture Spec実行まで実装）:
 - capture modeではCSS animation / transitionを停止し、撮影差分を抑える
 - 自動スクリーンショット自体はPhase 3で実装
 
-Phase 3:
-- 記事パイプラインから自動投入
-- 自動キャプチャ
+Phase 3（自動撮影基盤）:
+- Capture Spec URLをChromeで開く依存追加なしの撮影ランナー
+- `data-content-capture-status="ready"` とviewport一致を待って撮影
+- `captureRegion="viewport"` はviewport、その他はsemantic capture targetをPNG化
+- PNGとmanifest JSONを同時生成
+- PR Previewで `SIM-001-BASE / SIM-001-CF` のE2Eスモークを自動実行
+
+後続:
+- 制作stagingでの認証済みブラウザ運用
+- SKILL-08への自動受け渡し
 - 注釈合成
 - WordPress下書きへの接続
 
@@ -131,3 +138,40 @@ SIM-001-BASEはDrive正本TOP_baseの架空モデルを独立ケースとして�
 - `displayRange`: キャッシュフロー表の `all` / `10` / `20`
 - `riskKind`: 必要保障額の `death` / `medical`
 - `pageView`: 必要保障額の `simple` / `detail`
+
+
+## 10. Phase 3 自動スクリーンショット
+
+撮影はモデルケース保存とは別工程とする。撮影ランナーはPlanRecordを更新・再投入せず、既に表示可能なCapture Spec URLを開いて撮影するだけにする。
+
+実行例:
+
+```sh
+node scripts/capture-content-image.mjs \
+  --base-url https://pr-51-life-plan.kazuki-takemori-sub.workers.dev/ \
+  --model-case-id SIM-001-BASE \
+  --capture-spec-id SIM-001-CF \
+  --source-environment pr-preview \
+  --output-dir artifacts/content-captures
+```
+
+ランナーはCapture Specのviewportをページ側manifestから読み取り、初期viewportと異なる場合はviewportを合わせて再読込する。撮影対象はCSS selectorを仕様として持たず、ページが公開する `data-content-capture-target` のsemantic IDを使う。
+
+生成manifestの主な項目:
+- manifestVersion
+- articleId
+- modelCaseId
+- captureSpecId
+- view
+- captureRegion
+- viewport / actualViewport / viewportMatch
+- operatorMode
+- displayState
+- imageFilename / imageWidth / imageHeight / imageSha256
+- captureTimestamp
+- sourceEnvironment / sourceUrl
+- sourcePlanId
+
+PR PreviewのE2Eでは、通常の `TOP_base` seedを上書きせず、Capture Spec URLで起動した場合だけ `content-model:SIM-001-BASE` のPreview専用fixtureを不足時に1回だけ作る。これは認証付き制作stagingのD1保存データとは独立したスモーク検証用であり、撮影ランナー自体は保存APIを呼ばない。
+
+制作stagingを直接撮影する場合は、Google認証済みの専用ブラウザプロファイル等を撮影実行環境へ用意する。撮影失敗時はPlanRecordを再投入せず、同じCapture Specの撮影だけを再実行する。

@@ -48,6 +48,30 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: versions upload --config wrangler.preview.toml --preview-alias pr-${{ github.event.pull_request.number }}
 
+      - name: Capture SIM-001 cash-flow image
+        run: |
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-CF \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
+
+      - name: Upload content capture artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-capture-pr-${{ github.event.pull_request.number }}
+          path: artifacts/content-captures
+          if-no-files-found: error
+
+      - name: Add capture manifest to job summary
+        shell: bash
+        run: |
+          echo "## Content capture smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+          cat artifacts/content-captures/*.manifest.json >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Add preview output to job summary
         shell: bash
         env:

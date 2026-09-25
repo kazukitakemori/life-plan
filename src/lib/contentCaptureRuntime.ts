@@ -23,7 +23,8 @@ export interface ContentCaptureDisplayState {
   pageView?: 'simple' | 'detail';
 }
 
-interface StoredContentModelDefinition {
+export interface StoredContentModelDefinition {
+  articleId: string;
   modelCaseId: string;
   captureSpecs: ContentModelCaptureSpec[];
 }
@@ -58,6 +59,7 @@ export function readStoredContentModelDefinition(
   try {
     const parsed = JSON.parse(line.slice('definition='.length)) as unknown;
     if (!isObject(parsed)) return null;
+    if (!cleanId(typeof parsed.articleId === 'string' ? parsed.articleId : null)) return null;
     if (!cleanId(typeof parsed.modelCaseId === 'string' ? parsed.modelCaseId : null)) return null;
     if (!Array.isArray(parsed.captureSpecs)) return null;
     return parsed as unknown as StoredContentModelDefinition;
