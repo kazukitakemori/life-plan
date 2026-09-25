@@ -69,7 +69,7 @@ export function JointDebtShareEditor({
           </LoanSettingsField>
 
           <LoanSettingsField label={`${memberLabel}の控除按分`}>
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={sharePct}
               min={MIN_PAIR_SHARE_PCT}
