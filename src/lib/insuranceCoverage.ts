@@ -77,3 +77,12 @@ export function resolveRegisteredDeathBenefitAtAge(
 
   return total;
 }
+
+export function calcRegisteredMedicalHospitalBenefitMan(
+  medicalHospitalDailyYen: number,
+  inpatientDays: number,
+): number {
+  const dailyYen = Math.max(0, medicalHospitalDailyYen || 0);
+  const days = Math.max(0, inpatientDays || 0);
+  return (dailyYen * days) / 10_000;
+}
