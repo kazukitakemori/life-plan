@@ -15390,14 +15390,7 @@ button:disabled {
   flex-shrink: 0;
 }
 
-.loan-settings-form-table .loan-bank-fees-fetch .loan-fee-fetch-btn {
-  width: auto;
-  min-width: 0;
-  padding: 4px 15px;
-}
-
-.loan-bank-fees-fetch .education-fetch-btn,
-.loan-bank-fees-fetch .education-fetch-detail-link {
+.loan-bank-fees-fetch > .ui-btn {
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -15502,14 +15495,6 @@ button:disabled {
 
 .loan-rate-period-add {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border: 1px solid #90caf9;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 0.8125rem;
-  color: #1565c0;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 .loan-settings-form-table .loan-settings-form-value--group-credit-life {
