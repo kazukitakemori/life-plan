@@ -108,11 +108,11 @@ export function HousingLoanStructurePicker({
         </button>
       </div>
 
-      <details className="loan-structure-comparison-disclosure">
-        <summary className="loan-structure-comparison-summary">
-          借入形態の違いを比較する
+      <details className="loan-structure-comparison-disclosure ui-disclosure">
+        <summary className="loan-structure-comparison-summary ui-disclosure-summary">
+          <span className="ui-disclosure-title">借入形態の違いを比較する</span>
         </summary>
-        <div className="loan-structure-comparison-wrap">
+        <div className="loan-structure-comparison-wrap ui-disclosure-body">
           <h5 className="loan-structure-comparison-title">ローン比較表</h5>
           <div className="loan-structure-comparison-scroll">
             <table className="loan-structure-comparison-table">
