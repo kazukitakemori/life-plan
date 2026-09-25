@@ -117,6 +117,10 @@ export interface InsuranceEntry {
   insuredMemberId?: string;
   /** 死亡保障額（万円）。死亡保険で任意入力。 */
   deathBenefitMan?: number;
+  /** 死亡保障の終了方法。未設定時は必要保障額へ自動反映しない。 */
+  deathCoverageEndMode?: 'lifetime' | 'until';
+  /** 死亡保障の終了年齢。deathCoverageEndMode === 'until' のとき使用。 */
+  deathCoverageEndAge?: number;
   /** 入院給付金の日額（円/日）。医療保険で任意入力。 */
   medicalHospitalDailyYen?: number;
   /** がん診断時の一時金（万円）。がん保険で任意入力。 */
