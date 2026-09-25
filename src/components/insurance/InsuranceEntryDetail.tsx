@@ -1079,26 +1079,72 @@ export function InsuranceEntryDetail({
                   </label>
 
                   {entry.category === 'life' ? (
-                    <label className="insurance-protection-field">
-                      <span className="insurance-protection-label">死亡保障額</span>
-                      <div className="life-event-amount-field">
-                        <input
-                          type="number"
-                          className="amount-input"
-                          value={entry.deathBenefitMan ?? 0}
-                          min={0}
-                          step={10}
-                          onChange={(e) =>
+                    <>
+                      <label className="insurance-protection-field">
+                        <span className="insurance-protection-label">死亡保障額</span>
+                        <div className="life-event-amount-field">
+                          <input
+                            type="number"
+                            className="amount-input"
+                            value={entry.deathBenefitMan ?? 0}
+                            min={0}
+                            step={10}
+                            onChange={(e) =>
+                              update({
+                                deathBenefitMan: roundAmountMan(
+                                  Math.max(0, Number(e.target.value) || 0),
+                                ),
+                              })
+                            }
+                          />
+                          <span className="amount-unit">万円</span>
+                        </div>
+                      </label>
+                      <label className="insurance-protection-field">
+                        <span className="insurance-protection-label">保障期間</span>
+                        <select
+                          className="select-input insurance-beneficiary-select"
+                          value={entry.deathCoverageEndMode ?? ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
                             update({
-                              deathBenefitMan: roundAmountMan(
-                                Math.max(0, Number(e.target.value) || 0),
-                              ),
-                            })
-                          }
-                        />
-                        <span className="amount-unit">万円</span>
-                      </div>
-                    </label>
+                              deathCoverageEndMode:
+                                value === 'lifetime' || value === 'until'
+                                  ? value
+                                  : undefined,
+                              deathCoverageEndAge:
+                                value === 'until'
+                                  ? (entry.deathCoverageEndAge ?? member.expectedLifespan)
+                                  : entry.deathCoverageEndAge,
+                            });
+                          }}
+                        >
+                          <option value="">未設定</option>
+                          <option value="lifetime">終身</option>
+                          <option value="until">年齢まで</option>
+                        </select>
+                      </label>
+                      {entry.deathCoverageEndMode === 'until' ? (
+                        <label className="insurance-protection-field">
+                          <span className="insurance-protection-label">保障終了</span>
+                          <select
+                            className="select-input insurance-beneficiary-select"
+                            value={entry.deathCoverageEndAge ?? member.expectedLifespan}
+                            onChange={(e) =>
+                              update({
+                                deathCoverageEndAge: Number(e.target.value),
+                              })
+                            }
+                          >
+                            {ageOptions.map((age) => (
+                              <option key={age} value={age}>
+                                {age}歳
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                    </>
                   ) : null}
 
                   {entry.category === 'medical' ? (
