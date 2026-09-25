@@ -15456,14 +15456,6 @@ button:disabled {
   line-height: var(--leading-relaxed);
 }
 
-.loan-rate-rise-setting {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 100%;
-}
-
 .loan-rate-rise-panel {
   display: flex;
   flex-direction: column;
