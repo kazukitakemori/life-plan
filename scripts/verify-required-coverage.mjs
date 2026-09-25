@@ -14,7 +14,7 @@ import {
   createRentalProperty,
 } from '../src/lib/housingDefaults.ts';
 import { createDefaultInsuranceState, createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
-import { resolveRegisteredInsuranceCoverage } from '../src/lib/insuranceCoverage.ts';
+import { resolveRegisteredDeathBenefitAtAge, resolveRegisteredInsuranceCoverage } from '../src/lib/insuranceCoverage.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
 import {
   createLivingExpenseItem,
@@ -378,6 +378,8 @@ const registeredInsurance = createDefaultInsuranceState();
 registeredInsurance.byMember[head.id] = [
   createInsuranceEntry('life', head, referenceDate, {
     deathBenefitMan: 2000,
+    deathCoverageEndMode: 'until',
+    deathCoverageEndAge: 60,
   }, [head, spouse]),
   createInsuranceEntry('medical', head, referenceDate, {
     insuredMemberId: spouse.id,
@@ -404,6 +406,26 @@ assert.equal(spouseCoverage.deathBenefitMan, 0);
 assert.equal(spouseCoverage.medicalHospitalDailyYen, 5000);
 assert.equal(spouseCoverage.cancerDiagnosisBenefitMan, 100);
 console.log('OK registered insurance coverage follows insured member');
+assert.equal(
+  resolveRegisteredDeathBenefitAtAge(registeredInsurance, head.id, 60),
+  2000,
+);
+assert.equal(
+  resolveRegisteredDeathBenefitAtAge(registeredInsurance, head.id, 61),
+  0,
+);
+const deathCoverageRow = calcDeathTimingCoverageRow({
+  remainingExpenseTotal: 5000,
+  remainingEarned: 1000,
+  remainingSurvivorBasic: 0,
+  remainingChildAllowance: 0,
+  initialSavings: 500,
+  registeredDeathBenefitMan: 2000,
+});
+assert.equal(deathCoverageRow.preparedDeathBenefit, 2000);
+assert.equal(deathCoverageRow.preparedTotal, 3500);
+assert.equal(deathCoverageRow.shortfall, 1500);
+console.log('OK registered death benefit reduces death shortfall only while active');
 
 // 1. 末子の最終学歴（大学 22歳3月 → 2016年4月生なら 2038年3月）
 const educationEntry = createEducationExpenseEntry({
