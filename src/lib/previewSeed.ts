@@ -32,6 +32,14 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         operatorMode: { hidePersonalInfo: true },
         purpose: 'キャッシュフロー表の自動撮影E2E検証',
       },
+      {
+        id: 'SIM-001-ASSET',
+        view: 'asset-balance-chart',
+        captureRegion: 'asset-balance-chart',
+        viewport: { width: 1440, height: 1000 },
+        operatorMode: { hidePersonalInfo: true },
+        purpose: '貯蓄・資産グラフの自動撮影E2E検証',
+      },
     ],
   },
 };
