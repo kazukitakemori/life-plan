@@ -184,7 +184,7 @@ export function InsuranceStep({
       <StepHeading
         number={10}
         title="保険"
-        subtitle="保険料や将来の受取内容を登録"
+        subtitle="保険料や将来の受取内容を、必要な範囲で登録"
       />
 
       <MemberIncomeTabs
