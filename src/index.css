@@ -4919,6 +4919,28 @@ button:disabled {
   background: #f8fafc;
 }
 
+.required-coverage-registered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.required-coverage-registered-label {
+  font-size: 0.8125rem;
+  color: #667085;
+}
+
+.required-coverage-registered-value {
+  font-size: 0.875rem;
+  color: #344054;
+}
+
 .required-coverage-medical-need {
   gap: 14px;
   border-color: #c5d4e8;
