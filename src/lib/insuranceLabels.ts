@@ -355,5 +355,15 @@ export function formatInsurancePremiumSummary(entry: InsuranceEntry): string {
     return '保険料 未設定';
   }
   const mode = resolveInsurancePremiumPaymentMode(entry.premiumPaymentMode);
-  return `${INSURANCE_PREMIUM_PAYMENT_MODE_LABELS[mode]}${entry.premiumMan}万円`;
+  const premiumYen = Math.round(entry.premiumMan * 10_000);
+  const formatted = premiumYen.toLocaleString('ja-JP');
+
+  if (mode === 'monthly') {
+    const annualYen = Math.round(premiumYen * 12);
+    return `月${formatted}円（年${annualYen.toLocaleString('ja-JP')}円）`;
+  }
+  if (mode === 'annual') {
+    return `年${formatted}円`;
+  }
+  return `一時払い ${formatted}円`;
 }
