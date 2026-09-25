@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import type { CashFlowInput } from '../../lib/cashFlow';
 import type { CashFlowTableData } from '../../types/cashFlow';
-import type { InsuranceEntry } from '../../types/insurance';
+import type { InsuranceCategory, InsuranceEntry } from '../../types/insurance';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { resolveSurvivorLivelihoodIncomeAssessment } from '../../lib/requiredCoverageIncome';
 import {
@@ -50,6 +50,10 @@ interface RequiredCoverageViewProps {
   simpleDesignOnly?: boolean;
   onChange: (state: RequiredCoverageState) => void;
   onInsuranceEntryChange?: (entry: InsuranceEntry) => void;
+  onInsuranceEntryAdd?: (
+    category: InsuranceCategory,
+    insuredMemberId: string,
+  ) => void;
   onPageViewChange: (view: RequiredCoveragePageView) => void;
 }
 
@@ -132,6 +136,7 @@ export function RequiredCoverageView({
   simpleDesignOnly = false,
   onChange,
   onInsuranceEntryChange,
+  onInsuranceEntryAdd,
   onPageViewChange,
 }: RequiredCoverageViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -511,6 +516,7 @@ export function RequiredCoverageView({
                 riskKind="medical"
                 subjectMemberId={subjectMemberId}
                 onEntryChange={onInsuranceEntryChange}
+                onEntryAdd={onInsuranceEntryAdd}
               />
               <RequiredCoverageMedicalRiskView
                 cashFlowInput={cashFlowInput}
@@ -559,6 +565,7 @@ export function RequiredCoverageView({
                   riskKind="death"
                   subjectMemberId={subjectMemberId}
                   onEntryChange={onInsuranceEntryChange}
+                  onEntryAdd={onInsuranceEntryAdd}
                 />
                 {showForm ? (
                   <>
