@@ -335,7 +335,7 @@ export function LoanEntryDetail({
             : LOAN_PAYMENT_MODE_LABELS[mode];
 
           return (
-            <label key={mode} className="loan-payment-mode-option">
+            <label key={mode} className="ui-choice loan-payment-mode-option">
               <input
                 type="radio"
                 name={`loan-payment-mode-${entry.id}`}
@@ -374,7 +374,7 @@ export function LoanEntryDetail({
                 labelFor={`${entry.id}-monthly-repayment`}
                 cellClassName="loan-settings-form-value--loan-amount"
               >
-                <HousingManInput
+                <HousingManInput unified
                   compact
                   value={entry.monthlyRepaymentMan}
                   onChange={(monthlyRepaymentMan) =>
@@ -390,7 +390,7 @@ export function LoanEntryDetail({
 
               {!isCurrentHousingLinked ? (
                 <LoanSettingsField label="返済開始">
-                  <HousingRenewalDateFields
+                  <HousingRenewalDateFields unified
                     year={monthlyPeriod.startYear}
                     month={monthlyPeriod.startMonth}
                     referenceYear={referenceYear}
@@ -409,7 +409,7 @@ export function LoanEntryDetail({
               ) : null}
 
               <LoanSettingsField label="返済終了">
-                <HousingRenewalDateFields
+                <HousingRenewalDateFields unified
                   year={monthlyPeriod.endYear}
                   month={monthlyPeriod.endMonth}
                   referenceYear={referenceYear}

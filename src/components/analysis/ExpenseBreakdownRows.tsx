@@ -187,6 +187,22 @@ export function ExpenseBreakdownRows({
               </tr>
             ))}
 
+          {educationExpanded &&
+          visibleYears.some(
+            (year) => (year.expenseBreakdown.educationLoanRepayment ?? 0) > 0,
+          ) ? (
+            <tr className="cf-row-expense-detail">
+              {renderLabelCell('教育ローン返済', 3, { icon: 'leaf' })}
+              {visibleYears.map((y) =>
+                renderValueCell(
+                  y.expenseBreakdown.educationLoanRepayment ?? 0,
+                  y.calendarYear,
+                  { emptyAsDash: true },
+                ),
+              )}
+            </tr>
+          ) : null}
+
           <LoanExpenseBreakdownRows
             visibleYears={visibleYears}
             expanded={loanExpanded}

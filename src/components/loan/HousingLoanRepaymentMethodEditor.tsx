@@ -56,7 +56,7 @@ function FeatureToggleSelect({
   return (
     <select
       id={id}
-      className="select-input select-input--compact loan-settings-feature-select"
+      className="select-input select-input--compact ui-select ui-select--compact loan-settings-feature-select"
       value={enabled ? 'enabled' : 'disabled'}
       onChange={(e) => onChange(e.target.value === 'enabled')}
     >
@@ -80,7 +80,7 @@ function PrepaymentTypeRadios({
   return (
     <div className="housing-owned-payment-options housing-owned-payment-options--compact">
       {PREPAYMENT_TYPES.map((type) => (
-        <label key={type} className="housing-owned-payment-option">
+        <label key={type} className="ui-choice">
           <input
             type="radio"
             name={`${fieldIdPrefix}-${nameSuffix}-type`}
@@ -114,7 +114,7 @@ function RepaymentExecutionTimingLine({
       <span className="loan-prepayment-execution-label">実行する時期：</span>
       <select
         id={`${fieldIdPrefix}-${idSuffix}`}
-        className="select-input select-input--compact loan-prepayment-year-select"
+        className="select-input select-input--compact ui-select ui-select--compact loan-prepayment-year-select"
         value={offsetYears}
         onChange={(e) => onOffsetChange(Number(e.target.value))}
       >
@@ -207,7 +207,7 @@ export function HousingLoanRepaymentMethodEditor({
           {allowEqualPrincipal ? (
             <div className="housing-owned-payment-options housing-owned-payment-options--compact">
               {REPAYMENT_METHODS.map((method) => (
-                <label key={method} className="housing-owned-payment-option">
+                <label key={method} className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-repayment-method`}
@@ -250,7 +250,7 @@ export function HousingLoanRepaymentMethodEditor({
                   <span className="loan-repayment-bonus-detail-label">
                     ボーナス1回あたりの支払額：
                   </span>
-                  <HousingManInput
+                  <HousingManInput unified
                     compact
                     value={settings.bonusRepaymentAmountMan}
                     min={0}

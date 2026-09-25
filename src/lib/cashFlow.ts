@@ -61,7 +61,10 @@ import type { VehicleState } from '../types/vehicle';
 import { calcHouseholdMonthlyLifeEventBreakdownMan } from './lifeEventCashFlow';
 import { calcHouseholdMonthlyHousingDetailMan, addHousingExpenseDetail, calcHouseholdMonthlyRentalOtherIncomeMan } from './housingCashFlow';
 import { calcHouseholdMonthlyVehicleDetailMan } from './vehicleCashFlow';
-import { calcHouseholdMonthlyOtherLoanDetailMan } from './loanCashFlow';
+import {
+  calcHouseholdMonthlyEducationLoanRepaymentMan,
+  calcHouseholdMonthlyOtherLoanDetailMan,
+} from './loanCashFlow';
 import {
   addInsuranceCashFlowDetail,
   addInsuranceIncomeDetail,
@@ -478,6 +481,7 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
     let annualMedicalCare = 0;
     const annualLivingByLabel: Record<string, number> = {};
     const annualOtherLoanDetail = createEmptyOtherLoanRepaymentDetail();
+    let annualEducationLoanRepayment = 0;
     const annualLifeEventDetail = createEmptyLifeEventExpenseDetail();
     const annualHousingDetail = createEmptyHousingExpenseDetail();
     const annualVehicleDetail = createEmptyVehicleExpenseDetail();
@@ -598,6 +602,13 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
           month,
         ),
       );
+      annualEducationLoanRepayment +=
+        calcHouseholdMonthlyEducationLoanRepaymentMan(
+          input.loanState,
+          input.referenceDate,
+          year,
+          month,
+        );
 
       if (input.insuranceState) {
         addInsuranceCashFlowDetail(
@@ -763,6 +774,9 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
         expenseBreakdown.educationByMember[memberId],
       );
     }
+    expenseBreakdown.educationLoanRepayment = roundMan(
+      annualEducationLoanRepayment,
+    );
 
     entitlementPreviousYearDecember =
       entitlementsByMonth[12] ?? createEmptyPensionBreakdown();

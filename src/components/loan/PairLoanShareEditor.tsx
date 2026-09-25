@@ -67,7 +67,7 @@ export function PairLoanShareEditor({
           </LoanSettingsField>
 
           <LoanSettingsField label={`${memberLabel}の分担`}>
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={sharePct}
               min={MIN_PAIR_SHARE_PCT}

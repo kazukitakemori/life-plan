@@ -1003,7 +1003,7 @@ export const HOUSING_OWNED_TAIL_DETAIL_ROWS = [
   label: string;
 }>;
 
-/** 支出のローン（住まい/乗り物未リンク）内訳（万円） */
+/** 支出のローン（用途別へ移せないもの）内訳（万円）。education は旧派生値互換用に残す */
 export interface OtherLoanRepaymentDetail {
   housing: number;
   vehicle: number;
@@ -1036,12 +1036,11 @@ export function addOtherLoanRepaymentDetail(
   target.free += source.free;
 }
 
-/** ローンフォルダの常時表示行（教育・フリー） */
+/** ローンフォルダの常時表示行。教育ローンは「教育費」へ計上する */
 export const OTHER_LOAN_PRIMARY_DETAIL_ROWS = [
-  { key: 'education', label: '教育ローン' },
   { key: 'free', label: 'フリーローン' },
 ] as const satisfies ReadonlyArray<{
-  key: keyof Pick<OtherLoanRepaymentDetail, 'education' | 'free'>;
+  key: keyof Pick<OtherLoanRepaymentDetail, 'free'>;
   label: string;
 }>;
 
@@ -1132,6 +1131,8 @@ export interface ExpenseBreakdown {
   lifeEventDetail: LifeEventExpenseDetail;
   medicalCare: number;
   educationByMember: Record<string, number>;
+  /** 教育用途のローン返済。教育費合計に含める */
+  educationLoanRepayment: number;
   loanRepayment: number;
   loanRepaymentDetail: OtherLoanRepaymentDetail;
   insuranceOther: number;
@@ -1166,6 +1167,7 @@ export function createEmptyExpenseBreakdown(
     lifeEventDetail: createEmptyLifeEventExpenseDetail(),
     medicalCare: 0,
     educationByMember,
+    educationLoanRepayment: 0,
     loanRepayment: 0,
     loanRepaymentDetail: createEmptyOtherLoanRepaymentDetail(),
     insuranceOther: 0,
@@ -1174,9 +1176,11 @@ export function createEmptyExpenseBreakdown(
 }
 
 export function sumEducationExpense(breakdown: ExpenseBreakdown): number {
-  return Object.values(breakdown.educationByMember).reduce(
-    (sum, value) => sum + value,
-    0,
+  return (
+    Object.values(breakdown.educationByMember).reduce(
+      (sum, value) => sum + value,
+      0,
+    ) + (breakdown.educationLoanRepayment ?? 0)
   );
 }
 

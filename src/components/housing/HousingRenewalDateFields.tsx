@@ -14,6 +14,8 @@ interface HousingRenewalDateFieldsProps {
   minYear?: number;
   /** true のとき年のみ表示（月は非表示・変更不可） */
   yearOnly?: boolean;
+  /** 共通フォームデザインを適用する */
+  unified?: boolean;
   onChange: (year: number, month: number) => void;
 }
 
@@ -23,6 +25,7 @@ export function HousingRenewalDateFields({
   referenceYear,
   minYear,
   yearOnly = false,
+  unified = false,
   onChange,
 }: HousingRenewalDateFieldsProps) {
   const yearOptions = buildYearOptions(referenceYear, minYear);
@@ -31,7 +34,7 @@ export function HousingRenewalDateFields({
   return (
     <div className="housing-renewal-date">
       <select
-        className="select-input select-input--compact housing-renewal-year-select"
+        className={`select-input select-input--compact housing-renewal-year-select${unified ? ' ui-select ui-select--compact' : ''}`}
         value={resolvedYear}
         onChange={(event) => onChange(Number(event.target.value), month)}
         aria-label="次回更新年"
@@ -46,7 +49,7 @@ export function HousingRenewalDateFields({
         <>
           <span className="housing-renewal-slash">/</span>
           <select
-            className="select-input select-input--compact"
+            className={`select-input select-input--compact${unified ? ' ui-select ui-select--compact' : ''}`}
             value={month}
             onChange={(event) => onChange(resolvedYear, Number(event.target.value))}
             aria-label="次回更新月"

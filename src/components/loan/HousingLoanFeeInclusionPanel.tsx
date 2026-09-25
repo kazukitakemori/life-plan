@@ -44,7 +44,7 @@ function PairSharedPropertyFeeField({
       label={label}
       cellClassName="loan-settings-form-value--loan-amount"
     >
-      <HousingManInput compact value={amountMan} onChange={onChange} />
+      <HousingManInput unified compact value={amountMan} onChange={onChange} />
       <span className="loan-amount-linked-share">
         按分額 {sharedAmountMan.toLocaleString()}万円（{pairSharePct}%）
       </span>
@@ -98,7 +98,7 @@ export function HousingLoanFeeInclusionPanel({
   return (
     <div className="loan-fees-panel">
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ 不動産取引の諸費用</h5>
+        <h5 className="loan-fees-section-title">不動産取引の諸費用</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             {isPairLoan ? (
@@ -119,17 +119,18 @@ export function HousingLoanFeeInclusionPanel({
                     onPropertyChange({ registrationFeeMan })
                   }
                 />
-                <LoanSettingsField label="費用再取得">
+                <LoanSettingsField label="概算の再計算">
                   <LoanFeeFetchActions
                     canFetch={canRefetchPropertyFees}
                     onFetch={handleRefetchPropertyFees}
+                    fetchLabel="諸費用を再計算"
                   />
                 </LoanSettingsField>
               </>
             ) : (
               <>
                 <LoanSettingsField label="仲介手数料">
-                  <HousingManInput
+                  <HousingManInput unified
                     compact
                     value={property.brokerageFeeMan}
                     onChange={(brokerageFeeMan) =>
@@ -138,7 +139,7 @@ export function HousingLoanFeeInclusionPanel({
                   />
                 </LoanSettingsField>
                 <LoanSettingsField label="登記手数料">
-                  <HousingManInput
+                  <HousingManInput unified
                     compact
                     value={property.registrationFeeMan}
                     onChange={(registrationFeeMan) =>
@@ -153,7 +154,7 @@ export function HousingLoanFeeInclusionPanel({
       </div>
 
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ 銀行・保証会社の諸費用</h5>
+        <h5 className="loan-fees-section-title">銀行・保証会社の諸費用</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             <HousingLoanBankFeesEditor
@@ -170,12 +171,12 @@ export function HousingLoanFeeInclusionPanel({
       </div>
 
       <div className="loan-fees-section">
-        <h5 className="loan-fees-section-title">■ ローンの組み込み設定</h5>
+        <h5 className="loan-fees-section-title">ローンの組み込み設定</h5>
         <div className="housing-rental-card loan-settings-table-card">
           <div className="loan-settings-form-table">
             <LoanSettingsField label="諸費用の扱い">
               <div className="housing-owned-payment-options housing-owned-payment-options--compact">
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-fees-in-loan-mode`}
@@ -184,7 +185,7 @@ export function HousingLoanFeeInclusionPanel({
                   />
                   <span>諸費用をまとめてローンに含める</span>
                 </label>
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-fees-in-loan-mode`}
