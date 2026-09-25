@@ -43,3 +43,37 @@ export function resolveRegisteredInsuranceCoverage(
 
   return coverage;
 }
+
+export function resolveRegisteredDeathBenefitAtAge(
+  insuranceState: InsuranceState | undefined,
+  insuredMemberId: string,
+  insuredAge: number,
+): number {
+  if (!insuranceState) return 0;
+  let total = 0;
+
+  for (const [contractorMemberId, entries] of Object.entries(
+    insuranceState.byMember ?? {},
+  )) {
+    for (const entry of entries) {
+      if (entry.category !== 'life') continue;
+      const targetMemberId = entry.insuredMemberId ?? contractorMemberId;
+      if (targetMemberId !== insuredMemberId) continue;
+      const benefit = Math.max(0, entry.deathBenefitMan ?? 0);
+      if (benefit <= 0) continue;
+      if (entry.deathCoverageEndMode === 'lifetime') {
+        total += benefit;
+        continue;
+      }
+      if (
+        entry.deathCoverageEndMode === 'until' &&
+        Number.isFinite(entry.deathCoverageEndAge) &&
+        insuredAge <= (entry.deathCoverageEndAge ?? -1)
+      ) {
+        total += benefit;
+      }
+    }
+  }
+
+  return total;
+}
