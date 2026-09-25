@@ -25,6 +25,7 @@ import {
   calcHousingLoanTotalAmountMan,
 } from './housingLoanAmount';
 import { calcMemberMonthlyInsuranceDetailMan } from './insuranceCashFlow';
+import { resolveRegisteredDeathBenefitAtAge } from './insuranceCoverage';
 import { calcMemberMonthlyLifeEventBreakdownMan } from './lifeEventCashFlow';
 import { getAllLoanEntries } from './loanDefaults';
 import { isOtherLoanForCashFlow, calcLoanEntryMonthlyRepaymentMan } from './loanCashFlow';
@@ -917,6 +918,8 @@ export interface RequiredCoverageChartPoint {
   remainingOldAgeEmployees: number;
   remainingTaxSocial: number;
   remainingIncome: number;
+  /** その年齢時点で有効なQ10登録済み死亡保障（万円） */
+  registeredDeathBenefitMan: number;
   remainingTotal: number;
 }
 
@@ -2252,9 +2255,11 @@ function buildCoverageChartPoints(
   yearlyCashFlow: RequiredCoverageYearlyCashFlow[],
   cashFlowYears: CashFlowTableData['years'],
   openingBalances: { deposit: number; financialAssets: number },
+  subject: RequiredCoverageSubject,
 ): RequiredCoverageChartPoint[] {
   const head = input.familyMembers.find((member) => member.role === 'head');
   const spouse = input.familyMembers.find((member) => member.role === 'spouse');
+  const subjectMember = input.familyMembers.find((member) => member.role === subject);
   let remainingLiving = 0;
   let remainingHousing = 0;
   let remainingVehicle = 0;
@@ -2351,6 +2356,21 @@ function buildCoverageChartPoints(
       cashFlowYears,
       openingBalances,
     );
+    const subjectAgeMonth = subjectMember
+      ? getMemberAgeMonth(
+          subjectMember,
+          input.referenceDate,
+          flow.calendarYear,
+          12,
+        )
+      : null;
+    const registeredDeathBenefitMan = subjectMember && subjectAgeMonth
+      ? resolveRegisteredDeathBenefitAtAge(
+          input.insuranceState,
+          subjectMember.id,
+          subjectAgeMonth.age,
+        )
+      : 0;
     points.push({
       calendarYear: flow.calendarYear,
       headAge: headAgeMonth?.age ?? 0,
@@ -2395,6 +2415,7 @@ function buildCoverageChartPoints(
       remainingOldAgeEmployees: oldAgeEmployeesRem,
       remainingTaxSocial: taxSocialRem,
       remainingIncome,
+      registeredDeathBenefitMan,
       remainingTotal: Math.max(0, -(minBalanceFromHere[index] ?? 0)),
     });
   }
@@ -2581,6 +2602,7 @@ export function buildRequiredCoverageResult(
       yearlyCashFlow,
       cashFlowYears,
       openingBalances,
+      subject,
     ),
   };
 }
@@ -2594,6 +2616,7 @@ export interface DeathTimingCoverageRow {
   preparedChildAllowance: number;
   preparedOldAgeBasic: number;
   preparedOldAgeEmployees: number;
+  preparedDeathBenefit: number;
   preparedTotal: number;
   shortfall: number;
   /** 準備済 / 支出累計。支出が0なら100 */
@@ -2611,6 +2634,7 @@ export function calcDeathTimingCoverageRow(input: {
   remainingOldAgeBasic?: number;
   remainingOldAgeEmployees?: number;
   initialSavings: number;
+  registeredDeathBenefitMan?: number;
   includeSavings?: boolean;
   includeEarned?: boolean;
   includeSurvivor?: boolean;
@@ -2618,6 +2642,7 @@ export function calcDeathTimingCoverageRow(input: {
   includeChild?: boolean;
   includeOldAgeBasic?: boolean;
   includeOldAgeEmployees?: boolean;
+  includeDeathBenefit?: boolean;
 }): DeathTimingCoverageRow {
   const expenseBase = roundMan(Math.max(0, input.remainingExpenseTotal));
   const preparedSavings =
@@ -2647,6 +2672,10 @@ export function calcDeathTimingCoverageRow(input: {
     input.includeOldAgeEmployees === false
       ? 0
       : roundMan(Math.max(0, input.remainingOldAgeEmployees ?? 0));
+  const preparedDeathBenefit =
+    input.includeDeathBenefit === false
+      ? 0
+      : roundMan(Math.max(0, input.registeredDeathBenefitMan ?? 0));
   const preparedTotal = roundMan(
     preparedSavings +
       preparedEarned +
@@ -2654,7 +2683,8 @@ export function calcDeathTimingCoverageRow(input: {
       preparedSurvivorEmployees +
       preparedChildAllowance +
       preparedOldAgeBasic +
-      preparedOldAgeEmployees,
+      preparedOldAgeEmployees +
+      preparedDeathBenefit,
   );
   const shortfall = roundMan(Math.max(0, expenseBase - preparedTotal));
   const sufficiencyPct =
@@ -2668,6 +2698,7 @@ export function calcDeathTimingCoverageRow(input: {
     preparedChildAllowance,
     preparedOldAgeBasic,
     preparedOldAgeEmployees,
+    preparedDeathBenefit,
     preparedTotal,
     shortfall,
     sufficiencyPct,
