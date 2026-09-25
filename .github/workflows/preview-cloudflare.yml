@@ -68,6 +68,12 @@ jobs:
             --capture-spec-id SIM-001-LIFETIME \
             --source-environment pr-preview \
             --output-dir artifacts/content-captures
+          node scripts/capture-content-image.mjs \
+            --base-url "https://pr-${{ github.event.pull_request.number }}-life-plan.kazuki-takemori-sub.workers.dev/" \
+            --model-case-id SIM-001-BASE \
+            --capture-spec-id SIM-001-COVERAGE \
+            --source-environment pr-preview \
+            --output-dir artifacts/content-captures
 
       - name: Upload content capture artifact
         uses: actions/upload-artifact@v4
