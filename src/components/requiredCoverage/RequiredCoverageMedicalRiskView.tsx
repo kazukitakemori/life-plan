@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { HousingManInput } from '../housing/HousingManInput';
 import { HousingYenInput } from '../housing/HousingYenInput';
 import type { CashFlowInput } from '../../lib/cashFlow';
+import { resolveRegisteredInsuranceCoverage } from '../../lib/insuranceCoverage';
 import {
   HIGH_COST_BRACKET_CAP_FORMULAS,
   HIGH_COST_BRACKET_ORDER,
@@ -573,6 +574,26 @@ export function RequiredCoverageMedicalRiskView({
   onChange,
 }: RequiredCoverageMedicalRiskViewProps) {
   const design = state.medicalDesigns[subject];
+  const subjectMember = cashFlowInput.familyMembers.find(
+    (member) => member.role === subject,
+  );
+  const registeredCoverage = useMemo(
+    () =>
+      subjectMember
+        ? resolveRegisteredInsuranceCoverage(
+            cashFlowInput.insuranceState,
+            subjectMember.id,
+          )
+        : {
+            deathBenefitMan: 0,
+            medicalHospitalDailyYen: 0,
+            cancerDiagnosisBenefitMan: 0,
+          },
+    [cashFlowInput.insuranceState, subjectMember],
+  );
+  const hasRegisteredMedicalCoverage =
+    registeredCoverage.medicalHospitalDailyYen > 0 ||
+    registeredCoverage.cancerDiagnosisBenefitMan > 0;
   const [selectedCategory, setSelectedCategory] =
     useState<MedicalDiseaseCategory>('average');
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>(
@@ -1316,6 +1337,24 @@ export function RequiredCoverageMedicalRiskView({
           />
         </div>
       </MedicalSection>
+
+      {hasRegisteredMedicalCoverage ? (
+        <div className="required-coverage-registered">
+          <span className="required-coverage-registered-label">登録済み保障</span>
+          <strong className="required-coverage-registered-value">
+            {registeredCoverage.medicalHospitalDailyYen > 0
+              ? `入院 ${formatYen(registeredCoverage.medicalHospitalDailyYen)}円/日`
+              : null}
+            {registeredCoverage.medicalHospitalDailyYen > 0 &&
+            registeredCoverage.cancerDiagnosisBenefitMan > 0
+              ? '・'
+              : null}
+            {registeredCoverage.cancerDiagnosisBenefitMan > 0
+              ? `がん診断 ${formatManTenths(registeredCoverage.cancerDiagnosisBenefitMan)}万円`
+              : null}
+          </strong>
+        </div>
+      ) : null}
 
       <section
         className="required-coverage-medical-section required-coverage-medical-need"
