@@ -119,10 +119,11 @@ export function HousingLoanFeeInclusionPanel({
                     onPropertyChange({ registrationFeeMan })
                   }
                 />
-                <LoanSettingsField label="費用再取得">
+                <LoanSettingsField label="概算の再計算">
                   <LoanFeeFetchActions
                     canFetch={canRefetchPropertyFees}
                     onFetch={handleRefetchPropertyFees}
+                    fetchLabel="諸費用を再計算"
                   />
                 </LoanSettingsField>
               </>
