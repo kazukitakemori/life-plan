@@ -11,10 +11,10 @@ function parseArgs(argv) {
   const result = {};
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
-    if (!token.startsWith('--')) throw new Error(\`Unexpected argument: \${token}\`);
+    if (!token.startsWith('--')) throw new Error(`Unexpected argument: ${token}`);
     const key = token.slice(2);
     const value = argv[i + 1];
-    if (value == null || value.startsWith('--')) throw new Error(\`Missing value for --\${key}\`);
+    if (value == null || value.startsWith('--')) throw new Error(`Missing value for --${key}`);
     result[key] = value;
     i += 1;
   }
@@ -23,7 +23,7 @@ function parseArgs(argv) {
 
 function required(args, key) {
   const value = String(args[key] ?? '').trim();
-  if (!value) throw new Error(\`--\${key} is required.\`);
+  if (!value) throw new Error(`--${key} is required.`);
   return value;
 }
 
@@ -81,13 +81,13 @@ async function waitForJson(url, timeoutMs) {
     try {
       const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) return response.json();
-      lastError = new Error(\`\${response.status} \${response.statusText}\`);
+      lastError = new Error(`${response.status} ${response.statusText}`);
     } catch (error) {
       lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
-  throw new Error(\`Timed out waiting for Chrome DevTools endpoint: \${lastError ?? 'unknown error'}\`);
+  throw new Error(`Timed out waiting for Chrome DevTools endpoint: ${lastError ?? 'unknown error'}`);
 }
 
 class CdpClient {
@@ -115,7 +115,7 @@ class CdpClient {
       const pending = this.pending.get(message.id);
       if (!pending) return;
       this.pending.delete(message.id);
-      if (message.error) pending.reject(new Error(\`\${message.error.message} (\${message.error.code})\`));
+      if (message.error) pending.reject(new Error(`${message.error.message} (${message.error.code})`));
       else pending.resolve(message.result ?? {});
     });
   }
@@ -148,7 +148,7 @@ async function waitForCaptureReady(client, timeoutMs) {
   let lastState = null;
   while (Date.now() < deadline) {
     try {
-      const state = await evaluate(client, \`(() => {
+      const state = await evaluate(client, `(() => {
         const root = document.documentElement;
         return {
           status: root?.dataset?.contentCaptureStatus ?? null,
@@ -156,7 +156,7 @@ async function waitForCaptureReady(client, timeoutMs) {
           manifest: root?.dataset?.contentCaptureManifest ?? null,
           href: location.href,
         };
-      })()\`);
+      })()`);
       lastState = state;
       if (state?.status === 'ready') return state;
       if (state?.status === 'error') {
@@ -170,24 +170,24 @@ async function waitForCaptureReady(client, timeoutMs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error(\`Timed out waiting for data-content-capture-status="ready": \${JSON.stringify(lastState)}\`);
+  throw new Error(`Timed out waiting for data-content-capture-status="ready": ${JSON.stringify(lastState)}`);
 }
 
 async function openTarget(port, targetUrl, timeoutMs) {
-  const endpoint = \`http://127.0.0.1:\${port}/json/new?\${encodeURIComponent(targetUrl)}\`;
+  const endpoint = `http://127.0.0.1:${port}/json/new?${encodeURIComponent(targetUrl)}`;
   const deadline = Date.now() + timeoutMs;
   let lastError;
   while (Date.now() < deadline) {
     try {
       const response = await fetch(endpoint, { method: 'PUT' });
       if (response.ok) return response.json();
-      lastError = new Error(\`\${response.status} \${response.statusText}\`);
+      lastError = new Error(`${response.status} ${response.statusText}`);
     } catch (error) {
       lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
-  throw new Error(\`Could not create Chrome target: \${lastError ?? 'unknown error'}\`);
+  throw new Error(`Could not create Chrome target: ${lastError ?? 'unknown error'}`);
 }
 
 function buildTargetUrl(baseUrl, modelCaseId, captureSpecId) {
@@ -222,8 +222,8 @@ async function main() {
     '--no-first-run',
     '--no-default-browser-check',
     '--remote-allow-origins=*',
-    \`--remote-debugging-port=\${port}\`,
-    \`--user-data-dir=\${userDataDir}\`,
+    `--remote-debugging-port=${port}`,
+    `--user-data-dir=${userDataDir}`,
     'about:blank',
   ];
   if (process.platform !== 'win32') chromeArgs.unshift('--no-sandbox');
@@ -231,11 +231,11 @@ async function main() {
   const chrome = spawn(chromePath, chromeArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
   let chromeStderr = '';
   chrome.stderr.setEncoding('utf8');
-  chrome.stderr.on('data', (chunk) => { chromeStderr = \`\${chromeStderr}\${chunk}\`.slice(-8_000); });
+  chrome.stderr.on('data', (chunk) => { chromeStderr = `${chromeStderr}${chunk}`.slice(-8_000); });
 
   let client;
   try {
-    await waitForJson(\`http://127.0.0.1:\${port}/json/version\`, Math.min(timeoutMs, 15_000));
+    await waitForJson(`http://127.0.0.1:${port}/json/version`, Math.min(timeoutMs, 15_000));
     const target = await openTarget(port, 'about:blank', Math.min(timeoutMs, 15_000));
     client = new CdpClient(target.webSocketDebuggerUrl);
     await client.open();
@@ -288,20 +288,20 @@ async function main() {
     if (!readyState || !pageManifest) throw lastError ?? new Error('Capture page did not become ready.');
 
     for (const key of ['articleId', 'modelCaseId', 'captureSpecId', 'view', 'captureRegion', 'viewportMatch', 'sourcePlanId']) {
-      if (pageManifest[key] == null) throw new Error(\`Capture page manifest is missing \${key}.\`);
+      if (pageManifest[key] == null) throw new Error(`Capture page manifest is missing ${key}.`);
     }
     if (pageManifest.modelCaseId !== modelCaseId || pageManifest.captureSpecId !== captureSpecId) {
       throw new Error('Capture page manifest does not match the requested model/spec.');
     }
     if (pageManifest.viewportMatch !== true) {
-      throw new Error(\`Capture viewport does not match Capture Spec: \${JSON.stringify(pageManifest.viewport)}\`);
+      throw new Error(`Capture viewport does not match Capture Spec: ${JSON.stringify(pageManifest.viewport)}`);
     }
 
     const actualViewport = await evaluate(client, '({ width: window.innerWidth, height: window.innerHeight })');
     let clip;
     if (pageManifest.captureRegion !== 'viewport') {
-      clip = await evaluate(client, \`(() => {
-        const region = \${JSON.stringify(pageManifest.captureRegion)};
+      clip = await evaluate(client, `(() => {
+        const region = ${JSON.stringify(pageManifest.captureRegion)};
         const target = Array.from(document.querySelectorAll('[data-content-capture-target]'))
           .find((element) => element.dataset.contentCaptureTarget === region);
         if (!target) return null;
@@ -313,8 +313,8 @@ async function main() {
           height: Math.max(1, rect.height),
           scale: 1,
         };
-      })()\`);
-      if (!clip) throw new Error(\`Semantic capture target not found: \${pageManifest.captureRegion}\`);
+      })()`);
+      if (!clip) throw new Error(`Semantic capture target not found: ${pageManifest.captureRegion}`);
     }
 
     const screenshot = await client.command('Page.captureScreenshot', {
@@ -331,8 +331,8 @@ async function main() {
 
     mkdirSync(outputDir, { recursive: true });
     const fileStem = [pageManifest.articleId, modelCaseId, captureSpecId].map(sanitizeFilePart).join('__');
-    const imageFilename = \`\${fileStem}.png\`;
-    const manifestFilename = \`\${fileStem}.manifest.json\`;
+    const imageFilename = `${fileStem}.png`;
+    const manifestFilename = `${fileStem}.manifest.json`;
     writeFileSync(path.join(outputDir, imageFilename), png);
 
     const manifest = {
@@ -356,10 +356,10 @@ async function main() {
       sourceUrl: targetUrl,
       sourcePlanId: pageManifest.sourcePlanId,
     };
-    writeFileSync(path.join(outputDir, manifestFilename), \`\${JSON.stringify(manifest, null, 2)}\\n\`);
+    writeFileSync(path.join(outputDir, manifestFilename), `${JSON.stringify(manifest, null, 2)}\n`);
 
-    console.log(\`Captured \${imageFilename} (\${imageWidth}x\${imageHeight}, \${png.length} bytes).\`);
-    console.log(\`Manifest \${manifestFilename}.\`);
+    console.log(`Captured ${imageFilename} (${imageWidth}x${imageHeight}, ${png.length} bytes).`);
+    console.log(`Manifest ${manifestFilename}.`);
   } finally {
     client?.close();
     if (!chrome.killed) chrome.kill('SIGTERM');
