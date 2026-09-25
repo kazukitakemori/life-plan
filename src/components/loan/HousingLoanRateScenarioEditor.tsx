@@ -487,10 +487,6 @@ function RiseScenarioFields({
         </label>
       </div>
 
-      <p className="loan-rate-scenario-note">
-        例：3年後から2年ごとに＋0.10%、上限2.0%のように設定できます。上限を空欄にすると完済まで同じ幅で上昇します。
-      </p>
-
       {config.capPct != null && config.capPct <= baseRatePct ? (
         <p className="loan-rate-scenario-note">
           上限金利が現在の金利以下のため、この条件では金利は上昇しません。
@@ -612,11 +608,7 @@ function CustomRateChangeEditor({
 
   return (
     <div className="loan-rate-custom-editor">
-      {changes.length === 0 ? (
-        <p className="loan-rate-scenario-note">
-          金利変更はまだありません。必要なタイミングだけ追加してください。
-        </p>
-      ) : (
+      {changes.length > 0 ? (
         <div className="loan-rate-custom-list">
           {changes.map((change) => (
             <div
@@ -1110,12 +1102,6 @@ export function HousingLoanRateScenarioEditor({
             </select>
           </div>
 
-          {variableScenario === 'current' ? (
-            <p className="loan-rate-scenario-note">
-              現在入力した金利が完済まで続く前提で試算します。
-            </p>
-          ) : null}
-
           {variableScenario === 'rise' ? (
             <RiseScenarioFields
               config={variableRiseConfig}
@@ -1126,10 +1112,6 @@ export function HousingLoanRateScenarioEditor({
           ) : null}
 
           {variableScenario === 'custom' ? (
-            <>
-              <p className="loan-rate-scenario-note">
-                期間の終了日は入力せず、金利が変わるタイミングだけ追加します。次の変更までは同じ金利として自動計算します。
-              </p>
               <CustomRateChangeEditor
                 periods={periods}
                 schedule={schedule}
@@ -1137,7 +1119,6 @@ export function HousingLoanRateScenarioEditor({
                 useLoanStartBoundary
                 onChange={onChange}
               />
-            </>
           ) : null}
         </div>
       ) : null}
@@ -1157,9 +1138,6 @@ export function HousingLoanRateScenarioEditor({
             />
             <span className="loan-rate-scenario-range">完済まで</span>
           </div>
-          <p className="loan-rate-scenario-note">
-            入力した固定金利を完済まで適用して試算します。
-          </p>
         </div>
       ) : null}
 
@@ -1281,9 +1259,6 @@ export function HousingLoanRateScenarioEditor({
               />
             ) : null}
 
-            <p className="loan-rate-scenario-note">
-              固定期間終了後は変動金利として扱い、その後の金利変化もシナリオで設定します。
-            </p>
             <button
               type="submit"
               className="ui-btn ui-btn--secondary ui-btn--compact"
@@ -1296,9 +1271,6 @@ export function HousingLoanRateScenarioEditor({
             periods.length >= 2 &&
             postFixedVariableStart ? (
               <div className="loan-rate-post-fixed-custom">
-                <p className="loan-rate-scenario-note">
-                  固定期間の後は、金利が変わるタイミングだけ追加します。固定期間を変更した場合は先に「この金利条件を設定」を押してください。
-                </p>
                 <CustomRateChangeEditor
                   periods={periods.slice(1)}
                   schedule={schedule}
@@ -1319,11 +1291,7 @@ export function HousingLoanRateScenarioEditor({
       ) : null}
 
       {rateType === 'detailed' ? (
-        <>
-          <p className="loan-rate-scenario-note">
-            複数の固定・変動期間を自由に組み合わせる場合に使います。
-          </p>
-          <LoanInterestRatePeriodsEditor
+        <LoanInterestRatePeriodsEditor
             periods={periods}
             fieldIdPrefix={fieldIdPrefix}
             referenceYear={referenceYear}
@@ -1338,7 +1306,6 @@ export function HousingLoanRateScenarioEditor({
             allowAddPeriod
             onChange={onChange}
           />
-        </>
       ) : null}
     </div>
   );
