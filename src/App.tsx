@@ -996,6 +996,8 @@ export default function App() {
         modelCaseId: captureRequest.modelCaseId,
         captureSpecId: activeCaptureSpec.id,
         view: activeCaptureSpec.view,
+        purpose: activeCaptureSpec.purpose,
+        note: activeCaptureSpec.note ?? null,
         captureRegion: region,
         viewport:
           activeCaptureSpec.viewport ?? {
