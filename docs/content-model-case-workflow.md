@@ -60,7 +60,7 @@ CSS selector やDOM構造を正本にしない。
 
 ## 6. 撮影
 Capture Specに従って通常計算結果を表示する。実UI・数値・グラフは固定原稿として扱い、AIで描き直さない。
-記事用の矢印、囲み、短い注釈などは撮影後の別レイヤーで加える。
+撮影したPNGは原則として無加工の原本素材として扱う。ライフプランソフト開発側では、矢印・囲み・注釈・装飾の自動合成を標準工程に含めない。
 
 ## 7. 現在の実装段階
 Phase 1:
@@ -91,12 +91,12 @@ Phase 3（自動撮影基盤）:
 - PR Previewで `SIM-001-BASE` の主要4 view（cash-flow-table / asset-balance-chart / lifetime-balance / required-coverage）をE2E撮影
 - 個別manifestを集約し、`SKILL-08-handoff.json` を生成
 - handoffでは記事ID・モデルケースID・Capture Spec・画像ファイル・checksum・sourcePlanIdを機械的に追跡可能にする
-- SKILL-08では撮影PNGを実画面原本として固定し、AI再描画は禁止。注釈・強調・図解合成は後工程で必要な場合のみ行う
+- SKILL-08では撮影PNGを実画面原本として固定し、原則そのまま使用する。AI再描画・画像生成編集・自動注釈合成は標準手段にしない。ユーザーが別工程で合成する場合のみ、原本とは別の派生成果物として扱う
 
 後続:
 - 制作stagingでの認証済みブラウザ運用
-- SKILL-08への自動受け渡し
-- 注釈合成
+- SKILL-08等の制作工程でhandoffを直接消費する運用
+- 必要な場合のユーザー向け画像合成プロンプト生成
 - WordPress下書きへの接続
 
 ## 8. 制作環境の運用
