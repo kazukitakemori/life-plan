@@ -113,6 +113,14 @@ export interface InsuranceEntry {
    * 確定年金・有期年金の受取期間（年）。終身年金では未使用。
    */
   personalPensionAnnuityYears: number;
+  /** 保障の対象となる家族メンバー ID。未設定時は契約者を対象として扱う。 */
+  insuredMemberId?: string;
+  /** 死亡保障額（万円）。死亡保険で任意入力。 */
+  deathBenefitMan?: number;
+  /** 入院給付金の日額（円/日）。医療保険で任意入力。 */
+  medicalHospitalDailyYen?: number;
+  /** がん診断時の一時金（万円）。がん保険で任意入力。 */
+  cancerDiagnosisBenefitMan?: number;
   /**
    * 受取人の家族メンバー ID。
    * 学資・個人年金の受取人、または返戻金あり時の返戻金受取人。既定は契約者。
