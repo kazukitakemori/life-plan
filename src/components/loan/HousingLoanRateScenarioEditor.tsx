@@ -11,6 +11,9 @@ import {
   calendarMonthIndex,
 } from '../../lib/housingLoanAmortization';
 import type {
+  CalendarYearMonth,
+} from '../../lib/housingLoanAmortization';
+import type {
   LoanInterestRatePeriod,
   LoanInterestRateType,
   OwnedProperty,
@@ -27,7 +30,7 @@ type HousingRateType =
 
 type VariableRateScenario =
   | 'current'
-  | 'rise_01'
+  | 'rise'
   | 'custom';
 
 interface HousingLoanRateScenarioEditorProps {
@@ -63,17 +66,15 @@ function inferHousingRateType(
     }
   }
 
-  if (periods.length === 2) {
-    const [first, second] = periods;
-    if (
-      first.rateType === 'fixed' &&
-      second.rateType === 'variable' &&
-      isLoanStartBoundary(first) &&
-      !isLoanEndBoundary(first) &&
-      isLoanEndBoundary(second)
-    ) {
-      return 'initial_fixed';
-    }
+  if (
+    periods.length >= 2 &&
+    periods[0].rateType === 'fixed' &&
+    isLoanStartBoundary(periods[0]) &&
+    !isLoanEndBoundary(periods[0]) &&
+    periods.slice(1).every((period) => period.rateType === 'variable') &&
+    isLoanEndBoundary(periods[periods.length - 1])
+  ) {
+    return 'initial_fixed';
   }
 
   if (
@@ -102,66 +103,88 @@ function resolveInitialFixedYears(
   return months / 12;
 }
 
-function isYearlyRiseScenario(
+function monthsBetweenInclusive(
+  start: CalendarYearMonth,
+  end: CalendarYearMonth,
+): number {
+  return (
+    calendarMonthIndex(end.year, end.month) -
+    calendarMonthIndex(start.year, start.month) +
+    1
+  );
+}
+
+function resolveYearlyRiseStep(
   periods: LoanInterestRatePeriod[],
   schedule: ReturnType<typeof resolveLoanRepaymentSchedule>,
-): boolean {
-  if (periods.length < 2) return false;
-  if (!periods.every((period) => period.rateType === 'variable')) return false;
+  expectedStart: CalendarYearMonth,
+): number | null {
+  if (periods.length < 2) return null;
+  if (!periods.every((period) => period.rateType === 'variable')) return null;
+
+  let riseStep: number | null = null;
 
   for (let index = 0; index < periods.length; index++) {
-    const period = periods[index];
-    const bounds = resolveInterestRatePeriodBounds(period, schedule);
-    const expectedStart =
-      index === 0
-        ? schedule.repaymentStart
-        : addCalendarMonths(schedule.repaymentStart, index * 12);
+    const bounds = resolveInterestRatePeriodBounds(periods[index], schedule);
+    const start = addCalendarMonths(expectedStart, index * 12);
 
-    if (
-      bounds.start.year !== expectedStart.year ||
-      bounds.start.month !== expectedStart.month
-    ) {
-      return false;
+    if (bounds.start.year !== start.year || bounds.start.month !== start.month) {
+      return null;
     }
 
     const isLast = index === periods.length - 1;
     if (!isLast) {
-      const expectedEnd = addCalendarMonths(expectedStart, 11);
+      const expectedEnd = addCalendarMonths(start, 11);
       if (
         bounds.end.year !== expectedEnd.year ||
         bounds.end.month !== expectedEnd.month
       ) {
-        return false;
+        return null;
       }
+    } else if (
+      bounds.end.year !== schedule.repaymentEnd.year ||
+      bounds.end.month !== schedule.repaymentEnd.month
+    ) {
+      return null;
     }
 
     if (index > 0) {
-      const previous = periods[index - 1].interestRatePct;
-      const current = period.interestRatePct;
-      if (Math.abs(current - (previous + 0.1)) > 0.0001) {
-        return false;
+      const step =
+        periods[index].interestRatePct -
+        periods[index - 1].interestRatePct;
+      if (step < 0) return null;
+      if (riseStep == null) {
+        riseStep = step;
+      } else if (Math.abs(step - riseStep) > 0.0001) {
+        return null;
       }
     }
   }
 
-  return true;
+  return riseStep;
 }
 
 function inferVariableScenario(
   periods: LoanInterestRatePeriod[],
   schedule: ReturnType<typeof resolveLoanRepaymentSchedule>,
+  expectedStart: CalendarYearMonth,
 ): VariableRateScenario {
   if (
     periods.length === 1 &&
     periods[0].rateType === 'variable' &&
-    isLoanStartBoundary(periods[0]) &&
     isLoanEndBoundary(periods[0])
   ) {
-    return 'current';
+    const bounds = resolveInterestRatePeriodBounds(periods[0], schedule);
+    if (
+      bounds.start.year === expectedStart.year &&
+      bounds.start.month === expectedStart.month
+    ) {
+      return 'current';
+    }
   }
 
-  if (isYearlyRiseScenario(periods, schedule)) {
-    return 'rise_01';
+  if (resolveYearlyRiseStep(periods, schedule, expectedStart) != null) {
+    return 'rise';
   }
 
   return 'custom';
@@ -190,19 +213,34 @@ function buildSinglePeriod(
   ];
 }
 
-function buildYearlyRisePeriods(
-  current: LoanInterestRatePeriod | undefined,
-  schedule: ReturnType<typeof resolveLoanRepaymentSchedule>,
-  currentRatePct: number,
-): LoanInterestRatePeriod[] {
-  const totalMonths = Math.max(1, schedule.totalMonths);
+function buildVariableScenarioPeriods({
+  current,
+  schedule,
+  start,
+  baseRatePct,
+  annualRisePct,
+  useLoanStartBoundary,
+}: {
+  current?: LoanInterestRatePeriod;
+  schedule: ReturnType<typeof resolveLoanRepaymentSchedule>;
+  start: CalendarYearMonth;
+  baseRatePct: number;
+  annualRisePct: number;
+  useLoanStartBoundary: boolean;
+}): LoanInterestRatePeriod[] {
+  const totalMonths = Math.max(
+    1,
+    monthsBetweenInclusive(start, schedule.repaymentEnd),
+  );
   const yearBlocks = Math.ceil(totalMonths / 12);
   const result: LoanInterestRatePeriod[] = [];
 
   for (let index = 0; index < yearBlocks; index++) {
-    const start = addCalendarMonths(schedule.repaymentStart, index * 12);
+    const periodStart = addCalendarMonths(start, index * 12);
     const isLast = index === yearBlocks - 1;
-    const end = isLast ? schedule.repaymentEnd : addCalendarMonths(start, 11);
+    const periodEnd = isLast
+      ? schedule.repaymentEnd
+      : addCalendarMonths(periodStart, 11);
     const base =
       index === 0 && current
         ? current
@@ -211,11 +249,13 @@ function buildYearlyRisePeriods(
     result.push({
       ...base,
       rateType: 'variable',
-      interestRatePct: Number((currentRatePct + index * 0.1).toFixed(4)),
-      startYear: index === 0 ? 0 : start.year,
-      startMonth: index === 0 ? 0 : start.month,
-      endYear: isLast ? 0 : end.year,
-      endMonth: isLast ? 0 : end.month,
+      interestRatePct: Number(
+        (baseRatePct + index * annualRisePct).toFixed(4),
+      ),
+      startYear: index === 0 && useLoanStartBoundary ? 0 : periodStart.year,
+      startMonth: index === 0 && useLoanStartBoundary ? 0 : periodStart.month,
+      endYear: isLast ? 0 : periodEnd.year,
+      endMonth: isLast ? 0 : periodEnd.month,
     });
   }
 
@@ -254,24 +294,65 @@ export function HousingLoanRateScenarioEditor({
   );
 
   const inferredRateType = inferHousingRateType(periods);
+  const variablePeriods =
+    inferredRateType === 'initial_fixed' ? periods.slice(1) : periods;
+  const variableStart =
+    inferredRateType === 'initial_fixed' && variablePeriods[0]
+      ? resolveInterestRatePeriodBounds(variablePeriods[0], schedule).start
+      : schedule.repaymentStart;
+  const inferredVariableScenario =
+    inferredRateType === 'variable' || inferredRateType === 'initial_fixed'
+      ? inferVariableScenario(variablePeriods, schedule, variableStart)
+      : 'current';
+  const inferredRiseStep =
+    resolveYearlyRiseStep(variablePeriods, schedule, variableStart) ?? 0.1;
+
   const [rateType, setRateType] = useState<HousingRateType>(
     () => inferredRateType,
   );
   const [variableScenario, setVariableScenario] =
     useState<VariableRateScenario>(() =>
-      inferredRateType === 'variable'
-        ? inferVariableScenario(periods, schedule)
-        : 'current',
+      inferredRateType === 'variable' ? inferredVariableScenario : 'current',
+    );
+  const [variableRiseStep, setVariableRiseStep] =
+    useState<number>(() => inferredRateType === 'variable' ? inferredRiseStep : 0.1);
+  const [postFixedScenario, setPostFixedScenario] =
+    useState<VariableRateScenario>(() =>
+      inferredRateType === 'initial_fixed' ? inferredVariableScenario : 'current',
+    );
+  const [postFixedRiseStep, setPostFixedRiseStep] =
+    useState<number>(() =>
+      inferredRateType === 'initial_fixed' ? inferredRiseStep : 0.1,
     );
 
   useEffect(() => {
     const nextRateType = inferHousingRateType(periods);
+    const nextVariablePeriods =
+      nextRateType === 'initial_fixed' ? periods.slice(1) : periods;
+    const nextVariableStart =
+      nextRateType === 'initial_fixed' && nextVariablePeriods[0]
+        ? resolveInterestRatePeriodBounds(nextVariablePeriods[0], schedule).start
+        : schedule.repaymentStart;
+    const nextScenario =
+      nextRateType === 'variable' || nextRateType === 'initial_fixed'
+        ? inferVariableScenario(nextVariablePeriods, schedule, nextVariableStart)
+        : 'current';
+    const nextRiseStep =
+      resolveYearlyRiseStep(
+        nextVariablePeriods,
+        schedule,
+        nextVariableStart,
+      ) ?? 0.1;
+
     setRateType(nextRateType);
-    setVariableScenario(
-      nextRateType === 'variable'
-        ? inferVariableScenario(periods, schedule)
-        : 'current',
-    );
+    if (nextRateType === 'variable') {
+      setVariableScenario(nextScenario);
+      setVariableRiseStep(nextRiseStep);
+    }
+    if (nextRateType === 'initial_fixed') {
+      setPostFixedScenario(nextScenario);
+      setPostFixedRiseStep(nextRiseStep);
+    }
   }, [fieldIdPrefix]);
 
   const firstPeriod = periods[0];
@@ -279,6 +360,8 @@ export function HousingLoanRateScenarioEditor({
   const existingInitialFixedYears = resolveInitialFixedYears(periods, schedule);
   const hasExistingInitialFixed =
     inferHousingRateType(periods) === 'initial_fixed';
+  const existingPostFixedRate =
+    hasExistingInitialFixed ? periods[1]?.interestRatePct : undefined;
   const maxInitialFixedYears = Math.max(
     0,
     Math.floor((schedule.totalMonths - 1) / 12),
@@ -295,6 +378,7 @@ export function HousingLoanRateScenarioEditor({
     scenario: VariableRateScenario,
     interestRatePct = currentRatePct,
   ) => {
+    const previousScenario = variableScenario;
     setVariableScenario(scenario);
 
     if (scenario === 'current') {
@@ -302,10 +386,22 @@ export function HousingLoanRateScenarioEditor({
       return;
     }
 
-    if (scenario === 'rise_01') {
+    if (scenario === 'rise') {
       onChange(
-        buildYearlyRisePeriods(firstPeriod, schedule, interestRatePct),
+        buildVariableScenarioPeriods({
+          current: firstPeriod,
+          schedule,
+          start: schedule.repaymentStart,
+          baseRatePct: interestRatePct,
+          annualRisePct: variableRiseStep,
+          useLoanStartBoundary: true,
+        }),
       );
+      return;
+    }
+
+    if (scenario === 'custom' && previousScenario !== 'custom') {
+      onChange(buildSinglePeriod(firstPeriod, 'variable', interestRatePct));
     }
   };
 
@@ -314,6 +410,7 @@ export function HousingLoanRateScenarioEditor({
 
     if (next === 'variable') {
       setVariableScenario('current');
+      setVariableRiseStep(0.1);
       applySinglePeriodRate('variable');
       return;
     }
@@ -330,20 +427,43 @@ export function HousingLoanRateScenarioEditor({
     }
 
     if (rateType === 'variable') {
-      if (variableScenario === 'rise_01') {
+      if (variableScenario === 'rise') {
         onChange(
-          buildYearlyRisePeriods(firstPeriod, schedule, interestRatePct),
+          buildVariableScenarioPeriods({
+            current: firstPeriod,
+            schedule,
+            start: schedule.repaymentStart,
+            baseRatePct: interestRatePct,
+            annualRisePct: variableRiseStep,
+            useLoanStartBoundary: true,
+          }),
         );
       } else if (variableScenario === 'current') {
         onChange(buildSinglePeriod(firstPeriod, 'variable', interestRatePct));
       } else {
-        const next = periods.map((period, index) =>
-          index === 0
-            ? { ...period, interestRatePct }
-            : period,
+        onChange(
+          periods.map((period, index) =>
+            index === 0 ? { ...period, interestRatePct } : period,
+          ),
         );
-        onChange(next);
       }
+    }
+  };
+
+  const handleVariableRiseStepChange = (annualRisePct: number) => {
+    const safeRise = Math.max(0, annualRisePct);
+    setVariableRiseStep(safeRise);
+    if (variableScenario === 'rise') {
+      onChange(
+        buildVariableScenarioPeriods({
+          current: firstPeriod,
+          schedule,
+          start: schedule.repaymentStart,
+          baseRatePct: currentRatePct,
+          annualRisePct: safeRise,
+          useLoanStartBoundary: true,
+        }),
+      );
     }
   };
 
@@ -353,6 +473,10 @@ export function HousingLoanRateScenarioEditor({
     const fixedYears = Number(formData.get('fixedYears'));
     const fixedRate = Number(formData.get('fixedRate'));
     const followingRate = Number(formData.get('followingRate'));
+    const riseStep = Math.max(
+      0,
+      Number(formData.get('postFixedRiseStep') ?? postFixedRiseStep),
+    );
 
     if (
       !Number.isFinite(fixedYears) ||
@@ -361,7 +485,8 @@ export function HousingLoanRateScenarioEditor({
       fixedYears < 1 ||
       fixedYears > maxInitialFixedYears ||
       fixedRate < 0 ||
-      followingRate < 0
+      followingRate < 0 ||
+      !Number.isFinite(riseStep)
     ) {
       return;
     }
@@ -370,37 +495,49 @@ export function HousingLoanRateScenarioEditor({
       schedule.repaymentStart,
       fixedYears * 12 - 1,
     );
-    const secondStart = addCalendarMonths(firstEnd, 1);
+    const variableStart = addCalendarMonths(firstEnd, 1);
     const first =
       periods[0] ??
       createLoanInterestRatePeriod({
         rateType: 'fixed',
         interestRatePct: fixedRate,
       });
-    const second =
-      hasExistingInitialFixed && periods[1]
-        ? periods[1]
-        : createLoanInterestRatePeriod({
-            rateType: 'variable',
-            interestRatePct: followingRate,
-          });
+    const fixedPeriod: LoanInterestRatePeriod = {
+      ...first,
+      rateType: 'fixed',
+      interestRatePct: fixedRate,
+      startYear: 0,
+      startMonth: 0,
+      endYear: firstEnd.year,
+      endMonth: firstEnd.month,
+    };
+    const currentVariable =
+      hasExistingInitialFixed ? periods[1] : undefined;
+
+    if (postFixedScenario === 'rise') {
+      onChange([
+        fixedPeriod,
+        ...buildVariableScenarioPeriods({
+          current: currentVariable,
+          schedule,
+          start: variableStart,
+          baseRatePct: followingRate,
+          annualRisePct: riseStep,
+          useLoanStartBoundary: false,
+        }),
+      ]);
+      return;
+    }
 
     onChange([
+      fixedPeriod,
       {
-        ...first,
-        rateType: 'fixed',
-        interestRatePct: fixedRate,
-        startYear: 0,
-        startMonth: 0,
-        endYear: firstEnd.year,
-        endMonth: firstEnd.month,
-      },
-      {
-        ...second,
+        ...(currentVariable ??
+          createLoanInterestRatePeriod({ rateType: 'variable' })),
         rateType: 'variable',
         interestRatePct: followingRate,
-        startYear: secondStart.year,
-        startMonth: secondStart.month,
+        startYear: variableStart.year,
+        startMonth: variableStart.month,
         endYear: 0,
         endMonth: 0,
       },
@@ -456,7 +593,7 @@ export function HousingLoanRateScenarioEditor({
               }
             >
               <option value="current">現状維持</option>
-              <option value="rise_01">金利上昇：毎年＋0.10%</option>
+              <option value="rise">金利上昇</option>
               <option value="custom">自分で設定</option>
             </select>
           </div>
@@ -467,16 +604,30 @@ export function HousingLoanRateScenarioEditor({
             </p>
           ) : null}
 
-          {variableScenario === 'rise_01' ? (
-            <p className="loan-rate-scenario-note">
-              返済開始時の金利を基準に、1年ごとに0.10ポイントずつ上昇するシナリオを完済まで自動設定します。生成された条件は「自分で設定」に切り替えて調整できます。
-            </p>
+          {variableScenario === 'rise' ? (
+            <div className="loan-rate-rise-setting">
+              <span className="loan-rate-scenario-rate-label">
+                1年ごとの上昇幅
+              </span>
+              <HousingManInput
+                unified
+                compact
+                value={variableRiseStep}
+                onChange={handleVariableRiseStepChange}
+                unit="%"
+                min={0}
+                step={0.01}
+              />
+              <span className="loan-rate-scenario-note">
+                初期値は0.10%。入力した幅で毎年上昇する前提を完済まで自動設定します。
+              </span>
+            </div>
           ) : null}
 
           {variableScenario === 'custom' ? (
             <>
               <p className="loan-rate-scenario-note">
-                将来の金利が変わる時期と金利を個別に設定します。
+                将来の金利が変わる時期だけ追加してください。自動生成した年次期間は引き継がないため、必要な期間だけ設定できます。
               </p>
               <LoanInterestRatePeriodsEditor
                 periods={periods}
@@ -524,7 +675,7 @@ export function HousingLoanRateScenarioEditor({
           <form
             className="loan-rate-initial-fixed-form"
             onSubmit={handleInitialFixedSubmit}
-            key={`${fieldIdPrefix}-initial-${hasExistingInitialFixed ? periods.map((period) => period.id).join('-') : 'new'}`}
+            key={`${fieldIdPrefix}-initial-${hasExistingInitialFixed ? periods[0]?.id ?? 'existing' : 'new'}`}
           >
             <div className="loan-rate-initial-fixed-fields">
               <label className="loan-rate-initial-fixed-field">
@@ -568,7 +719,7 @@ export function HousingLoanRateScenarioEditor({
               </label>
 
               <label className="loan-rate-initial-fixed-field">
-                <span>固定期間終了後の変動金利</span>
+                <span>固定終了後の変動金利</span>
                 <span className="loan-rate-scenario-native-input-wrap">
                   <input
                     className="ui-input loan-rate-scenario-native-input"
@@ -576,11 +727,7 @@ export function HousingLoanRateScenarioEditor({
                     name="followingRate"
                     min="0"
                     step="0.01"
-                    defaultValue={
-                      hasExistingInitialFixed
-                        ? periods[1]?.interestRatePct ?? ''
-                        : ''
-                    }
+                    defaultValue={existingPostFixedRate ?? ''}
                     placeholder="入力"
                     required
                   />
@@ -588,8 +735,53 @@ export function HousingLoanRateScenarioEditor({
                 </span>
               </label>
             </div>
+
+            <div className="loan-rate-scenario-method">
+              <label htmlFor={`${fieldIdPrefix}-post-fixed-scenario`}>
+                固定終了後の金利シナリオ
+              </label>
+              <select
+                id={`${fieldIdPrefix}-post-fixed-scenario`}
+                className="ui-select ui-select--compact loan-rate-scenario-select"
+                value={postFixedScenario}
+                onChange={(event) => {
+                  const next = event.target.value as VariableRateScenario;
+                  setPostFixedScenario(next);
+                  if (next === 'rise' && postFixedRiseStep < 0) {
+                    setPostFixedRiseStep(0.1);
+                  }
+                }}
+              >
+                <option value="current">現状維持</option>
+                <option value="rise">金利上昇</option>
+                <option value="custom">自分で設定</option>
+              </select>
+            </div>
+
+            {postFixedScenario === 'rise' ? (
+              <label className="loan-rate-initial-fixed-field">
+                <span>1年ごとの上昇幅</span>
+                <span className="loan-rate-scenario-native-input-wrap">
+                  <input
+                    className="ui-input loan-rate-scenario-native-input"
+                    type="number"
+                    name="postFixedRiseStep"
+                    min="0"
+                    step="0.01"
+                    value={postFixedRiseStep}
+                    onChange={(event) =>
+                      setPostFixedRiseStep(
+                        Math.max(0, Number(event.target.value) || 0),
+                      )
+                    }
+                  />
+                  <span>%</span>
+                </span>
+              </label>
+            ) : null}
+
             <p className="loan-rate-scenario-note">
-              固定期間終了後の金利は自動補完せず、入力した値を使います。
+              固定期間終了後は変動金利として扱い、その後の金利変化もシナリオで設定します。
             </p>
             <button
               type="submit"
@@ -597,6 +789,29 @@ export function HousingLoanRateScenarioEditor({
             >
               この金利条件を設定
             </button>
+
+            {postFixedScenario === 'custom' && hasExistingInitialFixed ? (
+              <div className="loan-rate-post-fixed-custom">
+                <p className="loan-rate-scenario-note">
+                  「この金利条件を設定」を押すと、固定期間＋最初の変動期間だけに整理します。その後、必要な金利変更だけ追加できます。
+                </p>
+                <LoanInterestRatePeriodsEditor
+                  periods={periods}
+                  fieldIdPrefix={fieldIdPrefix}
+                  referenceYear={referenceYear}
+                  referenceMonth={referenceMonth}
+                  loanYears={loanYears}
+                  loanStartYear={loanStartYear}
+                  loanStartMonth={loanStartMonth}
+                  linkedHousingProperty={linkedHousingProperty}
+                  linkedVehicle={linkedVehicle}
+                  memberAgeAtReference={memberAgeAtReference}
+                  memberBirthMonth={memberBirthMonth}
+                  allowAddPeriod
+                  onChange={onChange}
+                />
+              </div>
+            ) : null}
           </form>
         ) : (
           <p className="loan-rate-scenario-note">
