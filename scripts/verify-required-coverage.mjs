@@ -14,7 +14,11 @@ import {
   createRentalProperty,
 } from '../src/lib/housingDefaults.ts';
 import { createDefaultInsuranceState, createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
-import { resolveRegisteredDeathBenefitAtAge, resolveRegisteredInsuranceCoverage } from '../src/lib/insuranceCoverage.ts';
+import {
+  calcRegisteredMedicalHospitalBenefitMan,
+  resolveRegisteredDeathBenefitAtAge,
+  resolveRegisteredInsuranceCoverage,
+} from '../src/lib/insuranceCoverage.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
 import {
   createLivingExpenseItem,
@@ -426,6 +430,31 @@ assert.equal(deathCoverageRow.preparedDeathBenefit, 2000);
 assert.equal(deathCoverageRow.preparedTotal, 3500);
 assert.equal(deathCoverageRow.shortfall, 1500);
 console.log('OK registered death benefit reduces death shortfall only while active');
+assert.equal(calcRegisteredMedicalHospitalBenefitMan(5000, 28), 14);
+const medicalWithRegisteredBenefit = calcMedicalRiskCoverage(
+  {
+    ...createDefaultRequiredCoverageState().medicalDesigns.head,
+    hospitalMonthsPerYear: 1,
+    inpatientDays: 28,
+    existingBenefitMan: calcRegisteredMedicalHospitalBenefitMan(5000, 28),
+  },
+  30,
+);
+const medicalWithoutRegisteredBenefit = calcMedicalRiskCoverage(
+  {
+    ...createDefaultRequiredCoverageState().medicalDesigns.head,
+    hospitalMonthsPerYear: 1,
+    inpatientDays: 28,
+    existingBenefitMan: 0,
+  },
+  30,
+);
+assert.equal(
+  medicalWithoutRegisteredBenefit.requiredAmountMan -
+    medicalWithRegisteredBenefit.requiredAmountMan,
+  14,
+);
+console.log('OK registered hospital daily benefit reduces medical shortfall');
 
 // 1. 末子の最終学歴（大学 22歳3月 → 2016年4月生なら 2038年3月）
 const educationEntry = createEducationExpenseEntry({
