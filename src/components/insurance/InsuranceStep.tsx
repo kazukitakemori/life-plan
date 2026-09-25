@@ -5,7 +5,7 @@ import {
   getMemberInsuranceEntries,
   updateInsuranceByMember,
 } from '../../lib/insuranceDefaults';
-import { INSURANCE_CATEGORY_LABELS } from '../../lib/insuranceLabels';
+import { INSURANCE_CATEGORY_DEFAULT_NAMES } from '../../lib/insuranceLabels';
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
 import { memberHasInsuranceData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
@@ -143,10 +143,10 @@ export function InsuranceStep({
 
     for (const entry of entries) {
       const isLinked = Boolean(entry.housingLink || entry.vehicleLink);
-      const defaultLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+      const defaultName = INSURANCE_CATEGORY_DEFAULT_NAMES[entry.category];
       const usesDefaultName =
         !isLinked &&
-        (entry.name.trim() === '' || entry.name.trim() === defaultLabel);
+        (entry.name.trim() === '' || entry.name.trim() === defaultName);
 
       if (!usesDefaultName) continue;
       const group = groups.get(entry.category) ?? [];
