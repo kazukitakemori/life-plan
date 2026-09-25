@@ -2191,7 +2191,10 @@ export default function App() {
       );
     }
 
-    const coverageInput = analysisSnapshot?.cashFlowInput ?? cashFlowInput;
+    const coverageInput: CashFlowInput = {
+      ...(analysisSnapshot?.cashFlowInput ?? cashFlowInput),
+      insuranceState,
+    };
     const coverageData = analysisSnapshot?.cashFlowData;
 
     const requiredCoverageStateForRender =
@@ -2235,6 +2238,10 @@ export default function App() {
             return;
           }
           setRequiredCoverageState(migrated);
+        }}
+        onInsuranceEntryChange={(entry) => {
+          markPlanDataChanged();
+          setInsuranceState((current) => updateInsuranceEntry(current, entry));
         }}
         onPageViewChange={(view) => {
           if (activeCaptureSpec) return;
