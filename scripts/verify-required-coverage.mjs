@@ -13,7 +13,8 @@ import {
   createOwnedPropertyMaintenance,
   createRentalProperty,
 } from '../src/lib/housingDefaults.ts';
-import { createDefaultInsuranceState } from '../src/lib/insuranceDefaults.ts';
+import { createDefaultInsuranceState, createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
+import { resolveRegisteredInsuranceCoverage } from '../src/lib/insuranceCoverage.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
 import {
   createLivingExpenseItem,
@@ -371,6 +372,36 @@ function buildInput(overrides = {}) {
     ...overrides,
   };
 }
+
+// 0. Q10登録済み保障：被保険者を優先し、未設定時は契約者を対象にする
+const registeredInsurance = createDefaultInsuranceState();
+registeredInsurance.byMember[head.id] = [
+  createInsuranceEntry('life', head, referenceDate, {
+    deathBenefitMan: 2000,
+  }, [head, spouse]),
+  createInsuranceEntry('medical', head, referenceDate, {
+    insuredMemberId: spouse.id,
+    medicalHospitalDailyYen: 5000,
+  }, [head, spouse]),
+  createInsuranceEntry('cancer', spouse, referenceDate, {
+    cancerDiagnosisBenefitMan: 100,
+  }, [head, spouse]),
+];
+const headCoverage = resolveRegisteredInsuranceCoverage(
+  registeredInsurance,
+  head.id,
+);
+assert.equal(headCoverage.deathBenefitMan, 2000);
+assert.equal(headCoverage.medicalHospitalDailyYen, 0);
+assert.equal(headCoverage.cancerDiagnosisBenefitMan, 0);
+const spouseCoverage = resolveRegisteredInsuranceCoverage(
+  registeredInsurance,
+  spouse.id,
+);
+assert.equal(spouseCoverage.deathBenefitMan, 0);
+assert.equal(spouseCoverage.medicalHospitalDailyYen, 5000);
+assert.equal(spouseCoverage.cancerDiagnosisBenefitMan, 100);
+console.log('OK registered insurance coverage follows insured member');
 
 // 1. 末子の最終学歴（大学 22歳3月 → 2016年4月生なら 2038年3月）
 const educationEntry = createEducationExpenseEntry({
