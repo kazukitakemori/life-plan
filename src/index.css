@@ -14535,11 +14535,6 @@ button:disabled {
   flex: 1 1 200px;
   min-width: 140px;
   max-width: 280px;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fffde7;
-  font-size: 0.8125rem;
 }
 
 .loan-entry-name-label {
@@ -15097,7 +15092,8 @@ button:disabled {
 }
 
 .loan-structure-comparison-wrap {
-  margin-top: 4px;
+  margin-top: 0;
+  padding-top: 4px;
 }
 
 .loan-structure-comparison-title {
