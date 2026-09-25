@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { HousingManInput } from '../housing/HousingManInput';
 import { HousingYenInput } from '../housing/HousingYenInput';
 import type { CashFlowInput } from '../../lib/cashFlow';
-import { resolveRegisteredInsuranceCoverage } from '../../lib/insuranceCoverage';
+import {
+  calcRegisteredMedicalHospitalBenefitMan,
+  resolveRegisteredInsuranceCoverage,
+} from '../../lib/insuranceCoverage';
 import {
   HIGH_COST_BRACKET_CAP_FORMULAS,
   HIGH_COST_BRACKET_ORDER,
@@ -651,15 +654,25 @@ export function RequiredCoverageMedicalRiskView({
       ? suggestedIncomeLossManPerMonth
       : design.incomeLossManPerMonth;
 
+  const effectiveInpatientDays = Math.max(
+    0,
+    Math.min(
+      design.inpatientDays,
+      design.hospitalMonthsPerYear * 30 || design.inpatientDays,
+    ),
+  );
+  const registeredHospitalBenefitMan = calcRegisteredMedicalHospitalBenefitMan(
+    registeredCoverage.medicalHospitalDailyYen,
+    effectiveInpatientDays,
+  );
   const coverageDesign = useMemo(
-    () =>
-      effectiveIncomeLossManPerMonth === design.incomeLossManPerMonth
-        ? design
-        : {
-            ...design,
-            incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
-          },
-    [design, effectiveIncomeLossManPerMonth],
+    () => ({
+      ...design,
+      incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
+      existingBenefitMan:
+        Math.max(0, design.existingBenefitMan) + registeredHospitalBenefitMan,
+    }),
+    [design, effectiveIncomeLossManPerMonth, registeredHospitalBenefitMan],
   );
   const result: MedicalRiskCoverageResult = useMemo(
     () => calcMedicalRiskCoverage(coverageDesign, quotedMonthlyIncomeMan),
@@ -1343,7 +1356,7 @@ export function RequiredCoverageMedicalRiskView({
           <span className="required-coverage-registered-label">登録済み保障</span>
           <strong className="required-coverage-registered-value">
             {registeredCoverage.medicalHospitalDailyYen > 0
-              ? `入院 ${formatYen(registeredCoverage.medicalHospitalDailyYen)}円/日`
+              ? `入院 ${formatYen(registeredCoverage.medicalHospitalDailyYen)}円/日 → ${formatManTenths(registeredHospitalBenefitMan)}万円`
               : null}
             {registeredCoverage.medicalHospitalDailyYen > 0 &&
             registeredCoverage.cancerDiagnosisBenefitMan > 0
@@ -1377,6 +1390,9 @@ export function RequiredCoverageMedicalRiskView({
             医療費 {formatManTenths(result.annualMedicalSelfPayMan)}万円 ＋ 雑費{' '}
             {formatManTenths(result.extraCosts.incidentalMan)}万円 ＋ 収入の純不足{' '}
             {formatManTenths(result.extraCosts.incomeLossMan)}万円
+            {result.existingBenefitMan > 0
+              ? ` − 給付 ${formatManTenths(result.existingBenefitMan)}万円`
+              : ''}
           </p>
         </div>
       </section>
