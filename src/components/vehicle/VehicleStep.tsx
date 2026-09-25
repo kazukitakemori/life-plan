@@ -146,7 +146,11 @@ export function VehicleStep({
       activeMember,
       referenceDate,
     );
-    persistEntries(resolvedActiveId, [...entries, nextEntry]);
+    const sameTypeCount = entries.filter((entry) => entry.type === nextEntry.type).length;
+    const namedEntry = sameTypeCount === 0
+      ? nextEntry
+      : { ...nextEntry, label: `${nextEntry.label}${sameTypeCount + 1}` };
+    persistEntries(resolvedActiveId, [...entries, namedEntry]);
   };
 
   const copySettingsFrom = () => {
