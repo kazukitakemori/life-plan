@@ -1,0 +1,23 @@
+# Content model verification uses the existing authenticated staging environment.
+# Never point this configuration at the production D1 database.
+name = "life-plan-auth-staging"
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+preview_urls = true
+keep_vars = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "life-plan-auth-staging"
+database_id = "23f37d46-c35b-44ef-8db1-667c13942698"
+
+[vars]
+AUTH_ORIGIN = "https://life-plan-auth-staging.kazuki-takemori-sub.workers.dev"
+AWS_SES_REGION = "ap-northeast-1"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]

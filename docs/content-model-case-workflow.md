@@ -50,7 +50,7 @@ CSS selector やDOM構造を正本にしない。
 アプリ内部では通常プランと同じ `PlanPayload / PlanRecord / PlanRepository` を利用する。
 `modelCaseId` から `content-model:<modelCaseId>` を生成し、同一ケースの再実行は同じレコードを更新する。
 
-保存後は必ず readback し、IDと記事メタデータを検証する。
+保存後は必ず readback し、ID・定義メタデータ・schemaVersion・payload全体を検証する。新規ケースのステータスは入力中とし、保存だけでシミュレーション済みにしない。
 
 ## 5. Cloudflare接続可能時
 制作専用Workspaceを1つ用意し、そのWorkspace IDを `CONTENT_MODEL_WORKSPACE_ID` に設定する。
@@ -71,9 +71,11 @@ Phase 1:
 - 制作専用Workspaceへの保護API
 - Capture Spec基礎
 
-Phase 2:
-- 事業者専用モード
-- 個人情報非表示（通常の編集ボタン等のUIは維持）
+Phase 2（個人情報非表示まで実装）:
+- advisor利用権で個人情報非表示を利用可能（PC・スマホ）
+- 顧客名・連絡先・プランメモを一覧・編集・削除確認で非表示（通常の編集ボタン等のUIは維持）
+- 非表示中のメタデータ更新では元の個人情報を維持。書き出しデータはマスクしない
+- 以下の撮影自動化は未実装
 - semantic capture target
 - deterministic viewport/display state
 
@@ -82,3 +84,27 @@ Phase 3:
 - 自動キャプチャ
 - 注釈合成
 - WordPress下書きへの接続
+
+## 8. 制作環境の運用
+
+制作検証先は `life-plan-auth-staging`。`wrangler.content-staging.toml` は認証用staging D1に接続する。本番Worker/D1とは別で、Previewの認証解除も無効にする。
+
+```powershell
+$env:VITE_LICENSE_PREVIEW_UNLOCK='0'
+$env:VITE_PREVIEW_SEED_DATA='0'
+npm run build
+npx wrangler deploy --config wrangler.content-staging.toml
+```
+
+SecretはCLIの標準入力またはCloudflareのSecret管理から設定し、値をリポジトリ・ログ・PRに残さない。既存Google/メール認証Secretは維持する。
+
+モデル定義を通常のmigration経由で投入用JSONへ変換する:
+
+```sh
+npx tsx --tsconfig tsconfig.app.json scripts/prepare-content-model.mjs model.json request.json
+npx tsx --tsconfig tsconfig.app.json scripts/verify-content-model.mjs
+```
+
+投入先はstagingの `PUT /api/internal/content-models`。BearerトークンとJSON本文を使用する。同一モデルを2回投入し、初回created=true、次回created=false、同一ID、revision増加、保存payloadの一致を確認する。APIは本文上限・Workspace存在・記事メタデータ・同時更新競合も検証する。
+
+SIM-001-BASEはDrive正本TOP_baseの架空モデルを独立ケースとして固定したもの。標準Preview seedは変更しない。Googleログイン後に制作プランを開き、実計算結果を確認する。通常PRのPreviewは従来どおり認証解除・標準seed有効の別環境とする。

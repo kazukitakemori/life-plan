@@ -156,7 +156,7 @@ export default function App() {
   const [headerTab, setHeaderTab] = useState<HeaderTabId>('admin');
   const [operatorPersonalInfoHidden, setOperatorPersonalInfoHidden] = useState(false);
   const operatorMode: OperatorMode = {
-    enabled: license.isLicensed,
+    enabled: license.isLicensed && license.entitlements.edition === 'advisor',
     hidePersonalInfo: operatorPersonalInfoHidden,
   };
   const [adminTab, setAdminTab] = useState<AdminTabId>('license');
@@ -2023,7 +2023,7 @@ export default function App() {
           : 'death'
       }
       operatorPersonalInfoHidden={operatorPersonalInfoHidden}
-      onOperatorPersonalInfoHiddenChange={setOperatorPersonalInfoHidden}
+      onOperatorPersonalInfoHiddenChange={operatorMode.enabled ? setOperatorPersonalInfoHidden : undefined}
       onRequiredCoverageRiskKindChange={(riskKind) => {
         markPlanDataChanged();
         setRequiredCoverageState((prev) =>

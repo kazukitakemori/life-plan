@@ -1,8 +1,50 @@
 import { getSessionContext } from './accountApi.js';
-import { jsonResponse, readJson } from './licenseShared.js';
+import { jsonResponse } from './licenseShared.js';
 
 const PREFIX = 'content-model:';
 const MAX_BYTES = 1_500_000;
+
+function isObject(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isId(value) {
+  return typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value.trim());
+}
+
+async function tokensMatch(supplied, expected) {
+  const encode = (value) => new TextEncoder().encode(value);
+  const [a, b] = await Promise.all([supplied, expected].map((value) => crypto.subtle.digest('SHA-256', encode(value))));
+  // Workers provides a constant-time comparison; hashes have equal byte length.
+  return crypto.subtle.timingSafeEqual(a, b);
+}
+
+async function readBoundedJson(request) {
+  if (!request.body) return { error: 'INVALID_CONTENT_MODEL', status: 400 };
+  const reader = request.body.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_BYTES) {
+        await reader.cancel();
+        return { error: 'PLAN_TOO_LARGE', status: 413 };
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    return { body: JSON.parse(new TextDecoder().decode(bytes)) };
+  } catch {
+    return { error: 'INVALID_CONTENT_MODEL', status: 400 };
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 function sameOrigin(request) {
   const origin = request.headers.get('Origin');
@@ -31,7 +73,7 @@ async function authorize(request, env) {
   }
 
   const supplied = bearerToken(request);
-  if (!supplied || supplied !== token) {
+  if (!supplied || !(await tokensMatch(supplied, token))) {
     return { response: jsonResponse({ error: 'UNAUTHORIZED' }, 401) };
   }
 
@@ -47,6 +89,8 @@ async function authorize(request, env) {
       ),
     };
   }
+  const workspace = await env.DB.prepare('SELECT id FROM account_workspaces WHERE id = ?').bind(workspaceId).first();
+  if (!workspace) return { response: jsonResponse({ error: 'CONTENT_MODEL_WORKSPACE_NOT_FOUND' }, 409) };
   return { workspaceId };
 }
 
@@ -72,28 +116,29 @@ async function handleUpsert(request, env) {
   const auth = await authorize(request, env);
   if (auth.response) return auth.response;
 
-  const body = await readJson(request);
-  const modelCaseId = String(body?.modelCaseId ?? '').trim();
-  const articleId = String(body?.articleId ?? '').trim();
+  const parsed = await readBoundedJson(request);
+  if (parsed.error) return jsonResponse({ error: parsed.error }, parsed.status);
+  const body = parsed.body;
+  const modelCaseId = body?.modelCaseId;
+  const articleId = body?.articleId;
   const plan = body?.plan;
   if (
-    !modelCaseId ||
-    !articleId ||
-    !plan ||
-    typeof plan !== 'object' ||
-    Array.isArray(plan)
+    !isId(modelCaseId) || !isId(articleId) || !isObject(plan) ||
+    typeof plan.customerName !== 'string' || !plan.customerName.startsWith('記事モデル｜') ||
+    plan.phone !== '' || plan.email !== '' ||
+    !Number.isInteger(plan.schemaVersion) || plan.schemaVersion < 1 ||
+    !isObject(plan.payload) || !Array.isArray(plan.payload.familyMembers) ||
+    plan.payload.familyMembers.length === 0 || typeof plan.payload.referenceDate !== 'string'
   ) {
     return jsonResponse({ error: 'INVALID_CONTENT_MODEL' }, 400);
   }
 
   const id = planId(modelCaseId);
-  if (plan.id !== id || !String(plan.note ?? '').includes(`articleId=${articleId}`)) {
+  const metadata = typeof plan.note === 'string' ? plan.note.split('\n') : [];
+  if (plan.id !== id || metadata[0] !== '[CONTENT_MODEL_CASE]' ||
+      !metadata.includes(`articleId=${articleId.trim()}`) ||
+      !metadata.includes(`modelCaseId=${modelCaseId.trim()}`)) {
     return jsonResponse({ error: 'CONTENT_MODEL_METADATA_MISMATCH' }, 400);
-  }
-
-  const documentJson = JSON.stringify(plan);
-  if (new TextEncoder().encode(documentJson).byteLength > MAX_BYTES) {
-    return jsonResponse({ error: 'PLAN_TOO_LARGE' }, 413);
   }
 
   const existing = await readExisting(env, auth.workspaceId, id);
@@ -102,8 +147,9 @@ async function handleUpsert(request, env) {
     existing?.created_at ??
     (typeof plan.createdAt === 'string' ? plan.createdAt : now);
   const nextRevision = Number(existing?.revision ?? 0) + 1;
+  const documentJson = JSON.stringify({ ...plan, createdAt, updatedAt: now });
 
-  await env.DB
+  const result = await env.DB
     .prepare(
       `INSERT INTO account_plans
          (workspace_id, plan_id, document_json, revision, created_at, updated_at)
@@ -111,7 +157,8 @@ async function handleUpsert(request, env) {
        ON CONFLICT(workspace_id, plan_id) DO UPDATE SET
          document_json = excluded.document_json,
          revision = excluded.revision,
-         updated_at = excluded.updated_at`,
+         updated_at = excluded.updated_at
+       WHERE account_plans.revision = ?`,
     )
     .bind(
       auth.workspaceId,
@@ -120,13 +167,16 @@ async function handleUpsert(request, env) {
       nextRevision,
       createdAt,
       now,
+      Number(existing?.revision ?? 0),
     )
     .run();
+
+  if (Number(result.meta?.changes) !== 1) return jsonResponse({ error: 'CONTENT_MODEL_CONFLICT' }, 409);
 
   const saved = await readExisting(env, auth.workspaceId, id);
   if (!saved) return jsonResponse({ error: 'CONTENT_MODEL_READBACK_FAILED' }, 500);
   const readback = JSON.parse(saved.document_json);
-  if (readback.id !== id) {
+  if (saved.document_json !== documentJson || Number(saved.revision) !== nextRevision) {
     return jsonResponse({ error: 'CONTENT_MODEL_READBACK_MISMATCH' }, 500);
   }
 

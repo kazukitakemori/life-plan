@@ -23,6 +23,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify content model persistence and privacy
+        run: npx --yes tsx@4.20.5 --tsconfig tsconfig.app.json scripts/verify-content-model.mjs
+
       - name: Run Q8 pension regression audit
         run: |
           npx --yes tsx@4.20.5 scripts/verify-pension-old-age.mjs

@@ -49,6 +49,31 @@ function clean(value: string): string {
   return value.trim();
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isText(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isId(value: unknown): value is string {
+  return isText(value) && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value.trim());
+}
+
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((value, index) => sameJson(value, b[index]));
+  }
+  if (isObject(a) && isObject(b)) {
+    const keys = Object.keys(a).filter((key) => a[key] !== undefined);
+    return keys.length === Object.keys(b).filter((key) => b[key] !== undefined).length &&
+      keys.every((key) => Object.hasOwn(b, key) && sameJson(a[key], b[key]));
+  }
+  return false;
+}
+
 export function getContentModelPlanId(modelCaseId: string): string {
   return `${CONTENT_MODEL_PLAN_ID_PREFIX}${clean(modelCaseId)}`;
 }
@@ -58,35 +83,66 @@ export function isContentModelPlan(record: Pick<PlanRecord, 'id'>): boolean {
 }
 
 export function validateContentModelCase(
-  model: ContentModelCase,
+  model: unknown,
 ): ContentModelCaseValidation {
   const errors: string[] = [];
+
+  if (!isObject(model)) return { valid: false, errors: ['Content model must be an object.'] };
 
   if (model.version !== CONTENT_MODEL_CASE_VERSION) {
     errors.push(`Unsupported content model version: ${model.version}`);
   }
-  if (!clean(model.articleId)) errors.push('articleId is required.');
-  if (!clean(model.modelCaseId)) errors.push('modelCaseId is required.');
-  if (!clean(model.title)) errors.push('title is required.');
-  if (!clean(model.editorialPurpose)) {
+  if (!isId(model.articleId)) errors.push('articleId must be a stable identifier.');
+  if (!isId(model.modelCaseId)) errors.push('modelCaseId must be a stable identifier.');
+  if (!isText(model.title)) errors.push('title is required.');
+  if (!isText(model.editorialPurpose)) {
     errors.push('editorialPurpose is required.');
   }
-  if (!Array.isArray(model.assumptions)) {
-    errors.push('assumptions must be an array.');
+  if (!Array.isArray(model.assumptions) || !model.assumptions.every(isText)) {
+    errors.push('assumptions must be an array of non-empty strings.');
   }
   if (!Array.isArray(model.captureSpecs) || model.captureSpecs.length === 0) {
     errors.push('At least one captureSpec is required.');
   } else {
+    const ids = new Set<string>();
     for (const spec of model.captureSpecs) {
-      if (!clean(spec.id)) errors.push('captureSpec.id is required.');
-      if (!clean(spec.purpose)) errors.push('captureSpec.purpose is required.');
-      if (spec.viewport && (spec.viewport.width < 320 || spec.viewport.height < 320)) {
-        errors.push('captureSpec.viewport is too small.');
+      if (!isObject(spec)) { errors.push('captureSpec must be an object.'); continue; }
+      if (!isId(spec.id) || ids.has(spec.id.trim())) errors.push('captureSpec.id must be unique and valid.');
+      else ids.add(spec.id.trim());
+      if (!isText(spec.purpose)) errors.push('captureSpec.purpose is required.');
+      if (!['cash-flow-table', 'asset-balance-chart', 'lifetime-balance', 'required-coverage'].includes(String(spec.view))) {
+        errors.push('captureSpec.view is unsupported.');
+      }
+      if (spec.viewport !== undefined && (!isObject(spec.viewport) ||
+        ![spec.viewport.width, spec.viewport.height].every((value) => typeof value === 'number' && Number.isInteger(value) && value >= 320 && value <= 7680))) {
+        errors.push('captureSpec.viewport must contain valid pixel dimensions.');
+      }
+      if (spec.operatorMode !== undefined && (!isObject(spec.operatorMode) || typeof spec.operatorMode.hidePersonalInfo !== 'boolean')) {
+        errors.push('captureSpec.operatorMode is invalid.');
+      }
+      if (spec.captureRegion !== undefined && !isText(spec.captureRegion)) errors.push('captureSpec.captureRegion is invalid.');
+      if (spec.note !== undefined && typeof spec.note !== 'string') errors.push('captureSpec.note is invalid.');
+      if (spec.displayState !== undefined && (!isObject(spec.displayState) || !Object.values(spec.displayState).every((value) =>
+        typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))))) {
+        errors.push('captureSpec.displayState is invalid.');
       }
     }
   }
-  if (!model.payload || typeof model.payload !== 'object') {
+  if (!isObject(model.payload)) {
     errors.push('payload is required.');
+  } else {
+    const payload = model.payload;
+    if (!Array.isArray(payload.familyMembers) || payload.familyMembers.length === 0 ||
+      !payload.familyMembers.every((member) => isObject(member) && isText(member.id))) {
+      errors.push('payload.familyMembers is required.');
+    }
+    if (!isText(payload.referenceDate) || !/^\d{4}-\d{2}-\d{2}$/.test(payload.referenceDate) ||
+      !Number.isFinite(Date.parse(payload.referenceDate)) || new Date(payload.referenceDate).toISOString().slice(0, 10) !== payload.referenceDate) {
+      errors.push('payload.referenceDate must be an explicit valid date.');
+    }
+    for (const key of ['incomeByMember', 'priorYearIncomeByMember', 'livingState', 'housingState', 'vehicleState', 'loanState', 'insuranceState', 'savingsState', 'educationByMember', 'lifeEventState', 'pensionByMember', 'taxSocialState']) {
+      if (!isObject(payload[key])) errors.push(`payload.${key} is required.`);
+    }
   }
 
   return { valid: errors.length === 0, errors };
@@ -119,6 +175,7 @@ export function toContentModelPlanRecord(
     `articleId=${clean(model.articleId)}`,
     `modelCaseId=${clean(model.modelCaseId)}`,
     `purpose=${clean(model.editorialPurpose)}`,
+    `definition=${JSON.stringify({ ...model, payload: undefined })}`,
   ].join('\n');
 
   return migratePlanRecord(
@@ -127,7 +184,7 @@ export function toContentModelPlanRecord(
       customerName: `記事モデル｜${clean(model.title)}`,
       note,
       purposes: ['life_plan'],
-      status: 'simulated',
+      status: 'in_progress',
       payload: model.payload,
       createdAt: existing?.createdAt,
       now,
@@ -153,6 +210,8 @@ export async function saveContentModelCase(
   model: ContentModelCase,
   now = new Date(),
 ): Promise<SaveContentModelCaseResult> {
+  const validation = validateContentModelCase(model);
+  if (!validation.valid) throw new Error(validation.errors.join(' '));
   const id = getContentModelPlanId(model.modelCaseId);
   const existing = await repository.get(id);
   const record = toContentModelPlanRecord(model, existing, now);
@@ -166,13 +225,11 @@ export async function saveContentModelCase(
     throw new Error('Reloaded content model case has an unexpected id.');
   }
 
-  const expectedArticle = `articleId=${clean(model.articleId)}`;
-  const expectedModel = `modelCaseId=${clean(model.modelCaseId)}`;
   if (
-    !reloaded.note.includes(expectedArticle) ||
-    !reloaded.note.includes(expectedModel)
+    reloaded.note !== record.note || reloaded.schemaVersion !== record.schemaVersion ||
+    !sameJson(reloaded.payload, record.payload)
   ) {
-    throw new Error('Reloaded content model case metadata does not match.');
+    throw new Error('Reloaded content model case metadata, schema or payload does not match.');
   }
 
   return { plan: reloaded, created: existing == null };

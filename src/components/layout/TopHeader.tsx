@@ -312,6 +312,19 @@ export function TopHeader({
     return null;
   };
 
+  const renderPrivacyToggle = (className: string) =>
+    isLicensed && onOperatorPersonalInfoHiddenChange ? (
+      <button
+        type="button"
+        className={className}
+        aria-pressed={operatorPersonalInfoHidden}
+        title="顧客名・連絡先・プランメモを画面上で隠します。保存・書き出し内容は変更しません"
+        onClick={() => onOperatorPersonalInfoHiddenChange(!operatorPersonalInfoHidden)}
+      >
+        {operatorPersonalInfoHidden ? '個人情報：非表示' : '個人情報：表示'}
+      </button>
+    ) : null;
+
   return (
     <header className={`top-header${anyMenuOpen ? ' has-menu-open' : ''}`}>
       {anyMenuOpen ? (
@@ -412,6 +425,7 @@ export function TopHeader({
                   </div>
                 );
               })}
+              {renderPrivacyToggle(`top-header-mobile-item${operatorPersonalInfoHidden ? ' active' : ''}`)}
             </nav>
           </div>
         </>
@@ -610,17 +624,7 @@ export function TopHeader({
               );
             })}
           </nav>
-          {isLicensed && onOperatorPersonalInfoHiddenChange ? (
-            <button
-              type="button"
-              className={operatorPersonalInfoHidden ? 'top-header-fullscreen-btn is-active' : 'top-header-fullscreen-btn'}
-              aria-pressed={operatorPersonalInfoHidden}
-              title="保存データは変更せず、画面上の個人情報だけを隠します"
-              onClick={() => onOperatorPersonalInfoHiddenChange(!operatorPersonalInfoHidden)}
-            >
-              {operatorPersonalInfoHidden ? '個人情報：非表示' : '個人情報：表示'}
-            </button>
-          ) : null}
+          {renderPrivacyToggle(`top-header-fullscreen-btn${operatorPersonalInfoHidden ? ' is-active' : ''}`)}
           <button
             type="button"
             className={
