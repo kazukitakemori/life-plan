@@ -13613,20 +13613,17 @@ button:disabled {
 
 .loan-payment-mode {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 10px 18px;
   margin-bottom: 16px;
-  padding: 10px 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-bg-subtle);
 }
 
 .loan-payment-mode-option {
-  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: #333;
-  cursor: pointer;
 }
 
 .vehicle-type-cell {
@@ -14581,25 +14578,8 @@ button:disabled {
 }
 
 .loan-entry-open-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
   width: 124px;
   flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  color: #333;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.loan-entry-open-btn--active {
-  background: #1976d2;
-  border-color: #1565c0;
-  color: #fff;
 }
 
 .loan-entry-card-footer {
@@ -14767,6 +14747,11 @@ button:disabled {
   font-size: 0.8125rem;
 }
 
+.loan-settings-form-table .ui-input,
+.loan-settings-form-table .ui-select {
+  font-size: var(--text-md);
+}
+
 .loan-settings-form-table .loan-settings-form-value--loan-amount {
   flex-direction: column;
   align-items: flex-start;
@@ -14870,7 +14855,7 @@ button:disabled {
   gap: 8px;
   width: 100%;
   padding-top: 12px;
-  border-top: 1px dashed #cfd8dc;
+  border-top: 1px dashed var(--ui-border);
 }
 
 .loan-prepayment-entry:first-child {
@@ -14888,19 +14873,6 @@ button:disabled {
 .loan-prepayment-remove,
 .loan-prepayment-add {
   flex-shrink: 0;
-  padding: 4px 10px;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 0.8125rem;
-  color: #555;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.loan-prepayment-add {
-  border-color: #90caf9;
-  color: #1565c0;
 }
 
 @keyframes loan-repayment-bonus-reveal {
@@ -15082,16 +15054,6 @@ button:disabled {
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-}
-
-.loan-structure-picker-cancel {
-  padding: 4px 10px;
-  border: none;
-  background: transparent;
-  color: #888;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  text-decoration: underline;
 }
 
 .loan-structure-options {
@@ -15390,7 +15352,7 @@ button:disabled {
   flex-shrink: 0;
 }
 
-.loan-bank-fees-fetch > .ui-btn {
+.loan-bank-fees-fetch > :is(.ui-btn, .ui-info-trigger) {
   flex-shrink: 0;
   white-space: nowrap;
 }
