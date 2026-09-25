@@ -22,9 +22,13 @@ import {
 
 const MAN_TO_YEN = 10_000;
 
-/** 住まい/乗り物に未リンクのローン（教育・フリー、および未紐づけの住宅・自動車） */
+/** 用途別CFへ直接計上しないローン（フリー、および未紐づけの住宅・自動車） */
 export function isOtherLoanForCashFlow(entry: LoanEntry): boolean {
-  return !entry.housingLink && !entry.vehicleLink;
+  return (
+    entry.category !== 'education' &&
+    !entry.housingLink &&
+    !entry.vehicleLink
+  );
 }
 
 /** ローン1本の指定年月の返済額（元金＋利息・万円） */
@@ -91,6 +95,28 @@ export function calcLoanEntryMonthlyRepaymentMan(
   );
 
   return yenToMan(principalPaid + interestYen);
+}
+
+/** 教育用途のローン返済月額（万円）。CFでは「教育費」に含める */
+export function calcHouseholdMonthlyEducationLoanRepaymentMan(
+  loanState: LoanState | undefined,
+  referenceDate: Date,
+  calendarYear: number,
+  calendarMonth: number,
+): number {
+  if (!loanState) return 0;
+
+  let total = 0;
+  for (const entry of getAllLoanEntries(loanState)) {
+    if (entry.category !== 'education') continue;
+    total += calcLoanEntryMonthlyRepaymentMan(
+      entry,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    );
+  }
+  return total;
 }
 
 /** 世帯の「ローン」フォルダ月次内訳（万円）。紐づけ済み住宅・自動車は含めない */
