@@ -58,7 +58,7 @@ export function VehicleInsuranceLinks({
         className="housing-owned-loan-add-btn"
         onClick={onAddInsurance}
       >
-        ＋ 保険の追加
+        ＋ 自動車保険を追加
       </button>
     </div>
   );
