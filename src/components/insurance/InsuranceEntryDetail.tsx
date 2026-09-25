@@ -1058,13 +1058,8 @@ export function InsuranceEntryDetail({
             <LoanSettingsField label="保障内容">
               <details className="insurance-protection-details">
                 <summary>
-                  {hasProtectionData
-                    ? '保障内容を確認・編集（任意）'
-                    : '保障内容も入力する（任意）'}
+                  {hasProtectionData ? '保障内容' : '保障内容（任意）'}
                 </summary>
-                <p className="insurance-link-hint">
-                  ここは未入力でもライフプランを作成できます。保障分析をしたい場合だけ入力してください。
-                </p>
                 <div className="insurance-protection-fields">
                   <label className="insurance-protection-field">
                     <span className="insurance-protection-label">保障の対象</span>
@@ -1153,9 +1148,6 @@ export function InsuranceEntryDetail({
                     </label>
                   ) : null}
                 </div>
-                <p className="insurance-link-hint">
-                  この段階では保障内容を保存するだけで、必要保障額の計算にはまだ自動反映しません。
-                </p>
               </details>
             </LoanSettingsField>
           ) : null}
