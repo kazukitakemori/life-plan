@@ -5,6 +5,7 @@ import {
   getMemberInsuranceEntries,
   updateInsuranceByMember,
 } from '../../lib/insuranceDefaults';
+import { INSURANCE_CATEGORY_LABELS } from '../../lib/insuranceLabels';
 import { getIncomeEligibleMembers } from '../../lib/memberDisplay';
 import { memberHasInsuranceData } from '../../lib/memberTabVisibility';
 import { useMemberTabDomain } from '../../lib/useMemberTabDomain';
@@ -136,6 +137,32 @@ export function InsuranceStep({
     return names;
   }, [entries, vehicleState]);
 
+  const defaultNamePositions = useMemo(() => {
+    const positions: Record<string, { index: number; count: number }> = {};
+    const groups = new Map<InsuranceCategory, InsuranceEntry[]>();
+
+    for (const entry of entries) {
+      const isLinked = Boolean(entry.housingLink || entry.vehicleLink);
+      const defaultLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+      const usesDefaultName =
+        !isLinked &&
+        (entry.name.trim() === '' || entry.name.trim() === defaultLabel);
+
+      if (!usesDefaultName) continue;
+      const group = groups.get(entry.category) ?? [];
+      group.push(entry);
+      groups.set(entry.category, group);
+    }
+
+    for (const group of groups.values()) {
+      group.forEach((entry, index) => {
+        positions[entry.id] = { index: index + 1, count: group.length };
+      });
+    }
+
+    return positions;
+  }, [entries]);
+
   const persistEntries = (memberId: string, updated: InsuranceEntry[]) => {
     onChange(updateInsuranceByMember(insuranceState, memberId, updated));
   };
@@ -215,6 +242,7 @@ export function InsuranceStep({
                   referenceDate={referenceDate}
                   housingPropertyName={housingPropertyNames[entry.id]}
                   vehicleName={vehicleNames[entry.id]}
+                  defaultNamePosition={defaultNamePositions[entry.id]}
                   initiallyExpanded={newEntryId === entry.id}
                   onChange={updateEntry}
                   onRemove={() => removeEntry(entry.id)}
