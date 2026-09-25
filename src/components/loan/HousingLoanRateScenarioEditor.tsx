@@ -665,7 +665,7 @@ function CustomRateChangeEditor({
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       {maxYears <= 0 ? (
         <p className="loan-rate-scenario-note">
