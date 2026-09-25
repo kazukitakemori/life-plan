@@ -1,6 +1,5 @@
 import type { FamilyMember } from '../../types/family';
 import type { InsuranceCategory, InsuranceEntry, InsuranceState } from '../../types/insurance';
-import { getMemberTabLabel } from '../../lib/memberDisplay';
 
 interface RequiredCoverageInsuranceEditorProps {
   insuranceState?: InsuranceState;
@@ -27,7 +26,7 @@ export function RequiredCoverageInsuranceEditor({
 }: RequiredCoverageInsuranceEditorProps) {
   if (!insuranceState) return null;
 
-  const eligibleMembers = familyMembers.filter((member) => member.role !== 'pet');
+  const subjectMember = familyMembers.find((member) => member.id === subjectMemberId);
   const rows = Object.entries(insuranceState.byMember ?? {})
     .flatMap(([contractorMemberId, entries]) =>
       entries.map((entry) => ({ contractorMemberId, entry })),
@@ -53,45 +52,12 @@ export function RequiredCoverageInsuranceEditor({
       </h3>
       {rows.length > 0 ? (
         <div className="required-coverage-insurance-list">
-          {rows.map(({ contractorMemberId, entry }) => {
-          const contractor =
-            familyMembers.find((member) => member.id === contractorMemberId) ??
-            eligibleMembers[0];
-          const resolvedInsuredMemberId = eligibleMembers.some(
-            (member) => member.id === entry.insuredMemberId,
-          )
-            ? entry.insuredMemberId!
-            : contractorMemberId;
-          const insuredMember =
-            eligibleMembers.find((member) => member.id === resolvedInsuredMemberId) ??
-            contractor;
-
+          {rows.map(({ entry }) => {
           return (
             <div key={entry.id} className="required-coverage-insurance-row">
               <div className="required-coverage-insurance-name">
                 <strong>{entry.name || '保険'}</strong>
               </div>
-
-              <label className="required-coverage-insurance-field">
-                <span>保障の対象</span>
-                <select
-                  className="select-input"
-                  value={resolvedInsuredMemberId}
-                  disabled={!onEntryChange}
-                  onChange={(event) =>
-                    onEntryChange?.({
-                      ...entry,
-                      insuredMemberId: event.target.value,
-                    })
-                  }
-                >
-                  {eligibleMembers.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {getMemberTabLabel(member)}
-                    </option>
-                  ))}
-                </select>
-              </label>
 
               {riskKind === 'death' && entry.category === 'life' ? (
                 <>
@@ -134,7 +100,7 @@ export function RequiredCoverageInsuranceEditor({
                           deathCoverageEndAge:
                             value === 'until'
                               ? (entry.deathCoverageEndAge ??
-                                insuredMember?.expectedLifespan ??
+                                subjectMember?.expectedLifespan ??
                                 80)
                               : entry.deathCoverageEndAge,
                         });
@@ -157,7 +123,7 @@ export function RequiredCoverageInsuranceEditor({
                           step={1}
                           value={
                             entry.deathCoverageEndAge ??
-                            insuredMember?.expectedLifespan ??
+                            subjectMember?.expectedLifespan ??
                             80
                           }
                           disabled={!onEntryChange}
