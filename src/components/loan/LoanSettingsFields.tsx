@@ -32,6 +32,7 @@ import {
   type GroupCreditLifePairSide,
 } from './HousingLoanGroupCreditLifeEditor';
 import { LoanInterestRatePeriodsEditor } from './LoanInterestRatePeriodsEditor';
+import { HousingLoanRateScenarioEditor } from './HousingLoanRateScenarioEditor';
 import { HousingLoanBankFeesEditor } from './HousingLoanBankFeesEditor';
 
 interface LoanSettingsFieldsProps {
@@ -387,21 +388,38 @@ export function LoanSettingsFields({
         )}
 
         <LoanSettingsField label="金利" cellClassName="loan-settings-form-value--rate-periods">
-          <LoanInterestRatePeriodsEditor
-            periods={settings.interestRatePeriods}
-            fieldIdPrefix={fieldIdPrefix}
-            referenceYear={referenceYear}
-            referenceMonth={referenceDate.getMonth() + 1}
-            loanYears={settings.years}
-            loanStartYear={settings.startYear}
-            loanStartMonth={settings.startMonth}
-            linkedHousingProperty={linkedHousingProperty}
-            linkedVehicle={linkedVehicle}
-            memberAgeAtReference={memberAgeAtReference}
-            memberBirthMonth={memberBirthMonth}
-            allowAddPeriod={showHousingFields}
-            onChange={(interestRatePeriods) => update({ interestRatePeriods })}
-          />
+          {showHousingFields ? (
+            <HousingLoanRateScenarioEditor
+              periods={settings.interestRatePeriods}
+              fieldIdPrefix={fieldIdPrefix}
+              referenceYear={referenceYear}
+              referenceMonth={referenceDate.getMonth() + 1}
+              loanYears={settings.years}
+              loanStartYear={settings.startYear}
+              loanStartMonth={settings.startMonth}
+              linkedHousingProperty={linkedHousingProperty}
+              linkedVehicle={linkedVehicle}
+              memberAgeAtReference={memberAgeAtReference}
+              memberBirthMonth={memberBirthMonth}
+              onChange={(interestRatePeriods) => update({ interestRatePeriods })}
+            />
+          ) : (
+            <LoanInterestRatePeriodsEditor
+              periods={settings.interestRatePeriods}
+              fieldIdPrefix={fieldIdPrefix}
+              referenceYear={referenceYear}
+              referenceMonth={referenceDate.getMonth() + 1}
+              loanYears={settings.years}
+              loanStartYear={settings.startYear}
+              loanStartMonth={settings.startMonth}
+              linkedHousingProperty={linkedHousingProperty}
+              linkedVehicle={linkedVehicle}
+              memberAgeAtReference={memberAgeAtReference}
+              memberBirthMonth={memberBirthMonth}
+              allowAddPeriod={false}
+              onChange={(interestRatePeriods) => update({ interestRatePeriods })}
+            />
+          )}
         </LoanSettingsField>
 
         {showHousingFields && structureType ? (
