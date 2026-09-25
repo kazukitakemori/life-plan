@@ -6,6 +6,7 @@ interface RequiredCoverageInsuranceEditorProps {
   insuranceState?: InsuranceState;
   familyMembers: FamilyMember[];
   riskKind: 'death' | 'medical';
+  subjectMemberId: string;
   onEntryChange?: (entry: InsuranceEntry) => void;
 }
 
@@ -17,6 +18,7 @@ export function RequiredCoverageInsuranceEditor({
   insuranceState,
   familyMembers,
   riskKind,
+  subjectMemberId,
   onEntryChange,
 }: RequiredCoverageInsuranceEditorProps) {
   if (!insuranceState) return null;
@@ -26,11 +28,13 @@ export function RequiredCoverageInsuranceEditor({
     .flatMap(([contractorMemberId, entries]) =>
       entries.map((entry) => ({ contractorMemberId, entry })),
     )
-    .filter(({ entry }) =>
-      riskKind === 'death'
+    .filter(({ contractorMemberId, entry }) => {
+      const targetMemberId = entry.insuredMemberId ?? contractorMemberId;
+      if (targetMemberId !== subjectMemberId) return false;
+      return riskKind === 'death'
         ? entry.category === 'life'
-        : entry.category === 'medical' || entry.category === 'cancer',
-    );
+        : entry.category === 'medical' || entry.category === 'cancer';
+    });
 
   if (rows.length === 0) return null;
 
