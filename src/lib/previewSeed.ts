@@ -31,6 +31,7 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         viewport: { width: 1440, height: 1000 },
         operatorMode: { hidePersonalInfo: true },
         purpose: 'キャッシュフロー表の自動撮影E2E検証',
+        note: 'SIM-001記事内の実画面素材。既存対応: LP-SCREEN-019。',
       },
       {
         id: 'SIM-001-ASSET',
@@ -39,6 +40,7 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         viewport: { width: 1440, height: 1000 },
         operatorMode: { hidePersonalInfo: true },
         purpose: '貯蓄・資産グラフの自動撮影E2E検証',
+        note: 'SIM-001記事内の実画面素材。既存対応: LP-SCREEN-018。',
       },
       {
         id: 'SIM-001-LIFETIME',
@@ -48,6 +50,7 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         viewport: { width: 1440, height: 1000 },
         operatorMode: { hidePersonalInfo: true },
         purpose: '生涯収支グラフの自動撮影E2E検証',
+        note: 'SIM-001記事内の実画面素材。既存対応: LP-SCREEN-013。',
       },
       {
         id: 'SIM-001-COVERAGE',
@@ -57,6 +60,7 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         viewport: { width: 1440, height: 1000 },
         operatorMode: { hidePersonalInfo: true },
         purpose: '必要保障額の自動撮影E2E検証',
+        note: 'SIM-001記事の必須素材ではない。required-coverage汎用撮影のスモーク検証用。',
       },
     ],
   },
