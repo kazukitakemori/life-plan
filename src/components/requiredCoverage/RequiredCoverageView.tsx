@@ -181,7 +181,6 @@ export function RequiredCoverageView({
     : '配偶者さん';
   const hasSpouse = spouseMember != null;
   const subjectLabel = subject === 'spouse' ? spouseLabel : headLabel;
-  const subjectMember = subject === 'spouse' ? spouseMember : headMember;
   const survivorMember =
     subject === 'head'
       ? (spouseMember ??
