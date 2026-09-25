@@ -139,7 +139,7 @@ function LoanInterestRatePeriodRow({
       <div className="loan-rate-period-body">
         <div className="loan-rate-period-rate-group">
           <div className="loan-rate-type-options housing-owned-payment-options housing-owned-payment-options--compact">
-            <label className="housing-owned-payment-option">
+            <label className="ui-choice">
               <input
                 type="radio"
                 name={`${fieldIdPrefix}-rate-type-${period.id}`}
@@ -148,7 +148,7 @@ function LoanInterestRatePeriodRow({
               />
               <span>{LOAN_INTEREST_RATE_TYPE_LABELS.fixed}</span>
             </label>
-            <label className="housing-owned-payment-option loan-rate-period-variable-option">
+            <label className="ui-choice loan-rate-period-variable-option">
               <input
                 type="radio"
                 name={`${fieldIdPrefix}-rate-type-${period.id}`}
@@ -159,7 +159,7 @@ function LoanInterestRatePeriodRow({
             </label>
           </div>
           <div className="loan-rate-period-pct-input">
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={period.interestRatePct}
               onChange={(interestRatePct) => onChange({ ...period, interestRatePct })}
@@ -174,7 +174,7 @@ function LoanInterestRatePeriodRow({
           {showStartEditor ? (
             <div className="loan-rate-period-boundary">
               <select
-                className="select-input select-input--compact loan-rate-period-boundary-select"
+                className="select-input select-input--compact ui-select ui-select--compact loan-rate-period-boundary-select"
                 value={startIsLoanStart ? 'loan_start' : 'custom'}
                 onChange={(event) => {
                   if (event.target.value === 'loan_start') {
@@ -192,7 +192,7 @@ function LoanInterestRatePeriodRow({
                 <option value="custom">日付を指定</option>
               </select>
               {!startIsLoanStart ? (
-                <HousingRenewalDateFields
+                <HousingRenewalDateFields unified
                   year={period.startYear}
                   month={period.startMonth}
                   referenceYear={referenceYear}
@@ -219,7 +219,7 @@ function LoanInterestRatePeriodRow({
           ) : null}
           <div className="loan-rate-period-boundary">
             <select
-              className="select-input select-input--compact loan-rate-period-boundary-select"
+              className="select-input select-input--compact ui-select ui-select--compact loan-rate-period-boundary-select"
               value={
                 endIsLoanEnd
                   ? 'loan_end'
