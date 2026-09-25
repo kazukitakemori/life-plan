@@ -355,6 +355,8 @@ async function main() {
       modelCaseId,
       captureSpecId,
       view: pageManifest.view,
+      purpose: pageManifest.purpose ?? null,
+      note: pageManifest.note ?? null,
       captureRegion: pageManifest.captureRegion,
       viewport: pageManifest.viewport,
       actualViewport,
