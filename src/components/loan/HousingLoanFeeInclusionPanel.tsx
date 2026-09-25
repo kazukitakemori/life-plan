@@ -44,7 +44,7 @@ function PairSharedPropertyFeeField({
       label={label}
       cellClassName="loan-settings-form-value--loan-amount"
     >
-      <HousingManInput compact value={amountMan} onChange={onChange} />
+      <HousingManInput unified compact value={amountMan} onChange={onChange} />
       <span className="loan-amount-linked-share">
         按分額 {sharedAmountMan.toLocaleString()}万円（{pairSharePct}%）
       </span>
@@ -130,7 +130,7 @@ export function HousingLoanFeeInclusionPanel({
             ) : (
               <>
                 <LoanSettingsField label="仲介手数料">
-                  <HousingManInput
+                  <HousingManInput unified
                     compact
                     value={property.brokerageFeeMan}
                     onChange={(brokerageFeeMan) =>
@@ -139,7 +139,7 @@ export function HousingLoanFeeInclusionPanel({
                   />
                 </LoanSettingsField>
                 <LoanSettingsField label="登記手数料">
-                  <HousingManInput
+                  <HousingManInput unified
                     compact
                     value={property.registrationFeeMan}
                     onChange={(registrationFeeMan) =>
@@ -176,7 +176,7 @@ export function HousingLoanFeeInclusionPanel({
           <div className="loan-settings-form-table">
             <LoanSettingsField label="諸費用の扱い">
               <div className="housing-owned-payment-options housing-owned-payment-options--compact">
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-fees-in-loan-mode`}
@@ -185,7 +185,7 @@ export function HousingLoanFeeInclusionPanel({
                   />
                   <span>諸費用をまとめてローンに含める</span>
                 </label>
-                <label className="housing-owned-payment-option">
+                <label className="ui-choice">
                   <input
                     type="radio"
                     name={`${fieldIdPrefix}-fees-in-loan-mode`}
