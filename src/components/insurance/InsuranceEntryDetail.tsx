@@ -182,6 +182,21 @@ export function InsuranceEntryDetail({
   const isLife = isLifeInsuranceCategory(entry.category);
   const isFire = entry.category === 'fire';
   const isAuto = entry.category === 'auto';
+  const showProtectionDetails =
+    entry.category === 'life' ||
+    entry.category === 'medical' ||
+    entry.category === 'cancer';
+  const protectionMembers = members.filter((item) => item.role !== 'pet');
+  const resolvedInsuredMemberId = protectionMembers.some(
+    (item) => item.id === entry.insuredMemberId,
+  )
+    ? entry.insuredMemberId!
+    : member.id;
+  const hasProtectionData =
+    Boolean(entry.insuredMemberId) ||
+    (entry.deathBenefitMan ?? 0) > 0 ||
+    (entry.medicalHospitalDailyYen ?? 0) > 0 ||
+    (entry.cancerDiagnosisBenefitMan ?? 0) > 0;
   const showBenefitPayout = hasBenefitPayoutInput(entry.category);
   const showBeneficiary = hasBeneficiaryInput(entry.category);
   const showReturnValueBeneficiary = showsReturnValueBeneficiary(
@@ -1036,6 +1051,112 @@ export function InsuranceEntryDetail({
                   </p>
                 </div>
               ) : null}
+            </LoanSettingsField>
+          ) : null}
+
+          {showProtectionDetails ? (
+            <LoanSettingsField label="保障内容">
+              <details className="insurance-protection-details">
+                <summary>
+                  {hasProtectionData
+                    ? '保障内容を確認・編集（任意）'
+                    : '保障内容も入力する（任意）'}
+                </summary>
+                <p className="insurance-link-hint">
+                  ここは未入力でもライフプランを作成できます。保障分析をしたい場合だけ入力してください。
+                </p>
+                <div className="insurance-protection-fields">
+                  <label className="insurance-protection-field">
+                    <span className="insurance-protection-label">保障の対象</span>
+                    <select
+                      className="select-input insurance-beneficiary-select"
+                      value={resolvedInsuredMemberId}
+                      onChange={(e) =>
+                        update({ insuredMemberId: e.target.value })
+                      }
+                    >
+                      {protectionMembers.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {getMemberTabLabel(item)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {entry.category === 'life' ? (
+                    <label className="insurance-protection-field">
+                      <span className="insurance-protection-label">死亡保障額</span>
+                      <div className="life-event-amount-field">
+                        <input
+                          type="number"
+                          className="amount-input"
+                          value={entry.deathBenefitMan ?? 0}
+                          min={0}
+                          step={10}
+                          onChange={(e) =>
+                            update({
+                              deathBenefitMan: roundAmountMan(
+                                Math.max(0, Number(e.target.value) || 0),
+                              ),
+                            })
+                          }
+                        />
+                        <span className="amount-unit">万円</span>
+                      </div>
+                    </label>
+                  ) : null}
+
+                  {entry.category === 'medical' ? (
+                    <label className="insurance-protection-field">
+                      <span className="insurance-protection-label">入院給付金</span>
+                      <div className="life-event-amount-field">
+                        <input
+                          type="number"
+                          className="amount-input"
+                          value={entry.medicalHospitalDailyYen ?? 0}
+                          min={0}
+                          step={1000}
+                          onChange={(e) =>
+                            update({
+                              medicalHospitalDailyYen: Math.max(
+                                0,
+                                Math.round(Number(e.target.value) || 0),
+                              ),
+                            })
+                          }
+                        />
+                        <span className="amount-unit">円/日</span>
+                      </div>
+                    </label>
+                  ) : null}
+
+                  {entry.category === 'cancer' ? (
+                    <label className="insurance-protection-field">
+                      <span className="insurance-protection-label">診断一時金</span>
+                      <div className="life-event-amount-field">
+                        <input
+                          type="number"
+                          className="amount-input"
+                          value={entry.cancerDiagnosisBenefitMan ?? 0}
+                          min={0}
+                          step={10}
+                          onChange={(e) =>
+                            update({
+                              cancerDiagnosisBenefitMan: roundAmountMan(
+                                Math.max(0, Number(e.target.value) || 0),
+                              ),
+                            })
+                          }
+                        />
+                        <span className="amount-unit">万円</span>
+                      </div>
+                    </label>
+                  ) : null}
+                </div>
+                <p className="insurance-link-hint">
+                  この段階では保障内容を保存するだけで、必要保障額の計算にはまだ自動反映しません。
+                </p>
+              </details>
             </LoanSettingsField>
           ) : null}
 
