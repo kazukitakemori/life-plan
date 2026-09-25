@@ -135,7 +135,7 @@ export function LoanEntryCard({
           <div className="loan-entry-card-footer">
             <button
               type="button"
-              className="loan-entry-remove-btn"
+              className="ui-delete-button loan-entry-remove-btn"
               onClick={onRemove}
               aria-label={`${displayName}を削除`}
             >
