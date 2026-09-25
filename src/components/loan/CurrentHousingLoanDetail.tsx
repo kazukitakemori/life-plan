@@ -119,7 +119,7 @@ export function CurrentHousingLoanDetail({
             labelFor={`${entry.id}-current-balance`}
             cellClassName="loan-settings-form-value--loan-amount"
           >
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={entry.currentBalanceMan}
               onChange={updateBalance}
@@ -130,7 +130,7 @@ export function CurrentHousingLoanDetail({
           </LoanSettingsField>
 
           <LoanSettingsField label="返済終了">
-            <HousingRenewalDateFields
+            <HousingRenewalDateFields unified
               year={period.endYear}
               month={period.endMonth}
               referenceYear={referenceYear}
@@ -143,7 +143,7 @@ export function CurrentHousingLoanDetail({
             label="現在金利"
             labelFor={`${entry.id}-current-rate`}
           >
-            <HousingManInput
+            <HousingManInput unified
               compact
               value={currentRatePct}
               onChange={updateCurrentRate}
@@ -156,7 +156,7 @@ export function CurrentHousingLoanDetail({
           <LoanSettingsField label="返済方式">
             <div className="housing-owned-payment-options housing-owned-payment-options--compact">
               {REPAYMENT_METHODS.map((method) => (
-                <label key={method} className="housing-owned-payment-option">
+                <label key={method} className="ui-choice">
                   <input
                     type="radio"
                     name={`${entry.id}-current-balance-repayment-method`}
