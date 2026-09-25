@@ -40,6 +40,7 @@ export type CoverageChartDisplayPoint = RequiredCoverageChartPoint & {
   preparedChild: number;
   preparedOldAgeBasic: number;
   preparedOldAgeEmployees: number;
+  preparedDeathBenefit: number;
   preparedTotal: number;
   shortfall: number;
   sufficiencyPct: number;
@@ -102,6 +103,7 @@ export function withDeathTimingSweep(
     remainingOldAgeBasic: point.remainingOldAgeBasic,
     remainingOldAgeEmployees: point.remainingOldAgeEmployees,
     initialSavings: preparedBalance,
+    registeredDeathBenefitMan: point.registeredDeathBenefitMan,
   });
   let remaining = row.expenseBase;
   const savings = clipPreparedLayer(row.preparedSavings, remaining);
@@ -127,6 +129,7 @@ export function withDeathTimingSweep(
     preparedChild: child.value,
     preparedOldAgeBasic: oldAgeBasic.value,
     preparedOldAgeEmployees: oldAgeEmployees.value,
+    preparedDeathBenefit: row.preparedDeathBenefit,
     preparedTotal: row.preparedTotal,
     shortfall: row.shortfall,
     sufficiencyPct: row.sufficiencyPct,
