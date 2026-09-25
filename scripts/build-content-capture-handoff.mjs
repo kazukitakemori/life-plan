@@ -92,7 +92,7 @@ function main() {
       allowAiRedrawOfScreen: false,
       editorialPlacementRequired: true,
       note:
-        'Use captured product screens as fixed originals. Add callouts/annotations only in downstream diagram composition when needed.',
+        'Use captured product screens unmodified by default. Do not auto-annotate or use generative image editing on the source UI. If a user later creates a composite manually, treat it as a derived editorial asset.',
     },
     captures: manifests.map((item) => ({
       captureSpecId: item.captureSpecId,
