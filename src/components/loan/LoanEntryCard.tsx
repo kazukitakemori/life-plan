@@ -82,7 +82,7 @@ export function LoanEntryCard({
             ) : (
               <input
                 type="text"
-                className="loan-entry-name-input"
+                className="loan-entry-name-input ui-input"
                 value={entry.name}
                 aria-label="ローン名"
                 onChange={(e) => onChange({ ...entry, name: e.target.value })}
