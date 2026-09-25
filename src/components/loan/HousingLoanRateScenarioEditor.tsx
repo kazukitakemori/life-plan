@@ -790,7 +790,9 @@ export function HousingLoanRateScenarioEditor({
               この金利条件を設定
             </button>
 
-            {postFixedScenario === 'custom' && hasExistingInitialFixed ? (
+            {postFixedScenario === 'custom' &&
+            hasExistingInitialFixed &&
+            periods.length <= 2 ? (
               <div className="loan-rate-post-fixed-custom">
                 <p className="loan-rate-scenario-note">
                   「この金利条件を設定」を押すと、固定期間＋最初の変動期間だけに整理します。その後、必要な金利変更だけ追加できます。
