@@ -40,6 +40,15 @@ const PREVIEW_CAPTURE_FIXTURES: Record<string, PreviewCaptureFixture> = {
         operatorMode: { hidePersonalInfo: true },
         purpose: '貯蓄・資産グラフの自動撮影E2E検証',
       },
+      {
+        id: 'SIM-001-LIFETIME',
+        view: 'lifetime-balance',
+        displayState: { startAge: 35 },
+        captureRegion: 'lifetime-balance',
+        viewport: { width: 1440, height: 1000 },
+        operatorMode: { hidePersonalInfo: true },
+        purpose: '生涯収支グラフの自動撮影E2E検証',
+      },
     ],
   },
 };
