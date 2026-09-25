@@ -49,8 +49,9 @@
 
 .pension-source-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  max-width: 760px;
 }
 
 .pension-source-option {
@@ -139,43 +140,59 @@
   display: none;
 }
 
-.pension-step .pension-info-box {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border: 1px solid var(--ui-border, #dfe5e1);
-  border-radius: 9px;
-  background: var(--ui-bg-surface, #fff);
-  color: var(--ui-text-muted, #65726b);
+.pension-step .teikibin-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  min-width: 0;
+  margin-top: 18px;
 }
 
-.pension-step .pension-info-emphasis {
+.pension-step .teikibin-form > .teikibin-block {
+  min-width: 0;
+}
+
+.pension-step .teikibin-monthly-details {
+  overflow: hidden;
+  border: 1px solid var(--ui-border, #dfe5e1);
+  border-radius: 10px;
+  background: var(--ui-bg-surface, #fff);
+}
+
+.pension-step .teikibin-monthly-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  cursor: pointer;
+  list-style: none;
   color: var(--ui-text, #26322c);
+  font-size: var(--text-sm, 0.875rem);
   font-weight: 700;
 }
 
-.pension-assumption-details {
-  margin-top: 9px;
-  padding-top: 8px;
+.pension-step .teikibin-monthly-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pension-step .teikibin-monthly-summary::after {
+  content: '＋';
+  flex: 0 0 auto;
+  color: var(--ui-brand, #2f6f4e);
+}
+
+.pension-step .teikibin-monthly-details[open] .teikibin-monthly-summary::after {
+  content: '−';
+}
+
+.pension-step .teikibin-monthly-details-body {
+  padding: 14px;
   border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
-.pension-assumption-details summary {
-  width: fit-content;
-  color: var(--ui-brand, #2f6f4e);
-  font-size: var(--text-xs, 0.8125rem);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.pension-assumption-details p {
-  margin-top: 8px !important;
-}
-
-.pension-source-helper {
-  margin: 14px 0 0;
-  color: var(--ui-text-muted, #65726b);
-  font-size: var(--text-xs, 0.8125rem);
-  line-height: 1.55;
+.pension-step .teikibin-amount-total {
+  border-top-color: var(--ui-brand, #2f6f4e);
 }
 
 .pension-step .benefit-settings {
@@ -239,22 +256,54 @@
   color: var(--ui-brand, #2f6f4e);
 }
 
-.pension-auto-benefit-note {
-  display: flex;
-  gap: 8px 12px;
-  align-items: baseline;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: var(--ui-bg-subtle, #f7f9f8);
-  color: var(--ui-text-muted, #65726b);
-  font-size: var(--text-xs, 0.8125rem);
-  line-height: 1.5;
+.pension-step .benefit-survivor-estimate {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border, #dfe5e1);
 }
 
-.pension-auto-benefit-note strong {
-  flex: 0 0 auto;
-  color: var(--ui-text, #26322c);
+.pension-step .benefit-survivor-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pension-step .benefit-survivor-section-heading .pension-subsection-title {
+  margin-bottom: 0;
+}
+
+.pension-step .benefit-survivor-estimate-source,
+.pension-step .benefit-survivor-estimate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pension-step .benefit-survivor-estimate-source {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--ui-border, #dfe5e1);
+}
+
+.pension-step .benefit-survivor-estimate-label,
+.pension-step .benefit-survivor-estimate-status {
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.pension-step .benefit-survivor-estimate-rows {
+  display: grid;
+}
+
+.pension-step .benefit-survivor-estimate-row {
+  min-height: 44px;
+  border-bottom: 1px solid var(--ui-border, #dfe5e1);
+}
+
+.pension-step .benefit-survivor-estimate-row:last-child {
+  border-bottom: 0;
 }
 
 .pension-step .benefit-settings-block--optional {
@@ -300,13 +349,21 @@
     padding: 12px;
   }
 
-  .pension-source-option {
+  .pension-step .teikibin-form {
+    gap: 18px;
+  }
+
+  .pension-step .teikibin-monthly-summary {
+    align-items: flex-start;
     padding: 12px;
   }
 
-  .pension-auto-benefit-note {
-    display: grid;
-    gap: 4px;
+  .pension-step .teikibin-monthly-details-body {
+    padding: 12px;
+  }
+
+  .pension-source-option {
+    padding: 12px;
   }
 
   .pension-step .benefit-settings-block--optional {
@@ -576,6 +633,15 @@
   visibility: hidden;
 }
 
+.pension-step .pension-chart-tooltip-row--note {
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+}
+
+.pension-step .pension-chart-tooltip-row--note .education-chart-tooltip-swatch {
+  visibility: hidden;
+}
+
 .pension-chart-mobile-summary {
   display: none;
 }
@@ -678,4 +744,28 @@
   .pension-step .pension-chart-container .recharts-responsive-container {
     max-width: 100%;
   }
+}
+
+
+/* Q8 compact information rows ----------------------------------------- */
+
+.pension-context-notice {
+  margin: 6px 0;
+  color: var(--ui-text-muted, #65726b);
+  font-size: var(--text-xs, 0.8125rem);
+  line-height: 1.5;
+}
+
+.pension-context-notice--action {
+  color: var(--ui-text, #26322c);
+}
+
+.pension-context-info {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.pension-context-info--benefit {
+  margin: 2px 0;
 }

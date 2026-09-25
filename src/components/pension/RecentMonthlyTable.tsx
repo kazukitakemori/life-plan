@@ -29,21 +29,45 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
 
   return (
     <div className="teikibin-block teikibin-block--monthly">
-      <h5 className="teikibin-block-title">最近の月別状況</h5>
-
       <div className="teikibin-monthly-table-wrap">
         <table className="teikibin-monthly-table">
+          <colgroup>
+            <col className="teikibin-monthly-col--date" />
+            <col className="teikibin-monthly-col--national" />
+            <col className="teikibin-monthly-col--category" />
+            <col className="teikibin-monthly-col--remuneration" />
+            <col className="teikibin-monthly-col--bonus" />
+            <col className="teikibin-monthly-col--premium" />
+          </colgroup>
           <thead>
             <tr>
               <th rowSpan={2}>年月</th>
-              <th rowSpan={2}>国民年金（第1号・第3号）納付状況</th>
+              <th rowSpan={2}>
+                国民年金
+                <br />
+                （第1号・第3号）
+                <br />
+                納付状況
+              </th>
               <th colSpan={3}>厚生年金保険</th>
-              <th rowSpan={2}>保険料納付額</th>
+              <th rowSpan={2}>
+                保険料
+                <br />
+                納付額
+              </th>
             </tr>
             <tr>
               <th>加入区分</th>
-              <th>標準報酬月額（千円）</th>
-              <th>標準賞与額（千円）</th>
+              <th>
+                標準報酬月額
+                <br />
+                （千円）
+              </th>
+              <th>
+                標準賞与額
+                <br />
+                （千円）
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -110,9 +134,7 @@ export function RecentMonthlyTable({ form, onChange }: RecentMonthlyTableProps) 
                 </select>
                 <span className="teikibin-monthly-date-unit">月</span>
               </td>
-              <td colSpan={5} className="teikibin-monthly-readonly">
-                最近の月別状況は詳細入力です。未入力でも年金概算は利用できます
-              </td>
+              <td colSpan={5} />
             </tr>
           </tbody>
         </table>

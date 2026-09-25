@@ -168,6 +168,51 @@ export function hasConfirmedNoUnpaidInRecentYear(
   return selected.every(({ row }) => isConfirmedCoveredMonthlyRow(row));
 }
 
+function hasConfirmedNoUnpaidInRecentYearFromQ7Employees(
+  deceased: FamilyMember,
+  entries: IncomeEntry[],
+  referenceDate: Date,
+  deathYear: number,
+  deathMonth: number,
+): boolean {
+  if (entries.length === 0) return false;
+
+  const requiredEndSerial = deathYear * 12 + (deathMonth - 1) - 2;
+  const requiredStartSerial = requiredEndSerial - 11;
+  const birthYear = calcBirthYear(
+    deceased.age,
+    deceased.birthMonth,
+    referenceDate,
+    deceased.birthDay,
+  );
+  const birthMonth = resolveMemberBirthMonth(deceased);
+
+  for (let serial = requiredStartSerial; serial <= requiredEndSerial; serial += 1) {
+    const calendarYear = Math.floor(serial / 12);
+    const calendarMonth = (serial % 12) + 1;
+    const ageMonth = getMemberAgeMonth(
+      deceased,
+      referenceDate,
+      calendarYear,
+      calendarMonth,
+    );
+    if (!ageMonth) return false;
+    if (
+      !isEmployeesInsuredAt(
+        entries,
+        ageMonth.age,
+        calendarMonth,
+        birthYear,
+        birthMonth,
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function recordedPremiumEligibleMonths(memberState: PensionMemberState): number {
   if (memberState.pastEnrollment === 'none') return 0;
   const form =
@@ -261,7 +306,11 @@ export function hasConfirmedTwoThirdsPremiumRequirement(
 export type SurvivorPremiumRequirementAssessment =
   | {
       status: 'met';
-      basis: 'manual' | 'one_year_no_unpaid' | 'two_thirds_recorded';
+      basis:
+        | 'manual'
+        | 'standard_assumption'
+        | 'one_year_no_unpaid'
+        | 'two_thirds_recorded';
     }
   | {
       status: 'not_met';
@@ -277,12 +326,20 @@ export function resolveSurvivorPremiumRequirementAssessment(
   memberState: PensionMemberState,
   referenceDate: Date,
   death: CalendarYearMonth,
+  entries: IncomeEntry[] = [],
 ): SurvivorPremiumRequirementAssessment {
   const setting =
     memberState.benefitSettings.survivorPremiumRequirement ?? 'auto';
   if (setting === 'met') return { status: 'met', basis: 'manual' };
   if (setting === 'not_met') {
     return { status: 'not_met', basis: 'manual' };
+  }
+
+  // 「入力内容から試算」では、通常どおり公的年金へ加入・納付している
+  // 標準ケースを前提にする。明示的な手動設定は上で優先し、
+  // ねんきん定期便を選んだ場合は実記録から判定する。
+  if (memberState.pastEnrollment === 'none') {
+    return { status: 'met', basis: 'standard_assumption' };
   }
 
   const deathAge = getMemberAgeMonth(
@@ -301,6 +358,25 @@ export function resolveSurvivorPremiumRequirementAssessment(
       death.year,
       death.month,
       deathAge.age,
+    )
+  ) {
+    return { status: 'met', basis: 'one_year_no_unpaid' };
+  }
+
+  const oneYearExceptionAvailable =
+    deathAge.age < STANDARD_OLD_AGE_START &&
+    (death.year < SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR ||
+      (death.year === SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_YEAR &&
+        death.month <= SURVIVOR_PREMIUM_ONE_YEAR_RULE_END_MONTH));
+
+  if (
+    oneYearExceptionAvailable &&
+    hasConfirmedNoUnpaidInRecentYearFromQ7Employees(
+      deceased,
+      entries,
+      referenceDate,
+      death.year,
+      death.month,
     )
   ) {
     return { status: 'met', basis: 'one_year_no_unpaid' };
@@ -370,6 +446,7 @@ export function resolveSurvivorEmployeesDeathRequirement(
       memberState,
       referenceDate,
       death,
+      entries,
     );
     if (premiumAssessment.status === 'met') {
       return 'short_term';

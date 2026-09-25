@@ -150,7 +150,7 @@ export interface BenefitSettings {
   survivorEmployeesMutualEndMonth?: number | null;
   /**
    * 遺族基礎年金・遺族厚生年金の保険料納付要件。
-   * auto はねんきん定期便等から確認できる場合だけ確定し、確認できなければ未確認扱い。
+   * 旧UIとの互換用。通常画面では直接入力させず、auto は試算方法に応じて内部判定する。
    */
   survivorPremiumRequirement?: SurvivorPremiumRequirementSetting;
   dependentSpousePension: DependentSpousePensionSettings;
@@ -177,14 +177,14 @@ export const PAST_ENROLLMENT_OPTIONS: {
   value: PastEnrollmentMode;
   label: string;
 }[] = [
-  { value: 'none', label: '収入情報から概算する' },
+  { value: 'none', label: '入力内容から試算する' },
   {
     value: 'nenkin-teikibin-under50',
-    label: 'ねんきん定期便から入力（50歳未満）',
+    label: 'ねんきん定期便から試算（50歳未満）',
   },
   {
     value: 'nenkin-teikibin-over50',
-    label: 'ねんきん定期便から入力（50歳以上）',
+    label: 'ねんきん定期便から試算（50歳以上）',
   },
 ];
 

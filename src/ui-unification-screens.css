@@ -625,7 +625,7 @@
 }
 
 /* Q8 pension ------------------------------------------------------------ */
-.pension-step :is(.pension-section-title, .pension-subsection-title, .teikibin-block-title, .benefit-settings-block-title, .pension-estimate-title) {
+.pension-step :is(.pension-section-title, .pension-subsection-title, .teikibin-block-title, .benefit-settings-block-title) {
   color: var(--ui-text);
 }
 
@@ -636,12 +636,10 @@
   box-shadow: var(--ui-shadow-subtle);
 }
 
-.pension-step :is(.pension-estimate-total, .pension-estimate-note, .pension-field-unit, .teikibin-block-title-sub, .benefit-death-date) {
+.pension-step :is(.pension-field-unit, .teikibin-block-title-sub, .benefit-death-date) {
   color: var(--ui-text-muted);
 }
 
-.pension-step .pension-estimate-total strong,
-.pension-step .pension-info-emphasis,
 .pension-step .pension-field-calc {
   color: var(--ui-brand);
 }

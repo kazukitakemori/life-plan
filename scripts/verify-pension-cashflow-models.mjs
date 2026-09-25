@@ -5,6 +5,11 @@
  */
 import assert from 'node:assert/strict';
 import { buildCashFlowTable } from '../src/lib/cashFlow.ts';
+import {
+  buildPensionBenefitChartPoints,
+  sumPensionBenefitChartPoint,
+} from '../src/lib/pensionBenefitChartData.ts';
+import { sumOldAgePension } from '../src/types/cashFlow.ts';
 import { createIncomeEntry } from '../src/lib/incomeDefaults.ts';
 import { createDefaultHousingState } from '../src/lib/housingDefaults.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
@@ -68,7 +73,11 @@ function assertFiniteDeep(value, path = 'root') {
   }
 }
 
-function buildInput(familyMembers, incomeByMember = {}) {
+function buildInput(
+  familyMembers,
+  incomeByMember = {},
+  pensionByMember = createDefaultPensionByMember(familyMembers),
+) {
   return {
     familyMembers,
     incomeByMember,
@@ -81,7 +90,7 @@ function buildInput(familyMembers, incomeByMember = {}) {
     loanState: createDefaultLoanState(),
     educationByMember: {},
     lifeEventState: createDefaultLifeEventState(),
-    pensionByMember: createDefaultPensionByMember(familyMembers),
+    pensionByMember,
     taxSocialState: createDefaultTaxSocialState(
       familyMembers.find((m) => m.role === 'head')?.age ?? 40,
       9,
@@ -115,6 +124,71 @@ for (const model of cases) {
     assert.ok(Number.isFinite(row.financialAssets));
   }
   console.log(`OK ${model.name}: ${result.startYear}-${result.endYear} (${result.years.length}年)`);
+}
+
+
+{
+  const pensioner = member({
+    id: 'pensioner',
+    role: 'head',
+    nickname: '年金受給者',
+    age: 64,
+    birthMonth: 4,
+  });
+  const pensionByMember = createDefaultPensionByMember([pensioner]);
+  const state = pensionByMember[pensioner.id];
+  state.benefitSettings.oldAgeBasic.amountMode = 'manual';
+  state.benefitSettings.oldAgeBasic.manualAmountPerYear = 1_200_000;
+  state.benefitSettings.oldAgeGeneralEmployees.amountMode = 'manual';
+  state.benefitSettings.oldAgeGeneralEmployees.manualAmountPerYear = 600_000;
+  state.benefitSettings.oldAgePublicPrivate.amountMode = 'manual';
+  state.benefitSettings.oldAgePublicPrivate.manualAmountPerYear = 0;
+
+  const input = buildInput([pensioner], {}, pensionByMember);
+  const cashFlow = buildCashFlowTable(input);
+  const chart = buildPensionBenefitChartPoints({
+    member: pensioner,
+    memberState: state,
+    incomeEntries: [],
+    familyMembers: [pensioner],
+    pensionByMember,
+    incomeByMember: {},
+    referenceDate,
+  });
+
+  for (const point of chart) {
+    const cashFlowYear = cashFlow.years.find(
+      (row) => row.calendarYear === point.calendarYear,
+    );
+    if (!cashFlowYear) continue;
+    const memberPension =
+      cashFlowYear.memberYearByMemberId?.[pensioner.id]?.incomeBreakdown
+        .pension;
+    assert.ok(memberPension);
+    assert.equal(
+      sumPensionBenefitChartPoint(point),
+      sumOldAgePension(memberPension.oldAge),
+      `Q8 graph and member CF must match in ${point.calendarYear}`,
+    );
+    assert.equal(
+      sumPensionBenefitChartPoint(point),
+      sumOldAgePension(cashFlowYear.incomeBreakdown.pension.oldAge),
+      `Q8 graph and household CF must match for a single member in ${point.calendarYear}`,
+    );
+  }
+
+  const age66 = chart.find((point) => point.headAge === 66);
+  const age67 = chart.find((point) => point.headAge === 67);
+  assert.ok(age66);
+  assert.ok(age67);
+  assert.equal(age66.familyAdditions, 0);
+  assert.equal(age67.familyAdditions, 0);
+  assert.equal(
+    sumPensionBenefitChartPoint(age66),
+    sumPensionBenefitChartPoint(age67),
+    '66歳だけが突出しない',
+  );
+  console.log('OK Q8 pension graph matches cash flow payment basis');
 }
 
 console.log('verify-pension-cashflow-models: all checks passed');

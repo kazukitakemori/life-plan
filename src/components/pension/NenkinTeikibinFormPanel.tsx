@@ -28,21 +28,17 @@ export function NenkinTeikibinUnder50FormPanel({
 
   return (
     <div className="teikibin-form">
-      <div className="teikibin-form-left">
-        <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
-        <PensionAmountTable form={form} onChange={updateForm} />
-      </div>
-      <div className="teikibin-form-right">
-        <details className="benefit-survivor-details">
-          <summary>
-            最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
-          </summary>
-          <p className="pension-field-hint">
-            入力しなくても年金額は概算できます。ねんきん定期便の月別状況を確認したい場合だけ開いてください。
-          </p>
+      <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
+      <PensionAmountTable form={form} onChange={updateForm} />
+      <details className="teikibin-monthly-details">
+        <summary className="teikibin-monthly-summary">
+          <span>最近の月別状況</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
+        </summary>
+        <div className="teikibin-monthly-details-body">
           <RecentMonthlyTable form={form} onChange={updateForm} />
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -66,21 +62,17 @@ export function NenkinTeikibinOver50FormPanel({
 
   return (
     <div className="teikibin-form">
-      <div className="teikibin-form-left">
-        <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
-        <PensionAmountTableOver50 form={form} onChange={updateForm} />
-      </div>
-      <div className="teikibin-form-right">
-        <details className="benefit-survivor-details">
-          <summary>
-            最近の月別状況 <span className="pension-choice-badge">任意・精度アップ</span>
-          </summary>
-          <p className="pension-field-hint">
-            入力しなくても年金額は概算できます。ねんきん定期便の月別状況を転記すると、一部の受給要件判定をより正確にできます。
-          </p>
+      <ParticipationPeriodGrid form={form} onChange={updateParticipation} />
+      <PensionAmountTableOver50 form={form} onChange={updateForm} />
+      <details className="teikibin-monthly-details">
+        <summary className="teikibin-monthly-summary">
+          <span>最近の月別状況</span>
+          <span className="benefit-optional-badge">任意・精度アップ</span>
+        </summary>
+        <div className="teikibin-monthly-details-body">
           <RecentMonthlyTableOver50 form={form} onChange={updateForm} />
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   );
 }

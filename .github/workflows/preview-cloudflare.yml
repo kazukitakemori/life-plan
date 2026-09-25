@@ -26,6 +26,8 @@ jobs:
       - name: Run Q8 pension regression audit
         run: |
           npx --yes tsx@4.20.5 scripts/verify-pension-old-age.mjs
+          npx --yes tsx@4.20.5 scripts/verify-pension-payment.mjs
+          npx --yes tsx@4.20.5 scripts/verify-pension-cashflow-models.mjs
           npx --yes tsx@4.20.5 scripts/verify-survivor-employees.mjs
           npx --yes tsx@4.20.5 scripts/verify-required-coverage.mjs
 

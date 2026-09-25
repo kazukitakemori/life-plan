@@ -273,11 +273,8 @@ export function PensionAmountTableOver50({
       <h5 className="teikibin-block-title">
         (2) 老齢年金の種類と見込額（年額）
       </h5>
-      <p className="pension-field-hint">
-        「受給開始年齢」は、ねんきん定期便に印字された「○歳〜」をそのまま選んでください。空欄の列は「—」のままで構いません。
-      </p>
-
-      <table className="teikibin-amount-table teikibin-amount-table--over50">
+      <div className="teikibin-table-scroll">
+        <table className="teikibin-amount-table teikibin-amount-table--over50">
         <tbody>
           <tr>
             <th className="teikibin-amount-row-label">受給開始年齢</th>
@@ -411,7 +408,8 @@ export function PensionAmountTableOver50({
             <TotalCell value={totalCol5} primary />
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

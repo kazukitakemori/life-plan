@@ -8486,20 +8486,9 @@ button:disabled {
   border-bottom: 7px solid #f5f5f5;
 }
 
-.pension-enrollment-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
 .pension-enrollment-label {
   color: #333;
   white-space: nowrap;
-}
-
-.pension-enrollment-select {
-  min-width: 320px;
 }
 
 .pension-estimate-panel {
@@ -8522,48 +8511,6 @@ button:disabled {
   margin-bottom: 8px;
 }
 
-.pension-estimate-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin-bottom: 8px;
-}
-
-.pension-estimate-title {
-  margin: 0;
-  font-weight: 700;
-  color: #223;
-}
-
-.pension-estimate-total {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #445;
-}
-
-.pension-estimate-total strong {
-  font-size: 1.125rem;
-  color: #1f4f86;
-}
-
-.pension-estimate-note {
-  margin: 0 0 12px;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: #456;
-}
-
-.pension-estimate-chart {
-  width: 100%;
-  min-height: 280px;
-  padding: 8px 4px 0;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-}
-
 .pension-estimate-panel .lifetime-chart-header {
   padding-left: 20px;
   padding-right: 20px;
@@ -8573,42 +8520,7 @@ button:disabled {
   margin: 0 -2px;
 }
 
-.pension-info-box {
-  padding: 12px 14px;
-  background: #fffde7;
-  border: 1px solid #ffb74d;
-  border-radius: 4px;
-  font-size: 0.8125rem;
-  color: #555;
-  line-height: 1.6;
-}
-
-.pension-info-box p {
-  margin: 0;
-}
-
-.pension-info-box p + p {
-  margin-top: 6px;
-}
-
-.pension-info-emphasis {
-  color: #d32f2f;
-  font-weight: 600;
-}
-
 /* Nenkin teikibin form (under 50) */
-
-.teikibin-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.teikibin-form-left,
-.teikibin-form-right {
-  min-width: 0;
-}
 
 .teikibin-block + .teikibin-block {
   margin-top: 20px;
@@ -9000,12 +8912,6 @@ button:disabled {
   min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .teikibin-form {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Benefit settings (2) ???? */
 
 .benefit-settings {
@@ -9074,13 +8980,6 @@ button:disabled {
   font-weight: 600;
   color: #1565c0;
   text-align: center;
-}
-
-.benefit-col-header--survivor {
-  background: linear-gradient(180deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #e65100;
-  font-size: 0.8125rem;
-  line-height: 1.35;
 }
 
 .benefit-row-label {
@@ -9174,14 +9073,6 @@ button:disabled {
 .pension-field-input--benefit-wide {
   width: 120px;
   text-align: right;
-}
-
-.benefit-survivor-cell {
-  width: 28%;
-  background: #fff8f0;
-  text-align: center;
-  color: #555;
-  font-size: 0.8125rem;
 }
 
 .benefit-survivor-input-cell {
