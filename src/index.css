@@ -4933,7 +4933,7 @@ button:disabled {
 
 .required-coverage-insurance-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 0.8fr) repeat(3, minmax(120px, 0.9fr));
+  grid-template-columns: minmax(160px, 1.2fr) repeat(3, minmax(120px, 0.9fr));
   gap: 10px;
   align-items: end;
   padding: 10px 12px;
