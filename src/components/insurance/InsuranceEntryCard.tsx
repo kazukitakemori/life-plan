@@ -3,6 +3,7 @@ import {
   formatAutoInsuranceName,
   formatFireInsuranceName,
   formatInsurancePremiumSummary,
+  INSURANCE_CATEGORY_DEFAULT_NAMES,
   INSURANCE_CATEGORY_LABELS,
   INSURANCE_CATEGORY_SECTOR,
   INSURANCE_SECTOR_LABELS,
@@ -45,16 +46,16 @@ export function InsuranceEntryCard({
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const isFireLinked = Boolean(entry.housingLink && housingPropertyName);
   const isAutoLinked = Boolean(entry.vehicleLink && vehicleName);
-  const defaultLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+  const defaultName = INSURANCE_CATEGORY_DEFAULT_NAMES[entry.category];
   const usesDefaultName =
-    entry.name.trim() === '' || entry.name.trim() === defaultLabel;
+    entry.name.trim() === '' || entry.name.trim() === defaultName;
   const displayName = isFireLinked
     ? formatFireInsuranceName(housingPropertyName!)
     : isAutoLinked
       ? formatAutoInsuranceName(vehicleName!)
       : usesDefaultName && defaultNamePosition?.count && defaultNamePosition.count > 1
-        ? `${defaultLabel} ${defaultNamePosition.index}`
-        : entry.name.trim() || defaultLabel;
+        ? `${defaultName} ${defaultNamePosition.index}`
+        : entry.name.trim() || defaultName;
   const sector = INSURANCE_CATEGORY_SECTOR[entry.category];
 
   const confirmRemove = () => {
