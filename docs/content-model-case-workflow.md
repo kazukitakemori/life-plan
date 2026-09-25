@@ -88,7 +88,10 @@ Phase 3（自動撮影基盤）:
 - `data-content-capture-status="ready"` とviewport一致を待って撮影
 - `captureRegion="viewport"` はviewport、その他はsemantic capture targetをPNG化
 - PNGとmanifest JSONを同時生成
-- PR Previewで `SIM-001-BASE / SIM-001-CF` のE2Eスモークを自動実行
+- PR Previewで `SIM-001-BASE` の主要4 view（cash-flow-table / asset-balance-chart / lifetime-balance / required-coverage）をE2E撮影
+- 個別manifestを集約し、`SKILL-08-handoff.json` を生成
+- handoffでは記事ID・モデルケースID・Capture Spec・画像ファイル・checksum・sourcePlanIdを機械的に追跡可能にする
+- SKILL-08では撮影PNGを実画面原本として固定し、AI再描画は禁止。注釈・強調・図解合成は後工程で必要な場合のみ行う
 
 後続:
 - 制作stagingでの認証済みブラウザ運用
