@@ -1,5 +1,6 @@
 import type { FamilyMember } from '../../types/family';
 import type { InsuranceCategory, InsuranceEntry, InsuranceState } from '../../types/insurance';
+import { getMemberTabLabel } from '../../lib/memberDisplay';
 
 interface RequiredCoverageInsuranceEditorProps {
   insuranceState?: InsuranceState;
@@ -68,6 +69,27 @@ export function RequiredCoverageInsuranceEditor({
               <div className="required-coverage-insurance-name">
                 <strong>{entry.name || '保険'}</strong>
               </div>
+
+              <label className="required-coverage-insurance-field">
+                <span>保障の対象</span>
+                <select
+                  className="select-input"
+                  value={resolvedInsuredMemberId}
+                  disabled={!onEntryChange}
+                  onChange={(event) =>
+                    onEntryChange?.({
+                      ...entry,
+                      insuredMemberId: event.target.value,
+                    })
+                  }
+                >
+                  {eligibleMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {getMemberTabLabel(member)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
               {riskKind === 'death' && entry.category === 'life' ? (
                 <>
