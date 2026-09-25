@@ -28,9 +28,10 @@ export function LoanFeeFetchActions({
       {showDetail && onDetail ? (
         <button
           type="button"
-          className="ui-btn ui-btn--ghost ui-btn--compact loan-fee-detail-btn"
+          className="ui-info-trigger loan-fee-detail-btn"
           onClick={onDetail}
         >
+          <span className="ui-info-trigger-icon" aria-hidden="true">i</span>
           {detailLabel}
         </button>
       ) : null}
