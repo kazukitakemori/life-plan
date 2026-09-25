@@ -667,7 +667,9 @@ export function RequiredCoverageMedicalRiskView({
       ...design,
       incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
       existingBenefitMan:
-        Math.max(0, design.existingBenefitMan) + registeredHospitalBenefitMan,
+        registeredHospitalBenefitMan > 0
+          ? registeredHospitalBenefitMan
+          : Math.max(0, design.existingBenefitMan),
     }),
     [design, effectiveIncomeLossManPerMonth, registeredHospitalBenefitMan],
   );
