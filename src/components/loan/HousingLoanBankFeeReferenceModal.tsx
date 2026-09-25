@@ -26,34 +26,33 @@ export function HousingLoanBankFeeReferenceModal({
   } = breakdown;
 
   return (
-    <div className="education-ref-modal-overlay" onClick={onClose}>
+    <div className="ui-info-dialog-backdrop" onClick={onClose}>
       <div
-        className="education-ref-modal housing-acq-ref-modal"
+        className="ui-info-dialog"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-labelledby="housing-loan-fee-ref-title"
       >
-        <button
-          type="button"
-          className="education-ref-modal-close"
-          onClick={onClose}
-          aria-label="閉じる"
-        >
-          ×
-        </button>
+        <div className="ui-info-dialog-head">
+          <h3 id="housing-loan-fee-ref-title" className="ui-info-dialog-title">
+            住宅ローン諸手数料の計算根拠
+          </h3>
+          <button
+            type="button"
+            className="ui-info-dialog-close"
+            onClick={onClose}
+            aria-label="閉じる"
+          >
+            ×
+          </button>
+        </div>
 
-        <h3
-          id="housing-loan-fee-ref-title"
-          className="education-ref-modal-title"
-        >
-          住宅ローン諸手数料の自動計算内訳
-        </h3>
-        <p className="education-ref-modal-summary">
-          借入額と返済期間をもとに、各手数料の概算を自動入力しました。
-          金融機関・保証会社・商品により異なるため、見積書等で確認してください。
-        </p>
-
-        <div className="education-ref-modal-body">
+        <div className="ui-info-dialog-body">
+          <p>
+            借入額と返済期間をもとに、各手数料の概算を自動入力しました。
+            金融機関・保証会社・商品により異なるため、見積書等で確認してください。
+          </p>
           <section className="education-ref-section">
             <h4 className="education-ref-section-title">融資手数料</h4>
             <p className="education-ref-section-desc">
