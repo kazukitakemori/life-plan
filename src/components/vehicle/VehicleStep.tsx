@@ -146,10 +146,23 @@ export function VehicleStep({
       activeMember,
       referenceDate,
     );
-    const sameTypeCount = entries.filter((entry) => entry.type === nextEntry.type).length;
-    const namedEntry = sameTypeCount === 0
+    const sameTypeEntries = entries.filter((entry) => entry.type === nextEntry.type);
+    let nextIndex = sameTypeEntries.length + 1;
+    for (const entry of sameTypeEntries) {
+      const label = entry.label.trim();
+      if (label === nextEntry.label) {
+        nextIndex = Math.max(nextIndex, 2);
+        continue;
+      }
+      if (!label.startsWith(nextEntry.label)) continue;
+      const suffix = Number(label.slice(nextEntry.label.length));
+      if (Number.isInteger(suffix) && suffix >= 2) {
+        nextIndex = Math.max(nextIndex, suffix + 1);
+      }
+    }
+    const namedEntry = sameTypeEntries.length === 0
       ? nextEntry
-      : { ...nextEntry, label: `${nextEntry.label}${sameTypeCount + 1}` };
+      : { ...nextEntry, label: `${nextEntry.label}${nextIndex}` };
     persistEntries(resolvedActiveId, [...entries, namedEntry]);
   };
 
