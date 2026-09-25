@@ -383,6 +383,8 @@ registeredInsurance.byMember[head.id] = [
     insuredMemberId: spouse.id,
     medicalHospitalDailyYen: 5000,
   }, [head, spouse]),
+];
+registeredInsurance.byMember[spouse.id] = [
   createInsuranceEntry('cancer', spouse, referenceDate, {
     cancerDiagnosisBenefitMan: 100,
   }, [head, spouse]),
