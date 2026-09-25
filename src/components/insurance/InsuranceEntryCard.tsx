@@ -76,8 +76,14 @@ export function InsuranceEntryCard({
             {INSURANCE_SECTOR_LABELS[sector]}
           </span>
           <span className="insurance-entry-category-badge">
-            {INSURANCE_CATEGORY_LABELS[entry.category]}
-          </span>
+          {INSURANCE_CATEGORY_LABELS[entry.category]}
+        </span>
+        {isFireLinked ? (
+          <span className="insurance-entry-link-badge">住まい連携</span>
+        ) : null}
+        {isAutoLinked ? (
+          <span className="insurance-entry-link-badge">乗り物連携</span>
+        ) : null}
           {linkedSource ? (
             <span className="insurance-entry-category-badge">{linkedSource}</span>
           ) : null}
