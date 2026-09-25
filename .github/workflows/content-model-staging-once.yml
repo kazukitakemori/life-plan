@@ -1,0 +1,38 @@
+name: Content model staging one-off
+
+on:
+  push:
+    branches:
+      - feat/content-model-case-foundation
+    paths:
+      - ".github/workflows/content-model-staging-once.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-model-staging-once
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Verify content model
+        run: npx --yes tsx@4.20.5 --tsconfig tsconfig.app.json scripts/verify-content-model.mjs
+      - name: Build production-like content staging
+        run: npm run build
+        env:
+          VITE_LICENSE_PREVIEW_UNLOCK: "0"
+          VITE_PREVIEW_SEED_DATA: "0"
+      - name: Deploy content staging
+        run: npx wrangler deploy --config wrangler.content-staging.toml
