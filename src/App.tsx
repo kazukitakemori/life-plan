@@ -2270,6 +2270,12 @@ export default function App() {
             ]);
           });
         }}
+        onInsuranceEntryRemove={(entryId) => {
+          markPlanDataChanged();
+          setInsuranceState((current) =>
+            removeInsuranceEntry(current, entryId),
+          );
+        }}
         onPageViewChange={(view) => {
           if (activeCaptureSpec) return;
           if (simpleCoverageDesignOnly) {
