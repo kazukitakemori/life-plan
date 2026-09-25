@@ -102,7 +102,7 @@ export function LoanEntryCard({
 
         <button
           type="button"
-          className={`loan-entry-open-btn${expanded ? ' loan-entry-open-btn--active' : ''}`}
+          className="ui-btn ui-btn--secondary ui-btn--compact loan-entry-open-btn"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
         >
