@@ -72,6 +72,15 @@
     padding: 14px 12px 16px;
   }
 
+  .insurance-step .insurance-entry-actions {
+    padding: 0 12px 16px;
+  }
+
+  .insurance-step .insurance-entry-delete-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
   .insurance-step .loan-settings-table-card,
   .insurance-step .loan-settings-form-table {
     min-width: 0;
