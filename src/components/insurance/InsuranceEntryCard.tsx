@@ -5,8 +5,6 @@ import {
   formatInsurancePremiumSummary,
   INSURANCE_CATEGORY_DEFAULT_NAMES,
   INSURANCE_CATEGORY_LABELS,
-  INSURANCE_CATEGORY_SECTOR,
-  INSURANCE_SECTOR_LABELS,
 } from '../../lib/insuranceLabels';
 import type { FamilyMember } from '../../types/family';
 import type { HousingState } from '../../types/housing';
@@ -56,7 +54,6 @@ export function InsuranceEntryCard({
       : usesDefaultName && defaultNamePosition?.count && defaultNamePosition.count > 1
         ? `${defaultName} ${defaultNamePosition.index}`
         : entry.name.trim() || defaultName;
-  const sector = INSURANCE_CATEGORY_SECTOR[entry.category];
 
   const confirmRemove = () => {
     const target = displayName.trim() || 'この保険';
@@ -67,17 +64,12 @@ export function InsuranceEntryCard({
 
   return (
     <div
-      className={`insurance-entry-card-wrap${expanded ? ' insurance-entry-card-wrap--expanded' : ''}${sector === 'life' ? ' insurance-entry-card-wrap--life' : ' insurance-entry-card-wrap--nonlife'}`}
+      className={`insurance-entry-card-wrap${expanded ? ' insurance-entry-card-wrap--expanded' : ''}`}
     >
       <div className="insurance-entry-card">
         <span className="insurance-entry-name-label">{displayName}</span>
 
         <div className="insurance-entry-badges">
-          <span
-            className={`insurance-entry-sector-badge insurance-entry-sector-badge--${sector}`}
-          >
-            {INSURANCE_SECTOR_LABELS[sector]}
-          </span>
           <span className="insurance-entry-category-badge">
             {INSURANCE_CATEGORY_LABELS[entry.category]}
           </span>
@@ -95,12 +87,11 @@ export function InsuranceEntryCard({
 
         <button
           type="button"
-          className={`insurance-entry-open-btn${expanded ? ' insurance-entry-open-btn--active' : ''}`}
+          className="ui-btn ui-btn--secondary ui-btn--compact insurance-entry-open-btn"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
         >
-          <span aria-hidden>{expanded ? '∧' : '›'}</span>
-          {expanded ? '閉じる' : '開く'}
+          {expanded ? '閉じる −' : '詳細を開く ＋'}
         </button>
       </div>
 
@@ -120,7 +111,7 @@ export function InsuranceEntryCard({
           <div className="insurance-entry-actions">
             <button
               type="button"
-              className="ui-btn ui-btn--danger insurance-entry-delete-button"
+              className="ui-delete-button insurance-entry-delete-button"
               onClick={confirmRemove}
             >
               この保険を削除

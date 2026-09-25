@@ -9,7 +9,6 @@ import { getVehicleAgeOptions } from '../../lib/vehicleDefaults';
 import {
   INSURANCE_BENEFIT_PAYOUT_MODE_LABELS,
   INSURANCE_BENEFIT_PAYOUT_MODES,
-  INSURANCE_CATEGORY_LABELS,
   INSURANCE_PREMIUM_PAYMENT_MODE_LABELS,
   INSURANCE_PREMIUM_PAYMENT_MODE_UNITS,
   INSURANCE_PREMIUM_PAYMENT_MODES,
@@ -398,14 +397,6 @@ export function InsuranceEntryDetail({
     >
       <div className="loan-settings-table-card">
         <div className="loan-settings-form-table">
-          {variant === 'full' ? (
-            <LoanSettingsField label="種類">
-              <span className="insurance-entry-detail-value">
-                {INSURANCE_CATEGORY_LABELS[entry.category]}
-              </span>
-            </LoanSettingsField>
-          ) : null}
-
           {!isLinkedName ? (
             <LoanSettingsField label="名称" labelFor={`ins-name-${entry.id}`}>
               <input
@@ -697,11 +688,6 @@ export function InsuranceEntryDetail({
                   ))}
                 </select>
               )}
-              <p className="insurance-link-hint">
-                {isFixedLifeDeductionCategory(entry.category)
-                  ? 'この保険種目では控除区分が固定です。所得税・住民税の生命保険料控除（新制度）に反映されます。'
-                  : '区分は所得税・住民税の生命保険料控除（新制度）に反映されます。'}
-              </p>
             </LoanSettingsField>
           ) : null}
 
@@ -923,9 +909,6 @@ export function InsuranceEntryDetail({
                   </option>
                 ))}
               </select>
-              <p className="insurance-link-hint">
-                契約者と同じ受取人は一括受取を一時所得、年金形式を雑所得（収入−必要経費）として試算します。必要経費は払込保険料総額÷総支給見込額の割合で按分します。異なる受取人は贈与税です。
-              </p>
             </LoanSettingsField>
           ) : null}
 
@@ -1031,9 +1014,6 @@ export function InsuranceEntryDetail({
                       </option>
                     ))}
                   </select>
-                  <p className="insurance-link-hint">
-                    返戻金の受取人です。契約者と同じなら一時所得（払込保険料を差し引き）、異なる場合は贈与税として試算します。
-                  </p>
                 </div>
               ) : null}
             </LoanSettingsField>

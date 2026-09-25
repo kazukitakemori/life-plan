@@ -16400,7 +16400,7 @@ button:disabled {
 .insurance-entry-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
 }
 
 .insurance-entry-list-item {
@@ -16410,27 +16410,10 @@ button:disabled {
 
 
 .insurance-entry-card-wrap {
-  border: 1px solid #bbdefb;
+  border: 1px solid #d5dde7;
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
-}
-
-
-.insurance-entry-card-wrap--nonlife {
-  border-color: #90caf9;
-}
-
-.insurance-entry-card-wrap--life {
-  border-color: #a5d6a7;
-}
-
-.insurance-entry-card-wrap--expanded.insurance-entry-card-wrap--nonlife {
-  border-color: #64b5f6;
-}
-
-.insurance-entry-card-wrap--expanded.insurance-entry-card-wrap--life {
-  border-color: #81c784;
 }
 
 .insurance-entry-card {
@@ -16440,55 +16423,19 @@ button:disabled {
   flex-wrap: wrap;
   gap: 10px;
   padding: 12px 14px;
-  background: #e3f2fd;
-}
-
-
-
-.insurance-entry-card-wrap--life .insurance-entry-card {
-  background: #e8f5e9;
+  background: #fff;
 }
 
 .insurance-entry-card-wrap--expanded .insurance-entry-card {
   border-radius: 8px 8px 0 0;
 }
 
-.insurance-entry-name-input {
-  flex: 1 1 200px;
-  min-width: 140px;
-  max-width: 280px;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fffde7;
-  font-size: 0.8125rem;
-}
-
 .insurance-entry-name-label {
   flex: 1 1 240px;
-  font-size: 0.8125rem;
+  min-width: 0;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #333;
-}
-
-.insurance-entry-sector-badge {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  white-space: nowrap;
-}
-
-.insurance-entry-sector-badge--nonlife {
-  color: #1565c0;
-  background: #e3f2fd;
-  border: 1px solid #90caf9;
-}
-
-.insurance-entry-sector-badge--life {
-  color: #2e7d32;
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
 }
 
 .insurance-entry-category-badge {
@@ -16554,12 +16501,8 @@ button:disabled {
 
 .insurance-entry-detail {
   padding: 16px 18px 18px;
-  border-top: 1px solid #bbdefb;
+  border-top: 1px solid #e5e7eb;
   background: #fff;
-}
-
-.insurance-entry-card-wrap--life .insurance-entry-detail {
-  border-top-color: #c8e6c9;
 }
 
 .insurance-entry-actions {
@@ -16571,22 +16514,6 @@ button:disabled {
 
 .insurance-entry-delete-button {
   color: var(--ui-danger);
-}
-
-/* ????????????????? */
-.insurance-entry-card-wrap--life .loan-settings-form-table .loan-settings-form-label,
-.insurance-entry-card-wrap--life .loan-settings-form-table .loan-settings-form-value {
-  border-bottom-color: #c8e6c9;
-}
-
-.insurance-entry-card-wrap--life .loan-settings-form-table .loan-settings-form-label {
-  background: #e8f5e9;
-  border-right-color: #a5d6a7;
-  color: #2e7d32;
-}
-
-.insurance-entry-card-wrap--life .insurance-period-toggle {
-  color: #2e7d32;
 }
 
 .insurance-entry-detail-value {
@@ -16811,12 +16738,6 @@ button:disabled {
   font-size: 0.875rem;
   font-weight: 700;
 }
-
-.insurance-add-group-desc {
-  margin: 0;
-  font-size: 0.8125rem;
-}
-
 
 
 

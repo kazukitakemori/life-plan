@@ -208,11 +208,7 @@ export function InsuranceStep({
 
   return (
     <div className="step-page insurance-step">
-      <StepHeading
-        number={10}
-        title="保険"
-        subtitle="保険料や将来の受取内容を、必要な範囲で登録"
-      />
+      <StepHeading number={10} title="保険" />
 
       <MemberIncomeTabs
         members={visibleMembers}
@@ -251,9 +247,7 @@ export function InsuranceStep({
             ))}
           </div>
         ) : (
-          <div className="insurance-empty">
-            保険はまだ登録されていません。必要なものだけ下から追加できます。住まい・乗り物の保険は各画面からも登録できます。
-          </div>
+          <div className="insurance-empty">保険はまだ登録されていません。</div>
         )}
       </section>
 
