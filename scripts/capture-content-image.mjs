@@ -360,11 +360,27 @@ async function main() {
 
     console.log(`Captured ${imageFilename} (${imageWidth}x${imageHeight}, ${png.length} bytes).`);
     console.log(`Manifest ${manifestFilename}.`);
+    console.log(`Capture manifest: ${JSON.stringify(manifest)}`);
   } finally {
     client?.close();
-    if (!chrome.killed) chrome.kill('SIGTERM');
-    if (temporaryProfile) rmSync(userDataDir, { recursive: true, force: true });
-    if (chrome.exitCode && chrome.exitCode !== 0) {
+    if (chrome.exitCode == null && !chrome.killed) chrome.kill('SIGTERM');
+    if (chrome.exitCode == null) {
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 2_000);
+        chrome.once('exit', () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+    }
+    if (temporaryProfile) {
+      try {
+        rmSync(userDataDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      } catch (error) {
+        console.warn('Could not remove temporary Chrome profile.', error);
+      }
+    }
+    if (chrome.exitCode && chrome.exitCode !== 0 && chrome.exitCode !== 143) {
       console.error(chromeStderr);
     }
   }
