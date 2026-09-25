@@ -16472,30 +16472,8 @@ button:disabled {
 }
 
 .insurance-entry-open-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100px;
   flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  color: #333;
   white-space: nowrap;
-  cursor: pointer;
-}
-
-.insurance-entry-open-btn--active {
-  background: #1976d2;
-  border-color: #1565c0;
-  color: #fff;
-}
-
-.insurance-entry-card-wrap--life .insurance-entry-open-btn--active {
-  background: #388e3c;
-  border-color: #2e7d32;
 }
 
 
