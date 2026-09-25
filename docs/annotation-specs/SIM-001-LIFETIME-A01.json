@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "annotationSpecId": "SIM-001-LIFETIME-A01",
+  "articleId": "SIM-001",
+  "modelCaseId": "SIM-001-BASE",
+  "captureSpecId": "SIM-001-LIFETIME",
+  "editorialTarget": "LP-SCREEN-013",
+  "sourcePolicy": {
+    "sourceImageIsCanonical": true,
+    "allowRedrawOfSourceScreen": false,
+    "allowTextOrNumberMutation": false,
+    "allowGraphMutation": false,
+    "outputMustBeRasterImage": true
+  },
+  "objective": "実画面の信頼感を保ったまま、読者が見る順番だけを短い注釈で補助する。",
+  "annotations": [
+    {
+      "id": "A1",
+      "type": "callout",
+      "text": "まず全体の流れを見る",
+      "target": "chart-overview",
+      "priority": 1
+    },
+    {
+      "id": "A2",
+      "type": "callout",
+      "text": "65歳前後の大きな変化を見る",
+      "target": "age-around-65",
+      "priority": 2
+    },
+    {
+      "id": "A3",
+      "type": "callout",
+      "text": "気になる時期はCF表で詳しく確認",
+      "target": "bottom-summary-table",
+      "priority": 3
+    }
+  ],
+  "designConstraints": {
+    "maxAnnotations": 3,
+    "shortTextOnly": true,
+    "doNotCoverAxisLabels": true,
+    "doNotCoverLegend": true,
+    "doNotCoverCriticalGraphLines": true,
+    "preserveOriginalAspectRatio": true,
+    "style": "clean editorial annotation, restrained, professional, financial media"
+  },
+  "pocGoal": "ChatGPT image generation/editing can add annotation quality without altering the canonical UI image."
+}
