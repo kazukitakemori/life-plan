@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CartesianGrid,
   ComposedChart,
@@ -180,6 +180,42 @@ export function AssetBalanceChart({
     ASSET_SAVINGS_CHART_HEIGHT,
     ASSET_SAVINGS_CHART_HEIGHT_FULLSCREEN,
   );
+  const plotContainerRef = useRef<HTMLDivElement>(null);
+  const [captureRenderReady, setCaptureRenderReady] = useState(false);
+
+  useEffect(() => {
+    const element = plotContainerRef.current;
+    if (!element) return;
+
+    let firstFrame = 0;
+    let secondFrame = 0;
+    const markReadyAfterLayout = () => {
+      setCaptureRenderReady(false);
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+      firstFrame = requestAnimationFrame(() => {
+        secondFrame = requestAnimationFrame(() => {
+          setCaptureRenderReady(true);
+        });
+      });
+    };
+
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+      markReadyAfterLayout();
+    });
+    observer.observe(element);
+
+    const rect = element.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) markReadyAfterLayout();
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [visiblePoints, plotHeight, xAxisHeight]);
   const summaryRows = useMemo(() => {
     if (visiblePoints.length === 0) return [];
 
@@ -221,6 +257,9 @@ export function AssetBalanceChart({
       className="asset-building-chart-card"
       aria-labelledby="asset-balance-chart-heading"
       data-content-capture-target="asset-balance-chart"
+      data-content-capture-render-status={
+        captureRenderReady ? 'ready' : 'pending'
+      }
     >
       <div className="lifetime-chart-header">
         <div className="lifetime-chart-header-left">
@@ -246,7 +285,10 @@ export function AssetBalanceChart({
             className="sim-align-label sim-chart-label-spacer"
             aria-hidden="true"
           />
-          <div className="sim-align-plot lifetime-chart-plot">
+          <div
+            ref={plotContainerRef}
+            className="sim-align-plot lifetime-chart-plot"
+          >
             <p className="lifetime-chart-y-unit" aria-hidden>
               （万円）
             </p>
