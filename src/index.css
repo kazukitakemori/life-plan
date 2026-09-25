@@ -4977,6 +4977,12 @@ button:disabled {
   }
 }
 
+.required-coverage-insurance-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .required-coverage-registered {
   display: flex;
   flex-wrap: wrap;
