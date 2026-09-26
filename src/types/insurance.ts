@@ -26,6 +26,8 @@ export type LifeInsuranceDeductionKind =
   | 'pension'
   | 'none';
 
+export type LifeInsuranceDeductionSystem = 'new' | 'old';
+
 export type InsuranceEndMode = 'lifetime' | 'until';
 
 /** 保険料の払込方法 */
@@ -86,11 +88,13 @@ export interface InsuranceEntry {
   endMode: InsuranceEndMode;
   endAge: number;
   endMonth: number;
-  /**
-   * 生命保険料控除区分。
-   * 死亡＝一般、医療・がん＝介護医療、学資＝一般、個人年金＝個人年金に固定。
-   * その他生命のみ変更可。損保は 'none'。
-   */
+  /** 生命保険料控除を税計算へ反映するか。未設定時は false。 */
+  lifeDeductionEnabled?: boolean;
+  /** 控除を受ける人（実際の保険料負担者）。未設定時は契約者。 */
+  lifeDeductionPayerMemberId?: string;
+  /** 新契約 / 旧契約。未設定時は新契約。 */
+  lifeDeductionSystem?: LifeInsuranceDeductionSystem;
+  /** 控除証明書に記載された区分。 */
   lifeDeductionKind: LifeInsuranceDeductionKind;
   /**
    * 返戻金の有無（死亡・医療・がん・その他生命で入力。既定 false）。
