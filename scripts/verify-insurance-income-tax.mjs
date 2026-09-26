@@ -10,6 +10,7 @@ import {
   calcInsuranceEntryIncomeTaxPreview,
   calcRecipientInsuranceIncomeTaxDetail,
   formatInsuranceEntryIncomeTaxPreview,
+  isPotentialFinancialLikeInsuranceProduct,
   resolveAnnuityPayoutEstimateYears,
 } from '../src/lib/insuranceIncomeTax.ts';
 import { getAnnuityRemainingLifeYears } from '../src/lib/annuityRemainingLife.ts';
@@ -696,6 +697,76 @@ assertEq(
   combinedTemporaryTax.temporaryIncomeTaxableYen,
   50_000,
   'temporary 500k deduction applied once',
+);
+
+// 一時払・5年以内の返戻金は金融類似商品の可能性があるため自動課税しない
+const shortSinglePremiumReturn = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 120,
+  returnValueAge: 45,
+  startAge: 40,
+  startMonth: 6,
+  premiumMan: 100,
+  premiumPaymentMode: 'lump_sum',
+  beneficiaryMemberId: head.id,
+  lifeDeductionPayerMemberId: head.id,
+});
+assertEq(
+  isPotentialFinancialLikeInsuranceProduct(shortSinglePremiumReturn, head),
+  true,
+  'short single-premium return candidate',
+);
+const shortSinglePremiumYear = yearWhenMemberReachesAge(head, 45);
+const shortSinglePremiumTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [shortSinglePremiumReturn] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: shortSinglePremiumYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  shortSinglePremiumTax.temporaryIncomeRevenueYen,
+  0,
+  'financial-like candidate not auto treated as temporary income',
+);
+assertEq(
+  shortSinglePremiumTax.manualReviewRevenueYen,
+  1_200_000,
+  'financial-like candidate remains visible for manual review',
+);
+const shortSinglePremiumPreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: shortSinglePremiumReturn,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+assertEq(
+  shortSinglePremiumPreview.kind,
+  'financial_like_product_manual',
+  'financial-like preview kind',
+);
+
+const longSinglePremiumReturn = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 120,
+  returnValueAge: 46,
+  startAge: 40,
+  startMonth: 6,
+  premiumMan: 100,
+  premiumPaymentMode: 'lump_sum',
+  beneficiaryMemberId: head.id,
+  lifeDeductionPayerMemberId: head.id,
+});
+assertEq(
+  isPotentialFinancialLikeInsuranceProduct(longSinglePremiumReturn, head),
+  false,
+  'single-premium return after five years uses normal classification',
 );
 
 // 学資（子ども受取）贈与でも累計払込保険料を表示する
