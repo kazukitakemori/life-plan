@@ -5,7 +5,7 @@ import { HousingManInput } from '../housing/HousingManInput';
 import { HousingYenInput } from '../housing/HousingYenInput';
 import type { CashFlowInput } from '../../lib/cashFlow';
 import {
-  calcRegisteredMedicalHospitalBenefitMan,
+  calcRegisteredMedicalScenarioBenefitMan,
   resolveRegisteredInsuranceCoverage,
 } from '../../lib/insuranceCoverage';
 import {
@@ -658,20 +658,22 @@ export function RequiredCoverageMedicalRiskView({
       design.hospitalMonthsPerYear * 30 || design.inpatientDays,
     ),
   );
-  const registeredHospitalBenefitMan = calcRegisteredMedicalHospitalBenefitMan(
-    registeredCoverage.medicalHospitalDailyYen,
-    effectiveInpatientDays,
-  );
+  const registeredScenarioBenefitMan =
+    calcRegisteredMedicalScenarioBenefitMan(
+      registeredCoverage,
+      effectiveInpatientDays,
+      selectedCategory === 'cancer',
+    );
   const coverageDesign = useMemo(
     () => ({
       ...design,
       incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
       existingBenefitMan:
-        registeredHospitalBenefitMan > 0
-          ? registeredHospitalBenefitMan
+        registeredScenarioBenefitMan > 0
+          ? registeredScenarioBenefitMan
           : Math.max(0, design.existingBenefitMan),
     }),
-    [design, effectiveIncomeLossManPerMonth, registeredHospitalBenefitMan],
+    [design, effectiveIncomeLossManPerMonth, registeredScenarioBenefitMan],
   );
   const result: MedicalRiskCoverageResult = useMemo(
     () => calcMedicalRiskCoverage(coverageDesign, quotedMonthlyIncomeMan),
