@@ -33,9 +33,12 @@ import { migrateHouseholdHousingToHead } from './lib/housingRentalPayer';
 import {
   addAutoInsuranceForVehicle,
   addFireInsuranceForHousing,
+  createInsuranceEntry,
+  getMemberInsuranceEntries,
   migrateInsuranceState,
   removeInsuranceEntry,
   syncInsurancesWithFamily,
+  updateInsuranceByMember,
   updateInsuranceEntry,
 } from './lib/insuranceDefaults';
 import {
@@ -2191,7 +2194,10 @@ export default function App() {
       );
     }
 
-    const coverageInput = analysisSnapshot?.cashFlowInput ?? cashFlowInput;
+    const coverageInput: CashFlowInput = {
+      ...(analysisSnapshot?.cashFlowInput ?? cashFlowInput),
+      insuranceState,
+    };
     const coverageData = analysisSnapshot?.cashFlowData;
 
     const requiredCoverageStateForRender =
@@ -2235,6 +2241,40 @@ export default function App() {
             return;
           }
           setRequiredCoverageState(migrated);
+        }}
+        onInsuranceEntryChange={(entry) => {
+          markPlanDataChanged();
+          setInsuranceState((current) => updateInsuranceEntry(current, entry));
+        }}
+        onInsuranceEntryAdd={(category, insuredMemberId) => {
+          const member = familyMembers.find(
+            (item) => item.id === insuredMemberId,
+          );
+          if (!member) return;
+          markPlanDataChanged();
+          setInsuranceState((current) => {
+            const created = createInsuranceEntry(
+              category,
+              member,
+              referenceDate,
+              { insuredMemberId },
+              familyMembers,
+            );
+            const currentEntries = getMemberInsuranceEntries(
+              current,
+              member.id,
+            );
+            return updateInsuranceByMember(current, member.id, [
+              ...currentEntries,
+              created,
+            ]);
+          });
+        }}
+        onInsuranceEntryRemove={(entryId) => {
+          markPlanDataChanged();
+          setInsuranceState((current) =>
+            removeInsuranceEntry(current, entryId),
+          );
         }}
         onPageViewChange={(view) => {
           if (activeCaptureSpec) return;

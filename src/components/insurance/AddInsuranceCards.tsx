@@ -67,7 +67,6 @@ export function AddInsuranceCards({ onAdd }: AddInsuranceCardsProps) {
                 <h4 className="insurance-add-group-title">
                   {INSURANCE_SECTOR_LABELS.nonlife}
                 </h4>
-                <p className="insurance-add-group-desc">火災・自動車など</p>
               </div>
               <CategoryGrid
                 categories={INSURANCE_NONLIFE_ADD_CATEGORIES}
@@ -80,7 +79,6 @@ export function AddInsuranceCards({ onAdd }: AddInsuranceCardsProps) {
                 <h4 className="insurance-add-group-title">
                   {INSURANCE_SECTOR_LABELS.life}
                 </h4>
-                <p className="insurance-add-group-desc">死亡・医療・老後など</p>
               </div>
               <CategoryGrid
                 categories={INSURANCE_LIFE_ADD_CATEGORIES}

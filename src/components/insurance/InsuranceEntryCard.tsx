@@ -3,9 +3,8 @@ import {
   formatAutoInsuranceName,
   formatFireInsuranceName,
   formatInsurancePremiumSummary,
+  INSURANCE_CATEGORY_DEFAULT_NAMES,
   INSURANCE_CATEGORY_LABELS,
-  INSURANCE_CATEGORY_SECTOR,
-  INSURANCE_SECTOR_LABELS,
 } from '../../lib/insuranceLabels';
 import type { FamilyMember } from '../../types/family';
 import type { HousingState } from '../../types/housing';
@@ -22,13 +21,10 @@ interface InsuranceEntryCardProps {
   referenceDate: Date;
   housingPropertyName?: string;
   vehicleName?: string;
-  isDragging?: boolean;
+  defaultNamePosition?: { index: number; count: number };
+  initiallyExpanded?: boolean;
   onChange: (entry: InsuranceEntry) => void;
   onRemove: () => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDragOverCard: (insertBefore: boolean) => void;
-  onDropOnCard: () => void;
 }
 
 export function InsuranceEntryCard({
@@ -40,107 +36,90 @@ export function InsuranceEntryCard({
   referenceDate,
   housingPropertyName,
   vehicleName,
-  isDragging = false,
+  defaultNamePosition,
+  initiallyExpanded = false,
   onChange,
   onRemove,
-  onDragStart,
-  onDragEnd,
-  onDragOverCard,
-  onDropOnCard,
 }: InsuranceEntryCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const isFireLinked = Boolean(entry.housingLink && housingPropertyName);
   const isAutoLinked = Boolean(entry.vehicleLink && vehicleName);
+  const defaultName = INSURANCE_CATEGORY_DEFAULT_NAMES[entry.category];
+  const usesDefaultName =
+    entry.name.trim() === '' || entry.name.trim() === defaultName;
   const displayName = isFireLinked
     ? formatFireInsuranceName(housingPropertyName!)
     : isAutoLinked
       ? formatAutoInsuranceName(vehicleName!)
-      : entry.name;
-  const sector = INSURANCE_CATEGORY_SECTOR[entry.category];
+      : usesDefaultName && defaultNamePosition?.count && defaultNamePosition.count > 1
+        ? `${defaultName} ${defaultNamePosition.index}`
+        : entry.name.trim() || defaultName;
+  const categoryLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+  const showCategoryBadge = displayName.trim() !== categoryLabel;
+
+  const confirmRemove = () => {
+    const target = displayName.trim() || 'この保険';
+    if (window.confirm(`「${target}」を削除しますか？`)) {
+      onRemove();
+    }
+  };
 
   return (
     <div
-      className={`insurance-entry-card-wrap${expanded ? ' insurance-entry-card-wrap--expanded' : ''}${sector === 'life' ? ' insurance-entry-card-wrap--life' : ' insurance-entry-card-wrap--nonlife'}${isDragging ? ' insurance-entry-card-wrap--dragging' : ''}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        const rect = e.currentTarget.getBoundingClientRect();
-        const insertBefore = e.clientY < rect.top + rect.height / 2;
-        onDragOverCard(insertBefore);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onDropOnCard();
-      }}
+      className={`insurance-entry-card-wrap${expanded ? ' insurance-entry-card-wrap--expanded' : ''}`}
     >
       <div className="insurance-entry-card">
-        <span
-          className="insurance-entry-drag-handle"
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('text/plain', entry.id);
-            e.dataTransfer.effectAllowed = 'move';
-            onDragStart();
-          }}
-          onDragEnd={onDragEnd}
-          role="button"
-          tabIndex={0}
-          aria-label="並べ替え"
-        >
-          ⠿
-        </span>
-        {isFireLinked || isAutoLinked ? (
-          <span className="insurance-entry-name-label">{displayName}</span>
-        ) : (
-          <input
-            type="text"
-            className="insurance-entry-name-input"
-            value={entry.name}
-            draggable={false}
-            onChange={(e) => onChange({ ...entry, name: e.target.value })}
-          />
-        )}
-        <span className={`insurance-entry-sector-badge insurance-entry-sector-badge--${sector}`}>
-          {INSURANCE_SECTOR_LABELS[sector]}
-        </span>
-        <span className="insurance-entry-category-badge">
-          {INSURANCE_CATEGORY_LABELS[entry.category]}
-        </span>
+        <span className="insurance-entry-name-label">{displayName}</span>
+
+        <div className="insurance-entry-badges">
+          {showCategoryBadge ? (
+            <span className="insurance-entry-category-badge">{categoryLabel}</span>
+          ) : null}
+          {isFireLinked ? (
+            <span className="insurance-entry-link-badge">住まい連携</span>
+          ) : null}
+          {isAutoLinked ? (
+            <span className="insurance-entry-link-badge">乗り物連携</span>
+          ) : null}
+        </div>
+
         <span className="insurance-entry-summary">
           {formatInsurancePremiumSummary(entry)}
         </span>
+
         <button
           type="button"
-          className={`insurance-entry-open-btn${expanded ? ' insurance-entry-open-btn--active' : ''}`}
+          className="ui-btn ui-btn--secondary ui-btn--compact insurance-entry-open-btn"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
         >
-          <span aria-hidden>{expanded ? '∧' : '›'}</span>
-          {expanded ? '閉じる' : '開く'}
-        </button>
-        <button
-          type="button"
-          className="housing-row-remove ui-entry-delete-button"
-          onClick={onRemove}
-          aria-label="保険を削除"
-        >
-          削除
+          {expanded ? '閉じる −' : '詳細を開く ＋'}
         </button>
       </div>
 
       {expanded ? (
-        <InsuranceEntryDetail
-          entry={entry}
-          member={member}
-          members={members}
-          housingState={housingState}
-          vehicleState={vehicleState}
-          referenceDate={referenceDate}
-          housingPropertyName={housingPropertyName}
-          vehicleName={vehicleName}
-          onChange={onChange}
-        />
+        <>
+          <InsuranceEntryDetail
+            entry={entry}
+            member={member}
+            members={members}
+            housingState={housingState}
+            vehicleState={vehicleState}
+            referenceDate={referenceDate}
+            housingPropertyName={housingPropertyName}
+            vehicleName={vehicleName}
+            onChange={onChange}
+          />
+          <div className="insurance-entry-actions">
+            <button
+              type="button"
+              className="ui-delete-button insurance-entry-delete-button"
+              onClick={confirmRemove}
+            >
+              この保険を削除
+            </button>
+          </div>
+        </>
       ) : null}
     </div>
   );

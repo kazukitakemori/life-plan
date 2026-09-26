@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import type { CashFlowInput } from '../../lib/cashFlow';
 import type { CashFlowTableData } from '../../types/cashFlow';
+import type { InsuranceCategory, InsuranceEntry } from '../../types/insurance';
 import { getMemberTabLabel } from '../../lib/memberDisplay';
 import { resolveSurvivorLivelihoodIncomeAssessment } from '../../lib/requiredCoverageIncome';
 import {
@@ -34,6 +35,7 @@ import {
   RequiredCoverageExpenseDesign,
 } from './RequiredCoverageExpenseDesign';
 import { RequiredCoverageMedicalRiskView } from './RequiredCoverageMedicalRiskView';
+import { RequiredCoverageInsuranceEditor } from './RequiredCoverageInsuranceEditor';
 import { RequiredCoverageNeedChart } from './RequiredCoverageNeedChart';
 import { RequiredCoverageCategoryCharts } from './RequiredCoverageCategoryChart';
 import { RequiredCoverageWorkDesign } from './RequiredCoverageWorkDesign';
@@ -47,6 +49,12 @@ interface RequiredCoverageViewProps {
   /** 部分目的（万が一保障）では詳細設計を出せない */
   simpleDesignOnly?: boolean;
   onChange: (state: RequiredCoverageState) => void;
+  onInsuranceEntryChange?: (entry: InsuranceEntry) => void;
+  onInsuranceEntryAdd?: (
+    category: InsuranceCategory,
+    insuredMemberId: string,
+  ) => void;
+  onInsuranceEntryRemove?: (entryId: string) => void;
   onPageViewChange: (view: RequiredCoveragePageView) => void;
 }
 
@@ -128,6 +136,9 @@ export function RequiredCoverageView({
   pageView,
   simpleDesignOnly = false,
   onChange,
+  onInsuranceEntryChange,
+  onInsuranceEntryAdd,
+  onInsuranceEntryRemove,
   onPageViewChange,
 }: RequiredCoverageViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -177,6 +188,8 @@ export function RequiredCoverageView({
     : '配偶者さん';
   const hasSpouse = spouseMember != null;
   const subjectLabel = subject === 'spouse' ? spouseLabel : headLabel;
+  const subjectMemberId =
+    (subject === 'spouse' ? spouseMember : headMember)?.id ?? '';
   const survivorMember =
     subject === 'head'
       ? (spouseMember ??
@@ -499,6 +512,15 @@ export function RequiredCoverageView({
         >
           {isMedicalRisk ? (
             <div className="required-coverage-body">
+              <RequiredCoverageInsuranceEditor
+                insuranceState={cashFlowInput.insuranceState}
+                familyMembers={cashFlowInput.familyMembers}
+                riskKind="medical"
+                subjectMemberId={subjectMemberId}
+                onEntryChange={onInsuranceEntryChange}
+                onEntryAdd={onInsuranceEntryAdd}
+                onEntryRemove={onInsuranceEntryRemove}
+              />
               <RequiredCoverageMedicalRiskView
                 cashFlowInput={cashFlowInput}
                 state={state}
@@ -540,6 +562,15 @@ export function RequiredCoverageView({
                     Q7の入力からみると、{survivorLabel}の前年相当の収入・所得が、遺族年金の生計維持に使う基準（収入850万円未満または所得655.5万円未満）を超える可能性があります。定年退職などでおおむね5年以内に基準未満となる場合等は認定されることもあるため、この画面では自動失権にはしていません。自動計上されている遺族年金は個別確認が必要です。
                   </p>
                 ) : null}
+                <RequiredCoverageInsuranceEditor
+                  insuranceState={cashFlowInput.insuranceState}
+                  familyMembers={cashFlowInput.familyMembers}
+                  riskKind="death"
+                  subjectMemberId={subjectMemberId}
+                  onEntryChange={onInsuranceEntryChange}
+                  onEntryAdd={onInsuranceEntryAdd}
+                  onEntryRemove={onInsuranceEntryRemove}
+                />
                 {showForm ? (
                   <>
                     <div className="required-coverage-detail-forms">

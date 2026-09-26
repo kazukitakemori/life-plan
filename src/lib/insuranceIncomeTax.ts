@@ -1,13 +1,11 @@
-import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
-import { getMemberAgeAtYearEnd } from './memberYearIncome';
+import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcMiscellaneousIncomeYen,
   calcTemporaryIncomeYen,
-  MISC_INCOME_FILING_EXEMPTION_REVENUE_YEN,
   TEMPORARY_INCOME_SPECIAL_DEDUCTION_YEN,
 } from './incomeTaxDeductions';
 import {
-  calcCalendarYearGiftTaxYen,
+  calcCalendarYearGiftTaxForGiftsYen,
   GIFT_TAX_BASIC_EXEMPTION_YEN,
 } from './giftTax';
 import { getAnnuityRemainingLifeYears } from './annuityRemainingLife';
@@ -34,10 +32,36 @@ import type { VehicleState } from '../types/vehicle';
 
 const MAN_TO_YEN = 10_000;
 
+function getMemberAgeAtCalendarYearStart(
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+): number | null {
+  if (
+    member.age == null ||
+    member.birthMonth == null ||
+    member.birthDay == null
+  ) {
+    return null;
+  }
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+    member.birthDay,
+  );
+  const birthdayAfterJan1 =
+    member.birthMonth > 1 ||
+    (member.birthMonth === 1 && member.birthDay > 1);
+  return calendarYear - birthYear - (birthdayAfterJan1 ? 1 : 0);
+}
+
 export type InsuranceBenefitIncomeKind =
   | 'temporary_income'
   | 'miscellaneous_income'
-  | 'gift_tax';
+  | 'gift_tax'
+  | 'annuity_right_tax_manual'
+  | 'financial_like_product_manual';
 
 /** @deprecated Use InsuranceBenefitIncomeKind */
 export type InsuranceBenefitTaxKind = InsuranceBenefitIncomeKind;
@@ -55,6 +79,8 @@ export interface InsuranceIncomeTaxDetail {
   giftAmountYen: number;
   /** 贈与税額（円） */
   giftTaxYen: number;
+  /** 商品要件等の確認が必要で自動税額計算から除外した受取額（円） */
+  manualReviewRevenueYen: number;
 }
 
 export function createEmptyInsuranceIncomeTaxDetail(): InsuranceIncomeTaxDetail {
@@ -65,6 +91,7 @@ export function createEmptyInsuranceIncomeTaxDetail(): InsuranceIncomeTaxDetail 
     miscellaneousIncomeTaxableYen: 0,
     giftAmountYen: 0,
     giftTaxYen: 0,
+    manualReviewRevenueYen: 0,
   };
 }
 
@@ -223,6 +250,28 @@ export function resolveInsuranceBenefitRecipientId(
 }
 
 /**
+ * 実際の保険料負担者を返す。
+ * lifeDeductionPayerMemberId は生命保険料控除だけでなく、
+ * 満期・解約等の受取時課税判定でも共通利用する。
+ * 未設定・家族削除等で参照切れの場合は契約者へフォールバックする。
+ */
+export function resolveInsurancePremiumPayerId(
+  entry: InsuranceEntry,
+  contractorId: string,
+  familyMembers?: FamilyMember[],
+): string {
+  const payerId = entry.lifeDeductionPayerMemberId;
+  if (!payerId) return contractorId;
+  if (
+    familyMembers &&
+    !familyMembers.some((member) => member.id === payerId)
+  ) {
+    return contractorId;
+  }
+  return payerId;
+}
+
+/**
  * 年金の総支給見込の基礎年数。
  * - 確定年金: 支給期間
  * - 終身年金: 余命年数
@@ -299,35 +348,81 @@ function resolveLifeContingentMember(
 
 function resolveAnnuityStartAge(
   entry: InsuranceEntry,
+  contractor: FamilyMember,
+  familyMembers: FamilyMember[],
+  referenceDate: Date,
   lifeMember: FamilyMember,
 ): number {
-  if (
-    !entry.benefitReceiveMemberId ||
-    entry.benefitReceiveMemberId === lifeMember.id
-  ) {
-    return entry.benefitReceiveAge;
-  }
-  return entry.benefitReceiveAge;
+  const receiveMember =
+    familyMembers.find((member) => member.id === entry.benefitReceiveMemberId) ??
+    contractor;
+  const receiveBirthMonth = resolveMemberBirthMonth(receiveMember);
+  const receiveBirthYear = calcBirthYear(
+    receiveMember.age,
+    receiveBirthMonth,
+    referenceDate,
+    receiveMember.birthDay,
+  );
+  const startYear = calcYearAtAge(
+    receiveBirthYear,
+    receiveBirthMonth,
+    entry.benefitReceiveAge,
+    receiveBirthMonth,
+  );
+  const ageMonth = getMemberAgeMonth(
+    lifeMember,
+    referenceDate,
+    startYear,
+    receiveBirthMonth,
+  );
+  return ageMonth?.age ?? entry.benefitReceiveAge;
 }
 
 /**
- * 保険金の所得区分。
- * - 契約者≠受取人 … 贈与税
- * - 年金形式の学資・個人年金 … 雑所得
- * - 一括受取・返戻金 … 一時所得
+ * 一時払かつ契約開始から5年以内の返戻金は、商品性によって
+ * 金融類似商品の源泉分離課税となる可能性がある。
+ * Q10の入力だけでは「一時払養老保険等」の法定要件を確定できないため、
+ * 候補契約は通常の一時所得へ自動分類せず要確認とする。
+ */
+export function isPotentialFinancialLikeInsuranceProduct(
+  entry: InsuranceEntry,
+  contractor: FamilyMember,
+): boolean {
+  if (
+    !entry.hasReturnValue ||
+    !hasReturnValueInput(entry.category) ||
+    entry.returnValueMan <= 0 ||
+    resolveInsurancePremiumPaymentMode(entry.premiumPaymentMode) !== 'lump_sum'
+  ) {
+    return false;
+  }
+  const startIndex = entry.startAge * 12 + entry.startMonth;
+  const returnIndex =
+    entry.returnValueAge * 12 + resolveInsuranceBenefitPaymentMonth(contractor);
+  const durationMonths = returnIndex - startIndex;
+  return durationMonths >= 0 && durationMonths <= 60;
+}
+
+/**
+ * 満期・解約等の受取時課税区分。
+ * - 保険料負担者＝受取人 + 年金形式 … 雑所得
+ * - 保険料負担者＝受取人 + 一括受取・返戻金 … 一時所得
+ * - 保険料負担者≠受取人 + 一括受取 … 贈与税
+ * - 保険料負担者≠受取人 + 年金形式 … 年金受給権の評価が必要なため自動計算しない
  */
 export function classifyInsuranceBenefitIncomeKind(
   entry: InsuranceEntry,
-  contractorId: string,
+  premiumPayerId: string,
   recipientId: string,
 ): InsuranceBenefitIncomeKind {
-  if (contractorId !== recipientId) {
-    return 'gift_tax';
-  }
-  if (
+  const isAnnuity =
     (entry.category === 'personal_pension' || entry.category === 'education') &&
-    resolveInsuranceBenefitPayoutMode(entry.benefitPayoutMode) === 'annuity'
-  ) {
+    resolveInsuranceBenefitPayoutMode(entry.benefitPayoutMode) === 'annuity';
+
+  if (premiumPayerId !== recipientId) {
+    return isAnnuity ? 'annuity_right_tax_manual' : 'gift_tax';
+  }
+  if (isAnnuity) {
     return 'miscellaneous_income';
   }
   return 'temporary_income';
@@ -335,25 +430,10 @@ export function classifyInsuranceBenefitIncomeKind(
 
 export function classifyInsuranceBenefitTax(
   entry: InsuranceEntry,
-  contractorId: string,
+  premiumPayerId: string,
   recipientId: string,
 ): InsuranceBenefitIncomeKind {
-  return classifyInsuranceBenefitIncomeKind(entry, contractorId, recipientId);
-}
-
-function applyMiscIncomeFilingExemption(
-  revenueYen: number,
-  taxableYen: number,
-  hasSalaryIncome: boolean,
-): number {
-  if (
-    hasSalaryIncome &&
-    revenueYen > 0 &&
-    revenueYen <= MISC_INCOME_FILING_EXEMPTION_REVENUE_YEN
-  ) {
-    return 0;
-  }
-  return taxableYen;
+  return classifyInsuranceBenefitIncomeKind(entry, premiumPayerId, recipientId);
 }
 
 function calcEntryBenefitRevenueMan(
@@ -381,6 +461,7 @@ function calcEntryAnnuityMiscExpenseYen(
   entry: InsuranceEntry,
   contractor: FamilyMember,
   familyMembers: FamilyMember[],
+  referenceDate: Date,
   revenueYen: number,
   cumulativePremiumYen: number,
 ): number {
@@ -390,7 +471,13 @@ function calcEntryAnnuityMiscExpenseYen(
     familyMembers,
   );
   const remainingLifeYears = getAnnuityRemainingLifeYears(
-    resolveAnnuityStartAge(entry, lifeMember),
+    resolveAnnuityStartAge(
+      entry,
+      contractor,
+      familyMembers,
+      referenceDate,
+      lifeMember,
+    ),
     lifeMember.gender,
   );
   const estimateYears = resolveAnnuityPayoutEstimateYears(
@@ -418,14 +505,22 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
   calendarYear: number;
   monthStart: number;
   monthEnd: number;
-  hasSalaryIncome?: boolean;
+  /** 保険以外で同じ暦年課税へ合算する贈与額（贈与者ID→円） */
+  additionalTaxableGiftsByDonorYen?: Record<string, number>;
 }): InsuranceIncomeTaxDetail {
   const detail = createEmptyInsuranceIncomeTaxDetail();
   const recipient = input.familyMembers.find((m) => m.id === input.recipientId);
   if (!recipient) return detail;
 
   const giftAmountByDonorYen = new Map<string, number>();
-  const hasSalaryIncome = input.hasSalaryIncome ?? false;
+  for (const [donorId, amountYen] of Object.entries(
+    input.additionalTaxableGiftsByDonorYen ?? {},
+  )) {
+    if (amountYen > 0) {
+      giftAmountByDonorYen.set(donorId, amountYen);
+    }
+  }
+  let temporaryIncomeExpenseYen = 0;
 
   for (const [contractorId, entries] of Object.entries(
     input.insuranceState.byMember,
@@ -452,11 +547,20 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
       if (recipientId !== input.recipientId) continue;
 
       const revenueYen = Math.round(revenueMan * MAN_TO_YEN);
-      const incomeKind = classifyInsuranceBenefitIncomeKind(
+      const premiumPayerId = resolveInsurancePremiumPayerId(
         entry,
         contractorId,
-        recipientId,
+        input.familyMembers,
       );
+      const incomeKind =
+        isPotentialFinancialLikeInsuranceProduct(entry, contractor) &&
+        premiumPayerId === recipientId
+          ? 'financial_like_product_manual'
+          : classifyInsuranceBenefitIncomeKind(
+              entry,
+              premiumPayerId,
+              recipientId,
+            );
       const cumulativePremiumYen = Math.round(
         calcEntryCumulativePremiumManUpToYear(
           entry,
@@ -470,51 +574,63 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
 
       if (incomeKind === 'temporary_income') {
         detail.temporaryIncomeRevenueYen += revenueYen;
-        detail.temporaryIncomeTaxableYen += calcTemporaryIncomeYen(
-          revenueYen,
-          cumulativePremiumYen,
-        );
+        temporaryIncomeExpenseYen += cumulativePremiumYen;
       } else if (incomeKind === 'miscellaneous_income') {
         const expenseYen = calcEntryAnnuityMiscExpenseYen(
           entry,
           contractor,
           input.familyMembers,
+          input.referenceDate,
           revenueYen,
           cumulativePremiumYen,
         );
         detail.miscellaneousIncomeRevenueYen += revenueYen;
-        detail.miscellaneousIncomeTaxableYen += applyMiscIncomeFilingExemption(
+        detail.miscellaneousIncomeTaxableYen += calcMiscellaneousIncomeYen(
           revenueYen,
-          calcMiscellaneousIncomeYen(revenueYen, expenseYen),
-          hasSalaryIncome,
+          expenseYen,
+        );
+      } else if (incomeKind === 'gift_tax') {
+        giftAmountByDonorYen.set(
+          premiumPayerId,
+          (giftAmountByDonorYen.get(premiumPayerId) ?? 0) + revenueYen,
         );
       } else {
-        giftAmountByDonorYen.set(
-          contractorId,
-          (giftAmountByDonorYen.get(contractorId) ?? 0) + revenueYen,
-        );
+        detail.manualReviewRevenueYen += revenueYen;
       }
+      // 年金形式で保険料負担者と受取人が異なる場合は、
+      // 給付事由発生時の年金受給権評価と2年目以降の課税部分計算が必要。
+      // 現在の入力情報だけでは正確に自動計算できないため税額へ加算しない。
     }
   }
 
-  const doneeAge =
-    getMemberAgeAtYearEnd(
+  detail.temporaryIncomeTaxableYen = calcTemporaryIncomeYen(
+    detail.temporaryIncomeRevenueYen,
+    temporaryIncomeExpenseYen,
+  );
+
+  const gifts = Array.from(giftAmountByDonorYen.entries())
+    .map(([donorId, giftAmountYen]) => {
+      const donor = input.familyMembers.find((m) => m.id === donorId);
+      return donor ? { donor, giftAmountYen } : null;
+    })
+    .filter(
+      (gift): gift is { donor: FamilyMember; giftAmountYen: number } =>
+        gift != null,
+    );
+
+  detail.giftAmountYen = gifts.reduce(
+    (sum, gift) => sum + gift.giftAmountYen,
+    0,
+  );
+  detail.giftTaxYen = calcCalendarYearGiftTaxForGiftsYen({
+    gifts,
+    donee: recipient,
+    doneeAgeAtJan1: getMemberAgeAtCalendarYearStart(
       recipient,
       input.referenceDate,
       input.calendarYear,
-    ) ?? resolveMemberAge(recipient);
-
-  for (const [donorId, giftAmountYen] of giftAmountByDonorYen) {
-    const donor = input.familyMembers.find((m) => m.id === donorId);
-    if (!donor) continue;
-    detail.giftAmountYen += giftAmountYen;
-    detail.giftTaxYen += calcCalendarYearGiftTaxYen({
-      giftAmountYen,
-      donor,
-      donee: recipient,
-      doneeAgeAtYearEnd: doneeAge,
-    });
-  }
+    ),
+  });
 
   return detail;
 }
@@ -648,6 +764,84 @@ export function calcInsuranceEntryIncomeTaxPreview(input: {
     input.entry,
     input.contractor.id,
   );
+  const premiumPayerId = resolveInsurancePremiumPayerId(
+    input.entry,
+    input.contractor.id,
+    input.familyMembers,
+  );
+  const preliminaryKind =
+    isPotentialFinancialLikeInsuranceProduct(input.entry, input.contractor) &&
+    premiumPayerId === recipientId
+      ? 'financial_like_product_manual'
+      : classifyInsuranceBenefitIncomeKind(
+          input.entry,
+          premiumPayerId,
+          recipientId,
+        );
+  const isAnnual =
+    (input.entry.category === 'education' ||
+      input.entry.category === 'personal_pension') &&
+    resolveInsuranceBenefitPayoutMode(input.entry.benefitPayoutMode) ===
+      'annuity';
+
+  if (preliminaryKind === 'financial_like_product_manual') {
+    const revenueYen = Math.round(
+      calcEntryBenefitRevenueMan(
+        input.entry,
+        input.contractor,
+        input.familyMembers,
+        input.referenceDate,
+        calendarYear,
+        1,
+        12,
+      ) * MAN_TO_YEN,
+    );
+    const expenseYen = Math.round(
+      calcEntryCumulativePremiumManUpToYear(
+        input.entry,
+        input.contractor,
+        input.housingState,
+        input.vehicleState,
+        input.referenceDate,
+        calendarYear,
+      ) * MAN_TO_YEN,
+    );
+    return {
+      kind: 'financial_like_product_manual',
+      revenueYen,
+      expenseYen,
+      specialDeductionYen: 0,
+      incomeYen: 0,
+      giftTaxYen: 0,
+      calendarYear,
+      isAnnual: false,
+    };
+  }
+
+  if (preliminaryKind === 'annuity_right_tax_manual') {
+    const revenueYen = Math.round(
+      calcEntryBenefitRevenueMan(
+        input.entry,
+        input.contractor,
+        input.familyMembers,
+        input.referenceDate,
+        calendarYear,
+        1,
+        12,
+      ) * MAN_TO_YEN,
+    );
+    return {
+      kind: 'annuity_right_tax_manual',
+      revenueYen,
+      expenseYen: 0,
+      specialDeductionYen: 0,
+      incomeYen: 0,
+      giftTaxYen: 0,
+      calendarYear,
+      isAnnual: true,
+    };
+  }
+
   const detail = calcRecipientInsuranceIncomeTaxDetail({
     recipientId,
     familyMembers: input.familyMembers,
@@ -661,12 +855,6 @@ export function calcInsuranceEntryIncomeTaxPreview(input: {
     monthStart: 1,
     monthEnd: 12,
   });
-
-  const isAnnual =
-    (input.entry.category === 'education' ||
-      input.entry.category === 'personal_pension') &&
-    resolveInsuranceBenefitPayoutMode(input.entry.benefitPayoutMode) ===
-      'annuity';
 
   const cumulativePremiumYen = Math.round(
     calcEntryCumulativePremiumManUpToYear(
@@ -685,6 +873,7 @@ export function calcInsuranceEntryIncomeTaxPreview(input: {
       input.entry,
       input.contractor,
       input.familyMembers,
+      input.referenceDate,
       revenueYen,
       cumulativePremiumYen,
     );
@@ -762,15 +951,33 @@ export function formatInsuranceEntryIncomeTaxPreviewParts(
   if (preview.kind === 'temporary_income') {
     return {
       kind: 'temporary_income',
-      summary: `一時所得：${yen(preview.incomeYen)}`,
-      formula: `（収入${yen(preview.revenueYen)} − 払込保険料${yen(preview.expenseYen)} − 特別控除${yen(preview.specialDeductionYen)}）× 1/2`,
+      summary: `一時所得（この契約のみの目安）：${yen(preview.incomeYen)}`,
+      formula: `（収入${yen(preview.revenueYen)} − 払込保険料${yen(preview.expenseYen)} − 特別控除${yen(preview.specialDeductionYen)}）× 1/2 ※同じ年の他の一時所得がある場合は合算して計算`,
       expenseMissing: preview.expenseYen <= 0,
+    };
+  }
+  if (preview.kind === 'financial_like_product_manual') {
+    return {
+      kind: 'financial_like_product_manual',
+      summary: '要確認：金融類似商品の源泉分離課税',
+      formula:
+        '一時払で5年以内に返戻金を受け取る契約は、商品要件によって差益に源泉分離課税が適用される場合があります。Q10の入力だけでは法定要件を確定できないため、この契約の税額は自動計算しません。',
+      expenseMissing: false,
+    };
+  }
+  if (preview.kind === 'annuity_right_tax_manual') {
+    return {
+      kind: 'annuity_right_tax_manual',
+      summary: '要確認：年金受給権の課税',
+      formula:
+        '保険料負担者と年金受取人が異なるため、受給開始時の贈与税と、2年目以降の年金の非課税部分・課税部分を個別に確認します。この画面では税額を自動計算しません。',
+      expenseMissing: false,
     };
   }
   return {
     kind: 'gift_tax',
-    summary: `贈与税：${yen(preview.giftTaxYen)}`,
-    formula: `贈与財産${yen(preview.revenueYen)}（累計払込保険料${yen(preview.expenseYen)}は控除対象外）`,
+    summary: `贈与税（この契約のみの目安）：${yen(preview.giftTaxYen)}`,
+    formula: `贈与財産${yen(preview.revenueYen)}（累計払込保険料${yen(preview.expenseYen)}は控除対象外）※実際の暦年課税は同じ年に受けた他の贈与と合算`,
     expenseMissing: preview.expenseYen <= 0,
   };
 }

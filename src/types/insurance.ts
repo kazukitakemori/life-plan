@@ -18,13 +18,15 @@ export type InsuranceCategory =
   | 'life_other';
 
 /**
- * 生命保険料控除の区分（所得税・住民税・新制度）。
+ * 生命保険料控除の証明書区分。
  */
 export type LifeInsuranceDeductionKind =
   | 'general'
   | 'nursing'
   | 'pension'
   | 'none';
+
+export type LifeInsuranceDeductionSystem = 'new' | 'old';
 
 export type InsuranceEndMode = 'lifetime' | 'until';
 
@@ -86,11 +88,17 @@ export interface InsuranceEntry {
   endMode: InsuranceEndMode;
   endAge: number;
   endMonth: number;
+  /** 生命保険料控除を税計算へ反映するか。未設定時は false。 */
+  lifeDeductionEnabled?: boolean;
   /**
-   * 生命保険料控除区分。
-   * 死亡＝一般、医療・がん＝介護医療、学資＝一般、個人年金＝個人年金に固定。
-   * その他生命のみ変更可。損保は 'none'。
+   * 実際の保険料負担者。
+   * 生命保険料控除と満期・解約等の受取時課税の判定で共用する。
+   * 未設定時は契約者を負担者として扱う。
    */
+  lifeDeductionPayerMemberId?: string;
+  /** 新契約 / 旧契約。未設定時は新契約。 */
+  lifeDeductionSystem?: LifeInsuranceDeductionSystem;
+  /** 控除証明書に記載された区分。 */
   lifeDeductionKind: LifeInsuranceDeductionKind;
   /**
    * 返戻金の有無（死亡・医療・がん・その他生命で入力。既定 false）。
@@ -113,6 +121,18 @@ export interface InsuranceEntry {
    * 確定年金・有期年金の受取期間（年）。終身年金では未使用。
    */
   personalPensionAnnuityYears: number;
+  /** 保障の対象となる家族メンバー ID。未設定時は契約者を対象として扱う。 */
+  insuredMemberId?: string;
+  /** 死亡保障額（万円）。死亡保険で任意入力。 */
+  deathBenefitMan?: number;
+  /** 死亡保障の終了方法。未設定時は必要保障額へ自動反映しない。 */
+  deathCoverageEndMode?: 'lifetime' | 'until';
+  /** 死亡保障の終了年齢。deathCoverageEndMode === 'until' のとき使用。 */
+  deathCoverageEndAge?: number;
+  /** 入院給付金の日額（円/日）。医療保険で任意入力。 */
+  medicalHospitalDailyYen?: number;
+  /** がん診断時の一時金（万円）。がん保険で任意入力。 */
+  cancerDiagnosisBenefitMan?: number;
   /**
    * 受取人の家族メンバー ID。
    * 学資・個人年金の受取人、または返戻金あり時の返戻金受取人。既定は契約者。

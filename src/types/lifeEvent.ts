@@ -26,11 +26,23 @@ export type LifeEventSource =
   | 'second_life_housing'
   | 'second_life_nursing';
 
+export type LifeEventGiftTaxTreatment =
+  | 'unknown'
+  | 'taxable'
+  | 'non_taxable';
+
 /** 子・孫の祝い金の受取者（1人あたり） */
 export interface LifeEventCelebrationBeneficiary {
   memberId: string;
   targetAge: number;
   amountMan: number;
+  /**
+   * 贈与税の扱い。
+   * unknown: 税額へ自動反映しない
+   * taxable: 暦年贈与として合算
+   * non_taxable: 社会通念上相当な祝物・通常必要な生活教育費等として非課税扱い
+   */
+  giftTaxTreatment?: LifeEventGiftTaxTreatment;
 }
 
 export interface LifeEventEntry {

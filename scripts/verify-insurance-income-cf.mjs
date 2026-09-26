@@ -12,8 +12,18 @@ import { createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
 import { createFamilyMember } from '../src/lib/familyDefaults.ts';
 
 const referenceDate = new Date(2026, 5, 1);
-const head = createFamilyMember('head');
-const child = createFamilyMember('child');
+const head = {
+  ...createFamilyMember('head'),
+  age: 40,
+  birthMonth: 6,
+  birthDay: 1,
+};
+const child = {
+  ...createFamilyMember('child'),
+  age: 10,
+  birthMonth: 6,
+  birthDay: 1,
+};
 const members = [head, child];
 
 function sumAnnualIncome(state, year) {

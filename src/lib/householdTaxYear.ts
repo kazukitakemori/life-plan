@@ -7,6 +7,7 @@ import type { HousingState } from '../types/housing';
 import type { LoanState } from '../types/loan';
 import type { InsuranceState } from '../types/insurance';
 import type { SavingsState } from '../types/savings';
+import type { LifeEventState } from '../types/lifeEvent';
 import type { VehicleState } from '../types/vehicle';
 import {
   collectIdecoPayoutTaxByMember,
@@ -52,6 +53,7 @@ export interface HouseholdTaxYearInput {
   /** ペアローン等メンバー別借入の控除計算に使用 */
   loanState?: LoanState;
   insuranceState?: InsuranceState;
+  lifeEventState?: LifeEventState;
   vehicleState?: VehicleState;
   /** iDeCo / 企業型DC / DB / 会社退職金の受取税に使用 */
   savingsState?: SavingsState;
@@ -173,6 +175,7 @@ export function calcHouseholdTaxYearResult(
       memberId: member.id,
       housingLoanTaxCreditYen,
       insuranceState: input.insuranceState,
+      lifeEventState: input.lifeEventState,
       housingState: input.housingState,
       vehicleState: input.vehicleState,
       savingsState: input.savingsState,

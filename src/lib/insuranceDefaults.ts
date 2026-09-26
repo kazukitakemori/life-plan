@@ -192,6 +192,9 @@ export function createInsuranceEntry(
     endMode,
     endAge,
     endMonth,
+    lifeDeductionEnabled: false,
+    lifeDeductionPayerMemberId: member.id,
+    lifeDeductionSystem: 'new',
     lifeDeductionKind: getDefaultLifeDeductionKind(category),
     hasReturnValue: false,
     returnValueAge: member.expectedLifespan,
@@ -334,6 +337,18 @@ export function syncInsurancesWithFamily(
         !eligibleIds.has(entry.beneficiaryMemberId)
       ) {
         next = { ...next, beneficiaryMemberId: memberId };
+      }
+      if (
+        entry.insuredMemberId &&
+        !eligibleIds.has(entry.insuredMemberId)
+      ) {
+        next = { ...next, insuredMemberId: undefined };
+      }
+      if (
+        entry.lifeDeductionPayerMemberId &&
+        !eligibleIds.has(entry.lifeDeductionPayerMemberId)
+      ) {
+        next = { ...next, lifeDeductionPayerMemberId: memberId };
       }
       if (
         entry.benefitReceiveMemberId &&

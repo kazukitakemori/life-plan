@@ -5,6 +5,10 @@ import { HousingManInput } from '../housing/HousingManInput';
 import { HousingYenInput } from '../housing/HousingYenInput';
 import type { CashFlowInput } from '../../lib/cashFlow';
 import {
+  calcRegisteredMedicalScenarioBenefitMan,
+  resolveRegisteredInsuranceCoverage,
+} from '../../lib/insuranceCoverage';
+import {
   HIGH_COST_BRACKET_CAP_FORMULAS,
   HIGH_COST_BRACKET_ORDER,
   HIGH_COST_BRACKET_RANGE_LABELS,
@@ -573,6 +577,23 @@ export function RequiredCoverageMedicalRiskView({
   onChange,
 }: RequiredCoverageMedicalRiskViewProps) {
   const design = state.medicalDesigns[subject];
+  const subjectMember = cashFlowInput.familyMembers.find(
+    (member) => member.role === subject,
+  );
+  const registeredCoverage = useMemo(
+    () =>
+      subjectMember
+        ? resolveRegisteredInsuranceCoverage(
+            cashFlowInput.insuranceState,
+            subjectMember.id,
+          )
+        : {
+            deathBenefitMan: 0,
+            medicalHospitalDailyYen: 0,
+            cancerDiagnosisBenefitMan: 0,
+          },
+    [cashFlowInput.insuranceState, subjectMember],
+  );
   const [selectedCategory, setSelectedCategory] =
     useState<MedicalDiseaseCategory>('average');
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>(
@@ -630,15 +651,29 @@ export function RequiredCoverageMedicalRiskView({
       ? suggestedIncomeLossManPerMonth
       : design.incomeLossManPerMonth;
 
+  const effectiveInpatientDays = Math.max(
+    0,
+    Math.min(
+      design.inpatientDays,
+      design.hospitalMonthsPerYear * 30 || design.inpatientDays,
+    ),
+  );
+  const registeredScenarioBenefitMan =
+    calcRegisteredMedicalScenarioBenefitMan(
+      registeredCoverage,
+      effectiveInpatientDays,
+      selectedCategory === 'cancer',
+    );
   const coverageDesign = useMemo(
-    () =>
-      effectiveIncomeLossManPerMonth === design.incomeLossManPerMonth
-        ? design
-        : {
-            ...design,
-            incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
-          },
-    [design, effectiveIncomeLossManPerMonth],
+    () => ({
+      ...design,
+      incomeLossManPerMonth: effectiveIncomeLossManPerMonth,
+      existingBenefitMan:
+        registeredScenarioBenefitMan > 0
+          ? registeredScenarioBenefitMan
+          : Math.max(0, design.existingBenefitMan),
+    }),
+    [design, effectiveIncomeLossManPerMonth, registeredScenarioBenefitMan],
   );
   const result: MedicalRiskCoverageResult = useMemo(
     () => calcMedicalRiskCoverage(coverageDesign, quotedMonthlyIncomeMan),
@@ -1338,6 +1373,9 @@ export function RequiredCoverageMedicalRiskView({
             医療費 {formatManTenths(result.annualMedicalSelfPayMan)}万円 ＋ 雑費{' '}
             {formatManTenths(result.extraCosts.incidentalMan)}万円 ＋ 収入の純不足{' '}
             {formatManTenths(result.extraCosts.incomeLossMan)}万円
+            {result.existingBenefitMan > 0
+              ? ` − 給付 ${formatManTenths(result.existingBenefitMan)}万円`
+              : ''}
           </p>
         </div>
       </section>

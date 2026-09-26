@@ -10,6 +10,7 @@ import {
   calcInsuranceEntryIncomeTaxPreview,
   calcRecipientInsuranceIncomeTaxDetail,
   formatInsuranceEntryIncomeTaxPreview,
+  isPotentialFinancialLikeInsuranceProduct,
   resolveAnnuityPayoutEstimateYears,
 } from '../src/lib/insuranceIncomeTax.ts';
 import { getAnnuityRemainingLifeYears } from '../src/lib/annuityRemainingLife.ts';
@@ -17,10 +18,17 @@ import {
   calcMiscellaneousIncomeYen,
   calcTemporaryIncomeYen,
 } from '../src/lib/incomeTaxDeductions.ts';
-import { createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
+import {
+  createInsuranceEntry,
+  syncInsurancesWithFamily,
+} from '../src/lib/insuranceDefaults.ts';
 import { createFamilyMember } from '../src/lib/familyDefaults.ts';
+import { calcCalendarYearGiftTaxForGiftsYen } from '../src/lib/giftTax.ts';
 import { buildMemberTaxBreakdownData } from '../src/lib/taxCalculator.ts';
 import { createDefaultPensionByMember } from '../src/lib/pensionDefaults.ts';
+import {
+  syncLifeEventsWithFamily,
+} from '../src/lib/lifeEventDefaults.ts';
 
 function assertEq(actual, expected, label) {
   if (actual !== expected) {
@@ -30,9 +38,32 @@ function assertEq(actual, expected, label) {
 }
 
 const referenceDate = new Date(2026, 5, 1);
-const head = createFamilyMember('head');
-const child = createFamilyMember('child');
-const members = [head, child];
+const head = {
+  ...createFamilyMember('head'),
+  age: 40,
+  birthMonth: 6,
+  birthDay: 1,
+};
+const spouse = {
+  ...createFamilyMember('spouse'),
+  age: 38,
+  birthMonth: 6,
+  birthDay: 1,
+};
+const child = {
+  ...createFamilyMember('child'),
+  age: 10,
+  birthMonth: 6,
+  birthDay: 1,
+};
+const sibling = {
+  ...createFamilyMember('other'),
+  age: 35,
+  birthMonth: 6,
+  birthDay: 1,
+  otherRelationship: 'sibling',
+};
+const members = [head, spouse, child, sibling];
 const emptyHousing = { byTarget: {} };
 const emptyVehicle = { inflationRate: 0, byMember: {} };
 
@@ -65,6 +96,56 @@ assertEq(
   classifyInsuranceBenefitIncomeKind(educationGift, head.id, child.id),
   'gift_tax',
   'education to child',
+);
+
+
+// 契約者ではなく実際の保険料負担者を基準に判定する
+const paidAndReceivedByChild = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 50,
+    benefitReceiveAge: 18,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: child.id,
+  },
+  members,
+);
+assertEq(
+  classifyInsuranceBenefitIncomeKind(
+    paidAndReceivedByChild,
+    child.id,
+    child.id,
+  ),
+  'temporary_income',
+  'premium payer equals recipient even when contractor differs',
+);
+
+const annuityDifferentPayer = createInsuranceEntry(
+  'personal_pension',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'annuity',
+    benefitAmountMan: 10,
+    benefitReceiveAge: 65,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: head.id,
+  },
+  members,
+);
+assertEq(
+  classifyInsuranceBenefitIncomeKind(
+    annuityDifferentPayer,
+    head.id,
+    child.id,
+  ),
+  'annuity_right_tax_manual',
+  'annuity right requires manual tax review when payer differs',
 );
 
 // 余命年数（所得税法施行令別表）
@@ -147,6 +228,66 @@ const educationTax = calcRecipientInsuranceIncomeTaxDetail({
 });
 assertEq(educationTax.giftAmountYen, 500_000, 'education gift amount');
 
+// 同一年の保険贈与は受贈者単位で合算し、110万円控除は1回だけ
+const giftA = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 80,
+    benefitReceiveAge: 19,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: head.id,
+  },
+  members,
+);
+const giftB = createInsuranceEntry(
+  'education',
+  spouse,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 80,
+    benefitReceiveAge: 19,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: spouse.id,
+  },
+  members,
+);
+const combinedGiftYear = yearWhenMemberReachesAge(child, 19);
+const combinedGiftTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(combinedGiftTax.giftAmountYen, 1_600_000, 'annual gifts combined');
+assertEq(combinedGiftTax.giftTaxYen, 50_000, 'annual 1.1m deduction applied once');
+
+// 一般贈与と特例贈与が混在する場合は共通課税価格を按分
+const mixedGiftTax = calcCalendarYearGiftTaxForGiftsYen({
+  gifts: [
+    { donor: head, giftAmountYen: 3_000_000 },
+    { donor: sibling, giftAmountYen: 1_500_000 },
+  ],
+  donee: child,
+  doneeAgeAtJan1: 18,
+});
+assertEq(mixedGiftTax, 416_666, 'mixed general and lineal gift tax');
+
 // 個人年金・年金形式（契約者受取）→ 雑所得
 // 収入10万円/年・払込累計25万円・確定10年
 // 総支給見込=100万円、割合=0.25、必要経費=25,000、雑所得=75,000
@@ -203,7 +344,287 @@ assertEq(
 assertEq(expectedMiscTaxable, 75_000, 'pension misc expected');
 assertEq(pensionTax.temporaryIncomeTaxableYen, 0, 'pension temporary');
 
+
+// 20万円以下でも「非課税」にはしない。確定申告要否とは分けて所得へ算入する。
+const pensionTaxWithSalary = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [personalPensionAnnuity] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: pensionYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  pensionTaxWithSalary.miscellaneousIncomeTaxableYen,
+  expectedMiscTaxable,
+  'salary earner misc income is not tax exempt under 200k',
+);
+
+// 保険料負担者＝受取人なら、契約者が別でも一時所得
+const payerAwareYear = yearWhenMemberReachesAge(child, 18);
+const payerAwareTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [paidAndReceivedByChild] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: payerAwareYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(payerAwareTax.giftAmountYen, 0, 'payer-aware lump is not gift');
+if (payerAwareTax.temporaryIncomeRevenueYen <= 0) {
+  console.error('FAIL payer-aware lump should be temporary income');
+  process.exit(1);
+}
+
+// 年金開始基準者と年金受取人が異なる場合、余命年数は受取人の開始時実年齢で判定
+const spouseLifetimePension = createInsuranceEntry(
+  'personal_pension',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'annuity',
+    personalPensionAnnuityKind: 'lifetime',
+    benefitAmountMan: 10,
+    benefitReceiveAge: 65,
+    benefitReceiveMemberId: head.id,
+    beneficiaryMemberId: spouse.id,
+    lifeDeductionPayerMemberId: spouse.id,
+    startAge: head.age - 5,
+    startMonth: 1,
+    endMode: 'until',
+    endAge: head.age - 1,
+    endMonth: 12,
+    premiumMan: 5,
+    premiumPaymentMode: 'annual',
+  },
+  members,
+);
+const spouseLifetimePreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: spouseLifetimePension,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+const spouseAgeAtHead65 = 63;
+const spouseRemainingYears = getAnnuityRemainingLifeYears(
+  spouseAgeAtHead65,
+  spouse.gender,
+);
+const expectedSpouseLifetimeExpense = calcAnnuityNecessaryExpenseYen(
+  100_000,
+  250_000,
+  100_000 * spouseRemainingYears,
+);
+assertEq(
+  spouseLifetimePreview.expenseYen,
+  expectedSpouseLifetimeExpense,
+  'lifetime annuity uses recipient actual age at start',
+);
+
+// 保険料負担者≠年金受取人は年金受給権評価が必要なため自動贈与税計算しない
+const annuityDifferentPayerYear = yearWhenMemberReachesAge(child, 65);
+const annuityDifferentPayerTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [annuityDifferentPayer] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: annuityDifferentPayerYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  annuityDifferentPayerTax.giftAmountYen,
+  0,
+  'annuity right is not treated as annual gift amount',
+);
+assertEq(
+  annuityDifferentPayerTax.miscellaneousIncomeTaxableYen,
+  0,
+  'annuity right yearly income is deferred to manual tax review',
+);
+const annuityDifferentPayerPreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: annuityDifferentPayer,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+assertEq(
+  annuityDifferentPayerPreview.kind,
+  'annuity_right_tax_manual',
+  'annuity different payer preview',
+);
+
 const pensionByMember = createDefaultPensionByMember(members);
+
+const taxableCelebrationState = {
+  byMember: {
+    [spouse.id]: [
+      {
+        id: 'celebration-taxable',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          {
+            memberId: child.id,
+            targetAge: 19,
+            amountMan: 80,
+            giftTaxTreatment: 'taxable',
+          },
+        ],
+      },
+    ],
+  },
+};
+const insuranceAndCelebrationBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: { byMember: { [head.id]: [giftA] } },
+  lifeEventState: taxableCelebrationState,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!insuranceAndCelebrationBreakdown) {
+  throw new Error('no insurance+celebration breakdown');
+}
+assertEq(
+  insuranceAndCelebrationBreakdown.giftTax.giftTaxYen,
+  50_000,
+  'insurance and Q3 celebration gift combined',
+);
+assertEq(
+  insuranceAndCelebrationBreakdown.giftTax.unconfirmedGiftYen,
+  0,
+  'taxable Q3 gift has no unconfirmed balance',
+);
+
+const unknownCelebrationState = {
+  byMember: {
+    [spouse.id]: [
+      {
+        id: 'celebration-unknown',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          {
+            memberId: child.id,
+            targetAge: 19,
+            amountMan: 80,
+            giftTaxTreatment: 'unknown',
+          },
+        ],
+      },
+    ],
+  },
+};
+const unknownCelebrationBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: { byMember: { [head.id]: [giftA] } },
+  lifeEventState: unknownCelebrationState,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!unknownCelebrationBreakdown) {
+  throw new Error('no unknown celebration breakdown');
+}
+assertEq(
+  unknownCelebrationBreakdown.giftTax.giftTaxYen,
+  0,
+  'unknown Q3 gift is not guessed into tax',
+);
+assertEq(
+  unknownCelebrationBreakdown.giftTax.unconfirmedGiftYen,
+  800_000,
+  'unknown Q3 gift remains visible',
+);
+
+// 贈与税は受取年の年税額として表示し、CF支出は翌年3月に計上
+const giftYearBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!giftYearBreakdown) throw new Error('no gift year breakdown');
+assertEq(giftYearBreakdown.giftTax.giftTaxYen, 50_000, 'gift year liability');
+assertEq(
+  giftYearBreakdown.giftTax.giftTaxCashFlowYen,
+  0,
+  'gift tax not paid in receipt year',
+);
+
+const giftPaymentYearBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear + 1,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!giftPaymentYearBreakdown) throw new Error('no gift payment year breakdown');
+assertEq(
+  giftPaymentYearBreakdown.giftTax.giftTaxYen,
+  0,
+  'next year has no new gift liability',
+);
+assertEq(
+  giftPaymentYearBreakdown.giftTax.giftTaxCashFlowYen,
+  50_000,
+  'prior year gift tax paid next March',
+);
+
 const breakdown = buildMemberTaxBreakdownData({
   familyMembers: members,
   incomeByMember: {},
@@ -243,6 +664,117 @@ assertEq(
   'preview label',
 );
 
+// 同一年に複数の一時所得がある場合、50万円特別控除は年1回
+const tempA = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 30,
+  returnValueAge: 60,
+  startAge: head.age,
+  startMonth: 1,
+  premiumMan: 0,
+  premiumPaymentMode: 'annual',
+});
+const tempB = createInsuranceEntry('medical', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 30,
+  returnValueAge: 60,
+  startAge: head.age,
+  startMonth: 1,
+  premiumMan: 0,
+  premiumPaymentMode: 'annual',
+});
+const combinedTemporaryTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [tempA, tempB] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: returnYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  combinedTemporaryTax.temporaryIncomeRevenueYen,
+  600_000,
+  'temporary incomes combined revenue',
+);
+assertEq(
+  combinedTemporaryTax.temporaryIncomeTaxableYen,
+  50_000,
+  'temporary 500k deduction applied once',
+);
+
+// 一時払・5年以内の返戻金は金融類似商品の可能性があるため自動課税しない
+const shortSinglePremiumReturn = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 120,
+  returnValueAge: 45,
+  startAge: 40,
+  startMonth: 6,
+  premiumMan: 100,
+  premiumPaymentMode: 'lump_sum',
+  beneficiaryMemberId: head.id,
+  lifeDeductionPayerMemberId: head.id,
+});
+assertEq(
+  isPotentialFinancialLikeInsuranceProduct(shortSinglePremiumReturn, head),
+  true,
+  'short single-premium return candidate',
+);
+const shortSinglePremiumYear = yearWhenMemberReachesAge(head, 45);
+const shortSinglePremiumTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [shortSinglePremiumReturn] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: shortSinglePremiumYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  shortSinglePremiumTax.temporaryIncomeRevenueYen,
+  0,
+  'financial-like candidate not auto treated as temporary income',
+);
+assertEq(
+  shortSinglePremiumTax.manualReviewRevenueYen,
+  1_200_000,
+  'financial-like candidate remains visible for manual review',
+);
+const shortSinglePremiumPreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: shortSinglePremiumReturn,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+assertEq(
+  shortSinglePremiumPreview.kind,
+  'financial_like_product_manual',
+  'financial-like preview kind',
+);
+
+const longSinglePremiumReturn = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 120,
+  returnValueAge: 46,
+  startAge: 40,
+  startMonth: 6,
+  premiumMan: 100,
+  premiumPaymentMode: 'lump_sum',
+  beneficiaryMemberId: head.id,
+  lifeDeductionPayerMemberId: head.id,
+});
+assertEq(
+  isPotentialFinancialLikeInsuranceProduct(longSinglePremiumReturn, head),
+  false,
+  'single-premium return after five years uses normal classification',
+);
+
 // 学資（子ども受取）贈与でも累計払込保険料を表示する
 const educationPremium = createInsuranceEntry(
   'education',
@@ -279,6 +811,83 @@ if (!educationParts || !educationParts.includes('累計払込保険料')) {
   console.error(`FAIL education gift label missing premium: ${educationParts}`);
   process.exit(1);
 }
+
+// 家族削除時は保険の受取人・保険料負担者・受取基準者の参照切れを残さない
+const removableChildInsurance = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    beneficiaryMemberId: child.id,
+    benefitReceiveMemberId: child.id,
+    lifeDeductionPayerMemberId: child.id,
+    insuredMemberId: child.id,
+  },
+  members,
+);
+const syncedInsuranceAfterChildRemoval = syncInsurancesWithFamily(
+  [head, spouse, sibling],
+  { byMember: { [head.id]: [removableChildInsurance] } },
+);
+const syncedInsuranceEntry =
+  syncedInsuranceAfterChildRemoval.byMember[head.id]?.[0];
+if (!syncedInsuranceEntry) {
+  throw new Error('insurance disappeared unexpectedly after child removal');
+}
+assertEq(
+  syncedInsuranceEntry.beneficiaryMemberId,
+  head.id,
+  'deleted insurance beneficiary falls back',
+);
+assertEq(
+  syncedInsuranceEntry.lifeDeductionPayerMemberId,
+  head.id,
+  'deleted premium payer falls back',
+);
+assertEq(
+  syncedInsuranceEntry.insuredMemberId,
+  undefined,
+  'deleted insured member falls back to contractor',
+);
+if (syncedInsuranceEntry.benefitReceiveMemberId === child.id) {
+  console.error('FAIL deleted benefit receive member reference remains');
+  process.exit(1);
+}
+
+// 旧Q3祝い金は贈与税区分がなくても「未確認」として安全に移行し、削除家族を残さない
+const legacyCelebrationState = {
+  byMember: {
+    [head.id]: [
+      {
+        id: 'legacy-celebration',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          { memberId: child.id, targetAge: 19, amountMan: 80 },
+        ],
+      },
+    ],
+  },
+};
+const syncedLegacyCelebration = syncLifeEventsWithFamily(
+  members,
+  legacyCelebrationState,
+);
+assertEq(
+  syncedLegacyCelebration.byMember[head.id][0].celebrationBeneficiaries[0]
+    .giftTaxTreatment,
+  'unknown',
+  'legacy celebration tax treatment migrates to unknown',
+);
+const syncedCelebrationAfterChildRemoval = syncLifeEventsWithFamily(
+  [head, spouse, sibling],
+  syncedLegacyCelebration,
+);
+assertEq(
+  syncedCelebrationAfterChildRemoval.byMember[head.id][0]
+    .celebrationBeneficiaries.length,
+  0,
+  'deleted celebration beneficiary removed',
+);
 
 console.log('OK insurance income tax', {
   returnTax,

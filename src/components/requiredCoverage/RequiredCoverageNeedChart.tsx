@@ -384,7 +384,17 @@ export function RequiredCoverageNeedChart({
       ...createDefaultLifetimeChartVisibleSeries(),
       ...balanceLegend,
     }) ?? 'deposit';
-  const preparedLabels = coveragePreparedResourceLabels(preparedBalanceMode);
+  const basePreparedLabels = coveragePreparedResourceLabels(preparedBalanceMode);
+  const hasRegisteredDeathBenefit = points.some(
+    (point) => point.registeredDeathBenefitMan > 0,
+  );
+  const preparedLabels = hasRegisteredDeathBenefit
+    ? {
+        ...basePreparedLabels,
+        legend: `${basePreparedLabels.legend}・死亡保障`,
+        formula: `${basePreparedLabels.formula}・死亡保障`,
+      }
+    : basePreparedLabels;
   const legendItems = needLegendItems(preparedLabels.legend);
   const displayPoints = useMemo(
     () =>

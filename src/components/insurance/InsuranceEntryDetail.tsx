@@ -9,12 +9,12 @@ import { getVehicleAgeOptions } from '../../lib/vehicleDefaults';
 import {
   INSURANCE_BENEFIT_PAYOUT_MODE_LABELS,
   INSURANCE_BENEFIT_PAYOUT_MODES,
-  INSURANCE_CATEGORY_LABELS,
   INSURANCE_PREMIUM_PAYMENT_MODE_LABELS,
-  INSURANCE_PREMIUM_PAYMENT_MODE_UNITS,
   INSURANCE_PREMIUM_PAYMENT_MODES,
   LIFE_INSURANCE_DEDUCTION_KIND_LABELS,
   LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS,
+  LIFE_INSURANCE_DEDUCTION_SYSTEM_LABELS,
+  LIFE_INSURANCE_DEDUCTION_SYSTEM_OPTIONS,
   PERSONAL_PENSION_ANNUITY_KIND_DESCRIPTIONS,
   PERSONAL_PENSION_ANNUITY_KIND_LABELS,
   PERSONAL_PENSION_ANNUITY_KINDS,
@@ -28,13 +28,12 @@ import {
   hasBeneficiaryInput,
   hasReturnValueInput,
   showsReturnValueBeneficiary,
-  isFixedLifeDeductionCategory,
-  isLifeInsuranceCategory,
   needsPersonalPensionAnnuityPeriod,
   resolveEducationAnnuityYears,
   resolveInsuranceBenefitPayoutMode,
   resolveInsurancePremiumPaymentMode,
   resolveLifeDeductionKind,
+  isLifeInsuranceCategory,
   resolvePersonalPensionAnnuityKind,
   resolvePersonalPensionAnnuityYears,
 } from '../../lib/insuranceLabels';
@@ -66,10 +65,12 @@ import type {
   InsurancePeriodSource,
   InsurancePremiumPaymentMode,
   LifeInsuranceDeductionKind,
+  LifeInsuranceDeductionSystem,
   PersonalPensionAnnuityKind,
 } from '../../types/insurance';
 import type { VehicleEntry, VehicleState } from '../../types/vehicle';
 import { LoanSettingsField } from '../loan/LoanSettingsFields';
+import { NumericAmountInput } from '../ui/NumericAmountInput';
 
 interface HousingPropertyOption {
   key: string;
@@ -105,6 +106,10 @@ interface InsuranceEntryDetailProps {
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const END_AGES = Array.from({ length: 101 }, (_, i) => i);
+
+function roundInsurancePremiumMan(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
 
 function collectHousingOptions(
   housingState: HousingState,
@@ -179,9 +184,28 @@ export function InsuranceEntryDetail({
   const vehicleOptions = collectVehicleOptions(vehicleState, members);
   const beneficiaryOptions = getIncomeEligibleMembers(members);
   const receiveMemberOptions = getBenefitReceiveMemberOptions(members);
-  const isLife = isLifeInsuranceCategory(entry.category);
+  const lifeDeductionEnabled = entry.lifeDeductionEnabled === true;
+  const lifeDeductionSystem = entry.lifeDeductionSystem ?? 'new';
+  const premiumPayerMemberId = beneficiaryOptions.some(
+    (item) => item.id === entry.lifeDeductionPayerMemberId,
+  )
+    ? entry.lifeDeductionPayerMemberId!
+    : member.id;
   const isFire = entry.category === 'fire';
   const isAuto = entry.category === 'auto';
+  const showCoverageDetails =
+    entry.category === 'life' ||
+    entry.category === 'medical' ||
+    entry.category === 'cancer';
+  const resolvedInsuredMemberId = beneficiaryOptions.some(
+    (item) => item.id === entry.insuredMemberId,
+  )
+    ? entry.insuredMemberId!
+    : member.id;
+  const insuredMember =
+    beneficiaryOptions.find((item) => item.id === resolvedInsuredMemberId) ??
+    member;
+  const insuredAgeOptions = getVehicleAgeOptions(insuredMember);
   const showBenefitPayout = hasBenefitPayoutInput(entry.category);
   const showBeneficiary = hasBeneficiaryInput(entry.category);
   const showReturnValueBeneficiary = showsReturnValueBeneficiary(
@@ -200,6 +224,9 @@ export function InsuranceEntryDetail({
   const showEducationAnnuityPeriod =
     entry.category === 'education' && payoutMode === 'annuity';
   const showBenefitAmount = hasBenefitAmountInput(entry.category);
+  const showPremiumPayer =
+    isLifeInsuranceCategory(entry.category) &&
+    (lifeDeductionEnabled || showBenefitPayout || entry.hasReturnValue);
   const educationAnnuityYears = resolveEducationAnnuityYears(
     entry.educationAnnuityYears,
   );
@@ -300,14 +327,15 @@ export function InsuranceEntryDetail({
   const paymentMode = resolveInsurancePremiumPaymentMode(
     entry.premiumPaymentMode,
   );
+  const isLumpSumPremium = paymentMode === 'lump_sum';
 
   const setPremiumPaymentMode = (next: InsurancePremiumPaymentMode) => {
     const current = resolveInsurancePremiumPaymentMode(entry.premiumPaymentMode);
     let premiumMan = entry.premiumMan;
     if (current === 'monthly' && next === 'annual') {
-      premiumMan = roundAmountMan(premiumMan * 12);
+      premiumMan = roundInsurancePremiumMan(premiumMan * 12);
     } else if (current === 'annual' && next === 'monthly') {
-      premiumMan = roundAmountMan(premiumMan / 12);
+      premiumMan = roundInsurancePremiumMan(premiumMan / 12);
     }
     update({ premiumPaymentMode: next, premiumMan });
   };
@@ -398,14 +426,6 @@ export function InsuranceEntryDetail({
     >
       <div className="loan-settings-table-card">
         <div className="loan-settings-form-table">
-          {variant === 'full' ? (
-            <LoanSettingsField label="種類">
-              <span className="insurance-entry-detail-value">
-                {INSURANCE_CATEGORY_LABELS[entry.category]}
-              </span>
-            </LoanSettingsField>
-          ) : null}
-
           {!isLinkedName ? (
             <LoanSettingsField label="名称" labelFor={`ins-name-${entry.id}`}>
               <input
@@ -436,30 +456,23 @@ export function InsuranceEntryDetail({
                   </option>
                 ))}
               </select>
-              <div className="life-event-amount-field">
-                <input
-                  id={`ins-premium-${entry.id}`}
-                  type="number"
-                  className="amount-input"
-                  value={entry.premiumMan}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    update({
-                      premiumMan: roundAmountMan(
-                        Math.max(0, Number(e.target.value) || 0),
-                      ),
-                    })
-                  }
-                />
-                <span className="amount-unit">
-                  {INSURANCE_PREMIUM_PAYMENT_MODE_UNITS[paymentMode]}
-                </span>
-              </div>
+              <NumericAmountInput
+                id={`ins-premium-${entry.id}`}
+                value={Math.round((entry.premiumMan ?? 0) * 10_000)}
+                unit="円"
+                ariaLabel="保険料"
+                onChange={(yen) =>
+                  update({
+                    premiumMan: roundInsurancePremiumMan(yen / 10_000),
+                  })
+                }
+              />
             </div>
           </LoanSettingsField>
 
-          <LoanSettingsField label="保険料払込期間">
+          <LoanSettingsField
+            label={isLumpSumPremium ? '支払時期' : '保険料払込期間'}
+          >
             <div className="insurance-period-fields">
               {linkedAsset ? (
                 <select
@@ -471,9 +484,18 @@ export function InsuranceEntryDetail({
                   }
                 >
                   <option value="linked">
-                    {getInsurancePeriodLinkLabel(linkedAsset)}（{periodRangeLabel}）
+                    {isLumpSumPremium
+                      ? `${getInsurancePeriodLinkLabel(linkedAsset)}の開始（${formatYearAtAgeLabel(
+                          resolvedPeriod.startAge,
+                          resolvedPeriod.startMonth,
+                          birthYear,
+                          member.birthMonth,
+                        )}）`
+                      : `${getInsurancePeriodLinkLabel(linkedAsset)}（${periodRangeLabel}）`}
                   </option>
-                  <option value="manual">期間を指定</option>
+                  <option value="manual">
+                    {isLumpSumPremium ? '時期を指定' : '期間を指定'}
+                  </option>
                 </select>
               ) : null}
 
@@ -525,82 +547,87 @@ export function InsuranceEntryDetail({
                     </span>
                   </div>
 
-                  {entry.endMode === 'lifetime' ? (
-                    <div className="insurance-period-end">
-                      <span className="insurance-period-end-label">一生涯</span>
-                      <button
-                        type="button"
-                        className="insurance-period-toggle"
-                        onClick={() =>
-                          update({
-                            periodSource: 'manual',
-                            endMode: 'until',
-                            endAge: Math.max(entry.startAge, member.age ?? 0),
-                            endMonth: 12,
-                          })
-                        }
-                      >
-                        終了年齢を指定
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="insurance-period-end">
-                      <select
-                        className="select-input"
-                        value={entry.endAge}
-                        aria-label="払込終了年齢"
-                        onChange={(e) =>
-                          update({
-                            periodSource: 'manual',
-                            endAge: Number(e.target.value),
-                          })
-                        }
-                      >
-                        {END_AGES.map((age) => (
-                          <option key={age} value={age}>
-                            {age}歳
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        className="select-input"
-                        value={entry.endMonth}
-                        aria-label="払込終了月"
-                        onChange={(e) =>
-                          update({
-                            periodSource: 'manual',
-                            endMonth: Number(e.target.value),
-                          })
-                        }
-                      >
-                        {MONTHS.map((month) => (
-                          <option key={month} value={month}>
-                            {month}月
-                          </option>
-                        ))}
-                      </select>
-                      <span className="period-start-label">
-                        {formatEndYearLabel(
-                          entry.endAge,
-                          entry.endMonth,
-                          birthYear,
-                          member.birthMonth,
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        className="insurance-period-toggle"
-                        onClick={() =>
-                          update({
-                            periodSource: 'manual',
-                            endMode: 'lifetime',
-                          })
-                        }
-                      >
-                        一生涯にする
-                      </button>
-                    </div>
-                  )}
+                  {!isLumpSumPremium ? (
+                    <>
+                      {entry.endMode === 'lifetime' ? (
+                        <div className="insurance-period-end">
+                          <span className="insurance-period-end-label">一生涯</span>
+                          <button
+                            type="button"
+                            className="insurance-period-toggle"
+                            onClick={() =>
+                              update({
+                                periodSource: 'manual',
+                                endMode: 'until',
+                                endAge: Math.max(entry.startAge, member.age ?? 0),
+                                endMonth: 12,
+                              })
+                            }
+                          >
+                            終了年齢を指定
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="insurance-period-end">
+                          <select
+                            className="select-input"
+                            value={entry.endAge}
+                            aria-label="払込終了年齢"
+                            onChange={(e) =>
+                              update({
+                                periodSource: 'manual',
+                                endAge: Number(e.target.value),
+                              })
+                            }
+                          >
+                            {END_AGES.map((age) => (
+                              <option key={age} value={age}>
+                                {age}歳
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            className="select-input"
+                            value={entry.endMonth}
+                            aria-label="払込終了月"
+                            onChange={(e) =>
+                              update({
+                                periodSource: 'manual',
+                                endMonth: Number(e.target.value),
+                              })
+                            }
+                          >
+                            {MONTHS.map((month) => (
+                              <option key={month} value={month}>
+                                {month}月
+                              </option>
+                            ))}
+                          </select>
+                          <span className="period-start-label">
+                            {formatEndYearLabel(
+                              entry.endAge,
+                              entry.endMonth,
+                              birthYear,
+                              member.birthMonth,
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            className="insurance-period-toggle"
+                            onClick={() =>
+                              update({
+                                periodSource: 'manual',
+                                endMode: 'lifetime',
+                              })
+                            }
+                          >
+                            一生涯にする
+                          </button>
+                        </div>
+                      )}
+
+                    </>
+                  ) : null}
                 </>
               )}
             </div>
@@ -658,50 +685,280 @@ export function InsuranceEntryDetail({
             </LoanSettingsField>
           ) : null}
 
-          {isLife ? (
-            <LoanSettingsField
-              label="生命保険料控除"
-              labelFor={
-                isFixedLifeDeductionCategory(entry.category)
-                  ? undefined
-                  : `ins-deduction-${entry.id}`
-              }
-            >
-              {isFixedLifeDeductionCategory(entry.category) ? (
-                <span className="insurance-entry-detail-value">
-                  {
-                    LIFE_INSURANCE_DEDUCTION_KIND_LABELS[
-                      resolveLifeDeductionKind(entry.category)
-                    ]
-                  }
-                </span>
-              ) : (
+          {showCoverageDetails ? (
+            <>
+              <LoanSettingsField
+                label="保障の対象"
+                labelFor={`ins-insured-${entry.id}`}
+              >
                 <select
-                  id={`ins-deduction-${entry.id}`}
-                  className="select-input"
-                  value={resolveLifeDeductionKind(
-                    entry.category,
-                    entry.lifeDeductionKind,
-                  )}
+                  id={`ins-insured-${entry.id}`}
+                  className="select-input insurance-beneficiary-select"
+                  value={resolvedInsuredMemberId}
                   onChange={(e) =>
                     update({
-                      lifeDeductionKind: e.target
-                        .value as LifeInsuranceDeductionKind,
+                      insuredMemberId:
+                        e.target.value === member.id
+                          ? undefined
+                          : e.target.value,
                     })
                   }
                 >
-                  {LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {LIFE_INSURANCE_DEDUCTION_KIND_LABELS[kind]}
+                  {beneficiaryOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getMemberTabLabel(item)}
                     </option>
                   ))}
                 </select>
-              )}
+                <p className="insurance-link-hint">
+                  契約者本人が保障対象の場合はそのままで構いません。必要保障額ではこの人の既契約保障として反映します。
+                </p>
+              </LoanSettingsField>
+
+              {entry.category === 'life' ? (
+                <>
+                  <LoanSettingsField
+                    label="死亡保障額"
+                    labelFor={`ins-death-benefit-${entry.id}`}
+                  >
+                    <NumericAmountInput
+                      id={`ins-death-benefit-${entry.id}`}
+                      value={entry.deathBenefitMan ?? 0}
+                      unit="万円"
+                      ariaLabel="死亡保障額"
+                      onChange={(value) =>
+                        update({
+                          deathBenefitMan: roundAmountMan(value),
+                        })
+                      }
+                    />
+                  </LoanSettingsField>
+                  <LoanSettingsField
+                    label="死亡保障期間"
+                    labelFor={`ins-death-period-${entry.id}`}
+                  >
+                    <div className="insurance-return-fields">
+                      <select
+                        id={`ins-death-period-${entry.id}`}
+                        className="select-input"
+                        value={entry.deathCoverageEndMode ?? ''}
+                        onChange={(e) => {
+                          const mode = e.target.value;
+                          update({
+                            deathCoverageEndMode:
+                              mode === 'lifetime' || mode === 'until'
+                                ? mode
+                                : undefined,
+                            deathCoverageEndAge:
+                              mode === 'until'
+                                ? (entry.deathCoverageEndAge ??
+                                  insuredMember.expectedLifespan)
+                                : entry.deathCoverageEndAge,
+                          });
+                        }}
+                      >
+                        <option value="">未設定（必要保障額へ未反映）</option>
+                        <option value="lifetime">終身</option>
+                        <option value="until">年齢まで</option>
+                      </select>
+                      {entry.deathCoverageEndMode === 'until' ? (
+                        <select
+                          className="select-input"
+                          value={
+                            entry.deathCoverageEndAge ??
+                            insuredMember.expectedLifespan
+                          }
+                          aria-label="死亡保障終了年齢"
+                          onChange={(e) =>
+                            update({
+                              deathCoverageEndAge: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {insuredAgeOptions.map((age) => (
+                            <option key={age} value={age}>
+                              {age}歳
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                    </div>
+                    {(entry.deathBenefitMan ?? 0) > 0 &&
+                    !entry.deathCoverageEndMode ? (
+                      <p className="insurance-link-hint">
+                        保障期間が未設定のため、死亡保障額は必要保障額へまだ反映していません。
+                      </p>
+                    ) : null}
+                    <p className="insurance-link-hint">
+                      必要保障額には税引前の死亡保障額を反映します。死亡保険金の所得税・相続税・贈与税は契約関係や相続状況で変わるため、この画面では自動計算しません。
+                    </p>
+                  </LoanSettingsField>
+                </>
+              ) : null}
+
+              {entry.category === 'medical' ? (
+                <LoanSettingsField
+                  label="入院給付金"
+                  labelFor={`ins-hospital-daily-${entry.id}`}
+                >
+                  <NumericAmountInput
+                    id={`ins-hospital-daily-${entry.id}`}
+                    value={entry.medicalHospitalDailyYen ?? 0}
+                    unit="円/日"
+                    ariaLabel="入院給付金の日額"
+                    onChange={(value) =>
+                      update({
+                        medicalHospitalDailyYen: Math.max(
+                          0,
+                          Math.round(value),
+                        ),
+                      })
+                    }
+                  />
+                  <p className="insurance-link-hint">
+                    必要保障額の医療シナリオでは、想定入院日数 × 日額で既契約保障として反映します。
+                  </p>
+                </LoanSettingsField>
+              ) : null}
+
+              {entry.category === 'cancer' ? (
+                <LoanSettingsField
+                  label="がん診断一時金"
+                  labelFor={`ins-cancer-benefit-${entry.id}`}
+                >
+                  <NumericAmountInput
+                    id={`ins-cancer-benefit-${entry.id}`}
+                    value={entry.cancerDiagnosisBenefitMan ?? 0}
+                    unit="万円"
+                    ariaLabel="がん診断一時金"
+                    onChange={(value) =>
+                      update({
+                        cancerDiagnosisBenefitMan: roundAmountMan(value),
+                      })
+                    }
+                  />
+                  <p className="insurance-link-hint">
+                    必要保障額で「がん」を選んだ場合の既契約保障として反映します。
+                  </p>
+                </LoanSettingsField>
+              ) : null}
+            </>
+          ) : null}
+
+          {showPremiumPayer ? (
+            <LoanSettingsField
+              label="保険料を負担する人"
+              labelFor={`ins-premium-payer-${entry.id}`}
+            >
+              <select
+                id={`ins-premium-payer-${entry.id}`}
+                className="select-input insurance-beneficiary-select"
+                value={premiumPayerMemberId}
+                onChange={(e) =>
+                  update({
+                    lifeDeductionPayerMemberId: e.target.value,
+                  })
+                }
+              >
+                {beneficiaryOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getMemberTabLabel(item)}
+                  </option>
+                ))}
+              </select>
               <p className="insurance-link-hint">
-                {isFixedLifeDeductionCategory(entry.category)
-                  ? 'この保険種目では控除区分が固定です。所得税・住民税の生命保険料控除（新制度）に反映されます。'
-                  : '区分は所得税・住民税の生命保険料控除（新制度）に反映されます。'}
+                契約者と異なる場合だけ変更します。受取時の税区分と、生命保険料控除を反映する場合の対象者に使います。
               </p>
+            </LoanSettingsField>
+          ) : null}
+
+          {isLifeInsuranceCategory(entry.category) ? (
+            <LoanSettingsField label="生命保険料控除">
+              <div className="insurance-deduction-fields">
+                <label className="ui-choice insurance-deduction-toggle">
+                  <input
+                    type="checkbox"
+                    checked={lifeDeductionEnabled}
+                    onChange={(e) =>
+                      update({
+                        lifeDeductionEnabled: e.target.checked,
+                        lifeDeductionPayerMemberId:
+                          entry.lifeDeductionPayerMemberId ?? member.id,
+                        lifeDeductionSystem:
+                          entry.lifeDeductionSystem ?? 'new',
+                      })
+                    }
+                  />
+                  <span>反映する</span>
+                </label>
+
+                {lifeDeductionEnabled ? (
+                  <div className="insurance-deduction-options">
+                    <p className="insurance-link-hint">
+                      控除は上の「保険料を負担する人」を基準に計算します。
+                    </p>
+
+                    <label className="insurance-deduction-option">
+                      <span>契約区分</span>
+                      <select
+                        className="select-input"
+                        value={lifeDeductionSystem}
+                        onChange={(e) => {
+                          const system = e.target
+                            .value as LifeInsuranceDeductionSystem;
+                          const currentKind = resolveLifeDeductionKind(
+                            entry.category,
+                            entry.lifeDeductionKind,
+                          );
+                          update({
+                            lifeDeductionSystem: system,
+                            lifeDeductionKind:
+                              system === 'old' && currentKind === 'nursing'
+                                ? 'general'
+                                : currentKind,
+                          });
+                        }}
+                      >
+                        {LIFE_INSURANCE_DEDUCTION_SYSTEM_OPTIONS.map(
+                          (system) => (
+                            <option key={system} value={system}>
+                              {LIFE_INSURANCE_DEDUCTION_SYSTEM_LABELS[system]}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="insurance-deduction-option">
+                      <span>証明書の区分</span>
+                      <select
+                        className="select-input"
+                        value={resolveLifeDeductionKind(
+                          entry.category,
+                          entry.lifeDeductionKind,
+                        )}
+                        onChange={(e) =>
+                          update({
+                            lifeDeductionKind: e.target
+                              .value as LifeInsuranceDeductionKind,
+                          })
+                        }
+                      >
+                        {LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS.filter(
+                          (kind) =>
+                            kind !== 'none' &&
+                            !(lifeDeductionSystem === 'old' &&
+                              kind === 'nursing'),
+                        ).map((kind) => (
+                          <option key={kind} value={kind}>
+                            {LIFE_INSURANCE_DEDUCTION_KIND_LABELS[kind]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+              </div>
             </LoanSettingsField>
           ) : null}
 
@@ -868,9 +1125,6 @@ export function InsuranceEntryDetail({
                       （{entry.benefitReceiveAge}歳〜{educationAnnuityEndAge}歳）
                     </span>
                   </div>
-                  <p className="insurance-link-hint">
-                    受取開始から毎年受け取る年数です。例：18歳から4年なら18〜21歳。
-                  </p>
                 </LoanSettingsField>
               ) : null}
 
@@ -879,26 +1133,17 @@ export function InsuranceEntryDetail({
                   label={payoutMode === 'annuity' ? '年間受取額' : '受取額'}
                   labelFor={`ins-benefit-amount-${entry.id}`}
                 >
-                  <div className="life-event-amount-field">
-                    <input
-                      id={`ins-benefit-amount-${entry.id}`}
-                      type="number"
-                      className="amount-input"
-                      value={entry.benefitAmountMan}
-                      min={0}
-                      step={0.1}
-                      onChange={(e) =>
-                        update({
-                          benefitAmountMan: roundAmountMan(
-                            Math.max(0, Number(e.target.value) || 0),
-                          ),
-                        })
-                      }
-                    />
-                    <span className="amount-unit">
-                      {payoutMode === 'annuity' ? '万円/年' : '万円'}
-                    </span>
-                  </div>
+                  <NumericAmountInput
+                    id={`ins-benefit-amount-${entry.id}`}
+                    value={entry.benefitAmountMan}
+                    unit={payoutMode === 'annuity' ? '万円/年' : '万円'}
+                    ariaLabel={payoutMode === 'annuity' ? '年間受取額' : '受取額'}
+                    onChange={(value) =>
+                      update({
+                        benefitAmountMan: roundAmountMan(value),
+                      })
+                    }
+                  />
                 </LoanSettingsField>
               ) : null}
             </>
@@ -923,9 +1168,6 @@ export function InsuranceEntryDetail({
                   </option>
                 ))}
               </select>
-              <p className="insurance-link-hint">
-                契約者と同じ受取人は一括受取を一時所得、年金形式を雑所得（収入−必要経費）として試算します。必要経費は払込保険料総額÷総支給見込額の割合で按分します。異なる受取人は贈与税です。
-              </p>
             </LoanSettingsField>
           ) : null}
 
@@ -986,25 +1228,17 @@ export function InsuranceEntryDetail({
                         member.birthMonth,
                       )}
                     </span>
-                    <div className="life-event-amount-field">
-                      <input
-                        id={`ins-return-amount-${entry.id}`}
-                        type="number"
-                        className="amount-input"
-                        value={entry.returnValueMan}
-                        min={0}
-                        step={0.1}
-                        aria-label="返戻金額"
-                        onChange={(e) =>
-                          update({
-                            returnValueMan: roundAmountMan(
-                              Math.max(0, Number(e.target.value) || 0),
-                            ),
-                          })
-                        }
-                      />
-                      <span className="amount-unit">万円</span>
-                    </div>
+                    <NumericAmountInput
+                      id={`ins-return-amount-${entry.id}`}
+                      value={entry.returnValueMan}
+                      unit="万円"
+                      ariaLabel="返戻金額"
+                      onChange={(value) =>
+                        update({
+                          returnValueMan: roundAmountMan(value),
+                        })
+                      }
+                    />
                   </>
                 ) : null}
               </div>
@@ -1031,9 +1265,6 @@ export function InsuranceEntryDetail({
                       </option>
                     ))}
                   </select>
-                  <p className="insurance-link-hint">
-                    返戻金の受取人です。契約者と同じなら一時所得（払込保険料を差し引き）、異なる場合は贈与税として試算します。
-                  </p>
                 </div>
               ) : null}
             </LoanSettingsField>
@@ -1046,9 +1277,12 @@ export function InsuranceEntryDetail({
                   {incomeTaxPreviewParts.summary}
                 </div>
                 {incomeTaxPreviewParts.formula ? (
-                  <p className="insurance-income-tax-formula">
-                    {incomeTaxPreviewParts.formula}
-                  </p>
+                  <details className="insurance-income-tax-details">
+                    <summary>計算内容を見る</summary>
+                    <p className="insurance-income-tax-formula">
+                      {incomeTaxPreviewParts.formula}
+                    </p>
+                  </details>
                 ) : null}
                 {incomeTaxPreviewParts.expenseMissing ? (
                   <p className="insurance-link-hint">

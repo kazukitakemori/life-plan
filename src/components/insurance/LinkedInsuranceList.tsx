@@ -74,6 +74,11 @@ function LinkedInsuranceItem({
     insurance.id,
   );
   const summary = formatInsurancePremiumSummary(insurance);
+  const confirmRemove = () => {
+    if (window.confirm(`「${itemLabel}」を削除しますか？`)) {
+      onRemoveInsurance(insurance.id);
+    }
+  };
   const isCard = layout === 'card';
 
   const openButtonClass = isCard
@@ -125,10 +130,10 @@ function LinkedInsuranceItem({
           <button
             type="button"
             className="housing-row-remove"
-            onClick={() => onRemoveInsurance(insurance.id)}
+            onClick={confirmRemove}
             aria-label="保険を削除"
           >
-            −
+            削除
           </button>
         </div>
         {detail}
@@ -156,10 +161,10 @@ function LinkedInsuranceItem({
         <button
           type="button"
           className={removeClassName}
-          onClick={() => onRemoveInsurance(insurance.id)}
+          onClick={confirmRemove}
           aria-label="保険を削除"
         >
-          −
+          削除
         </button>
       </div>
       {detail}

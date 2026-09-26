@@ -13,7 +13,13 @@ import {
   createOwnedPropertyMaintenance,
   createRentalProperty,
 } from '../src/lib/housingDefaults.ts';
-import { createDefaultInsuranceState } from '../src/lib/insuranceDefaults.ts';
+import { createDefaultInsuranceState, createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
+import {
+  calcRegisteredMedicalHospitalBenefitMan,
+  calcRegisteredMedicalScenarioBenefitMan,
+  resolveRegisteredDeathBenefitAtAge,
+  resolveRegisteredInsuranceCoverage,
+} from '../src/lib/insuranceCoverage.ts';
 import { createDefaultLifeEventState } from '../src/lib/lifeEventDefaults.ts';
 import {
   createLivingExpenseItem,
@@ -371,6 +377,94 @@ function buildInput(overrides = {}) {
     ...overrides,
   };
 }
+
+// 0. Q10登録済み保障：被保険者を優先し、未設定時は契約者を対象にする
+const registeredInsurance = createDefaultInsuranceState();
+registeredInsurance.byMember[head.id] = [
+  createInsuranceEntry('life', head, referenceDate, {
+    deathBenefitMan: 2000,
+    deathCoverageEndMode: 'until',
+    deathCoverageEndAge: 60,
+  }, [head, spouse]),
+  createInsuranceEntry('medical', head, referenceDate, {
+    insuredMemberId: spouse.id,
+    medicalHospitalDailyYen: 5000,
+  }, [head, spouse]),
+];
+registeredInsurance.byMember[spouse.id] = [
+  createInsuranceEntry('cancer', spouse, referenceDate, {
+    cancerDiagnosisBenefitMan: 100,
+  }, [head, spouse]),
+];
+const headCoverage = resolveRegisteredInsuranceCoverage(
+  registeredInsurance,
+  head.id,
+);
+assert.equal(headCoverage.deathBenefitMan, 2000);
+assert.equal(headCoverage.medicalHospitalDailyYen, 0);
+assert.equal(headCoverage.cancerDiagnosisBenefitMan, 0);
+const spouseCoverage = resolveRegisteredInsuranceCoverage(
+  registeredInsurance,
+  spouse.id,
+);
+assert.equal(spouseCoverage.deathBenefitMan, 0);
+assert.equal(spouseCoverage.medicalHospitalDailyYen, 5000);
+assert.equal(spouseCoverage.cancerDiagnosisBenefitMan, 100);
+console.log('OK registered insurance coverage follows insured member');
+assert.equal(
+  resolveRegisteredDeathBenefitAtAge(registeredInsurance, head.id, 60),
+  2000,
+);
+assert.equal(
+  resolveRegisteredDeathBenefitAtAge(registeredInsurance, head.id, 61),
+  0,
+);
+const deathCoverageRow = calcDeathTimingCoverageRow({
+  remainingExpenseTotal: 5000,
+  remainingEarned: 1000,
+  remainingSurvivorBasic: 0,
+  remainingChildAllowance: 0,
+  initialSavings: 500,
+  registeredDeathBenefitMan: 2000,
+});
+assert.equal(deathCoverageRow.preparedDeathBenefit, 2000);
+assert.equal(deathCoverageRow.preparedTotal, 3500);
+assert.equal(deathCoverageRow.shortfall, 1500);
+console.log('OK registered death benefit reduces death shortfall only while active');
+assert.equal(calcRegisteredMedicalHospitalBenefitMan(5000, 28), 14);
+const medicalWithRegisteredBenefit = calcMedicalRiskCoverage(
+  {
+    ...createDefaultRequiredCoverageState().medicalDesigns.head,
+    hospitalMonthsPerYear: 1,
+    inpatientDays: 28,
+    existingBenefitMan: calcRegisteredMedicalHospitalBenefitMan(5000, 28),
+  },
+  30,
+);
+const medicalWithoutRegisteredBenefit = calcMedicalRiskCoverage(
+  {
+    ...createDefaultRequiredCoverageState().medicalDesigns.head,
+    hospitalMonthsPerYear: 1,
+    inpatientDays: 28,
+    existingBenefitMan: 0,
+  },
+  30,
+);
+assert.equal(
+  medicalWithoutRegisteredBenefit.requiredAmountMan -
+    medicalWithRegisteredBenefit.requiredAmountMan,
+  14,
+);
+console.log('OK registered hospital daily benefit reduces medical shortfall');
+assert.equal(
+  calcRegisteredMedicalScenarioBenefitMan(spouseCoverage, 28, false),
+  14,
+);
+assert.equal(
+  calcRegisteredMedicalScenarioBenefitMan(spouseCoverage, 28, true),
+  114,
+);
+console.log('OK cancer diagnosis benefit applies only to cancer scenario');
 
 // 1. 末子の最終学歴（大学 22歳3月 → 2016年4月生なら 2038年3月）
 const educationEntry = createEducationExpenseEntry({

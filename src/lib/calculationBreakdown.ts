@@ -762,14 +762,32 @@ function buildIncomeTaxBreakdown(
   }
 
   if (data.giftTax.giftTaxYen > 0) {
-    const idGiftTax = addItem('贈与税（保険収入）', data.giftTax.giftTaxYen);
+    const idGiftTax = addItem('贈与税（当年の暦年贈与）', data.giftTax.giftTaxYen);
     rows.push({
-      segments: [{ type: 'text', text: breakdownItemLabeledRef(idGiftTax, '贈与税（保険収入）') }],
+      segments: [{ type: 'text', text: breakdownItemLabeledRef(idGiftTax, '贈与税（当年の暦年贈与）') }],
       operators: [],
       resultId: idGiftTax,
-      resultLabel: breakdownItemLabeledRef(idGiftTax, '贈与税（保険収入）'),
+      resultLabel: breakdownItemLabeledRef(idGiftTax, '贈与税（当年の暦年贈与）'),
       compoundNote:
-        '学資保険など、契約者と受取人が異なる場合の保険金は贈与として課税されます。贈与税は所得税とは別にキャッシュフローへ反映されます。',
+        'Q10の保険料負担者と受取人が異なる一括受取と、Q3で「課税対象として計算」を選んだ祝い金を同じ受贈者・同じ暦年で合算します。この年税額の申告・納付は原則として翌年です。',
+    });
+  }
+
+  if (data.giftTax.giftTaxCashFlowYen > 0) {
+    const idGiftTaxCf = addItem(
+      '贈与税（キャッシュフロー反映額・前年分）',
+      data.giftTax.giftTaxCashFlowYen,
+    );
+    rows.push({
+      segments: [],
+      operators: [],
+      resultId: idGiftTaxCf,
+      resultLabel: breakdownItemLabeledRef(
+        idGiftTaxCf,
+        '贈与税（キャッシュフロー反映額・前年分）',
+      ),
+      compoundNote:
+        '前年に受けた暦年贈与の贈与税を、申告・納付時期に合わせて翌年3月のキャッシュフローへ反映します。',
     });
   }
 
@@ -778,6 +796,18 @@ function buildIncomeTaxBreakdown(
     '社会保険料控除は、同じ年の「厚生年金」「健康保険（合計）」「雇用保険」タブと同じ標準報酬月額ベースです。健康保険タブの⑥～⑧の合計が税の「健康保険」控除に対応します。',
     '計算結果はあくまで概算です。実際の税額は確定申告・年末調整等で異なる場合があります。',
   ];
+
+  if (data.giftTax.unconfirmedGiftYen > 0) {
+    notes.unshift(
+      `Q3の祝い金に贈与税の扱いが「未確認」のものが${formatYen(data.giftTax.unconfirmedGiftYen)}あります。この金額は贈与税の自動計算に含めていません。`,
+    );
+  }
+
+  if (data.insuranceIncomeTax.manualReviewRevenueYen > 0) {
+    notes.unshift(
+      `Q10の保険受取に税務確認が必要な金額が${formatYen(data.insuranceIncomeTax.manualReviewRevenueYen)}あります。年金受給権の評価や金融類似商品の源泉分離課税など、Q10の入力だけでは税額を確定できないため自動計算から除外しています。`,
+    );
+  }
 
   if (pensionPrimary) {
     notes.push(
