@@ -821,6 +821,7 @@ const removableChildInsurance = createInsuranceEntry(
     beneficiaryMemberId: child.id,
     benefitReceiveMemberId: child.id,
     lifeDeductionPayerMemberId: child.id,
+    insuredMemberId: child.id,
   },
   members,
 );
@@ -842,6 +843,11 @@ assertEq(
   syncedInsuranceEntry.lifeDeductionPayerMemberId,
   head.id,
   'deleted premium payer falls back',
+);
+assertEq(
+  syncedInsuranceEntry.insuredMemberId,
+  undefined,
+  'deleted insured member falls back to contractor',
 );
 if (syncedInsuranceEntry.benefitReceiveMemberId === child.id) {
   console.error('FAIL deleted benefit receive member reference remains');
