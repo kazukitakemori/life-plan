@@ -13,6 +13,8 @@ import {
   INSURANCE_PREMIUM_PAYMENT_MODES,
   LIFE_INSURANCE_DEDUCTION_KIND_LABELS,
   LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS,
+  LIFE_INSURANCE_DEDUCTION_SYSTEM_LABELS,
+  LIFE_INSURANCE_DEDUCTION_SYSTEM_OPTIONS,
   PERSONAL_PENSION_ANNUITY_KIND_DESCRIPTIONS,
   PERSONAL_PENSION_ANNUITY_KIND_LABELS,
   PERSONAL_PENSION_ANNUITY_KINDS,
@@ -31,6 +33,7 @@ import {
   resolveInsuranceBenefitPayoutMode,
   resolveInsurancePremiumPaymentMode,
   resolveLifeDeductionKind,
+  isLifeInsuranceCategory,
   resolvePersonalPensionAnnuityKind,
   resolvePersonalPensionAnnuityYears,
 } from '../../lib/insuranceLabels';
@@ -62,6 +65,7 @@ import type {
   InsurancePeriodSource,
   InsurancePremiumPaymentMode,
   LifeInsuranceDeductionKind,
+  LifeInsuranceDeductionSystem,
   PersonalPensionAnnuityKind,
 } from '../../types/insurance';
 import type { VehicleEntry, VehicleState } from '../../types/vehicle';
@@ -180,6 +184,13 @@ export function InsuranceEntryDetail({
   const vehicleOptions = collectVehicleOptions(vehicleState, members);
   const beneficiaryOptions = getIncomeEligibleMembers(members);
   const receiveMemberOptions = getBenefitReceiveMemberOptions(members);
+  const lifeDeductionEnabled = entry.lifeDeductionEnabled === true;
+  const lifeDeductionSystem = entry.lifeDeductionSystem ?? 'new';
+  const lifeDeductionPayerMemberId = beneficiaryOptions.some(
+    (item) => item.id === entry.lifeDeductionPayerMemberId,
+  )
+    ? entry.lifeDeductionPayerMemberId!
+    : member.id;
   const isFire = entry.category === 'fire';
   const isAuto = entry.category === 'auto';
   const showBenefitPayout = hasBenefitPayoutInput(entry.category);
@@ -658,31 +669,108 @@ export function InsuranceEntryDetail({
             </LoanSettingsField>
           ) : null}
 
-          {entry.category === 'life_other' ? (
-            <LoanSettingsField
-              label="生命保険料控除"
-              labelFor={`ins-deduction-${entry.id}`}
-            >
-              <select
-                id={`ins-deduction-${entry.id}`}
-                className="select-input"
-                value={resolveLifeDeductionKind(
-                  entry.category,
-                  entry.lifeDeductionKind,
-                )}
-                onChange={(e) =>
-                  update({
-                    lifeDeductionKind: e.target
-                      .value as LifeInsuranceDeductionKind,
-                  })
-                }
-              >
-                {LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {LIFE_INSURANCE_DEDUCTION_KIND_LABELS[kind]}
-                  </option>
-                ))}
-              </select>
+          {isLifeInsuranceCategory(entry.category) ? (
+            <LoanSettingsField label="生命保険料控除">
+              <div className="insurance-deduction-fields">
+                <label className="ui-choice insurance-deduction-toggle">
+                  <input
+                    type="checkbox"
+                    checked={lifeDeductionEnabled}
+                    onChange={(e) =>
+                      update({
+                        lifeDeductionEnabled: e.target.checked,
+                        lifeDeductionPayerMemberId:
+                          entry.lifeDeductionPayerMemberId ?? member.id,
+                        lifeDeductionSystem:
+                          entry.lifeDeductionSystem ?? 'new',
+                      })
+                    }
+                  />
+                  <span>反映する</span>
+                </label>
+
+                {lifeDeductionEnabled ? (
+                  <div className="insurance-deduction-options">
+                    <label className="insurance-deduction-option">
+                      <span>控除を受ける人</span>
+                      <select
+                        className="select-input"
+                        value={lifeDeductionPayerMemberId}
+                        onChange={(e) =>
+                          update({
+                            lifeDeductionPayerMemberId: e.target.value,
+                          })
+                        }
+                      >
+                        {beneficiaryOptions.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {getMemberTabLabel(item)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="insurance-deduction-option">
+                      <span>契約区分</span>
+                      <select
+                        className="select-input"
+                        value={lifeDeductionSystem}
+                        onChange={(e) => {
+                          const system = e.target
+                            .value as LifeInsuranceDeductionSystem;
+                          const currentKind = resolveLifeDeductionKind(
+                            entry.category,
+                            entry.lifeDeductionKind,
+                          );
+                          update({
+                            lifeDeductionSystem: system,
+                            lifeDeductionKind:
+                              system === 'old' && currentKind === 'nursing'
+                                ? 'general'
+                                : currentKind,
+                          });
+                        }}
+                      >
+                        {LIFE_INSURANCE_DEDUCTION_SYSTEM_OPTIONS.map(
+                          (system) => (
+                            <option key={system} value={system}>
+                              {LIFE_INSURANCE_DEDUCTION_SYSTEM_LABELS[system]}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="insurance-deduction-option">
+                      <span>証明書の区分</span>
+                      <select
+                        className="select-input"
+                        value={resolveLifeDeductionKind(
+                          entry.category,
+                          entry.lifeDeductionKind,
+                        )}
+                        onChange={(e) =>
+                          update({
+                            lifeDeductionKind: e.target
+                              .value as LifeInsuranceDeductionKind,
+                          })
+                        }
+                      >
+                        {LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS.filter(
+                          (kind) =>
+                            kind !== 'none' &&
+                            !(lifeDeductionSystem === 'old' &&
+                              kind === 'nursing'),
+                        ).map((kind) => (
+                          <option key={kind} value={kind}>
+                            {LIFE_INSURANCE_DEDUCTION_KIND_LABELS[kind]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+              </div>
             </LoanSettingsField>
           ) : null}
 
