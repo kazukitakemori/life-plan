@@ -81,7 +81,10 @@ import {
   type ResidentTaxLevyPhase,
 } from './priorYearIncomeResolution';
 import { NATIONAL_PENSION_ANNUAL_YEN } from './pensionConstants';
-import { calcMemberLifeInsuranceDeductionYen, calcMemberAnnualLifeInsurancePremiumManByKind } from './lifeInsuranceDeduction';
+import {
+  calcMemberAnnualDeductibleLifeInsurancePremiumManByKind,
+  calcMemberLifeInsuranceDeductionYen,
+} from './lifeInsuranceDeduction';
 import { calcMemberIdecoContributionDeductionYen } from './idecoContributionDeduction';
 import {
   calcRecipientInsuranceIncomeTaxDetail,
@@ -3864,9 +3867,10 @@ export function buildMemberTaxBreakdownData(input: {
       })
     : { incomeTaxYen: 0, residentTaxYen: 0 };
   const lifeInsuranceIncomeTaxPremiumsMan = input.insuranceState
-    ? calcMemberAnnualLifeInsurancePremiumManByKind({
+    ? calcMemberAnnualDeductibleLifeInsurancePremiumManByKind({
         member,
-        entries: input.insuranceState.byMember[member.id] ?? [],
+        familyMembers: input.familyMembers,
+        insuranceState: input.insuranceState,
         housingState: input.housingState ?? { byTarget: {} },
         vehicleState: input.vehicleState ?? { byMember: {} },
         referenceDate: input.referenceDate,
@@ -3876,9 +3880,10 @@ export function buildMemberTaxBreakdownData(input: {
       })
     : null;
   const lifeInsuranceResidentTaxPremiumsMan = input.insuranceState
-    ? calcMemberAnnualLifeInsurancePremiumManByKind({
+    ? calcMemberAnnualDeductibleLifeInsurancePremiumManByKind({
         member,
-        entries: input.insuranceState.byMember[member.id] ?? [],
+        familyMembers: input.familyMembers,
+        insuranceState: input.insuranceState,
         housingState: input.housingState ?? { byTarget: {} },
         vehicleState: input.vehicleState ?? { byMember: {} },
         referenceDate: input.referenceDate,
