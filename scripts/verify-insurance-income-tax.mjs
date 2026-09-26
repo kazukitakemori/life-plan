@@ -30,8 +30,18 @@ function assertEq(actual, expected, label) {
 }
 
 const referenceDate = new Date(2026, 5, 1);
-const head = createFamilyMember('head');
-const child = createFamilyMember('child');
+const head = {
+  ...createFamilyMember('head'),
+  age: 40,
+  birthMonth: 6,
+  birthDay: 1,
+};
+const child = {
+  ...createFamilyMember('child'),
+  age: 10,
+  birthMonth: 6,
+  birthDay: 1,
+};
 const members = [head, child];
 const emptyHousing = { byTarget: {} };
 const emptyVehicle = { inflationRate: 0, byMember: {} };
