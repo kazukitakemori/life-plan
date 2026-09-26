@@ -18,11 +18,17 @@ import {
   calcMiscellaneousIncomeYen,
   calcTemporaryIncomeYen,
 } from '../src/lib/incomeTaxDeductions.ts';
-import { createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
+import {
+  createInsuranceEntry,
+  syncInsurancesWithFamily,
+} from '../src/lib/insuranceDefaults.ts';
 import { createFamilyMember } from '../src/lib/familyDefaults.ts';
 import { calcCalendarYearGiftTaxForGiftsYen } from '../src/lib/giftTax.ts';
 import { buildMemberTaxBreakdownData } from '../src/lib/taxCalculator.ts';
 import { createDefaultPensionByMember } from '../src/lib/pensionDefaults.ts';
+import {
+  syncLifeEventsWithFamily,
+} from '../src/lib/lifeEventDefaults.ts';
 
 function assertEq(actual, expected, label) {
   if (actual !== expected) {
@@ -805,6 +811,77 @@ if (!educationParts || !educationParts.includes('累計払込保険料')) {
   console.error(`FAIL education gift label missing premium: ${educationParts}`);
   process.exit(1);
 }
+
+// 家族削除時は保険の受取人・保険料負担者・受取基準者の参照切れを残さない
+const removableChildInsurance = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    beneficiaryMemberId: child.id,
+    benefitReceiveMemberId: child.id,
+    lifeDeductionPayerMemberId: child.id,
+  },
+  members,
+);
+const syncedInsuranceAfterChildRemoval = syncInsurancesWithFamily(
+  [head, spouse, sibling],
+  { byMember: { [head.id]: [removableChildInsurance] } },
+);
+const syncedInsuranceEntry =
+  syncedInsuranceAfterChildRemoval.byMember[head.id]?.[0];
+if (!syncedInsuranceEntry) {
+  throw new Error('insurance disappeared unexpectedly after child removal');
+}
+assertEq(
+  syncedInsuranceEntry.beneficiaryMemberId,
+  head.id,
+  'deleted insurance beneficiary falls back',
+);
+assertEq(
+  syncedInsuranceEntry.lifeDeductionPayerMemberId,
+  head.id,
+  'deleted premium payer falls back',
+);
+if (syncedInsuranceEntry.benefitReceiveMemberId === child.id) {
+  console.error('FAIL deleted benefit receive member reference remains');
+  process.exit(1);
+}
+
+// 旧Q3祝い金は贈与税区分がなくても「未確認」として安全に移行し、削除家族を残さない
+const legacyCelebrationState = {
+  byMember: {
+    [head.id]: [
+      {
+        id: 'legacy-celebration',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          { memberId: child.id, targetAge: 19, amountMan: 80 },
+        ],
+      },
+    ],
+  },
+};
+const syncedLegacyCelebration = syncLifeEventsWithFamily(
+  members,
+  legacyCelebrationState,
+);
+assertEq(
+  syncedLegacyCelebration.byMember[head.id][0].celebrationBeneficiaries[0]
+    .giftTaxTreatment,
+  'unknown',
+  'legacy celebration tax treatment migrates to unknown',
+);
+const syncedCelebrationAfterChildRemoval = syncLifeEventsWithFamily(
+  [head, spouse, sibling],
+  syncedLegacyCelebration,
+);
+assertEq(
+  syncedCelebrationAfterChildRemoval.byMember[head.id][0]
+    .celebrationBeneficiaries.length,
+  0,
+  'deleted celebration beneficiary removed',
+);
 
 console.log('OK insurance income tax', {
   returnTax,
