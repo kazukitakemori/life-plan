@@ -344,15 +344,34 @@ function resolveLifeContingentMember(
 
 function resolveAnnuityStartAge(
   entry: InsuranceEntry,
+  contractor: FamilyMember,
+  familyMembers: FamilyMember[],
+  referenceDate: Date,
   lifeMember: FamilyMember,
 ): number {
-  if (
-    !entry.benefitReceiveMemberId ||
-    entry.benefitReceiveMemberId === lifeMember.id
-  ) {
-    return entry.benefitReceiveAge;
-  }
-  return entry.benefitReceiveAge;
+  const receiveMember =
+    familyMembers.find((member) => member.id === entry.benefitReceiveMemberId) ??
+    contractor;
+  const receiveBirthMonth = resolveMemberBirthMonth(receiveMember);
+  const receiveBirthYear = calcBirthYear(
+    receiveMember.age,
+    receiveBirthMonth,
+    referenceDate,
+    receiveMember.birthDay,
+  );
+  const startYear = calcYearAtAge(
+    receiveBirthYear,
+    receiveBirthMonth,
+    entry.benefitReceiveAge,
+    receiveBirthMonth,
+  );
+  const ageMonth = getMemberAgeMonth(
+    lifeMember,
+    referenceDate,
+    startYear,
+    receiveBirthMonth,
+  );
+  return ageMonth?.age ?? entry.benefitReceiveAge;
 }
 
 /**
@@ -413,6 +432,7 @@ function calcEntryAnnuityMiscExpenseYen(
   entry: InsuranceEntry,
   contractor: FamilyMember,
   familyMembers: FamilyMember[],
+  referenceDate: Date,
   revenueYen: number,
   cumulativePremiumYen: number,
 ): number {
@@ -422,7 +442,13 @@ function calcEntryAnnuityMiscExpenseYen(
     familyMembers,
   );
   const remainingLifeYears = getAnnuityRemainingLifeYears(
-    resolveAnnuityStartAge(entry, lifeMember),
+    resolveAnnuityStartAge(
+      entry,
+      contractor,
+      familyMembers,
+      referenceDate,
+      lifeMember,
+    ),
     lifeMember.gender,
   );
   const estimateYears = resolveAnnuityPayoutEstimateYears(
@@ -521,6 +547,7 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
           entry,
           contractor,
           input.familyMembers,
+          input.referenceDate,
           revenueYen,
           cumulativePremiumYen,
         );
@@ -773,6 +800,7 @@ export function calcInsuranceEntryIncomeTaxPreview(input: {
       input.entry,
       input.contractor,
       input.familyMembers,
+      input.referenceDate,
       revenueYen,
       cumulativePremiumYen,
     );
