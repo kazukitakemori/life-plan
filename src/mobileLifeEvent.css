@@ -292,8 +292,13 @@
   .life-event-step .celebration-gift-col-name::before { content: '名前'; }
   .life-event-step .celebration-gift-col-age::before { content: '適齢期'; }
   .life-event-step .celebration-gift-col-amount::before { content: '援助金'; }
+  .life-event-step .celebration-gift-col-tax::before { content: '贈与税'; }
 
-  .life-event-step :where(.celebration-gift-select, .celebration-gift-amount-input) {
+  .life-event-step :where(
+    .celebration-gift-select,
+    .celebration-gift-amount-input,
+    .celebration-gift-tax-select
+  ) {
     width: 100%;
     min-width: 0;
     min-height: 44px;
@@ -307,6 +312,14 @@
     align-items: center;
     gap: 8px;
     width: 100%;
+  }
+
+  .life-event-step .celebration-gift-col-tax {
+    grid-column: 1 / -1;
+  }
+
+  .life-event-step .celebration-gift-tax-hint {
+    margin-top: 6px;
   }
 
   .life-event-step .life-event-table-empty {
