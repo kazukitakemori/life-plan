@@ -16539,11 +16539,6 @@ button:disabled {
   color: #555;
 }
 
-.insurance-return-fields .life-event-amount-field {
-  width: auto;
-  flex: 0 1 auto;
-}
-
 .insurance-return-select {
   width: auto;
   min-width: 6rem;
@@ -16598,45 +16593,6 @@ button:disabled {
   line-height: 1.4;
 }
 
-.insurance-protection-details {
-  width: 100%;
-  max-width: 100%;
-}
-
-.insurance-protection-details summary {
-  width: fit-content;
-  cursor: pointer;
-  color: #2e7d32;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.insurance-protection-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  width: 100%;
-  margin-top: 10px;
-}
-
-.insurance-protection-field {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-width: 0;
-}
-
-.insurance-protection-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.insurance-protection-field .life-event-amount-field {
-  width: auto;
-}
-
 .insurance-income-tax-result {
   font-size: 0.875rem;
   font-weight: 600;
@@ -16681,15 +16637,114 @@ button:disabled {
   min-width: 0;
 }
 
-.insurance-premium-fields .life-event-amount-field {
-  width: auto;
-  flex: 0 1 auto;
-}
-
 .insurance-premium-mode-select {
   width: auto;
   min-width: 7rem;
   flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .insurance-entry-card {
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .insurance-entry-name-label,
+  .insurance-entry-summary {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .insurance-entry-summary {
+    white-space: normal;
+  }
+
+  .insurance-entry-open-btn {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .insurance-entry-detail {
+    padding: 12px;
+  }
+
+  .insurance-entry-actions {
+    padding: 0 12px 14px;
+  }
+
+  .insurance-entry-actions .ui-delete-button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .insurance-entry-detail .loan-settings-form-table {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insurance-entry-detail .loan-settings-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insurance-entry-detail .loan-settings-form-label {
+    border-right: none;
+    border-bottom: none;
+    padding: 10px 10px 4px;
+    white-space: normal;
+  }
+
+  .insurance-entry-detail .loan-settings-form-value {
+    padding: 4px 10px 10px;
+  }
+
+  .insurance-entry-detail .select-input,
+  .insurance-entry-detail .ui-input,
+  .insurance-entry-detail .loan-entry-note-input {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .insurance-entry-detail .loan-entry-note-input,
+  .insurance-link-select,
+  .insurance-period-source-select {
+    width: 100%;
+  }
+
+  .insurance-premium-fields {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .insurance-premium-mode-select {
+    width: 100%;
+  }
+
+  .insurance-period-fields,
+  .insurance-period-start,
+  .insurance-period-end,
+  .insurance-return-fields {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .insurance-period-start,
+  .insurance-period-end {
+    flex: 1 1 100%;
+  }
+
+  .insurance-entry-detail .ui-amount {
+    max-width: 100%;
+  }
+
+  .insurance-entry-detail .ui-input--amount {
+    width: min(10rem, calc(100vw - 7rem));
+    min-width: 0;
+  }
+
+  .insurance-return-beneficiary {
+    margin-top: 6px;
+  }
 }
 
 .insurance-add-section {
