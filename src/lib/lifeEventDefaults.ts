@@ -34,6 +34,8 @@ export function syncCelebrationBeneficiaries(
     memberId: member.id,
     targetAge: byId.get(member.id)?.targetAge ?? DEFAULT_CELEBRATION_TARGET_AGE,
     amountMan: byId.get(member.id)?.amountMan ?? 0,
+    giftTaxTreatment:
+      byId.get(member.id)?.giftTaxTreatment ?? 'unknown',
   }));
 }
 
