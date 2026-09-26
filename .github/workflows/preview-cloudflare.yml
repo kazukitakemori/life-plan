@@ -34,6 +34,8 @@ jobs:
           npx --yes tsx@4.20.5 scripts/verify-survivor-employees.mjs
           npx --yes tsx@4.20.5 scripts/verify-required-coverage.mjs
           npx --yes tsx@4.20.5 scripts/verify-life-insurance-deduction.mjs
+          npx --yes tsx@4.20.5 scripts/verify-insurance-income-cf.mjs
+          npx --yes tsx@4.20.5 scripts/verify-insurance-income-tax.mjs
 
       - name: Build preview
         run: npm run build
