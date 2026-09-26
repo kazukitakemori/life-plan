@@ -456,6 +456,7 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
   if (!recipient) return detail;
 
   const giftAmountByDonorYen = new Map<string, number>();
+  let temporaryIncomeExpenseYen = 0;
 
   for (const [contractorId, entries] of Object.entries(
     input.insuranceState.byMember,
@@ -505,10 +506,7 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
 
       if (incomeKind === 'temporary_income') {
         detail.temporaryIncomeRevenueYen += revenueYen;
-        detail.temporaryIncomeTaxableYen += calcTemporaryIncomeYen(
-          revenueYen,
-          cumulativePremiumYen,
-        );
+        temporaryIncomeExpenseYen += cumulativePremiumYen;
       } else if (incomeKind === 'miscellaneous_income') {
         const expenseYen = calcEntryAnnuityMiscExpenseYen(
           entry,
@@ -533,6 +531,11 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
       // 現在の入力情報だけでは正確に自動計算できないため税額へ加算しない。
     }
   }
+
+  detail.temporaryIncomeTaxableYen = calcTemporaryIncomeYen(
+    detail.temporaryIncomeRevenueYen,
+    temporaryIncomeExpenseYen,
+  );
 
   const gifts = Array.from(giftAmountByDonorYen.entries())
     .map(([donorId, giftAmountYen]) => {
@@ -838,8 +841,8 @@ export function formatInsuranceEntryIncomeTaxPreviewParts(
   if (preview.kind === 'temporary_income') {
     return {
       kind: 'temporary_income',
-      summary: `一時所得：${yen(preview.incomeYen)}`,
-      formula: `（収入${yen(preview.revenueYen)} − 払込保険料${yen(preview.expenseYen)} − 特別控除${yen(preview.specialDeductionYen)}）× 1/2`,
+      summary: `一時所得（この契約のみの目安）：${yen(preview.incomeYen)}`,
+      formula: `（収入${yen(preview.revenueYen)} − 払込保険料${yen(preview.expenseYen)} − 特別控除${yen(preview.specialDeductionYen)}）× 1/2 ※同じ年の他の一時所得がある場合は合算して計算`,
       expenseMissing: preview.expenseYen <= 0,
     };
   }
@@ -854,8 +857,8 @@ export function formatInsuranceEntryIncomeTaxPreviewParts(
   }
   return {
     kind: 'gift_tax',
-    summary: `贈与税：${yen(preview.giftTaxYen)}`,
-    formula: `贈与財産${yen(preview.revenueYen)}（累計払込保険料${yen(preview.expenseYen)}は控除対象外）`,
+    summary: `贈与税（この契約のみの目安）：${yen(preview.giftTaxYen)}`,
+    formula: `贈与財産${yen(preview.revenueYen)}（累計払込保険料${yen(preview.expenseYen)}は控除対象外）※実際の暦年課税は同じ年に受けた他の贈与と合算`,
     expenseMissing: preview.expenseYen <= 0,
   };
 }
