@@ -1,12 +1,11 @@
-import { resolveMemberAge, resolveMemberBirthMonth } from './familyDefaults';
-import { getMemberAgeAtYearEnd } from './memberYearIncome';
+import { resolveMemberBirthMonth } from './familyDefaults';
 import {
   calcMiscellaneousIncomeYen,
   calcTemporaryIncomeYen,
   TEMPORARY_INCOME_SPECIAL_DEDUCTION_YEN,
 } from './incomeTaxDeductions';
 import {
-  calcCalendarYearGiftTaxYen,
+  calcCalendarYearGiftTaxForGiftsYen,
   GIFT_TAX_BASIC_EXEMPTION_YEN,
 } from './giftTax';
 import { getAnnuityRemainingLifeYears } from './annuityRemainingLife';
@@ -32,6 +31,30 @@ import type { InsuranceEntry, InsuranceState } from '../types/insurance';
 import type { VehicleState } from '../types/vehicle';
 
 const MAN_TO_YEN = 10_000;
+
+function getMemberAgeAtCalendarYearStart(
+  member: FamilyMember,
+  referenceDate: Date,
+  calendarYear: number,
+): number | null {
+  if (
+    member.age == null ||
+    member.birthMonth == null ||
+    member.birthDay == null
+  ) {
+    return null;
+  }
+  const birthYear = calcBirthYear(
+    member.age,
+    member.birthMonth,
+    referenceDate,
+    member.birthDay,
+  );
+  const birthdayAfterJan1 =
+    member.birthMonth > 1 ||
+    (member.birthMonth === 1 && member.birthDay > 1);
+  return calendarYear - birthYear - (birthdayAfterJan1 ? 1 : 0);
+}
 
 export type InsuranceBenefitIncomeKind =
   | 'temporary_income'
@@ -512,24 +535,29 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
     }
   }
 
-  const doneeAge =
-    getMemberAgeAtYearEnd(
+  const gifts = Array.from(giftAmountByDonorYen.entries())
+    .map(([donorId, giftAmountYen]) => {
+      const donor = input.familyMembers.find((m) => m.id === donorId);
+      return donor ? { donor, giftAmountYen } : null;
+    })
+    .filter(
+      (gift): gift is { donor: FamilyMember; giftAmountYen: number } =>
+        gift != null,
+    );
+
+  detail.giftAmountYen = gifts.reduce(
+    (sum, gift) => sum + gift.giftAmountYen,
+    0,
+  );
+  detail.giftTaxYen = calcCalendarYearGiftTaxForGiftsYen({
+    gifts,
+    donee: recipient,
+    doneeAgeAtJan1: getMemberAgeAtCalendarYearStart(
       recipient,
       input.referenceDate,
       input.calendarYear,
-    ) ?? resolveMemberAge(recipient);
-
-  for (const [donorId, giftAmountYen] of giftAmountByDonorYen) {
-    const donor = input.familyMembers.find((m) => m.id === donorId);
-    if (!donor) continue;
-    detail.giftAmountYen += giftAmountYen;
-    detail.giftTaxYen += calcCalendarYearGiftTaxYen({
-      giftAmountYen,
-      donor,
-      donee: recipient,
-      doneeAgeAtYearEnd: doneeAge,
-    });
-  }
+    ),
+  });
 
   return detail;
 }
