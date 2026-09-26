@@ -67,6 +67,9 @@ export function CelebrationGiftBlock({
             <div className="celebration-gift-header-cell celebration-gift-col-amount">
               援助金
             </div>
+            <div className="celebration-gift-header-cell celebration-gift-col-tax">
+              贈与税
+            </div>
           </div>
 
           <div className="celebration-gift-table-body">
@@ -117,6 +120,29 @@ export function CelebrationGiftBlock({
                       />
                       <span className="amount-unit">万円</span>
                     </div>
+                  </div>
+                  <div className="celebration-gift-table-cell celebration-gift-col-tax">
+                    <select
+                      className="select-input celebration-gift-tax-select"
+                      value={beneficiary.giftTaxTreatment ?? 'unknown'}
+                      onChange={(e) =>
+                        updateBeneficiary(beneficiary.memberId, {
+                          giftTaxTreatment:
+                            e.target.value === 'taxable'
+                              ? 'taxable'
+                              : e.target.value === 'non_taxable'
+                                ? 'non_taxable'
+                                : 'unknown',
+                        })
+                      }
+                    >
+                      <option value="unknown">未確認</option>
+                      <option value="taxable">課税対象として計算</option>
+                      <option value="non_taxable">非課税として扱う</option>
+                    </select>
+                    <p className="celebration-gift-tax-hint">
+                      未確認は贈与税の自動計算に含めません。
+                    </p>
                   </div>
                 </div>
               );
