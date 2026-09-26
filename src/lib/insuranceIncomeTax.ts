@@ -450,12 +450,21 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
   calendarYear: number;
   monthStart: number;
   monthEnd: number;
+  /** 保険以外で同じ暦年課税へ合算する贈与額（贈与者ID→円） */
+  additionalTaxableGiftsByDonorYen?: Record<string, number>;
 }): InsuranceIncomeTaxDetail {
   const detail = createEmptyInsuranceIncomeTaxDetail();
   const recipient = input.familyMembers.find((m) => m.id === input.recipientId);
   if (!recipient) return detail;
 
   const giftAmountByDonorYen = new Map<string, number>();
+  for (const [donorId, amountYen] of Object.entries(
+    input.additionalTaxableGiftsByDonorYen ?? {},
+  )) {
+    if (amountYen > 0) {
+      giftAmountByDonorYen.set(donorId, amountYen);
+    }
+  }
   let temporaryIncomeExpenseYen = 0;
 
   for (const [contractorId, entries] of Object.entries(
