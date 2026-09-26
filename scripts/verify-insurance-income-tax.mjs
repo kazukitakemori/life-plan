@@ -413,6 +413,68 @@ assertEq(
 );
 
 const pensionByMember = createDefaultPensionByMember(members);
+
+// 贈与税は受取年の年税額として表示し、CF支出は翌年3月に計上
+const giftYearBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!giftYearBreakdown) throw new Error('no gift year breakdown');
+assertEq(giftYearBreakdown.giftTax.giftTaxYen, 50_000, 'gift year liability');
+assertEq(
+  giftYearBreakdown.giftTax.giftTaxCashFlowYen,
+  0,
+  'gift tax not paid in receipt year',
+);
+
+const giftPaymentYearBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear + 1,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!giftPaymentYearBreakdown) throw new Error('no gift payment year breakdown');
+assertEq(
+  giftPaymentYearBreakdown.giftTax.giftTaxYen,
+  0,
+  'next year has no new gift liability',
+);
+assertEq(
+  giftPaymentYearBreakdown.giftTax.giftTaxCashFlowYen,
+  50_000,
+  'prior year gift tax paid next March',
+);
+
 const breakdown = buildMemberTaxBreakdownData({
   familyMembers: members,
   incomeByMember: {},
