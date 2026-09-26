@@ -10254,13 +10254,17 @@ button:disabled {
 
 .celebration-gift-table {
   width: 100%;
-  max-width: 560px;
+  max-width: 820px;
 }
 
 .celebration-gift-table-header,
 .celebration-gift-table-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(160px, 1.2fr);
+  grid-template-columns:
+    minmax(120px, 1.1fr)
+    minmax(110px, 0.8fr)
+    minmax(150px, 1fr)
+    minmax(210px, 1.5fr);
 }
 
 .celebration-gift-table-header {
@@ -10319,7 +10323,8 @@ button:disabled {
 }
 
 .celebration-gift-select,
-.celebration-gift-amount-input {
+.celebration-gift-amount-input,
+.celebration-gift-tax-select {
   background: var(--color-input-highlight);
 }
 
@@ -10332,6 +10337,22 @@ button:disabled {
   align-items: center;
   gap: 4px;
   width: 100%;
+}
+
+.celebration-gift-col-tax {
+  display: block;
+}
+
+.celebration-gift-tax-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.celebration-gift-tax-hint {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .life-event-table-card {
