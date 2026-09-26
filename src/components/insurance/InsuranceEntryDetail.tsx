@@ -789,6 +789,9 @@ export function InsuranceEntryDetail({
                         保障期間が未設定のため、死亡保障額は必要保障額へまだ反映していません。
                       </p>
                     ) : null}
+                    <p className="insurance-link-hint">
+                      必要保障額には税引前の死亡保障額を反映します。死亡保険金の所得税・相続税・贈与税は契約関係や相続状況で変わるため、この画面では自動計算しません。
+                    </p>
                   </LoanSettingsField>
                 </>
               ) : null}
