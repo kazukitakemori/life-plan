@@ -10,7 +10,6 @@ import {
   INSURANCE_BENEFIT_PAYOUT_MODE_LABELS,
   INSURANCE_BENEFIT_PAYOUT_MODES,
   INSURANCE_PREMIUM_PAYMENT_MODE_LABELS,
-  INSURANCE_PREMIUM_PAYMENT_MODE_UNITS,
   INSURANCE_PREMIUM_PAYMENT_MODES,
   LIFE_INSURANCE_DEDUCTION_KIND_LABELS,
   LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS,
@@ -67,6 +66,7 @@ import type {
 } from '../../types/insurance';
 import type { VehicleEntry, VehicleState } from '../../types/vehicle';
 import { LoanSettingsField } from '../loan/LoanSettingsFields';
+import { NumericAmountInput } from '../ui/NumericAmountInput';
 
 interface HousingPropertyOption {
   key: string;
@@ -102,6 +102,10 @@ interface InsuranceEntryDetailProps {
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const END_AGES = Array.from({ length: 101 }, (_, i) => i);
+
+function roundInsurancePremiumMan(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
 
 function collectHousingOptions(
   housingState: HousingState,
@@ -302,9 +306,9 @@ export function InsuranceEntryDetail({
     const current = resolveInsurancePremiumPaymentMode(entry.premiumPaymentMode);
     let premiumMan = entry.premiumMan;
     if (current === 'monthly' && next === 'annual') {
-      premiumMan = roundAmountMan(premiumMan * 12);
+      premiumMan = roundInsurancePremiumMan(premiumMan * 12);
     } else if (current === 'annual' && next === 'monthly') {
-      premiumMan = roundAmountMan(premiumMan / 12);
+      premiumMan = roundInsurancePremiumMan(premiumMan / 12);
     }
     update({ premiumPaymentMode: next, premiumMan });
   };
@@ -425,26 +429,17 @@ export function InsuranceEntryDetail({
                   </option>
                 ))}
               </select>
-              <div className="life-event-amount-field">
-                <input
-                  id={`ins-premium-${entry.id}`}
-                  type="number"
-                  className="amount-input"
-                  value={entry.premiumMan}
-                  min={0}
-                  step={0.1}
-                  onChange={(e) =>
-                    update({
-                      premiumMan: roundAmountMan(
-                        Math.max(0, Number(e.target.value) || 0),
-                      ),
-                    })
-                  }
-                />
-                <span className="amount-unit">
-                  {INSURANCE_PREMIUM_PAYMENT_MODE_UNITS[paymentMode]}
-                </span>
-              </div>
+              <NumericAmountInput
+                id={`ins-premium-${entry.id}`}
+                value={Math.round((entry.premiumMan ?? 0) * 10_000)}
+                unit="円"
+                ariaLabel="保険料"
+                onChange={(yen) =>
+                  update({
+                    premiumMan: roundInsurancePremiumMan(yen / 10_000),
+                  })
+                }
+              />
             </div>
           </LoanSettingsField>
 
@@ -862,26 +857,17 @@ export function InsuranceEntryDetail({
                   label={payoutMode === 'annuity' ? '年間受取額' : '受取額'}
                   labelFor={`ins-benefit-amount-${entry.id}`}
                 >
-                  <div className="life-event-amount-field">
-                    <input
-                      id={`ins-benefit-amount-${entry.id}`}
-                      type="number"
-                      className="amount-input"
-                      value={entry.benefitAmountMan}
-                      min={0}
-                      step={0.1}
-                      onChange={(e) =>
-                        update({
-                          benefitAmountMan: roundAmountMan(
-                            Math.max(0, Number(e.target.value) || 0),
-                          ),
-                        })
-                      }
-                    />
-                    <span className="amount-unit">
-                      {payoutMode === 'annuity' ? '万円/年' : '万円'}
-                    </span>
-                  </div>
+                  <NumericAmountInput
+                    id={`ins-benefit-amount-${entry.id}`}
+                    value={entry.benefitAmountMan}
+                    unit={payoutMode === 'annuity' ? '万円/年' : '万円'}
+                    ariaLabel={payoutMode === 'annuity' ? '年間受取額' : '受取額'}
+                    onChange={(value) =>
+                      update({
+                        benefitAmountMan: roundAmountMan(value),
+                      })
+                    }
+                  />
                 </LoanSettingsField>
               ) : null}
             </>
@@ -966,25 +952,17 @@ export function InsuranceEntryDetail({
                         member.birthMonth,
                       )}
                     </span>
-                    <div className="life-event-amount-field">
-                      <input
-                        id={`ins-return-amount-${entry.id}`}
-                        type="number"
-                        className="amount-input"
-                        value={entry.returnValueMan}
-                        min={0}
-                        step={0.1}
-                        aria-label="返戻金額"
-                        onChange={(e) =>
-                          update({
-                            returnValueMan: roundAmountMan(
-                              Math.max(0, Number(e.target.value) || 0),
-                            ),
-                          })
-                        }
-                      />
-                      <span className="amount-unit">万円</span>
-                    </div>
+                    <NumericAmountInput
+                      id={`ins-return-amount-${entry.id}`}
+                      value={entry.returnValueMan}
+                      unit="万円"
+                      ariaLabel="返戻金額"
+                      onChange={(value) =>
+                        update({
+                          returnValueMan: roundAmountMan(value),
+                        })
+                      }
+                    />
                   </>
                 ) : null}
               </div>
