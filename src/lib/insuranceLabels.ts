@@ -5,6 +5,7 @@ import type {
   InsurancePremiumPaymentMode,
   InsuranceSector,
   LifeInsuranceDeductionKind,
+  LifeInsuranceDeductionSystem,
   PersonalPensionAnnuityKind,
 } from '../types/insurance';
 
@@ -260,6 +261,17 @@ export const LIFE_INSURANCE_DEDUCTION_KIND_LABELS: Record<
 export const LIFE_INSURANCE_DEDUCTION_KIND_OPTIONS: LifeInsuranceDeductionKind[] =
   ['general', 'nursing', 'pension', 'none'];
 
+export const LIFE_INSURANCE_DEDUCTION_SYSTEM_LABELS: Record<
+  LifeInsuranceDeductionSystem,
+  string
+> = {
+  new: '新契約（2012年以降）',
+  old: '旧契約（2011年以前）',
+};
+
+export const LIFE_INSURANCE_DEDUCTION_SYSTEM_OPTIONS: LifeInsuranceDeductionSystem[] =
+  ['new', 'old'];
+
 /**
  * カテゴリごとの生命保険料控除の既定区分。
  * 死亡・学資＝一般、医療・がん＝介護医療、個人年金＝個人年金に固定。
@@ -284,31 +296,13 @@ export function getDefaultLifeDeductionKind(
   }
 }
 
-/** 死亡・医療・がん・学資・個人年金は控除区分をカテゴリで固定する */
-export function isFixedLifeDeductionCategory(
-  category: InsuranceCategory,
-): boolean {
-  return (
-    category === 'life' ||
-    category === 'medical' ||
-    category === 'cancer' ||
-    category === 'education' ||
-    category === 'personal_pension'
-  );
-}
-
-/** 表示・税計算用に実効控除区分を返す（固定カテゴリは常に既定値） */
+/** 表示・税計算用に実効控除区分を返す。生命保険は保存値を優先する。 */
 export function resolveLifeDeductionKind(
   category: InsuranceCategory,
   stored?: LifeInsuranceDeductionKind,
 ): LifeInsuranceDeductionKind {
-  if (isFixedLifeDeductionCategory(category)) {
-    return getDefaultLifeDeductionKind(category);
-  }
-  if (category === 'life_other') {
-    return stored ?? 'general';
-  }
-  return 'none';
+  if (!isLifeInsuranceCategory(category)) return 'none';
+  return stored ?? getDefaultLifeDeductionKind(category);
 }
 
 export function isLifeInsuranceCategory(category: InsuranceCategory): boolean {
