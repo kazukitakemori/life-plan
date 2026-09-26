@@ -58,31 +58,99 @@ export function isLinealAscendantGift(
   return donor.role === 'head' || donor.role === 'spouse';
 }
 
+export interface CalendarYearGift {
+  giftAmountYen: number;
+  donor: FamilyMember;
+}
+
+export interface CalendarYearGiftTaxInput {
+  gifts: CalendarYearGift[];
+  donee: FamilyMember;
+  /**
+   * 贈与年1月1日時点の年齢。
+   * 生年月日が不足して判定できない場合は null とし、特例税率を自動適用しない。
+   */
+  doneeAgeAtJan1: number | null;
+}
+
+/**
+ * 暦年課税の贈与税額。
+ * 基礎控除110万円は受贈者ごとの年間贈与総額に対して1回だけ適用する。
+ * 一般贈与財産と特例贈与財産が混在する場合は、国税庁の計算方法に合わせて
+ * 共通の基礎控除後課税価格へ各税率を適用し、財産価額の割合で按分する。
+ */
+export function calcCalendarYearGiftTaxForGiftsYen(
+  input: CalendarYearGiftTaxInput,
+): number {
+  const validGifts = input.gifts.filter((gift) => gift.giftAmountYen > 0);
+  if (validGifts.length === 0) return 0;
+
+  let generalGiftYen = 0;
+  let linealGiftYen = 0;
+  const canUseLinealRate =
+    input.doneeAgeAtJan1 != null && input.doneeAgeAtJan1 >= 18;
+
+  for (const gift of validGifts) {
+    if (canUseLinealRate && isLinealAscendantGift(gift.donor, input.donee)) {
+      linealGiftYen += gift.giftAmountYen;
+    } else {
+      generalGiftYen += gift.giftAmountYen;
+    }
+  }
+
+  const totalGiftYen = generalGiftYen + linealGiftYen;
+  const taxableGiftYen = Math.max(
+    0,
+    totalGiftYen - GIFT_TAX_BASIC_EXEMPTION_YEN,
+  );
+  if (taxableGiftYen <= 0) return 0;
+
+  if (generalGiftYen <= 0) {
+    return calcProgressiveGiftTaxYen(
+      taxableGiftYen,
+      LINEAL_GIFT_TAX_BRACKETS,
+    );
+  }
+  if (linealGiftYen <= 0) {
+    return calcProgressiveGiftTaxYen(
+      taxableGiftYen,
+      GENERAL_GIFT_TAX_BRACKETS,
+    );
+  }
+
+  const linealWholeTaxYen = calcProgressiveGiftTaxYen(
+    taxableGiftYen,
+    LINEAL_GIFT_TAX_BRACKETS,
+  );
+  const generalWholeTaxYen = calcProgressiveGiftTaxYen(
+    taxableGiftYen,
+    GENERAL_GIFT_TAX_BRACKETS,
+  );
+
+  const linealTaxYen = Math.floor(
+    (linealWholeTaxYen * linealGiftYen) / totalGiftYen,
+  );
+  const generalTaxYen = Math.floor(
+    (generalWholeTaxYen * generalGiftYen) / totalGiftYen,
+  );
+  return linealTaxYen + generalTaxYen;
+}
+
 export interface GiftTaxInput {
   giftAmountYen: number;
   donor: FamilyMember;
   donee: FamilyMember;
-  doneeAgeAtYearEnd: number;
+  /** @deprecated doneeAgeAtJan1 を使用 */
+  doneeAgeAtYearEnd?: number;
+  doneeAgeAtJan1?: number | null;
 }
 
+/** 単一贈与向け互換API */
 export function calcCalendarYearGiftTaxYen(input: GiftTaxInput): number {
-  const { giftAmountYen, donor, donee, doneeAgeAtYearEnd } = input;
-  if (giftAmountYen <= 0) return 0;
-
-  const taxableGiftYen = Math.max(
-    0,
-    giftAmountYen - GIFT_TAX_BASIC_EXEMPTION_YEN,
-  );
-  if (taxableGiftYen <= 0) return 0;
-
-  const donorAge = donor.age ?? 0;
-  const useLinealRate =
-    isLinealAscendantGift(donor, donee) &&
-    donorAge >= 18 &&
-    doneeAgeAtYearEnd >= 18;
-
-  return calcProgressiveGiftTaxYen(
-    taxableGiftYen,
-    useLinealRate ? LINEAL_GIFT_TAX_BRACKETS : GENERAL_GIFT_TAX_BRACKETS,
-  );
+  return calcCalendarYearGiftTaxForGiftsYen({
+    gifts: [{ giftAmountYen: input.giftAmountYen, donor: input.donor }],
+    donee: input.donee,
+    doneeAgeAtJan1:
+      input.doneeAgeAtJan1 ?? input.doneeAgeAtYearEnd ?? null,
+  });
 }
