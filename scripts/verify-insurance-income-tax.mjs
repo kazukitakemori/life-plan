@@ -414,6 +414,102 @@ assertEq(
 
 const pensionByMember = createDefaultPensionByMember(members);
 
+const taxableCelebrationState = {
+  byMember: {
+    [spouse.id]: [
+      {
+        id: 'celebration-taxable',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          {
+            memberId: child.id,
+            targetAge: 19,
+            amountMan: 80,
+            giftTaxTreatment: 'taxable',
+          },
+        ],
+      },
+    ],
+  },
+};
+const insuranceAndCelebrationBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: { byMember: { [head.id]: [giftA] } },
+  lifeEventState: taxableCelebrationState,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!insuranceAndCelebrationBreakdown) {
+  throw new Error('no insurance+celebration breakdown');
+}
+assertEq(
+  insuranceAndCelebrationBreakdown.giftTax.giftTaxYen,
+  50_000,
+  'insurance and Q3 celebration gift combined',
+);
+assertEq(
+  insuranceAndCelebrationBreakdown.giftTax.unconfirmedGiftYen,
+  0,
+  'taxable Q3 gift has no unconfirmed balance',
+);
+
+const unknownCelebrationState = {
+  byMember: {
+    [spouse.id]: [
+      {
+        id: 'celebration-unknown',
+        type: 'celebration_gift',
+        celebrationBeneficiaries: [
+          {
+            memberId: child.id,
+            targetAge: 19,
+            amountMan: 80,
+            giftTaxTreatment: 'unknown',
+          },
+        ],
+      },
+    ],
+  },
+};
+const unknownCelebrationBreakdown = buildMemberTaxBreakdownData({
+  familyMembers: members,
+  incomeByMember: {},
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  memberId: child.id,
+  monthStart: 1,
+  monthEnd: 12,
+  annualPensionManByMember: {},
+  pensionByMember,
+  simulationStartYear: 2026,
+  insuranceState: { byMember: { [head.id]: [giftA] } },
+  lifeEventState: unknownCelebrationState,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+});
+if (!unknownCelebrationBreakdown) {
+  throw new Error('no unknown celebration breakdown');
+}
+assertEq(
+  unknownCelebrationBreakdown.giftTax.giftTaxYen,
+  0,
+  'unknown Q3 gift is not guessed into tax',
+);
+assertEq(
+  unknownCelebrationBreakdown.giftTax.unconfirmedGiftYen,
+  800_000,
+  'unknown Q3 gift remains visible',
+);
+
 // 贈与税は受取年の年税額として表示し、CF支出は翌年3月に計上
 const giftYearBreakdown = buildMemberTaxBreakdownData({
   familyMembers: members,
