@@ -452,6 +452,47 @@ assertEq(
   'preview label',
 );
 
+// 同一年に複数の一時所得がある場合、50万円特別控除は年1回
+const tempA = createInsuranceEntry('life', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 30,
+  returnValueAge: 60,
+  startAge: head.age,
+  startMonth: 1,
+  premiumMan: 0,
+  premiumPaymentMode: 'annual',
+});
+const tempB = createInsuranceEntry('medical', head, referenceDate, {
+  hasReturnValue: true,
+  returnValueMan: 30,
+  returnValueAge: 60,
+  startAge: head.age,
+  startMonth: 1,
+  premiumMan: 0,
+  premiumPaymentMode: 'annual',
+});
+const combinedTemporaryTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [tempA, tempB] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: returnYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  combinedTemporaryTax.temporaryIncomeRevenueYen,
+  600_000,
+  'temporary incomes combined revenue',
+);
+assertEq(
+  combinedTemporaryTax.temporaryIncomeTaxableYen,
+  50_000,
+  'temporary 500k deduction applied once',
+);
+
 // 学資（子ども受取）贈与でも累計払込保険料を表示する
 const educationPremium = createInsuranceEntry(
   'education',
