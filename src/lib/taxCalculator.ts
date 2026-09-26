@@ -3990,6 +3990,25 @@ export function buildMemberTaxBreakdownData(input: {
         monthEnd,
       })
     : createEmptyInsuranceIncomeTaxDetail();
+  const priorCalendarYearInsuranceGiftTax = input.insuranceState
+    ? calcRecipientInsuranceIncomeTaxDetail({
+        recipientId: member.id,
+        familyMembers: input.familyMembers,
+        insuranceState: input.insuranceState,
+        housingState: input.housingState ?? { byTarget: {} },
+        vehicleState: input.vehicleState ?? { byMember: {} },
+        referenceDate: input.referenceDate,
+        calendarYear: input.calendarYear - 1,
+        monthStart: 1,
+        monthEnd: 12,
+      }).giftTaxYen
+    : 0;
+  const giftTaxPaymentMonth = 3;
+  const giftTaxCashFlowYen =
+    simulationMonthStart <= giftTaxPaymentMonth &&
+    simulationMonthEnd >= giftTaxPaymentMonth
+      ? taxYenToCashFlowYen(priorCalendarYearInsuranceGiftTax)
+      : 0;
   const incomeTaxBusinessBreakdown =
     usesAnnualBasisForIncomeTax || incomeTaxProfile.hasActiveIncomeBlock
       ? calcMemberBusinessIncomeBreakdownYenForTaxYear({
@@ -4548,8 +4567,10 @@ export function buildMemberTaxBreakdownData(input: {
     }),
     insuranceIncomeTax,
     giftTax: {
+      /** 当年に受けた贈与に対する年税額（申告対象年の表示用） */
       giftTaxYen: insuranceIncomeTax.giftTaxYen,
-      giftTaxCashFlowYen: taxYenToCashFlowYen(insuranceIncomeTax.giftTaxYen),
+      /** 前年分を翌年3月に納付するCF支出 */
+      giftTaxCashFlowYen,
     },
   };
 }
