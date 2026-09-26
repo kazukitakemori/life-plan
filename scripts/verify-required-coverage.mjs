@@ -16,6 +16,7 @@ import {
 import { createDefaultInsuranceState, createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
 import {
   calcRegisteredMedicalHospitalBenefitMan,
+  calcRegisteredMedicalScenarioBenefitMan,
   resolveRegisteredDeathBenefitAtAge,
   resolveRegisteredInsuranceCoverage,
 } from '../src/lib/insuranceCoverage.ts';
@@ -455,6 +456,15 @@ assert.equal(
   14,
 );
 console.log('OK registered hospital daily benefit reduces medical shortfall');
+assert.equal(
+  calcRegisteredMedicalScenarioBenefitMan(spouseCoverage, 28, false),
+  14,
+);
+assert.equal(
+  calcRegisteredMedicalScenarioBenefitMan(spouseCoverage, 28, true),
+  114,
+);
+console.log('OK cancer diagnosis benefit applies only to cancer scenario');
 
 // 1. 末子の最終学歴（大学 22歳3月 → 2016年4月生なら 2038年3月）
 const educationEntry = createEducationExpenseEntry({
