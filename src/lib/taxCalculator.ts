@@ -3854,6 +3854,7 @@ export function buildMemberTaxBreakdownData(input: {
   const lifeInsuranceDeductions = input.insuranceState
     ? calcMemberLifeInsuranceDeductionYen({
         member,
+        familyMembers: input.familyMembers,
         insuranceState: input.insuranceState,
         housingState: input.housingState ?? { byTarget: {} },
         vehicleState: input.vehicleState ?? { byMember: {} },
