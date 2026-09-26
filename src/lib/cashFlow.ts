@@ -847,6 +847,7 @@ export function buildCashFlowTable(input: CashFlowInput): CashFlowTableData {
       housingState: input.housingState,
       loanState: input.loanState,
       insuranceState: input.insuranceState,
+      lifeEventState: input.lifeEventState,
       vehicleState: input.vehicleState,
       savingsState: input.savingsState,
     });
