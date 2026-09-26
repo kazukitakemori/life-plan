@@ -3977,8 +3977,6 @@ export function buildMemberTaxBreakdownData(input: {
         monthStart,
         monthEnd,
       });
-  const hasSalaryIncomeForInsuranceTax =
-    incomeTaxSalaryBreakdown.grossSalaryRevenueYen > 0;
   const insuranceIncomeTax = input.insuranceState
     ? calcRecipientInsuranceIncomeTaxDetail({
         recipientId: member.id,
@@ -3990,7 +3988,6 @@ export function buildMemberTaxBreakdownData(input: {
         calendarYear: input.calendarYear,
         monthStart,
         monthEnd,
-        hasSalaryIncome: hasSalaryIncomeForInsuranceTax,
       })
     : createEmptyInsuranceIncomeTaxDetail();
   const incomeTaxBusinessBreakdown =
@@ -4075,7 +4072,6 @@ export function buildMemberTaxBreakdownData(input: {
         calendarYear: levyIncomeCalendarYear,
         monthStart: levyMonths.monthStart,
         monthEnd: levyMonths.monthEnd,
-        hasSalaryIncome: levySalaryBreakdown.grossSalaryRevenueYen > 0,
       })
     : createEmptyInsuranceIncomeTaxDetail();
   const levyInsuranceIncomeTaxableYen =
