@@ -60,7 +60,8 @@ export type InsuranceBenefitIncomeKind =
   | 'temporary_income'
   | 'miscellaneous_income'
   | 'gift_tax'
-  | 'annuity_right_tax_manual';
+  | 'annuity_right_tax_manual'
+  | 'financial_like_product_manual';
 
 /** @deprecated Use InsuranceBenefitIncomeKind */
 export type InsuranceBenefitTaxKind = InsuranceBenefitIncomeKind;
@@ -78,6 +79,8 @@ export interface InsuranceIncomeTaxDetail {
   giftAmountYen: number;
   /** 贈与税額（円） */
   giftTaxYen: number;
+  /** 商品要件等の確認が必要で自動税額計算から除外した受取額（円） */
+  manualReviewRevenueYen: number;
 }
 
 export function createEmptyInsuranceIncomeTaxDetail(): InsuranceIncomeTaxDetail {
@@ -88,6 +91,7 @@ export function createEmptyInsuranceIncomeTaxDetail(): InsuranceIncomeTaxDetail 
     miscellaneousIncomeTaxableYen: 0,
     giftAmountYen: 0,
     giftTaxYen: 0,
+    manualReviewRevenueYen: 0,
   };
 }
 
@@ -375,6 +379,31 @@ function resolveAnnuityStartAge(
 }
 
 /**
+ * 一時払かつ契約開始から5年以内の返戻金は、商品性によって
+ * 金融類似商品の源泉分離課税となる可能性がある。
+ * Q10の入力だけでは「一時払養老保険等」の法定要件を確定できないため、
+ * 候補契約は通常の一時所得へ自動分類せず要確認とする。
+ */
+export function isPotentialFinancialLikeInsuranceProduct(
+  entry: InsuranceEntry,
+  contractor: FamilyMember,
+): boolean {
+  if (
+    !entry.hasReturnValue ||
+    !hasReturnValueInput(entry.category) ||
+    entry.returnValueMan <= 0 ||
+    resolveInsurancePremiumPaymentMode(entry.premiumPaymentMode) !== 'lump_sum'
+  ) {
+    return false;
+  }
+  const startIndex = entry.startAge * 12 + entry.startMonth;
+  const returnIndex =
+    entry.returnValueAge * 12 + resolveInsuranceBenefitPaymentMonth(contractor);
+  const durationMonths = returnIndex - startIndex;
+  return durationMonths >= 0 && durationMonths <= 60;
+}
+
+/**
  * 満期・解約等の受取時課税区分。
  * - 保険料負担者＝受取人 + 年金形式 … 雑所得
  * - 保険料負担者＝受取人 + 一括受取・返戻金 … 一時所得
@@ -523,11 +552,15 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
         contractorId,
         input.familyMembers,
       );
-      const incomeKind = classifyInsuranceBenefitIncomeKind(
-        entry,
-        premiumPayerId,
-        recipientId,
-      );
+      const incomeKind =
+        isPotentialFinancialLikeInsuranceProduct(entry, contractor) &&
+        premiumPayerId === recipientId
+          ? 'financial_like_product_manual'
+          : classifyInsuranceBenefitIncomeKind(
+              entry,
+              premiumPayerId,
+              recipientId,
+            );
       const cumulativePremiumYen = Math.round(
         calcEntryCumulativePremiumManUpToYear(
           entry,
@@ -561,6 +594,8 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
           premiumPayerId,
           (giftAmountByDonorYen.get(premiumPayerId) ?? 0) + revenueYen,
         );
+      } else {
+        detail.manualReviewRevenueYen += revenueYen;
       }
       // 年金形式で保険料負担者と受取人が異なる場合は、
       // 給付事由発生時の年金受給権評価と2年目以降の課税部分計算が必要。
@@ -734,16 +769,54 @@ export function calcInsuranceEntryIncomeTaxPreview(input: {
     input.contractor.id,
     input.familyMembers,
   );
-  const preliminaryKind = classifyInsuranceBenefitIncomeKind(
-    input.entry,
-    premiumPayerId,
-    recipientId,
-  );
+  const preliminaryKind =
+    isPotentialFinancialLikeInsuranceProduct(input.entry, input.contractor) &&
+    premiumPayerId === recipientId
+      ? 'financial_like_product_manual'
+      : classifyInsuranceBenefitIncomeKind(
+          input.entry,
+          premiumPayerId,
+          recipientId,
+        );
   const isAnnual =
     (input.entry.category === 'education' ||
       input.entry.category === 'personal_pension') &&
     resolveInsuranceBenefitPayoutMode(input.entry.benefitPayoutMode) ===
       'annuity';
+
+  if (preliminaryKind === 'financial_like_product_manual') {
+    const revenueYen = Math.round(
+      calcEntryBenefitRevenueMan(
+        input.entry,
+        input.contractor,
+        input.familyMembers,
+        input.referenceDate,
+        calendarYear,
+        1,
+        12,
+      ) * MAN_TO_YEN,
+    );
+    const expenseYen = Math.round(
+      calcEntryCumulativePremiumManUpToYear(
+        input.entry,
+        input.contractor,
+        input.housingState,
+        input.vehicleState,
+        input.referenceDate,
+        calendarYear,
+      ) * MAN_TO_YEN,
+    );
+    return {
+      kind: 'financial_like_product_manual',
+      revenueYen,
+      expenseYen,
+      specialDeductionYen: 0,
+      incomeYen: 0,
+      giftTaxYen: 0,
+      calendarYear,
+      isAnnual: false,
+    };
+  }
 
   if (preliminaryKind === 'annuity_right_tax_manual') {
     const revenueYen = Math.round(
@@ -881,6 +954,15 @@ export function formatInsuranceEntryIncomeTaxPreviewParts(
       summary: `一時所得（この契約のみの目安）：${yen(preview.incomeYen)}`,
       formula: `（収入${yen(preview.revenueYen)} − 払込保険料${yen(preview.expenseYen)} − 特別控除${yen(preview.specialDeductionYen)}）× 1/2 ※同じ年の他の一時所得がある場合は合算して計算`,
       expenseMissing: preview.expenseYen <= 0,
+    };
+  }
+  if (preview.kind === 'financial_like_product_manual') {
+    return {
+      kind: 'financial_like_product_manual',
+      summary: '要確認：金融類似商品の源泉分離課税',
+      formula:
+        '一時払で5年以内に返戻金を受け取る契約は、商品要件によって差益に源泉分離課税が適用される場合があります。Q10の入力だけでは法定要件を確定できないため、この契約の税額は自動計算しません。',
+      expenseMissing: false,
     };
   }
   if (preview.kind === 'annuity_right_tax_manual') {
