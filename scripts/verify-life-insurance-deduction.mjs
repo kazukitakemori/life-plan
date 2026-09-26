@@ -10,7 +10,7 @@ import {
   calcOldSystemLifeInsuranceDeductionForCategoryYen,
 } from '../src/lib/lifeInsuranceDeduction.ts';
 import { createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
-import { createDefaultFamily } from '../src/lib/familyDefaults.ts';
+import { createFamilyMember } from '../src/lib/familyDefaults.ts';
 import { buildMemberTaxBreakdownData } from '../src/lib/taxCalculator.ts';
 import { createDefaultPensionByMember } from '../src/lib/pensionDefaults.ts';
 
@@ -83,10 +83,17 @@ assertEq(
   'resident total cap 70,000',
 );
 
-const members = createDefaultFamily();
-const head = members.find((m) => m.role === 'head');
-const spouse = members.find((m) => m.role === 'spouse');
-if (!head || !spouse) throw new Error('head/spouse not found');
+const head = {
+  ...createFamilyMember('head'),
+  age: 40,
+  birthMonth: 6,
+};
+const spouse = {
+  ...createFamilyMember('spouse'),
+  age: 38,
+  birthMonth: 6,
+};
+const members = [head, spouse];
 
 const referenceDate = new Date(2026, 5, 1);
 const emptyHousing = { byTarget: {} };
