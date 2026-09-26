@@ -193,6 +193,19 @@ export function InsuranceEntryDetail({
     : member.id;
   const isFire = entry.category === 'fire';
   const isAuto = entry.category === 'auto';
+  const showCoverageDetails =
+    entry.category === 'life' ||
+    entry.category === 'medical' ||
+    entry.category === 'cancer';
+  const resolvedInsuredMemberId = beneficiaryOptions.some(
+    (item) => item.id === entry.insuredMemberId,
+  )
+    ? entry.insuredMemberId!
+    : member.id;
+  const insuredMember =
+    beneficiaryOptions.find((item) => item.id === resolvedInsuredMemberId) ??
+    member;
+  const insuredAgeOptions = getVehicleAgeOptions(insuredMember);
   const showBenefitPayout = hasBenefitPayoutInput(entry.category);
   const showBeneficiary = hasBeneficiaryInput(entry.category);
   const showReturnValueBeneficiary = showsReturnValueBeneficiary(
@@ -670,6 +683,163 @@ export function InsuranceEntryDetail({
                 </p>
               ) : null}
             </LoanSettingsField>
+          ) : null}
+
+          {showCoverageDetails ? (
+            <>
+              <LoanSettingsField
+                label="保障の対象"
+                labelFor={`ins-insured-${entry.id}`}
+              >
+                <select
+                  id={`ins-insured-${entry.id}`}
+                  className="select-input insurance-beneficiary-select"
+                  value={resolvedInsuredMemberId}
+                  onChange={(e) =>
+                    update({
+                      insuredMemberId:
+                        e.target.value === member.id
+                          ? undefined
+                          : e.target.value,
+                    })
+                  }
+                >
+                  {beneficiaryOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getMemberTabLabel(item)}
+                    </option>
+                  ))}
+                </select>
+                <p className="insurance-link-hint">
+                  契約者本人が保障対象の場合はそのままで構いません。必要保障額ではこの人の既契約保障として反映します。
+                </p>
+              </LoanSettingsField>
+
+              {entry.category === 'life' ? (
+                <>
+                  <LoanSettingsField
+                    label="死亡保障額"
+                    labelFor={`ins-death-benefit-${entry.id}`}
+                  >
+                    <NumericAmountInput
+                      id={`ins-death-benefit-${entry.id}`}
+                      value={entry.deathBenefitMan ?? 0}
+                      unit="万円"
+                      ariaLabel="死亡保障額"
+                      onChange={(value) =>
+                        update({
+                          deathBenefitMan: roundAmountMan(value),
+                        })
+                      }
+                    />
+                  </LoanSettingsField>
+                  <LoanSettingsField
+                    label="死亡保障期間"
+                    labelFor={`ins-death-period-${entry.id}`}
+                  >
+                    <div className="insurance-return-fields">
+                      <select
+                        id={`ins-death-period-${entry.id}`}
+                        className="select-input"
+                        value={entry.deathCoverageEndMode ?? ''}
+                        onChange={(e) => {
+                          const mode = e.target.value;
+                          update({
+                            deathCoverageEndMode:
+                              mode === 'lifetime' || mode === 'until'
+                                ? mode
+                                : undefined,
+                            deathCoverageEndAge:
+                              mode === 'until'
+                                ? (entry.deathCoverageEndAge ??
+                                  insuredMember.expectedLifespan)
+                                : entry.deathCoverageEndAge,
+                          });
+                        }}
+                      >
+                        <option value="">未設定（必要保障額へ未反映）</option>
+                        <option value="lifetime">終身</option>
+                        <option value="until">年齢まで</option>
+                      </select>
+                      {entry.deathCoverageEndMode === 'until' ? (
+                        <select
+                          className="select-input"
+                          value={
+                            entry.deathCoverageEndAge ??
+                            insuredMember.expectedLifespan
+                          }
+                          aria-label="死亡保障終了年齢"
+                          onChange={(e) =>
+                            update({
+                              deathCoverageEndAge: Number(e.target.value),
+                            })
+                          }
+                        >
+                          {insuredAgeOptions.map((age) => (
+                            <option key={age} value={age}>
+                              {age}歳
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                    </div>
+                    {(entry.deathBenefitMan ?? 0) > 0 &&
+                    !entry.deathCoverageEndMode ? (
+                      <p className="insurance-link-hint">
+                        保障期間が未設定のため、死亡保障額は必要保障額へまだ反映していません。
+                      </p>
+                    ) : null}
+                  </LoanSettingsField>
+                </>
+              ) : null}
+
+              {entry.category === 'medical' ? (
+                <LoanSettingsField
+                  label="入院給付金"
+                  labelFor={`ins-hospital-daily-${entry.id}`}
+                >
+                  <NumericAmountInput
+                    id={`ins-hospital-daily-${entry.id}`}
+                    value={entry.medicalHospitalDailyYen ?? 0}
+                    unit="円/日"
+                    ariaLabel="入院給付金の日額"
+                    onChange={(value) =>
+                      update({
+                        medicalHospitalDailyYen: Math.max(
+                          0,
+                          Math.round(value),
+                        ),
+                      })
+                    }
+                  />
+                  <p className="insurance-link-hint">
+                    必要保障額の医療シナリオでは、想定入院日数 × 日額で既契約保障として反映します。
+                  </p>
+                </LoanSettingsField>
+              ) : null}
+
+              {entry.category === 'cancer' ? (
+                <LoanSettingsField
+                  label="がん診断一時金"
+                  labelFor={`ins-cancer-benefit-${entry.id}`}
+                >
+                  <NumericAmountInput
+                    id={`ins-cancer-benefit-${entry.id}`}
+                    value={entry.cancerDiagnosisBenefitMan ?? 0}
+                    unit="万円"
+                    ariaLabel="がん診断一時金"
+                    onChange={(value) =>
+                      update({
+                        cancerDiagnosisBenefitMan: roundAmountMan(value),
+                      })
+                    }
+                  />
+                  <p className="insurance-link-hint">
+                    必要保障額で「がん」を選んだ場合の既契約保障として反映します。
+                  </p>
+                </LoanSettingsField>
+              ) : null}
+            </>
           ) : null}
 
           {showPremiumPayer ? (
