@@ -18,7 +18,7 @@ export type InsuranceCategory =
   | 'life_other';
 
 /**
- * 生命保険料控除の区分（所得税・住民税・新制度）。
+ * 生命保険料控除の証明書区分。
  */
 export type LifeInsuranceDeductionKind =
   | 'general'
