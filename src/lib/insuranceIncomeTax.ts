@@ -450,7 +450,6 @@ export function calcRecipientInsuranceIncomeTaxDetail(input: {
   calendarYear: number;
   monthStart: number;
   monthEnd: number;
-  hasSalaryIncome?: boolean;
 }): InsuranceIncomeTaxDetail {
   const detail = createEmptyInsuranceIncomeTaxDetail();
   const recipient = input.familyMembers.find((m) => m.id === input.recipientId);
