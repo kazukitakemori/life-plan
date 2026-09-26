@@ -86,3 +86,26 @@ export function calcRegisteredMedicalHospitalBenefitMan(
   const days = Math.max(0, inpatientDays || 0);
   return (dailyYen * days) / 10_000;
 }
+
+/**
+ * 必要保障額の医療シナリオへ反映するQ10既契約保障。
+ * 入院給付金は全シナリオ、がん診断一時金はがんシナリオだけ加算する。
+ */
+export function calcRegisteredMedicalScenarioBenefitMan(
+  coverage: Pick<
+    RegisteredInsuranceCoverage,
+    'medicalHospitalDailyYen' | 'cancerDiagnosisBenefitMan'
+  >,
+  inpatientDays: number,
+  isCancerScenario: boolean,
+): number {
+  return (
+    calcRegisteredMedicalHospitalBenefitMan(
+      coverage.medicalHospitalDailyYen,
+      inpatientDays,
+    ) +
+    (isCancerScenario
+      ? Math.max(0, coverage.cancerDiagnosisBenefitMan || 0)
+      : 0)
+  );
+}
