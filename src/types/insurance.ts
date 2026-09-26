@@ -90,7 +90,11 @@ export interface InsuranceEntry {
   endMonth: number;
   /** 生命保険料控除を税計算へ反映するか。未設定時は false。 */
   lifeDeductionEnabled?: boolean;
-  /** 控除を受ける人（実際の保険料負担者）。未設定時は契約者。 */
+  /**
+   * 実際の保険料負担者。
+   * 生命保険料控除と満期・解約等の受取時課税の判定で共用する。
+   * 未設定時は契約者を負担者として扱う。
+   */
   lifeDeductionPayerMemberId?: string;
   /** 新契約 / 旧契約。未設定時は新契約。 */
   lifeDeductionSystem?: LifeInsuranceDeductionSystem;
