@@ -67,6 +67,56 @@ assertEq(
   'education to child',
 );
 
+
+// 契約者ではなく実際の保険料負担者を基準に判定する
+const paidAndReceivedByChild = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 50,
+    benefitReceiveAge: 18,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: child.id,
+  },
+  members,
+);
+assertEq(
+  classifyInsuranceBenefitIncomeKind(
+    paidAndReceivedByChild,
+    child.id,
+    child.id,
+  ),
+  'temporary_income',
+  'premium payer equals recipient even when contractor differs',
+);
+
+const annuityDifferentPayer = createInsuranceEntry(
+  'personal_pension',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'annuity',
+    benefitAmountMan: 10,
+    benefitReceiveAge: 65,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: head.id,
+  },
+  members,
+);
+assertEq(
+  classifyInsuranceBenefitIncomeKind(
+    annuityDifferentPayer,
+    head.id,
+    child.id,
+  ),
+  'annuity_right_tax_manual',
+  'annuity right requires manual tax review when payer differs',
+);
+
 // 余命年数（所得税法施行令別表）
 assertEq(getAnnuityRemainingLifeYears(55, 'female'), 27, 'life 55F');
 assertEq(getAnnuityRemainingLifeYears(65, 'male'), 15, 'life 65M');
@@ -202,6 +252,82 @@ assertEq(
 );
 assertEq(expectedMiscTaxable, 75_000, 'pension misc expected');
 assertEq(pensionTax.temporaryIncomeTaxableYen, 0, 'pension temporary');
+
+
+// 20万円以下でも「非課税」にはしない。確定申告要否とは分けて所得へ算入する。
+const pensionTaxWithSalary = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: head.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [personalPensionAnnuity] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: pensionYear,
+  monthStart: 1,
+  monthEnd: 12,
+  hasSalaryIncome: true,
+});
+assertEq(
+  pensionTaxWithSalary.miscellaneousIncomeTaxableYen,
+  expectedMiscTaxable,
+  'salary earner misc income is not tax exempt under 200k',
+);
+
+// 保険料負担者＝受取人なら、契約者が別でも一時所得
+const payerAwareYear = yearWhenMemberReachesAge(child, 18);
+const payerAwareTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [paidAndReceivedByChild] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: payerAwareYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(payerAwareTax.giftAmountYen, 0, 'payer-aware lump is not gift');
+if (payerAwareTax.temporaryIncomeRevenueYen <= 0) {
+  console.error('FAIL payer-aware lump should be temporary income');
+  process.exit(1);
+}
+
+// 保険料負担者≠年金受取人は年金受給権評価が必要なため自動贈与税計算しない
+const annuityDifferentPayerYear = yearWhenMemberReachesAge(child, 65);
+const annuityDifferentPayerTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: { byMember: { [head.id]: [annuityDifferentPayer] } },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: annuityDifferentPayerYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(
+  annuityDifferentPayerTax.giftAmountYen,
+  0,
+  'annuity right is not treated as annual gift amount',
+);
+assertEq(
+  annuityDifferentPayerTax.miscellaneousIncomeTaxableYen,
+  0,
+  'annuity right yearly income is deferred to manual tax review',
+);
+const annuityDifferentPayerPreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: annuityDifferentPayer,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+assertEq(
+  annuityDifferentPayerPreview.kind,
+  'annuity_right_tax_manual',
+  'annuity different payer preview',
+);
 
 const pensionByMember = createDefaultPensionByMember(members);
 const breakdown = buildMemberTaxBreakdownData({
