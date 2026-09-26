@@ -339,6 +339,12 @@ export function syncInsurancesWithFamily(
         next = { ...next, beneficiaryMemberId: memberId };
       }
       if (
+        entry.insuredMemberId &&
+        !eligibleIds.has(entry.insuredMemberId)
+      ) {
+        next = { ...next, insuredMemberId: undefined };
+      }
+      if (
         entry.lifeDeductionPayerMemberId &&
         !eligibleIds.has(entry.lifeDeductionPayerMemberId)
       ) {
