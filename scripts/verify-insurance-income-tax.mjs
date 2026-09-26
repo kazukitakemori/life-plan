@@ -349,7 +349,6 @@ const pensionTaxWithSalary = calcRecipientInsuranceIncomeTaxDetail({
   calendarYear: pensionYear,
   monthStart: 1,
   monthEnd: 12,
-  hasSalaryIncome: true,
 });
 assertEq(
   pensionTaxWithSalary.miscellaneousIncomeTaxableYen,
