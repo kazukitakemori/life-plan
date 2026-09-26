@@ -16643,6 +16643,36 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.insurance-deduction-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.insurance-deduction-toggle {
+  width: fit-content;
+}
+
+.insurance-deduction-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.insurance-deduction-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.insurance-deduction-option > span {
+  font-size: 0.75rem;
+  color: #667085;
+}
+
 @media (max-width: 768px) {
   .insurance-entry-card {
     align-items: stretch;
@@ -16744,6 +16774,14 @@ button:disabled {
 
   .insurance-return-beneficiary {
     margin-top: 6px;
+  }
+
+  .insurance-deduction-options {
+    grid-template-columns: 1fr;
+  }
+
+  .insurance-deduction-option .select-input {
+    width: 100%;
   }
 }
 
