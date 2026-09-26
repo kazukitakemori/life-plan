@@ -186,7 +186,7 @@ export function InsuranceEntryDetail({
   const receiveMemberOptions = getBenefitReceiveMemberOptions(members);
   const lifeDeductionEnabled = entry.lifeDeductionEnabled === true;
   const lifeDeductionSystem = entry.lifeDeductionSystem ?? 'new';
-  const lifeDeductionPayerMemberId = beneficiaryOptions.some(
+  const premiumPayerMemberId = beneficiaryOptions.some(
     (item) => item.id === entry.lifeDeductionPayerMemberId,
   )
     ? entry.lifeDeductionPayerMemberId!
@@ -211,6 +211,9 @@ export function InsuranceEntryDetail({
   const showEducationAnnuityPeriod =
     entry.category === 'education' && payoutMode === 'annuity';
   const showBenefitAmount = hasBenefitAmountInput(entry.category);
+  const showPremiumPayer =
+    isLifeInsuranceCategory(entry.category) &&
+    (lifeDeductionEnabled || showBenefitPayout || entry.hasReturnValue);
   const educationAnnuityYears = resolveEducationAnnuityYears(
     entry.educationAnnuityYears,
   );
@@ -669,6 +672,33 @@ export function InsuranceEntryDetail({
             </LoanSettingsField>
           ) : null}
 
+          {showPremiumPayer ? (
+            <LoanSettingsField
+              label="保険料を負担する人"
+              labelFor={`ins-premium-payer-${entry.id}`}
+            >
+              <select
+                id={`ins-premium-payer-${entry.id}`}
+                className="select-input insurance-beneficiary-select"
+                value={premiumPayerMemberId}
+                onChange={(e) =>
+                  update({
+                    lifeDeductionPayerMemberId: e.target.value,
+                  })
+                }
+              >
+                {beneficiaryOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getMemberTabLabel(item)}
+                  </option>
+                ))}
+              </select>
+              <p className="insurance-link-hint">
+                契約者と異なる場合だけ変更します。受取時の税区分と、生命保険料控除を反映する場合の対象者に使います。
+              </p>
+            </LoanSettingsField>
+          ) : null}
+
           {isLifeInsuranceCategory(entry.category) ? (
             <LoanSettingsField label="生命保険料控除">
               <div className="insurance-deduction-fields">
@@ -691,24 +721,9 @@ export function InsuranceEntryDetail({
 
                 {lifeDeductionEnabled ? (
                   <div className="insurance-deduction-options">
-                    <label className="insurance-deduction-option">
-                      <span>控除を受ける人</span>
-                      <select
-                        className="select-input"
-                        value={lifeDeductionPayerMemberId}
-                        onChange={(e) =>
-                          update({
-                            lifeDeductionPayerMemberId: e.target.value,
-                          })
-                        }
-                      >
-                        {beneficiaryOptions.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {getMemberTabLabel(item)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <p className="insurance-link-hint">
+                      控除は上の「保険料を負担する人」を基準に計算します。
+                    </p>
 
                     <label className="insurance-deduction-option">
                       <span>契約区分</span>
