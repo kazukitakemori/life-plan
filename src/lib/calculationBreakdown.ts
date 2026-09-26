@@ -803,6 +803,12 @@ function buildIncomeTaxBreakdown(
     );
   }
 
+  if (data.insuranceIncomeTax.manualReviewRevenueYen > 0) {
+    notes.unshift(
+      `Q10の保険受取に税務確認が必要な金額が${formatYen(data.insuranceIncomeTax.manualReviewRevenueYen)}あります。年金受給権の評価や金融類似商品の源泉分離課税など、Q10の入力だけでは税額を確定できないため自動計算から除外しています。`,
+    );
+  }
+
   if (pensionPrimary) {
     notes.push(
       '公的年金等控除は国税庁タックスアンサー No.1600（令和2年以降）に基づく概算です。',
