@@ -54,6 +54,8 @@ export function InsuranceEntryCard({
       : usesDefaultName && defaultNamePosition?.count && defaultNamePosition.count > 1
         ? `${defaultName} ${defaultNamePosition.index}`
         : entry.name.trim() || defaultName;
+  const categoryLabel = INSURANCE_CATEGORY_LABELS[entry.category];
+  const showCategoryBadge = displayName.trim() !== categoryLabel;
 
   const confirmRemove = () => {
     const target = displayName.trim() || 'この保険';
@@ -70,9 +72,9 @@ export function InsuranceEntryCard({
         <span className="insurance-entry-name-label">{displayName}</span>
 
         <div className="insurance-entry-badges">
-          <span className="insurance-entry-category-badge">
-            {INSURANCE_CATEGORY_LABELS[entry.category]}
-          </span>
+          {showCategoryBadge ? (
+            <span className="insurance-entry-category-badge">{categoryLabel}</span>
+          ) : null}
           {isFireLinked ? (
             <span className="insurance-entry-link-badge">住まい連携</span>
           ) : null}
