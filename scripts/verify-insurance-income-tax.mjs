@@ -19,6 +19,7 @@ import {
 } from '../src/lib/incomeTaxDeductions.ts';
 import { createInsuranceEntry } from '../src/lib/insuranceDefaults.ts';
 import { createFamilyMember } from '../src/lib/familyDefaults.ts';
+import { calcCalendarYearGiftTaxForGiftsYen } from '../src/lib/giftTax.ts';
 import { buildMemberTaxBreakdownData } from '../src/lib/taxCalculator.ts';
 import { createDefaultPensionByMember } from '../src/lib/pensionDefaults.ts';
 
@@ -36,13 +37,26 @@ const head = {
   birthMonth: 6,
   birthDay: 1,
 };
+const spouse = {
+  ...createFamilyMember('spouse'),
+  age: 38,
+  birthMonth: 6,
+  birthDay: 1,
+};
 const child = {
   ...createFamilyMember('child'),
   age: 10,
   birthMonth: 6,
   birthDay: 1,
 };
-const members = [head, child];
+const sibling = {
+  ...createFamilyMember('other'),
+  age: 35,
+  birthMonth: 6,
+  birthDay: 1,
+  otherRelationship: 'sibling',
+};
+const members = [head, spouse, child, sibling];
 const emptyHousing = { byTarget: {} };
 const emptyVehicle = { inflationRate: 0, byMember: {} };
 
@@ -206,6 +220,66 @@ const educationTax = calcRecipientInsuranceIncomeTaxDetail({
   monthEnd: 12,
 });
 assertEq(educationTax.giftAmountYen, 500_000, 'education gift amount');
+
+// 同一年の保険贈与は受贈者単位で合算し、110万円控除は1回だけ
+const giftA = createInsuranceEntry(
+  'education',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 80,
+    benefitReceiveAge: 19,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: head.id,
+  },
+  members,
+);
+const giftB = createInsuranceEntry(
+  'education',
+  spouse,
+  referenceDate,
+  {
+    benefitPayoutMode: 'lump_sum',
+    benefitAmountMan: 80,
+    benefitReceiveAge: 19,
+    benefitReceiveMemberId: child.id,
+    beneficiaryMemberId: child.id,
+    lifeDeductionPayerMemberId: spouse.id,
+  },
+  members,
+);
+const combinedGiftYear = yearWhenMemberReachesAge(child, 19);
+const combinedGiftTax = calcRecipientInsuranceIncomeTaxDetail({
+  recipientId: child.id,
+  familyMembers: members,
+  insuranceState: {
+    byMember: {
+      [head.id]: [giftA],
+      [spouse.id]: [giftB],
+    },
+  },
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+  calendarYear: combinedGiftYear,
+  monthStart: 1,
+  monthEnd: 12,
+});
+assertEq(combinedGiftTax.giftAmountYen, 1_600_000, 'annual gifts combined');
+assertEq(combinedGiftTax.giftTaxYen, 50_000, 'annual 1.1m deduction applied once');
+
+// 一般贈与と特例贈与が混在する場合は共通課税価格を按分
+const mixedGiftTax = calcCalendarYearGiftTaxForGiftsYen({
+  gifts: [
+    { donor: head, giftAmountYen: 3_000_000 },
+    { donor: sibling, giftAmountYen: 1_500_000 },
+  ],
+  donee: child,
+  doneeAgeAtJan1: 18,
+});
+assertEq(mixedGiftTax, 416_666, 'mixed general and lineal gift tax');
 
 // 個人年金・年金形式（契約者受取）→ 雑所得
 // 収入10万円/年・払込累計25万円・確定10年
