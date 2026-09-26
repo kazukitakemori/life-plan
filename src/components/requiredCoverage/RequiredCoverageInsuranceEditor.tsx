@@ -111,6 +111,9 @@ export function RequiredCoverageInsuranceEditor({
                       <option value="until">年齢まで</option>
                     </select>
                   </label>
+                  <p className="required-coverage-card-note">
+                    ここでは税引前の死亡保障額を既契約保障として反映します。
+                  </p>
                   {entry.deathCoverageEndMode === 'until' ? (
                     <label className="required-coverage-insurance-field">
                       <span>保障終了</span>
