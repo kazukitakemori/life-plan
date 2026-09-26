@@ -13,6 +13,11 @@ import {
 } from './otherCashFlowLinkage';
 import { resolveSimulationStartYear } from './simulationTiming';
 import type { SavingsState } from '../types/savings';
+import type { LifeEventState } from '../types/lifeEvent';
+import {
+  collectLifeEventGiftTaxForRecipient,
+  createEmptyLifeEventGiftTaxCollection,
+} from './lifeEventGiftTax';
 import { calcMemberSelectiveDcManForMonth } from './dcContribution';
 import {
   buildMemberIncomeProfileFromIncomeTaxAnnualBasis,
@@ -2891,8 +2896,12 @@ export interface MemberTaxBreakdownData {
   /** 保険収入に係る税（受取人ベース） */
   insuranceIncomeTax: InsuranceIncomeTaxDetail;
   giftTax: {
+    /** 当年に発生した暦年贈与の税額 */
     giftTaxYen: number;
+    /** 翌年3月にキャッシュフローへ出す納付額 */
     giftTaxCashFlowYen: number;
+    /** Q3祝い金のうち課税/非課税を未確認のため税額へ未反映の額 */
+    unconfirmedGiftYen: number;
   };
 }
 
@@ -3524,6 +3533,7 @@ export function buildMemberTaxBreakdownData(input: {
   /** 住宅ローン控除（税額控除・円）。所得税→住民税の順に充当 */
   housingLoanTaxCreditYen?: number;
   insuranceState?: InsuranceState;
+  lifeEventState?: LifeEventState;
   housingState?: HousingState;
   vehicleState?: VehicleState;
   /** 小規模企業共済等掛金控除（iDeCo + 選択型DC加入者掛金）に使用 */
@@ -3977,37 +3987,60 @@ export function buildMemberTaxBreakdownData(input: {
         monthStart,
         monthEnd,
       });
-  const insuranceIncomeTax = input.insuranceState
-    ? calcRecipientInsuranceIncomeTaxDetail({
+  const currentLifeEventGiftTax = input.lifeEventState
+    ? collectLifeEventGiftTaxForRecipient({
         recipientId: member.id,
         familyMembers: input.familyMembers,
-        insuranceState: input.insuranceState,
-        housingState: input.housingState ?? { byTarget: {} },
-        vehicleState: input.vehicleState ?? { byMember: {} },
+        lifeEventState: input.lifeEventState,
         referenceDate: input.referenceDate,
         calendarYear: input.calendarYear,
         monthStart,
         monthEnd,
       })
-    : createEmptyInsuranceIncomeTaxDetail();
-  const priorCalendarYearInsuranceGiftTax = input.insuranceState
-    ? calcRecipientInsuranceIncomeTaxDetail({
+    : createEmptyLifeEventGiftTaxCollection();
+  const insuranceIncomeTax = calcRecipientInsuranceIncomeTaxDetail({
+    recipientId: member.id,
+    familyMembers: input.familyMembers,
+    insuranceState: input.insuranceState ?? { byMember: {} },
+    housingState: input.housingState ?? { byTarget: {} },
+    vehicleState: input.vehicleState ?? { byMember: {} },
+    referenceDate: input.referenceDate,
+    calendarYear: input.calendarYear,
+    monthStart,
+    monthEnd,
+    additionalTaxableGiftsByDonorYen:
+      currentLifeEventGiftTax.taxableByDonorYen,
+  });
+  const priorLifeEventGiftTax = input.lifeEventState
+    ? collectLifeEventGiftTaxForRecipient({
         recipientId: member.id,
         familyMembers: input.familyMembers,
-        insuranceState: input.insuranceState,
-        housingState: input.housingState ?? { byTarget: {} },
-        vehicleState: input.vehicleState ?? { byMember: {} },
+        lifeEventState: input.lifeEventState,
         referenceDate: input.referenceDate,
         calendarYear: input.calendarYear - 1,
         monthStart: 1,
         monthEnd: 12,
-      }).giftTaxYen
-    : 0;
+      })
+    : createEmptyLifeEventGiftTaxCollection();
+  const priorCalendarYearGiftTax =
+    calcRecipientInsuranceIncomeTaxDetail({
+      recipientId: member.id,
+      familyMembers: input.familyMembers,
+      insuranceState: input.insuranceState ?? { byMember: {} },
+      housingState: input.housingState ?? { byTarget: {} },
+      vehicleState: input.vehicleState ?? { byMember: {} },
+      referenceDate: input.referenceDate,
+      calendarYear: input.calendarYear - 1,
+      monthStart: 1,
+      monthEnd: 12,
+      additionalTaxableGiftsByDonorYen:
+        priorLifeEventGiftTax.taxableByDonorYen,
+    }).giftTaxYen;
   const giftTaxPaymentMonth = 3;
   const giftTaxCashFlowYen =
     simulationMonthStart <= giftTaxPaymentMonth &&
     simulationMonthEnd >= giftTaxPaymentMonth
-      ? taxYenToCashFlowYen(priorCalendarYearInsuranceGiftTax)
+      ? taxYenToCashFlowYen(priorCalendarYearGiftTax)
       : 0;
   const incomeTaxBusinessBreakdown =
     usesAnnualBasisForIncomeTax || incomeTaxProfile.hasActiveIncomeBlock
@@ -4571,6 +4604,7 @@ export function buildMemberTaxBreakdownData(input: {
       giftTaxYen: insuranceIncomeTax.giftTaxYen,
       /** 前年分を翌年3月に納付するCF支出 */
       giftTaxCashFlowYen,
+      unconfirmedGiftYen: currentLifeEventGiftTax.unconfirmedYen,
     },
   };
 }
