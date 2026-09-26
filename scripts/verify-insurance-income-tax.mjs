@@ -375,6 +375,53 @@ if (payerAwareTax.temporaryIncomeRevenueYen <= 0) {
   process.exit(1);
 }
 
+// 年金開始基準者と年金受取人が異なる場合、余命年数は受取人の開始時実年齢で判定
+const spouseLifetimePension = createInsuranceEntry(
+  'personal_pension',
+  head,
+  referenceDate,
+  {
+    benefitPayoutMode: 'annuity',
+    personalPensionAnnuityKind: 'lifetime',
+    benefitAmountMan: 10,
+    benefitReceiveAge: 65,
+    benefitReceiveMemberId: head.id,
+    beneficiaryMemberId: spouse.id,
+    lifeDeductionPayerMemberId: spouse.id,
+    startAge: head.age - 5,
+    startMonth: 1,
+    endMode: 'until',
+    endAge: head.age - 1,
+    endMonth: 12,
+    premiumMan: 5,
+    premiumPaymentMode: 'annual',
+  },
+  members,
+);
+const spouseLifetimePreview = calcInsuranceEntryIncomeTaxPreview({
+  entry: spouseLifetimePension,
+  contractor: head,
+  familyMembers: members,
+  housingState: emptyHousing,
+  vehicleState: emptyVehicle,
+  referenceDate,
+});
+const spouseAgeAtHead65 = 63;
+const spouseRemainingYears = getAnnuityRemainingLifeYears(
+  spouseAgeAtHead65,
+  spouse.gender,
+);
+const expectedSpouseLifetimeExpense = calcAnnuityNecessaryExpenseYen(
+  100_000,
+  250_000,
+  100_000 * spouseRemainingYears,
+);
+assertEq(
+  spouseLifetimePreview.expenseYen,
+  expectedSpouseLifetimeExpense,
+  'lifetime annuity uses recipient actual age at start',
+);
+
 // 保険料負担者≠年金受取人は年金受給権評価が必要なため自動贈与税計算しない
 const annuityDifferentPayerYear = yearWhenMemberReachesAge(child, 65);
 const annuityDifferentPayerTax = calcRecipientInsuranceIncomeTaxDetail({
